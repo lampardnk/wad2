@@ -1,0 +1,11 @@
+# Installed packages (everyone runs `pnpm install` instead)
+node_modules/
+
+# Secrets - never commit
+.env
+
+# Build output
+dist/
+
+# Mac system files
+.DS_Store
