@@ -3,6 +3,8 @@ import express from 'express'
 import cors from 'cors'
 import mongoose from 'mongoose'
 import authRoutes from './routes/auth.js'
+import crowdRoutes from './routes/crowd.js'
+import preferenceRoutes from './routes/preferences.js'
 import User from './models/User.js'
 
 const app = express()
@@ -11,6 +13,8 @@ app.use(express.json())
 
 // Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/crowd', crowdRoutes)
+app.use('/api/preferences', preferenceRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
