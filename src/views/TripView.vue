@@ -24,22 +24,28 @@
       <li class="nav-item me-2">
         <button class="btn btn-sm" :class="activeTab === 'expenses' ? 'btn-primary' : 'btn-outline-secondary'" @click="activeTab = 'expenses'">Expenses & Split</button>
       </li>
+      <li class="nav-item me-2">
+        <button class="btn btn-sm" :class="activeTab === 'photos' ? 'btn-primary' : 'btn-outline-secondary'" @click="activeTab = 'photos'">Photos</button>
+      </li>
       <li class="nav-item">
         <button class="btn btn-sm" :class="activeTab === 'safety' ? 'btn-primary' : 'btn-outline-secondary'" @click="activeTab = 'safety'" data-testid="safety-tab">Safety</button>
       </li>
     </ul>
 
-    <div v-if="activeTab === 'itinerary'">
-      <ItineraryView />
+    <div v-show="activeTab === 'itinerary'">
+      <ItineraryView @itinerary-change="updatePackingActivities" />
     </div>
     <div v-if="activeTab === 'voting'">
       <GroupVoting />
     </div>
-    <div v-if="activeTab === 'packing'">
-      <PackingView />
+    <div v-show="activeTab === 'packing'">
+      <PackingView :has-outdoor-activity="hasOutdoorActivity" />
     </div>
     <div v-if="activeTab === 'expenses'">
       <ExpensesView />
+    </div>
+    <div v-show="activeTab === 'photos'">
+      <PhotosView />
     </div>
     <!--
       v-show (not v-if) keeps SafetyLayer mounted when you switch tabs,
@@ -55,18 +61,23 @@
 import ItineraryView from '../components/ItineraryView.vue'
 import GroupVoting from '../components/GroupVoting.vue'
 import PackingView from '../components/PackingView.vue'
+import PhotosView from '../components/PhotosView.vue'
 import ExpensesView from '../components/ExpensesView.vue'
 import SafetyLayer from '../components/SafetyLayer.vue'
 
 export default {
-  components: { ItineraryView, GroupVoting, PackingView, ExpensesView, SafetyLayer },
+  components: { ItineraryView, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer },
   data() {
     return {
       activeTab: 'itinerary',
+      hasOutdoorActivity: true,
       safetyWarning: ''
     }
   },
   methods: {
+    updatePackingActivities(activities) {
+      this.hasOutdoorActivity = activities.some(activity => activity.outdoor)
+    },
     /*
       handleRiskChange()
       Listens to the "risk-change" event from SafetyLayer.

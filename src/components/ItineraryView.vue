@@ -39,6 +39,7 @@
 import namsanForecast from '../assets/mockNamsan.json'
 
 export default {
+  emits: ['itinerary-change'],
   data() {
     return {
       hasConflict: true,
@@ -50,6 +51,10 @@ export default {
         { hour: 18, name: 'Dinner Reservation (Myeongdong Kyoja)', forecast: null, outdoor: false, highlight: false }
       ]
     }
+  },
+
+  mounted() {
+    this.reportItinerary()
   },
 
   computed: {
@@ -115,6 +120,9 @@ export default {
   },
 
   methods: {
+    reportItinerary() {
+      this.$emit('itinerary-change', this.itinerary.map(item => ({ name: item.name, outdoor: item.outdoor })))
+    },
     resolveConflict() {
       this.hasConflict = false
       this.isResolved = true
@@ -127,6 +135,7 @@ export default {
           item.highlight = true
         }
       }
+      this.reportItinerary()
     },
 
     moveItem(index, newHour) {
@@ -134,6 +143,7 @@ export default {
       this.itinerary[index].highlight = true
       // Keep the day in time order
       this.itinerary.sort((a, b) => a.hour - b.hour)
+      this.reportItinerary()
     },
 
     formatHour(h) {
