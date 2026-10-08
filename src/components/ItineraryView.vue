@@ -284,6 +284,7 @@ export default {
           item.highlight = true
         }
       }
+      this.reportItinerary()
     },
 
     // "Plan my day": work out new times for every stop and show a preview
