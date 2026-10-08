@@ -6,8 +6,13 @@
 
     <!-- Weather alert (unchanged) -->
     <div v-if="hasConflict" class="alert alert-warning">
-      <strong>Weather Alert:</strong> Heavy rain predicted at 14:00. Namsan Park (Outdoor) is affected.
-      <button class="btn btn-sm btn-danger ms-3" @click="resolveConflict">Replace with National Museum (Indoor)</button>
+      <strong>Weather Alert:</strong> Heavy rain predicted at 14:00. Outdoor activities affected.
+      <div class="mt-2 d-flex align-items-center gap-2">
+        <select v-model="selectedWishlistItem" class="form-select form-select-sm w-auto">
+          <option v-for="w in wishlist" :key="w.name" :value="w">:star: {{ w.name }}</option>
+        </select>
+        <button class="btn btn-sm btn-danger" @click="resolveConflict">Replace with Wishlist Pick</button>
+      </div>
     </div>
 
     <!-- Plan my day -->
@@ -47,68 +52,76 @@
     </div>
 
     <div class="card p-3 mb-3">
-      <div v-for="(item, i) in itinerary" :key="item.name" class="mb-2 p-2 rounded"
-        :class="item.highlight ? 'bg-success-subtle' : 'bg-light'" data-testid="itinerary-item">
+      <div v-for="(item, i) in itinerary" :key="item.name">
+        <!-- Itinerary Item Box -->
+        <div class="mb-2 p-2 rounded"
+          :class="item.highlight ? 'bg-success-subtle' : 'bg-light'" data-testid="itinerary-item">
 
-        <!-- Time, name, badge, lock -->
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <strong>{{ formatHour(item.hour) }}</strong> {{ item.name }}
-          <span v-if="inRain(item)" title="Outdoors during the 2:00 PM rain">🌧️</span>
+          <!-- Time, name, badge, lock -->
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <strong>{{ formatHour(item.hour) }}</strong> {{ item.name }}
+            <span v-if="inRain(item)" title="Outdoors during the 2:00 PM rain">🌧️</span>
 
-          <span v-if="crowdInfo[i].closedToday" class="badge bg-danger" data-testid="closed-badge">Closed {{ tripDay }}s</span>
-          <CrowdBadge v-else-if="item.address" :loading="item.loading" :busyness="crowdInfo[i].busyness"
-            :estimated="!!(item.forecast && item.forecast.estimated)" />
+            <span v-if="crowdInfo[i].closedToday" class="badge bg-danger" data-testid="closed-badge">Closed {{ tripDay }}s</span>
+            <CrowdBadge v-else-if="item.address" :loading="item.loading" :busyness="crowdInfo[i].busyness"
+              :estimated="!!(item.forecast && item.forecast.estimated)" />
 
-          <label class="small text-muted ms-auto" title="Preserved stops are never moved by suggestions or Plan my day">
-            <input type="checkbox" v-model="item.locked" @change="plan = null" class="form-check-input me-1" data-testid="lock-checkbox">🔒 Preserve
-          </label>
+            <label class="small text-muted ms-auto" title="Preserved stops are never moved by suggestions or Plan my day">
+              <input type="checkbox" v-model="item.locked" @change="plan = null" class="form-check-input me-1" data-testid="lock-checkbox">🔒 Preserve
+            </label>
+          </div>
+
+          <div v-if="item.error" class="small text-danger mt-1">{{ item.error }}</div>
+
+          <!-- No real data: offer nearby landmarks -->
+          <div v-if="item.forecast && item.forecast.estimated && item.forecast.nearby.length"
+            class="small mt-1 d-flex flex-wrap align-items-center gap-1" data-testid="crowd-estimate-note">
+            <span class="text-muted">No data for this place (showing an estimate). Use data from nearby:</span>
+            <button v-for="place in item.forecast.nearby" :key="place" class="btn btn-sm btn-link p-0 me-2"
+              :disabled="item.loading" @click="useNearby(item, place)" data-testid="crowd-nearby-btn">{{ place }}</button>
+          </div>
+          <div v-if="item.dataFrom" class="small text-muted mt-1" data-testid="crowd-source">Crowd data from {{ item.dataFrom }} (nearby)</div>
+
+          <!-- Preference + duration -->
+          <div v-if="item.forecast && item.forecast.days && !crowdInfo[i].closedToday" class="small mt-1 d-flex flex-wrap align-items-center gap-2">
+            <label :for="'best-' + i" class="text-muted">Preference</label>
+            <select :id="'best-' + i" v-model="item.bestTime" class="form-select form-select-sm w-auto" data-testid="best-time-select">
+              <option v-for="opt in timeOptions" :key="opt" :value="opt">
+                {{ timeLabels[opt] }}{{ opt === item.forecast.bestTimeDefault ? ' (recommended)' : '' }}
+              </option>
+            </select>
+            <label :for="'dur-' + i" class="text-muted ms-1">Duration</label>
+            <select :id="'dur-' + i" v-model.number="item.duration" class="form-select form-select-sm w-auto" data-testid="duration-select">
+              <option v-for="d in durationOptions" :key="d" :value="d">
+                {{ d }} h{{ d === item.forecast.durationDefault ? ' (typical)' : '' }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Suggestion -->
+          <div v-if="crowdInfo[i].suggestHour !== null || crowdInfo[i].swap" class="small mt-2 d-flex flex-wrap align-items-center gap-2">
+            <span class="text-muted" :title="crowdInfo[i].reason">💡 {{ crowdInfo[i].short }}</span>
+            <button v-if="crowdInfo[i].suggestHour !== null" class="btn btn-sm btn-outline-primary py-0"
+              @click="moveItem(i, crowdInfo[i].suggestHour)" data-testid="crowd-move-btn">
+              Move to {{ formatHour(crowdInfo[i].suggestHour) }}
+            </button>
+            <button v-if="crowdInfo[i].swap" class="btn btn-sm btn-outline-secondary py-0"
+              :title="'This at ' + formatHour(crowdInfo[i].swap.hour) + ', ' + crowdInfo[i].swap.name + ' at ' + formatHour(crowdInfo[i].swap.otherNewHour)"
+              @click="swapItems(i, crowdInfo[i].swap.index)" data-testid="crowd-swap-btn">
+              Swap times with {{ shortName(crowdInfo[i].swap.name) }}
+            </button>
+          </div>
+
+          <!-- Hourly chart -->
+          <CrowdChart v-if="item.forecast && item.forecast.days && item.forecast.days[tripDay] && !crowdInfo[i].closedToday"
+            :forecast="item.forecast" :day-name="tripDay"
+            :planned-hour="item.hour" :suggest-hour="crowdInfo[i].suggestHour" />
         </div>
 
-        <div v-if="item.error" class="small text-danger mt-1">{{ item.error }}</div>
-
-        <!-- No real data: offer nearby landmarks -->
-        <div v-if="item.forecast && item.forecast.estimated && item.forecast.nearby.length"
-          class="small mt-1 d-flex flex-wrap align-items-center gap-1" data-testid="crowd-estimate-note">
-          <span class="text-muted">No data for this place (showing an estimate). Use data from nearby:</span>
-          <button v-for="place in item.forecast.nearby" :key="place" class="btn btn-sm btn-link p-0 me-2"
-            :disabled="item.loading" @click="useNearby(item, place)" data-testid="crowd-nearby-btn">{{ place }}</button>
+        <!-- Transit time badge shown between stops -->
+        <div v-if="i < itinerary.length - 1 && item.transitToNext" class="text-center small text-muted my-1">
+          🚗 ~{{ item.transitToNext }} transit to next stop
         </div>
-        <div v-if="item.dataFrom" class="small text-muted mt-1" data-testid="crowd-source">Crowd data from {{ item.dataFrom }} (nearby)</div>
-
-        <!-- Preference + duration -->
-        <div v-if="item.forecast && item.forecast.days && !crowdInfo[i].closedToday" class="small mt-1 d-flex flex-wrap align-items-center gap-2">
-          <label :for="'best-' + i" class="text-muted">Preference</label>
-          <select :id="'best-' + i" v-model="item.bestTime" class="form-select form-select-sm w-auto" data-testid="best-time-select">
-            <option v-for="opt in timeOptions" :key="opt" :value="opt">
-              {{ timeLabels[opt] }}{{ opt === item.forecast.bestTimeDefault ? ' (recommended)' : '' }}
-            </option>
-          </select>
-          <label :for="'dur-' + i" class="text-muted ms-1">Duration</label>
-          <select :id="'dur-' + i" v-model.number="item.duration" class="form-select form-select-sm w-auto" data-testid="duration-select">
-            <option v-for="d in durationOptions" :key="d" :value="d">
-              {{ d }} h{{ d === item.forecast.durationDefault ? ' (typical)' : '' }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Suggestion -->
-        <div v-if="crowdInfo[i].suggestHour !== null || crowdInfo[i].swap" class="small mt-2 d-flex flex-wrap align-items-center gap-2">
-          <span class="text-muted" :title="crowdInfo[i].reason">💡 {{ crowdInfo[i].short }}</span>
-          <button v-if="crowdInfo[i].suggestHour !== null" class="btn btn-sm btn-outline-primary py-0"
-            @click="moveItem(i, crowdInfo[i].suggestHour)" data-testid="crowd-move-btn">
-            Move to {{ formatHour(crowdInfo[i].suggestHour) }}
-          </button>
-          <button v-if="crowdInfo[i].swap" class="btn btn-sm btn-outline-secondary py-0"
-            :title="'This at ' + formatHour(crowdInfo[i].swap.hour) + ', ' + crowdInfo[i].swap.name + ' at ' + formatHour(crowdInfo[i].swap.otherNewHour)"
-            @click="swapItems(i, crowdInfo[i].swap.index)" data-testid="crowd-swap-btn">
-            Swap times with {{ shortName(crowdInfo[i].swap.name) }}
-          </button>
-        </div>
-
-        <!-- Hourly chart -->
-        <CrowdChart v-if="item.forecast && item.forecast.days && item.forecast.days[tripDay] && !crowdInfo[i].closedToday"
-          :forecast="item.forecast" :day-name="tripDay"
-          :planned-hour="item.hour" :suggest-hour="crowdInfo[i].suggestHour" />
       </div>
     </div>
   </div>
@@ -120,6 +133,7 @@ import CrowdChart from './CrowdChart.vue'
 import PreferencesPanel from './PreferencesPanel.vue'
 import { prefs, loadPreferences } from '../preferences.js'
 import { getForecast, suggestSlot, planDay, busynessAt, formatHour, TIME_WINDOWS, TIME_LABELS } from '../crowd.js'
+import { fetchTravelTime } from '../services/maps.js'
 
 export default {
   components: { CrowdBadge, CrowdChart, PreferencesPanel },
@@ -139,7 +153,33 @@ export default {
         { hour: 14, duration: null, name: 'Namsan Park (Outdoor)', address: '231 Samil-daero, Jung-gu, Seoul, South Korea', outdoor: true, forecast: null, bestTime: null, loading: false, error: '', highlight: false, dataFrom: '', locked: false },
         { hour: 18, duration: 1.5, name: 'Dinner Reservation (Myeongdong Kyoja)', address: null, outdoor: false, forecast: null, bestTime: null, loading: false, error: '', highlight: false, dataFrom: '', locked: true },
         { hour: 20, duration: null, name: 'Itaewon Street', address: 'Itaewon-ro, Yongsan-gu, Seoul, South Korea', outdoor: true, forecast: null, bestTime: null, loading: false, error: '', highlight: false, dataFrom: '', locked: false }
-      ]
+      ],
+      // Add to your data() return object in ItineraryView.vue:
+    wishlist: [
+      { name: 'Starfield Library (Indoor Mall)', address: '513 Yeongdong-daero, Gangnam-gu, Seoul', outdoor: false },
+      { name: 'National Museum of Korea', address: '137 Seobinggo-ro, Yongsan-gu, Seoul', outdoor: false },
+      { name: 'Lotte World Indoor Adventure', address: '240 Olympic-ro, Songpa-gu, Seoul', outdoor: false }
+    ],
+    selectedWishlistItem: null,
+
+    // Update your resolveConflict() method:
+    resolveConflict() {
+      this.hasConflict = false
+      this.isResolved = true
+      
+      const replacement = this.selectedWishlistItem || this.wishlist[1] // Default to National Museum if none selected
+      
+      for (const item of this.itinerary) {
+        if (this.inRain(item)) {
+          item.name = `${replacement.name} ✨ [Wishlist Replacement]`
+          item.address = replacement.address
+          item.outdoor = replacement.outdoor
+          item.forecast = null
+          item.highlight = true
+        }
+      }
+      this.reportItinerary()
+    }
     }
   },
 
@@ -271,6 +311,10 @@ export default {
       return 'Server not reachable. Is it running?'
     },
 
+    reportItinerary() {
+      this.$emit('itinerary-change', this.itinerary)
+    },
+
     resolveConflict() {
       this.hasConflict = false
       this.isResolved = true
@@ -305,7 +349,7 @@ export default {
       this.plan = planDay({ stops, dayName: this.tripDay, prefs })
     },
 
-    applyPlan() {
+    async applyPlan() {
       for (const row of this.plan.rows) {
         if (row.newHour === null || row.newHour === row.oldHour) continue
         this.itinerary[row.index].hour = row.newHour
@@ -313,10 +357,12 @@ export default {
       }
       this.itinerary.sort((a, b) => a.hour - b.hour) // sort AFTER all changes (indexes point to the old order)
       this.plan = null
+      await this.updateTransitTimes() // Recalculate transit spacing
+      this.reportItinerary()
     },
 
     // Swap the times of two stops, e.g. tower <-> dinner
-    swapItems(a, b) {
+    async swapItems(a, b) {
       this.plan = null
       const first = this.itinerary[a]
       const second = this.itinerary[b]
@@ -326,15 +372,35 @@ export default {
       first.highlight = true
       second.highlight = true
       this.itinerary.sort((x, y) => x.hour - y.hour)
+      await this.updateTransitTimes() // Recalculate transit spacing
+      this.reportItinerary()
     },
 
-    moveItem(index, newHour) {
+    async moveItem(index, newHour) {
       this.plan = null
       this.itinerary[index].hour = newHour
       this.itinerary[index].highlight = true
       // Keep the day in time order
       this.itinerary.sort((a, b) => a.hour - b.hour)
+      await this.updateTransitTimes() // Recalculate transit spacing
+      this.reportItinerary()
+    },
+
+    async updateTransitTimes() {
+    for (let i = 0; i < this.itinerary.length - 1; i++) {
+      const currentStop = this.itinerary[i]
+      const nextStop = this.itinerary[i + 1]
+
+      if (currentStop.address && nextStop.address) {
+        try {
+          const transit = await fetchTravelTime(currentStop.address, nextStop.address)
+          currentStop.transitToNext = transit.durationText
+        } catch (err) {
+          currentStop.transitToNext = '30 mins (est)'
+        }
+      }
     }
+  }
   }
 }
 </script>

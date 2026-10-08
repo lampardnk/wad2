@@ -33,6 +33,7 @@
     </ul>
 
     <div v-show="activeTab === 'itinerary'">
+      <FlightDelayWidget @cascade-resolved="handleCascadeResolved" />
       <ItineraryView @itinerary-change="updatePackingActivities" />
     </div>
     <div v-if="activeTab === 'voting'">
@@ -64,9 +65,10 @@ import PackingView from '../components/PackingView.vue'
 import PhotosView from '../components/PhotosView.vue'
 import ExpensesView from '../components/ExpensesView.vue'
 import SafetyLayer from '../components/SafetyLayer.vue'
+import FlightDelayWidget from '../components/FlightDelayWidget.vue'
 
 export default {
-  components: { ItineraryView, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer },
+  components: { ItineraryView, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget},
   data() {
     return {
       activeTab: 'itinerary',
