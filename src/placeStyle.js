@@ -7,6 +7,11 @@ export const PLACE_TYPES = {
   zoo: { icon: '🦁', label: 'Zoo', color: '#c6ecfb' },
   theme_park: { icon: '🎢', label: 'Theme park', color: '#f5d995' },
   aquarium: { icon: '🐠', label: 'Aquarium', color: '#c6ecfb' },
+  food: { icon: '🍜', label: 'Food & drink', color: '#ffe0cc' },
+  shop: { icon: '🛍', label: 'Shopping', color: '#f8d4ec' },
+  park: { icon: '🌳', label: 'Park', color: '#dcf5a6' },
+  transport: { icon: '🚉', label: 'Transport', color: '#e2e6ea' },
+  heritage: { icon: '⛩', label: 'Temple & heritage', color: '#fde2b8' },
   custom: { icon: '⭐', label: 'Your pick', color: '#cfeee1' }
 }
 

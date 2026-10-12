@@ -63,7 +63,7 @@ export function loadFromServer(saved) {
   trip.stops = (saved.stops || []).map(runtimeStop)
   trip.wishlist = (saved.wishlist || []).map((w) => ({
     id: w.id, name: w.name, address: w.address || null, outdoor: !!w.outdoor,
-    type: w.type || null, votes: Array.isArray(w.votes) ? w.votes : []
+    type: w.type || null, city: w.city || null, votes: Array.isArray(w.votes) ? w.votes : []
   }))
 }
 
@@ -71,7 +71,7 @@ export function loadFromServer(saved) {
 export function savedShape() {
   return {
     stops: trip.stops.map((s) => ({ id: s.id, name: s.name, address: s.address, date: s.date, hour: s.hour, duration: s.duration, outdoor: s.outdoor, locked: s.locked })),
-    wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address, outdoor: !!w.outdoor, type: w.type || null, votes: w.votes || [] }))
+    wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address, outdoor: !!w.outdoor, type: w.type || null, city: w.city || null, votes: w.votes || [] }))
   }
 }
 // Save the open trip's stops + wishlist (for pages that don't show the itinerary, e.g. trip setup)

@@ -1,5 +1,5 @@
 <template>
-  <!-- New-trip setup: /trip/:id/setup/wishlist, then /trip/:id/setup/vote -->
+  <!-- New-trip setup: /trip/:id/setup/invite, then /wishlist, then /vote -->
   <div class="setup">
     <p v-if="loading" class="text-muted">Loading trip…</p>
     <div v-else-if="loadError" class="alert alert-warning">
@@ -12,33 +12,40 @@
         <button type="button" class="setup-back" aria-label="Back" @click="goBack">‹</button>
         <div class="flex-grow-1">
           <p class="setup-trip">{{ tripInfo.name }}</p>
-          <h1 class="setup-title">{{ step === 'vote' ? 'Group decisions' : 'Wishlist' }}</h1>
+          <h1 class="setup-title">{{ titles[step] }}</h1>
         </div>
         <span class="setup-saved small text-muted" role="status">{{ saveStatus }}</span>
       </header>
 
       <!-- Steps -->
       <ol class="setup-steps" aria-label="Setup steps">
-        <li :class="{ current: step === 'wishlist', done: step === 'vote' }" :aria-current="step === 'wishlist' ? 'step' : null">
-          <span class="dot">{{ step === 'vote' ? '✓' : '1' }}</span> Save places
+        <li v-for="(s, i) in steps" :key="s.key" :class="{ current: step === s.key, done: i < stepIndex }" :aria-current="step === s.key ? 'step' : null">
+          <span class="dot">{{ i < stepIndex ? '✓' : i + 1 }}</span> {{ s.label }}
         </li>
-        <li :class="{ current: step === 'vote' }" :aria-current="step === 'vote' ? 'step' : null">
-          <span class="dot">2</span> Vote together
-        </li>
-        <li><span class="dot">3</span> Plan your days</li>
+        <li><span class="dot">{{ steps.length + 1 }}</span> Plan your days</li>
       </ol>
 
       <p class="setup-lead">
-        <template v-if="step === 'wishlist'">Save places you'd like to visit. Tap ♡ on a popular place, or add your own.</template>
+        <template v-if="step === 'invite'">Who's coming? Invite friends by username or send them a link. Going solo? Just skip this.</template>
+        <template v-else-if="step === 'wishlist'">Save places you'd like to visit. Tap ♡ on a popular place, or add your own.</template>
         <template v-else>Everyone votes on the saved places. The group picks are the ones to fit into your days.</template>
       </p>
 
-      <WishlistView v-if="step === 'wishlist'" :destinations="tripInfo.destinations" />
+      <TripShare v-if="step === 'invite'" inline :trip-id="id" :trip-name="tripInfo.name" :members="tripInfo.members"
+        :travellers="tripInfo.travellers" :role="tripInfo.role" :me="tripInfo.me" :pending-invites="tripInfo.pendingInvites"
+        @changed="reloadInfo" />
+      <WishlistView v-else-if="step === 'wishlist'" :destinations="tripInfo.destinations" />
       <PlacesVoting v-else :travellers="tripInfo.travellers" @go-wishlist="goTo('wishlist')" />
 
       <!-- Bottom bar -->
       <div class="setup-bar">
-        <template v-if="step === 'wishlist'">
+        <template v-if="step === 'invite'">
+          <button type="button" class="btn btn-link text-muted" @click="goTo('wishlist')">Skip for now</button>
+          <button type="button" class="btn setup-next" @click="goTo('wishlist')" data-testid="setup-invite-next">
+            Next: save places →
+          </button>
+        </template>
+        <template v-else-if="step === 'wishlist'">
           <button type="button" class="btn btn-link text-muted" @click="finish">Skip setup</button>
           <button type="button" class="btn setup-next" :disabled="saving" @click="goTo('vote')" data-testid="setup-next">
             Next: vote together →
@@ -59,20 +66,27 @@
 import axios from 'axios'
 import WishlistView from '../components/WishlistView.vue'
 import PlacesVoting from '../components/PlacesVoting.vue'
+import TripShare from '../components/TripShare.vue'
 import { trip, loadFromServer, savedShape, saveTrip } from '../itineraryStore.js'
 
 export default {
-  components: { WishlistView, PlacesVoting },
+  components: { WishlistView, PlacesVoting, TripShare },
   props: {
     id: { type: String, required: true },
-    step: { type: String, default: 'wishlist' } // 'wishlist' | 'vote'
+    step: { type: String, default: 'invite' } // 'invite' | 'wishlist' | 'vote'
   },
 
   data() {
     return {
       loading: true,
       loadError: '',
-      tripInfo: { name: '', destinations: [], travellers: [] },
+      tripInfo: { name: '', destinations: [], travellers: [], members: [], role: 'member', me: '', pendingInvites: [] },
+      steps: [
+        { key: 'invite', label: 'Invite group' },
+        { key: 'wishlist', label: 'Save places' },
+        { key: 'vote', label: 'Vote together' }
+      ],
+      titles: { invite: 'Invite your group', wishlist: 'Wishlist', vote: 'Group decisions' },
       saving: false,
       saveStatus: '',
       saveTimer: null,
@@ -81,6 +95,9 @@ export default {
   },
 
   computed: {
+    stepIndex() {
+      return this.steps.findIndex((s) => s.key === this.step)
+    },
     // Changes whenever the wishlist or its votes change
     saveKey() {
       return JSON.stringify(savedShape().wishlist)
@@ -100,13 +117,8 @@ export default {
   async mounted() {
     try {
       const res = await axios.get('/api/trips/' + this.id)
-      const t = res.data
-      this.tripInfo = {
-        name: t.name,
-        destinations: t.destinations && t.destinations.length ? t.destinations : [t.destination],
-        travellers: t.travellers || []
-      }
-      loadFromServer(t)
+      this.setInfo(res.data)
+      loadFromServer(res.data)
       this.lastSaved = this.saveKey
     } catch (err) {
       this.loadError = 'Could not load this trip. Is the server running?'
@@ -115,6 +127,28 @@ export default {
   },
 
   methods: {
+    setInfo(t) {
+      this.tripInfo = {
+        name: t.name,
+        destinations: t.destinations && t.destinations.length ? t.destinations : [t.destination],
+        travellers: t.travellers || [],
+        members: t.members || [],
+        role: t.role || 'member',
+        me: t.me || '',
+        pendingInvites: t.pendingInvites || []
+      }
+    },
+
+    // After adding/removing people on the invite step (votes need the new names)
+    async reloadInfo() {
+      try {
+        const res = await axios.get('/api/trips/' + this.id)
+        this.setInfo(res.data)
+      } catch (err) {
+        // keep what we have
+      }
+    },
+
     async saveNow() {
       clearTimeout(this.saveTimer)
       if (this.saveKey === this.lastSaved) return
@@ -145,6 +179,7 @@ export default {
 
     goBack() {
       if (this.step === 'vote') this.goTo('wishlist')
+      else if (this.step === 'wishlist') this.goTo('invite')
       else this.finish()
     }
   },

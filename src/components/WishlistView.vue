@@ -28,10 +28,12 @@
           <h4 class="wl-name" :title="w.name">{{ w.name }}</h4>
           <span v-if="w.votes && w.votes.length" class="wl-pill" :title="w.votes.join(', ') + ' want to go'">👍 {{ w.votes.length }}</span>
         </div>
+        <!-- Where it is, so similar places can be told apart -->
+        <p v-if="streetOf(w)" class="wl-street" :title="w.address">📍 {{ streetOf(w) }}</p>
         <button type="button" class="wl-heart filled" :aria-label="'Remove ' + w.name + ' from wishlist'" title="Remove" @click="remove(w)">♥</button>
         <span class="wl-art" aria-hidden="true">{{ placeStyle(w.type).icon }}</span>
         <div class="wl-bar">
-          <span class="wl-bar-text">{{ placeStyle(w.type).label }}<span v-if="!w.outdoor"> · Indoor</span></span>
+          <span class="wl-bar-text"><span v-if="w.city">{{ flagFor(w.city) }} {{ w.city.split(', ')[0] }} · </span>{{ placeStyle(w.type).label }}<span v-if="!w.outdoor"> · Indoor</span></span>
           <button type="button" class="wl-round" :aria-label="'Edit ' + w.name" title="Edit" @click="startEdit(w)">✎</button>
         </div>
       </article>
@@ -61,73 +63,86 @@
       </form>
     </transition>
 
-    <!-- Add your own -->
-    <form class="wl-add" @submit.prevent="addTyped">
+    <!-- Find a place (any shop, restaurant, temple...) or add your own -->
+    <form class="wl-add" @submit.prevent="chooseActive">
+      <label v-if="destinations.length > 1" class="wl-in">
+        <span class="visually-hidden">Search in</span>
+        <select v-model="searchIn" class="form-select wl-input" @change="runSearch">
+          <option v-for="d in destinations" :key="d" :value="d">{{ flagFor(d) }} {{ d.split(', ')[0] }}</option>
+        </select>
+      </label>
       <div class="wl-add-name position-relative">
-        <label for="wish-name" class="visually-hidden">Place name</label>
+        <label for="wish-name" class="visually-hidden">Find a place</label>
         <input id="wish-name" v-model="form.name" class="form-control wl-input" maxlength="120" autocomplete="off"
-          :placeholder="'Add a place in ' + (activeDest ? activeDest.split(', ')[0] : 'your destination')"
+          :placeholder="'Find a place in ' + (searchIn ? searchIn.split(', ')[0] : 'your destination') + ', e.g. ramen, FamilyMart'"
           role="combobox" aria-autocomplete="list" aria-controls="wish-suggest"
-          :aria-expanded="showSuggest && typedMatches.length > 0"
+          :aria-expanded="showSuggest && rows.length > 0"
           :aria-activedescendant="active >= 0 ? 'wish-opt-' + active : null"
-          @focus="showSuggest = true" @blur="showSuggest = false" @input="active = -1" @keydown="onKeydown"
+          @focus="showSuggest = true" @blur="showSuggest = false" @input="onType" @keydown="onKeydown"
           data-testid="wish-name">
-        <ul v-if="showSuggest && typedMatches.length" id="wish-suggest" class="wl-suggest" role="listbox">
-          <li v-for="(p, k) in typedMatches" :id="'wish-opt-' + k" :key="p.name" role="option"
-            :class="{ active: k === active }" :aria-selected="k === active"
-            @mousedown.prevent="addPopular(p)" @mouseenter="active = k">
-            <span aria-hidden="true">{{ placeStyle(p.type).icon }}</span> {{ p.name }}
-            <span v-if="p.indoor" class="badge text-bg-light ms-auto">Indoor</span>
+
+        <ul v-if="showSuggest && rows.length" id="wish-suggest" class="wl-suggest" role="listbox">
+          <li v-for="(row, k) in rows" :id="'wish-opt-' + k" :key="row.key" role="option"
+            :class="['wl-row-' + row.kind, { active: k === active }]" :aria-selected="k === active"
+            :aria-expanded="row.kind === 'chain' ? openChain === row.name : null"
+            @mousedown.prevent="choose(row)" @mouseenter="active = k">
+            <span class="wl-row-icon" aria-hidden="true">{{ row.icon }}</span>
+            <span class="wl-row-text">
+              <strong>{{ row.name }}</strong>
+              <span v-if="row.note" class="wl-row-note"> {{ row.note }}</span>
+              <span v-if="row.sub" class="d-block small text-muted text-truncate">{{ row.sub }}</span>
+            </span>
+            <span v-if="row.kind === 'chain'" class="wl-row-arrow" aria-hidden="true">{{ openChain === row.name ? '▾' : '›' }}</span>
           </li>
         </ul>
+        <p v-if="showSuggest && searching" class="wl-searching small text-muted" role="status">Searching…</p>
+        <p v-else-if="showSuggest && searchError" class="wl-searching small text-danger" role="status">{{ searchError }}</p>
       </div>
       <label for="wish-address" class="visually-hidden">Address</label>
-      <input id="wish-address" v-model="form.address" class="form-control wl-input wl-add-address" maxlength="200" placeholder="Address (optional)">
+      <input id="wish-address" v-model="form.address" class="form-control wl-input wl-add-address" maxlength="200" placeholder="Address (optional, for your own place)">
       <button type="submit" class="btn btn-primary wl-pill-btn" :disabled="!form.name.trim()" data-testid="wish-add">+ Add</button>
     </form>
 
-    <!-- ===== Popular places ===== -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-5 mb-3">
-      <h3 class="wl-heading mb-0">Popular in {{ activeDest ? activeDest.split(', ')[0] : '…' }}</h3>
-      <div v-if="destinations.length > 1" class="d-flex flex-wrap gap-2" role="group" aria-label="Destination">
-        <button v-for="d in destinations" :key="d" type="button" class="wl-chip" :class="{ active: d === activeDest }"
-          :aria-pressed="d === activeDest" @click="selectDest(d)">
-          {{ flagFor(d) }} {{ d.split(', ')[0] }}
-        </button>
+    <!-- ===== Popular places: one section per destination ===== -->
+    <section v-for="sec in sections" :key="sec.dest" class="mt-5" :aria-label="'Popular in ' + sec.city">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h3 class="wl-heading mb-0">{{ sec.flag }} Popular in {{ sec.city }}</h3>
+        <span v-if="sec.list.length" class="small text-muted">{{ sec.list.length }} places · from OpenStreetMap</span>
       </div>
-    </div>
 
-    <div v-if="loading" aria-busy="true">
-      <p class="small text-muted">Finding popular places… the first time for a whole country can take up to a minute.</p>
-      <div class="wl-grid"><div v-for="n in 6" :key="n" class="wl-card skeleton"></div></div>
-    </div>
-    <div v-else-if="error" class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
-      <span>{{ error }}</span>
-      <button class="btn btn-sm btn-outline-secondary" @click="loadPopular(activeDest, true)">Try again</button>
-    </div>
-    <p v-else-if="!shownPopular.length" class="wl-empty">No popular places found here. You can still add your own above.</p>
+      <div v-if="sec.loading" aria-busy="true">
+        <p class="small text-muted">Finding popular places… the first time for a whole country can take up to a minute.</p>
+        <div class="wl-grid"><div v-for="n in 6" :key="n" class="wl-card skeleton"></div></div>
+      </div>
+      <div v-else-if="sec.error" class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+        <span>{{ sec.error }}</span>
+        <button class="btn btn-sm btn-outline-secondary" @click="loadPopular(sec.dest)">Try again</button>
+      </div>
+      <p v-else-if="!sec.list.length" class="wl-empty">No popular places found in {{ sec.city }}. You can still add your own above.</p>
 
-    <template v-else>
-      <div class="wl-grid" data-testid="popular-list">
-        <article v-for="p in shownPopular.slice(0, shown)" :key="p.name" class="wl-card" :style="{ background: placeStyle(p.type).color }">
-          <div class="wl-card-top">
-            <h4 class="wl-name" :title="p.name">{{ p.name }}</h4>
-          </div>
-          <button v-if="isAdded(p)" type="button" class="wl-heart filled" disabled :aria-label="p.name + ' is in your wishlist'">♥</button>
-          <button v-else type="button" class="wl-heart" :aria-label="'Add ' + p.name + ' to wishlist'" title="Add to wishlist"
-            @click="addPopular(p)" data-testid="popular-add">♡</button>
-          <span class="wl-art" aria-hidden="true">{{ placeStyle(p.type).icon }}</span>
-          <div class="wl-bar">
-            <span class="wl-bar-text">{{ placeStyle(p.type).label }}<span v-if="p.indoor"> · Indoor</span></span>
-            <span v-if="isAdded(p)" class="wl-added">Saved</span>
-          </div>
-        </article>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mt-3">
-        <span class="small text-muted">Showing {{ Math.min(shown, shownPopular.length) }} of {{ shownPopular.length }} · from OpenStreetMap</span>
-        <button v-if="shown < shownPopular.length" type="button" class="btn btn-sm btn-outline-secondary wl-pill-btn" @click="shown += 24">Show more</button>
-      </div>
-    </template>
+      <template v-else>
+        <div class="wl-grid" data-testid="popular-list">
+          <article v-for="p in sec.list.slice(0, sec.shown)" :key="p.name" class="wl-card" :style="{ background: placeStyle(p.type).color }">
+            <div class="wl-card-top">
+              <h4 class="wl-name" :title="p.name">{{ p.name }}</h4>
+            </div>
+            <button v-if="isAdded(p)" type="button" class="wl-heart filled" disabled :aria-label="p.name + ' is in your wishlist'">♥</button>
+            <button v-else type="button" class="wl-heart" :aria-label="'Add ' + p.name + ' to wishlist'" title="Add to wishlist"
+              @click="addPopular(p)" data-testid="popular-add">♡</button>
+            <span class="wl-art" aria-hidden="true">{{ placeStyle(p.type).icon }}</span>
+            <div class="wl-bar">
+              <span class="wl-bar-text">{{ placeStyle(p.type).label }}<span v-if="p.indoor"> · Indoor</span></span>
+              <span v-if="isAdded(p)" class="wl-added">Saved</span>
+            </div>
+          </article>
+        </div>
+        <div v-if="sec.shown < sec.list.length" class="text-end mt-3">
+          <button type="button" class="btn btn-sm btn-outline-secondary wl-pill-btn" @click="showMore(sec.dest)">
+            Show more in {{ sec.city }}
+          </button>
+        </div>
+      </template>
+    </section>
   </div>
 </template>
 
@@ -145,10 +160,8 @@ export default {
 
   data() {
     return {
-      activeDest: '',
-      popularByDest: {}, // destination -> list from the server (switching back is instant)
-      loading: false,
-      error: '',
+      popularByDest: {}, // destination -> list from the server
+      status: {}, // destination -> { loading, error, shown }
       search: '',
       filter: 'all',
       showFilters: false,
@@ -157,9 +170,14 @@ export default {
         { value: 'indoor', label: '🏛 Indoor' },
         { value: 'outdoor', label: '🌳 Outdoor' }
       ],
-      shown: 24,
       form: { name: '', address: '' },
       showSuggest: false,
+      searchIn: '',      // which destination "Find a place" searches in
+      found: [],         // results from /api/places/search
+      searching: false,
+      searchError: '',
+      searchTimer: null,
+      openChain: null,   // name of the chain whose branches are shown
       active: -1,
       editId: null,
       editForm: { name: '', address: '' }
@@ -167,11 +185,14 @@ export default {
   },
 
   watch: {
-    // Load the first destination when the trip's destinations arrive
+    // Load every destination's popular places when the trip's destinations arrive
     destinations: {
       immediate: true,
       handler(list) {
-        if (list.length && !list.includes(this.activeDest)) this.selectDest(list[0])
+        for (const d of list) {
+          if (!this.status[d]) this.loadPopular(d)
+        }
+        if (!list.includes(this.searchIn)) this.searchIn = list[0] || ''
       }
     }
   },
@@ -190,24 +211,62 @@ export default {
       return list
     },
 
-    shownPopular() {
-      const list = []
-      for (const p of this.popularByDest[this.activeDest] || []) {
-        if (this.matches(p.name, p.indoor)) list.push(p)
+    // One section per destination, with the search + filter applied
+    sections() {
+      const result = []
+      for (const d of this.destinations) {
+        const st = this.status[d] || { loading: true, error: '', shown: 12 }
+        const list = []
+        for (const p of this.popularByDest[d] || []) {
+          if (this.matches(p.name, p.indoor)) list.push(p)
+        }
+        result.push({
+          dest: d,
+          city: d.split(', ')[0],
+          flag: this.flagFor(d),
+          list,
+          loading: st.loading,
+          error: st.error,
+          shown: st.shown
+        })
       }
-      return list
+      return result
     },
 
-    // Type-ahead: popular places whose name contains what's typed (max 8)
-    typedMatches() {
-      const q = this.form.name.trim().toLowerCase()
+    // Rows in the "Find a place" dropdown: popular matches, search results (chains grouped), then "add your own"
+    rows() {
+      const q = this.form.name.trim()
       if (q.length < 2) return []
-      const list = []
-      for (const p of this.popularByDest[this.activeDest] || []) {
-        if (p.name.toLowerCase().includes(q) && !this.isAdded(p)) list.push(p)
-        if (list.length === 8) break
+      const rows = []
+      const names = []
+
+      // 1. Popular places in this destination
+      for (const p of this.popularByDest[this.searchIn] || []) {
+        if (rows.length < 3 && p.name.toLowerCase().includes(q.toLowerCase()) && !this.isAdded(p)) {
+          rows.push({ key: 'p-' + p.name, kind: 'popular', name: p.name, note: '★ Popular', sub: placeStyle(p.type).label, icon: placeStyle(p.type).icon, place: p })
+          names.push(p.name.toLowerCase())
+        }
       }
-      return list
+
+      // 2. Search results
+      for (const g of this.found) {
+        if (names.includes(g.name.toLowerCase()) || this.isAdded(g)) continue
+        const icon = placeStyle(g.type).icon
+        if (g.branches.length === 1) {
+          rows.push({ key: 'f-' + g.name, kind: 'place', name: g.name, note: g.kind, sub: g.branches[0].address, icon, group: g, branch: g.branches[0] })
+        } else {
+          rows.push({ key: 'c-' + g.name, kind: 'chain', name: g.name, note: g.kind, sub: 'See ' + g.branches.length + ' locations', icon, group: g })
+          if (this.openChain === g.name) {
+            for (const b of g.branches) {
+              rows.push({ key: 'b-' + g.name + b.address, kind: 'branch', name: b.address, note: '', sub: '', icon: '📍', group: g, branch: b })
+            }
+          }
+        }
+      }
+
+      // 3. Not found? Add exactly what was typed
+      rows.push({ key: 'own', kind: 'own', name: 'Add "' + q + '" as your own place', note: '', sub: this.form.address.trim() || '', icon: '＋' })
+      return rows
     }
   },
 
@@ -221,23 +280,31 @@ export default {
       return !this.search.trim() || name.toLowerCase().includes(this.search.trim().toLowerCase())
     },
 
-    selectDest(d) {
-      this.activeDest = d
-      this.shown = 24
-      this.loadPopular(d, false)
+    // First part of the address, e.g. "13 Okazaki Park" (skipped if it is just the place's name)
+    streetOf(w) {
+      if (!w.address) return ''
+      const first = w.address.split(',')[0].trim()
+      if (first.toLowerCase() === w.name.toLowerCase()) return ''
+      if (w.city && first.toLowerCase() === w.city.split(', ')[0].toLowerCase()) return '' // just the city again
+      return first
     },
 
-    async loadPopular(dest, force) {
-      if (!dest || (this.popularByDest[dest] && !force)) return
-      this.loading = true
-      this.error = ''
+    showMore(dest) {
+      this.status[dest].shown += 12
+    },
+
+    async loadPopular(dest) {
+      this.status[dest] = { loading: true, error: '', shown: 12 }
       try {
         const res = await axios.get('/api/places/attractions', { params: { destination: dest } })
-        this.popularByDest[dest] = res.data
+        // Remember which city each place is in
+        const list = []
+        for (const p of res.data) list.push({ ...p, city: dest })
+        this.popularByDest[dest] = list
       } catch (err) {
-        this.error = (err.response && err.response.data && err.response.data.message) || 'Could not load popular places. Is the server running?'
+        this.status[dest].error = (err.response && err.response.data && err.response.data.message) || 'Could not load popular places. Is the server running?'
       }
-      this.loading = false
+      this.status[dest].loading = false
     },
 
     isAdded(p) {
@@ -249,25 +316,73 @@ export default {
 
     addPopular(p) {
       if (this.isAdded(p)) return
-      trip.wishlist.push({ id: newId('w'), name: p.name, address: p.address || null, outdoor: !p.indoor, type: p.type, votes: [] })
-      this.form = { name: '', address: '' }
-      this.active = -1
+      trip.wishlist.push({ id: newId('w'), name: p.name, address: p.address || null, outdoor: !p.indoor, type: p.type, city: p.city || null, votes: [] })
+      this.clearForm()
     },
 
-    // Add the highlighted suggestion, or exactly what was typed
-    addTyped() {
-      if (this.active >= 0 && this.typedMatches[this.active]) {
-        this.addPopular(this.typedMatches[this.active])
+    // Typing: wait until the user pauses, then search (keeps us within Photon's fair-use limits)
+    onType() {
+      this.active = -1
+      this.openChain = null
+      clearTimeout(this.searchTimer)
+      this.searchTimer = setTimeout(this.runSearch, 300)
+    },
+
+    async runSearch() {
+      const q = this.form.name.trim()
+      if (q.length < 2 || !this.searchIn) {
+        this.found = []
         return
       }
+      this.searching = true
+      this.searchError = ''
+      try {
+        const res = await axios.get('/api/places/search', { params: { q, near: this.searchIn } })
+        if (q === this.form.name.trim()) this.found = res.data // ignore answers to older typing
+      } catch (err) {
+        this.searchError = 'Place search is unavailable. You can still add your own.'
+      }
+      this.searching = false
+    },
+
+    choose(row) {
+      if (row.kind === 'chain') {
+        // Show or hide this chain's branches
+        this.openChain = this.openChain === row.name ? null : row.name
+        return
+      }
+      if (row.kind === 'popular') this.addPopular(row.place)
+      else if (row.kind === 'place' || row.kind === 'branch') this.addFound(row.group, row.branch)
+      else this.addOwn()
+    },
+
+    // Enter / the + Add button: the highlighted row, otherwise add what was typed
+    chooseActive() {
+      if (this.active >= 0 && this.rows[this.active]) this.choose(this.rows[this.active])
+      else this.addOwn()
+    },
+
+    addFound(group, branch) {
+      trip.wishlist.push({ id: newId('w'), name: group.name, address: branch.address, outdoor: !group.indoor, type: group.type, city: this.searchIn || null, votes: [] })
+      this.clearForm()
+    },
+
+    addOwn() {
       const name = this.form.name.trim()
       if (!name) return
-      trip.wishlist.push({ id: newId('w'), name, address: this.form.address.trim() || null, outdoor: false, type: 'custom', votes: [] })
+      trip.wishlist.push({ id: newId('w'), name, address: this.form.address.trim() || null, outdoor: false, type: 'custom', city: this.searchIn || null, votes: [] })
+      this.clearForm()
+    },
+
+    clearForm() {
       this.form = { name: '', address: '' }
+      this.found = []
+      this.active = -1
+      this.openChain = null
     },
 
     onKeydown(e) {
-      const count = this.typedMatches.length
+      const count = this.rows.length
       if (!count) return
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -432,6 +547,16 @@ export default {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+.wl-street {
+  position: relative;
+  z-index: 1;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #3d4d49;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .wl-pill {
   flex-shrink: 0;
   font-size: 12px;
@@ -564,7 +689,7 @@ export default {
   border: 1px solid #dfe5e3;
   border-radius: 18px;
   box-shadow: 0 14px 30px rgba(16, 40, 34, 0.14);
-  max-height: 280px;
+  max-height: 360px;
   overflow-y: auto;
 }
 .wl-suggest li {
@@ -574,6 +699,45 @@ export default {
   padding: 9px 12px;
   border-radius: 12px;
   cursor: pointer;
+}
+.wl-in {
+  flex: 0 0 150px;
+}
+.wl-row-text {
+  flex: 1;
+  min-width: 0;
+}
+.wl-row-note {
+  margin-left: 6px;
+  color: var(--app-muted, #5f6f6b);
+  font-size: 13px;
+}
+.wl-row-icon {
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.wl-row-arrow {
+  color: var(--app-muted, #5f6f6b);
+  font-size: 18px;
+}
+.wl-suggest li.wl-row-branch {
+  padding-left: 40px;
+  font-size: 14px;
+}
+.wl-suggest li.wl-row-branch strong {
+  font-weight: 500;
+}
+.wl-suggest li.wl-row-own {
+  border-top: 1px solid #eef2f1;
+  color: #0b7f5f;
+}
+.wl-searching {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  margin: 0;
+  pointer-events: none;
 }
 .wl-suggest li.active {
   background: #e6f5ef;

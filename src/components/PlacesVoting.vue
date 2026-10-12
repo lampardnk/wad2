@@ -40,6 +40,7 @@
             <h4 class="pv-name">{{ w.name }}</h4>
             <span v-if="isPick(w)" class="pv-badge">✓ Group pick</span>
           </div>
+          <p v-if="whereOf(w)" class="pv-where">📍 {{ whereOf(w) }}</p>
 
           <!-- Progress towards a group pick -->
           <div class="pv-progress" role="progressbar" :aria-valuenow="w.votes.length" aria-valuemin="0" :aria-valuemax="travellers.length"
@@ -102,6 +103,14 @@ export default {
 
   methods: {
     placeStyle,
+    // e.g. "Kyoto · 13 Okazaki Park"
+    whereOf(w) {
+      const parts = []
+      if (w.city) parts.push(w.city.split(', ')[0])
+      const street = w.address ? w.address.split(',')[0].trim() : ''
+      if (street && street !== w.name && !parts.includes(street)) parts.push(street)
+      return parts.join(' · ')
+    },
     isPick(w) {
       return this.travellers.length > 0 && (w.votes || []).length >= this.needed
     },
@@ -214,6 +223,11 @@ export default {
   color: #fff;
   border-radius: 999px;
   padding: 3px 10px;
+}
+.pv-where {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--app-muted, #5f6f6b);
 }
 .pv-progress {
   height: 6px;

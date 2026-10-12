@@ -69,31 +69,20 @@
           </div>
 
           <!-- Dates -->
-          <div class="col-6 col-md-3">
+          <div class="col-6">
             <div class="field" :class="'is-' + states.startDate">
               <label for="trip-start" class="field-label">Start date</label>
               <input id="trip-start" type="date" class="field-input" v-model="newTrip.startDate" @blur="touched.startDate = true">
             </div>
             <p class="field-msg" :class="'is-' + states.startDate">{{ messages.startDate }}</p>
           </div>
-          <div class="col-6 col-md-3">
+          <div class="col-6">
             <div class="field" :class="'is-' + states.endDate">
               <label for="trip-end" class="field-label">End date</label>
               <input id="trip-end" type="date" class="field-input" v-model="newTrip.endDate" :min="newTrip.startDate"
                 :aria-invalid="states.endDate === 'error'" aria-describedby="trip-end-msg" @blur="touched.endDate = true">
             </div>
             <p id="trip-end-msg" class="field-msg" :class="'is-' + states.endDate">{{ messages.endDate }}</p>
-          </div>
-
-          <!-- Travellers -->
-          <div class="col-md-6">
-            <div class="field" :class="'is-' + states.travellers">
-              <label for="trip-people" class="field-label">Travellers</label>
-              <input id="trip-people" type="text" class="field-input" v-model="newTrip.travellers"
-                placeholder="e.g. Sarah, John, Amy" aria-describedby="trip-people-msg" @blur="touched.travellers = true">
-              <span class="field-icon" aria-hidden="true">{{ icons[states.travellers] }}</span>
-            </div>
-            <p id="trip-people-msg" class="field-msg" :class="'is-' + states.travellers">{{ messages.travellers }}</p>
           </div>
         </div>
 
@@ -122,6 +111,25 @@
         </button>
       </div>
     </div>
+
+    <!-- ===== Invites waiting for me ===== -->
+    <transition-group v-if="invites.length" name="list" tag="section" class="invites" aria-label="Trip invites">
+      <article v-for="inv in invites" :key="inv.tripId" class="invite-card" data-testid="invite-card">
+        <span class="invite-icon" aria-hidden="true">📨</span>
+        <div class="invite-text">
+          <p class="mb-0"><strong>{{ inv.invitedBy }}</strong> invited you to <strong>{{ inv.name }}</strong></p>
+          <p class="invite-meta mb-0">
+            <template v-for="(d, k) in inv.destinations" :key="d"><span v-if="k > 0"> → </span>{{ flagFor(d) }} {{ shortPlace(d) }}</template>
+            <template v-if="inv.startDate"> · {{ dateRange(inv) }}</template>
+            · {{ inv.people }} going
+          </p>
+        </div>
+        <div class="invite-actions">
+          <button type="button" class="btn invite-decline" @click="declineInvite(inv)">Decline</button>
+          <router-link :to="'/join/' + inv.code" class="btn invite-join" data-testid="invite-join">Join →</router-link>
+        </div>
+      </article>
+    </transition-group>
 
     <!-- ===== Trips ===== -->
     <div class="d-flex justify-content-between align-items-baseline mb-3">
@@ -154,8 +162,11 @@
             <path d="M0 120 L70 50 L120 95 L170 40 L240 105 L300 70 L300 120 Z" class="mountain-back" />
             <path d="M0 120 Q60 80 120 100 T300 95 L300 120 Z" class="hill" />
           </svg>
+          <!-- Photo of the destination (Wikipedia) fades in over the drawing once loaded -->
+          <img v-if="photos[t.destinations[0]]" :src="photos[t.destinations[0]]" class="trip-photo" alt="" loading="lazy">
           <span class="trip-status" :class="'status-' + statusFor(t).kind">{{ statusFor(t).label }}</span>
           <span v-if="t.demo" class="trip-demo">Demo</span>
+          <span v-else-if="t.members && t.members.length > 1" class="trip-demo">👥 {{ t.members.length }}</span>
         </router-link>
 
         <div class="trip-body">
@@ -170,7 +181,9 @@
           <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
             <!-- Travellers as initials -->
             <div class="avatars" :aria-label="t.travellers.length + ' travellers: ' + t.travellers.join(', ')">
-              <span v-for="(p, i) in t.travellers.slice(0, 4)" :key="i" class="avatar" :title="p">{{ p.charAt(0).toUpperCase() }}</span>
+              <span v-for="(p, i) in t.travellers.slice(0, 4)" :key="i" class="avatar"
+                :class="{ guest: t.members && !t.members.some((m) => m.name === p) }"
+                :title="p + (t.members && !t.members.some((m) => m.name === p) ? ' (not joined yet)' : '')">{{ p.charAt(0).toUpperCase() }}</span>
               <span v-if="t.travellers.length > 4" class="avatar more">+{{ t.travellers.length - 4 }}</span>
             </div>
 
@@ -180,7 +193,8 @@
               <button class="btn btn-sm btn-danger py-0" @click="removeTrip(t)">Yes</button>
               <button class="btn btn-sm btn-outline-secondary py-0" @click="confirmingId = null">No</button>
             </div>
-            <button v-else-if="!t.demo" class="icon-btn" :aria-label="'Delete ' + t.name" title="Delete trip" @click="confirmingId = t.id">🗑</button>
+            <button v-else-if="!t.demo && t.role === 'owner'" class="icon-btn" :aria-label="'Delete ' + t.name" title="Delete trip" @click="confirmingId = t.id">🗑</button>
+            <span v-else-if="t.role === 'member'" class="shared-tag" title="You joined this trip">👥 Shared with you</span>
           </div>
 
           <router-link :to="'/trip/' + t.id" class="btn open-btn mt-3" data-testid="open-trip">Open trip →</router-link>
@@ -225,7 +239,7 @@ export default {
       saving: false,
       formError: '',
       // Which fields the user has left at least once (we only judge those)
-      touched: { name: false, destination: false, startDate: false, endDate: false, travellers: false },
+      touched: { name: false, destination: false, startDate: false, endDate: false },
       icons: { success: '✓', error: '!', '': '' },
       // Destination type-ahead
       destOpen: false,
@@ -237,7 +251,9 @@ export default {
       search: '',
       activeDestination: 'All',
       // destination = what's being typed; destinations = the ones already added
-      newTrip: { name: '', destination: '', destinations: [], startDate: '', endDate: '', travellers: '' }
+      photos: {}, // destination -> photo url
+      invites: [], // trips I've been invited to by username
+      newTrip: { name: '', destination: '', destinations: [], startDate: '', endDate: '',  }
     }
   },
 
@@ -322,20 +338,19 @@ export default {
     // Each field is '' (not checked yet), 'success' or 'error'
     states() {
       const t = this.newTrip
-      const result = { name: '', destination: '', startDate: '', endDate: '', travellers: '' }
+      const result = { name: '', destination: '', startDate: '', endDate: '' }
 
       if (this.touched.name) result.name = t.name.trim() ? 'success' : 'error'
       if (t.destinations.length) result.destination = 'success'
       else if (this.touched.destination) result.destination = t.destination.trim() ? '' : 'error'
       if (t.startDate) result.startDate = 'success'
       if (t.endDate) result.endDate = t.startDate && t.endDate < t.startDate ? 'error' : 'success'
-      if (this.touched.travellers && t.travellers.trim()) result.travellers = 'success'
       return result
     },
 
     // The small line under each field
     messages() {
-      const msg = { name: '', destination: '', startDate: '', endDate: '', travellers: 'Separate names with commas' }
+      const msg = { name: '', destination: '', startDate: '', endDate: '' }
       if (this.states.name === 'error') msg.name = 'Please give your trip a name'
       if (this.states.destination === 'error') msg.destination = 'Where are you going? Add at least one destination'
       else if (this.newTrip.destinations.length === 0) msg.destination = 'Pick a suggestion or press Enter to add it'
@@ -343,13 +358,6 @@ export default {
       else msg.destination = this.newTrip.destinations.length + ' destinations, in this order'
       if (this.states.endDate === 'error') msg.endDate = 'Must be on or after the start date'
       else if (this.formLength) msg.endDate = this.formLength
-
-      // Count travellers as they type
-      let count = 0
-      for (const part of this.newTrip.travellers.split(',')) {
-        if (part.trim()) count++
-      }
-      if (count > 0) msg.travellers = count + (count === 1 ? ' traveller' : ' travellers')
       return msg
     },
 
@@ -460,6 +468,44 @@ export default {
         this.loadError = 'Could not load your trips. Is the server running?'
       }
       this.loading = false
+      this.loadPhotos()
+      this.loadInvites()
+    },
+
+    async loadInvites() {
+      try {
+        const res = await axios.get('/api/invites')
+        this.invites = res.data
+      } catch (err) {
+        this.invites = []
+      }
+    },
+
+    async declineInvite(inv) {
+      this.invites = this.invites.filter((x) => x !== inv)
+      try {
+        await axios.post('/api/invites/' + inv.tripId + '/decline')
+      } catch (err) {
+        this.loadInvites() // put it back if that failed
+      }
+    },
+
+    // One photo per destination (trips going to the same place share it)
+    async loadPhotos() {
+      for (const t of this.allTrips) {
+        const d = t.destinations[0]
+        if (!d || this.photos[d] !== undefined) continue
+        this.photos[d] = '' // looking it up
+        axios.get('/api/places/photo', { params: { destination: d, size: 'small' } })
+          .then((res) => {
+            if (!res.data.url) return
+            // Show it only once it has downloaded, so the card never flashes empty
+            const img = new Image()
+            img.onload = () => { this.photos[d] = res.data.url }
+            img.src = res.data.url
+          })
+          .catch(() => {}) // keep the drawing
+      }
     },
 
     openForm() {
@@ -509,15 +555,14 @@ export default {
           name,
           destinations,
           startDate: this.newTrip.startDate,
-          endDate: this.newTrip.endDate,
-          travellers: this.newTrip.travellers.split(',')
+          endDate: this.newTrip.endDate
         })
-        this.newTrip = { name: '', destination: '', destinations: [], startDate: '', endDate: '', travellers: '' }
+        this.newTrip = { name: '', destination: '', destinations: [], startDate: '', endDate: '',  }
         this.resetTouched()
         this.showCreateForm = false
-        // New trip: set it up step by step (wishlist, then voting). "first" = this is their first trip.
+        // New trip: set it up step by step (invite, wishlist, then voting). "first" = this is their first trip.
         const query = this.trips.length === 0 ? { first: '1' } : {}
-        this.$router.push({ path: '/trip/' + res.data.id + '/setup/wishlist', query })
+        this.$router.push({ path: '/trip/' + res.data.id + '/setup/invite', query })
       } catch (err) {
         this.formError = (err.response && err.response.data && err.response.data.message) || 'Could not save the trip. Is the server running?'
       }
@@ -878,6 +923,74 @@ export default {
   height: 44px;
   background: #fff;
 }
+.invites {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.invite-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1.5px solid #b8e4d2;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(11, 127, 95, 0.08);
+}
+.invite-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: #e6f5ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.invite-text {
+  flex: 1;
+  min-width: 0;
+}
+.invite-meta {
+  font-size: 13px;
+  color: var(--app-muted);
+}
+.invite-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.invite-join {
+  background: #1f2d2a;
+  color: #dcf5a6;
+  border-radius: 999px;
+  font-weight: 600;
+  padding: 7px 18px;
+}
+.invite-join:hover {
+  background: var(--app-primary);
+  color: #fff;
+}
+.invite-decline {
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  color: var(--app-muted);
+}
+@media (max-width: 576px) {
+  .invite-card {
+    flex-wrap: wrap;
+  }
+  .invite-actions {
+    width: 100%;
+  }
+  .invite-actions .btn {
+    flex: 1;
+  }
+}
 .chips {
   display: flex;
   gap: 8px;
@@ -941,6 +1054,46 @@ export default {
   display: block;
   height: 120px;
   background: var(--sky);
+}
+.trip-status,
+.trip-demo {
+  z-index: 1;
+}
+.avatar.guest {
+  background: #fff;
+  color: #9aa8a4;
+  border: 2px dashed #c5d0cd;
+}
+.shared-tag {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0b7f5f;
+  background: #eef4f2;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.trip-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: photo-in 0.4s ease;
+}
+/* Darken the top a little so the status badge stays readable */
+.trip-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 45%);
+  pointer-events: none;
+}
+@keyframes photo-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trip-photo { animation: none; }
 }
 .trip-art svg {
   width: 100%;
