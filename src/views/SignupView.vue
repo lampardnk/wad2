@@ -40,7 +40,7 @@
         <hr class="auth-divider">
 
         <p class="auth-switch">
-          Already have an account? <router-link to="/login" class="auth-link">Sign In</router-link>
+          Already have an account? <router-link :to="{ path: '/login', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }" class="auth-link">Sign In</router-link>
         </p>
       </div>
     </div>
@@ -100,7 +100,10 @@ export default {
           password: this.password
         })
         // Account created: send them to the login page with a success message
-        this.$router.push({ path: '/login', query: { registered: 'true', username: this.username.trim().toLowerCase() } })
+        // (keeps ?redirect so an invite link still works after signing up)
+        const query = { registered: 'true', username: this.username.trim().toLowerCase() }
+        if (this.$route.query.redirect) query.redirect = this.$route.query.redirect
+        this.$router.push({ path: '/login', query })
       } catch (err) {
         // Show the server's message if it sent one, otherwise a general one
         if (err.response && err.response.data && err.response.data.message) {

@@ -3,11 +3,17 @@ import HomeView from '../views/HomeView.vue'
 import TripView from '../views/TripView.vue'
 import LoginView from '../views/LoginView.vue'
 import SignupView from '../views/SignupView.vue'
+import TripSetupView from '../views/TripSetupView.vue'
+import JoinView from '../views/JoinView.vue'
 import { auth } from '../auth.js'
 
 const routes = [
   { path: '/', name: 'Home', component: HomeView, meta: { requiresAuth: true } },
   { path: '/trip/:id', name: 'Trip', component: TripView, props: true, meta: { requiresAuth: true } },
+  // New trips: step 1 = invite, step 2 = wishlist, step 3 = vote, then the trip page
+  { path: '/trip/:id/setup/:step(invite|wishlist|vote)', name: 'TripSetup', component: TripSetupView, props: true, meta: { requiresAuth: true } },
+  // Invite links: /join/<code>
+  { path: '/join/:code', name: 'Join', component: JoinView, props: true, meta: { requiresAuth: true } },
   { path: '/login', name: 'Login', component: LoginView, meta: { hideNav: true } },
   { path: '/signup', name: 'Signup', component: SignupView, meta: { hideNav: true } }
 ]

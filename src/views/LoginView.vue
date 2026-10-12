@@ -5,7 +5,9 @@
     <div class="auth-card">
       <div class="auth-sheet">
         <h1 class="auth-title">Welcome back</h1>
-        <p class="auth-subtitle">Log in to plan smarter trips and skip the crowds.</p>
+        <p class="auth-subtitle">
+          {{ invited ? "Log in to join the trip you were invited to." : 'Log in to plan smarter trips.' }}
+        </p>
 
         <p v-if="$route.query.registered" class="auth-success" data-testid="login-registered">
           Account created! Please sign in.
@@ -31,7 +33,7 @@
         <hr class="auth-divider">
 
         <p class="auth-switch">
-          Don't have an account? <router-link to="/signup" class="auth-link">Sign Up</router-link>
+          Don't have an account? <router-link :to="{ path: '/signup', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }" class="auth-link">Sign Up</router-link>
         </p>
       </div>
     </div>
@@ -51,6 +53,12 @@ export default {
       password: '',
       errorMessage: '',
       loading: false
+    }
+  },
+  computed: {
+    // Came from an invite link (/join/...)
+    invited() {
+      return String(this.$route.query.redirect || '').startsWith('/join/')
     }
   },
   methods: {
