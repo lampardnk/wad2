@@ -52,6 +52,7 @@
           :end-date="itineraryInfo.endDate"
           :initial-stops="itineraryInfo.stops"
           :initial-wishlist="itineraryInfo.wishlist"
+          :initial-version="itineraryInfo.version"
           @itinerary-change="updatePackingActivities" />
       </div>
       <div v-if="activeTab === 'voting'">
@@ -112,9 +113,9 @@ export default {
   computed: {
     // What the itinerary needs to know about this trip
     itineraryInfo() {
-      if (this.isDemo) return { destination: 'Seoul, South Korea', startDate: '2026-10-12', endDate: '2026-10-17', stops: [], wishlist: [] }
+      if (this.isDemo) return { destination: 'Seoul, South Korea', startDate: '2026-10-12', endDate: '2026-10-17', stops: [], wishlist: [], version: 0 }
       const t = this.trip
-      return { destination: t.destination, startDate: t.startDate, endDate: t.endDate, stops: t.stops || [], wishlist: t.wishlist || [] }
+      return { destination: t.destination, startDate: t.startDate, endDate: t.endDate, stops: t.stops || [], wishlist: t.wishlist || [], version: t.version || 0 }
     },
     isDemo() {
       return this.id === 'seoul'

@@ -50,6 +50,8 @@ router.get('/', requireAuth, async (req, res) => {
     return res.json(saved.data)
   }
 
+  console.log('Calling OpenWeather for', cacheKey)
+  
   const params = new URLSearchParams({ lat, lon, units: 'metric', appid: key })
   const response = await fetch('https://api.openweathermap.org/data/2.5/forecast?' + params, { signal: AbortSignal.timeout(10000) })
   if (!response.ok) {
