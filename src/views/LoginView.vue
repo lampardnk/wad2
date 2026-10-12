@@ -5,7 +5,7 @@
     <div class="auth-card">
       <div class="auth-sheet">
         <h1 class="auth-title">Welcome back</h1>
-        <p class="auth-subtitle">Log in to plan smarter trips and skip the crowds.</p>
+        <p class="auth-subtitle">Log in to plan smarter trips.</p>
 
         <p v-if="$route.query.registered" class="auth-success" data-testid="login-registered">
           Account created! Please sign in.

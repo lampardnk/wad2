@@ -3,7 +3,8 @@ import mongoose from 'mongoose'
 const tripSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   name: { type: String, required: true, trim: true, maxlength: 80 },
-  destination: { type: String, required: true, trim: true, maxlength: 80 },
+  destination: { type: String, required: true, trim: true, maxlength: 80 }, // first/main destination (used by weather etc.)
+  destinations: [{ type: String, trim: true, maxlength: 80 }],                 // all destinations, in travel order
   startDate: { type: String, default: '' }, // 'YYYY-MM-DD' (a string avoids timezone shifts)
   endDate: { type: String, default: '' },
   travellers: [{ type: String, trim: true, maxlength: 40 }],

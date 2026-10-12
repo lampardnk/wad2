@@ -1,6 +1,7 @@
 // Shared itinerary state, same idea as auth.js and preferences.js.
 // FlightDelayWidget (Day 1, demo only) and ItineraryView both use this.
 import { reactive } from 'vue'
+import axios from 'axios'
 
 // Day 1 (Mon 12 Oct) of the Seoul demo: arrival day. Hours are decimals: 13.5 = 1:30 PM.
 // latestStart = last time the stop can still start (e.g. tour check-in closes).
@@ -51,22 +52,30 @@ export function loadDemo() {
     runtimeStop({ id: 'd2-itaewon', date: d, hour: 20, duration: null, name: 'Itaewon Street', address: 'Itaewon-ro, Yongsan-gu, Seoul, South Korea', outdoor: true })
   ]
   trip.wishlist = [
-    { id: 'w-starfield', name: 'Starfield Library (Indoor Mall)', address: '513 Yeongdong-daero, Gangnam-gu, Seoul', outdoor: false },
-    { id: 'w-museum', name: 'National Museum of Korea', address: '137 Seobinggo-ro, Yongsan-gu, Seoul', outdoor: false },
-    { id: 'w-lotte', name: 'Lotte World Indoor Adventure', address: '240 Olympic-ro, Songpa-gu, Seoul', outdoor: false }
+    { id: 'w-starfield', name: 'Starfield Library (Indoor Mall)', address: '513 Yeongdong-daero, Gangnam-gu, Seoul', outdoor: false, type: 'attraction', votes: ['Sarah', 'Amy'] },
+    { id: 'w-museum', name: 'National Museum of Korea', address: '137 Seobinggo-ro, Yongsan-gu, Seoul', outdoor: false, type: 'museum', votes: ['John'] },
+    { id: 'w-lotte', name: 'Lotte World Indoor Adventure', address: '240 Olympic-ro, Songpa-gu, Seoul', outdoor: false, type: 'theme_park', votes: ['Sarah', 'John', 'Amy'] }
   ]
 }
 
 // A saved trip from the server
 export function loadFromServer(saved) {
   trip.stops = (saved.stops || []).map(runtimeStop)
-  trip.wishlist = (saved.wishlist || []).map((w) => ({ id: w.id, name: w.name, address: w.address || null, outdoor: false }))
+  trip.wishlist = (saved.wishlist || []).map((w) => ({
+    id: w.id, name: w.name, address: w.address || null, outdoor: !!w.outdoor,
+    type: w.type || null, votes: Array.isArray(w.votes) ? w.votes : []
+  }))
 }
 
 // Only the fields worth saving (no crowd data, loading flags, etc.)
 export function savedShape() {
   return {
     stops: trip.stops.map((s) => ({ id: s.id, name: s.name, address: s.address, date: s.date, hour: s.hour, duration: s.duration, outdoor: s.outdoor, locked: s.locked })),
-    wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address }))
+    wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address, outdoor: !!w.outdoor, type: w.type || null, votes: w.votes || [] }))
   }
+}
+// Save the open trip's stops + wishlist (for pages that don't show the itinerary, e.g. trip setup)
+export async function saveTrip(tripId) {
+  if (!tripId || tripId === 'seoul') return // the demo trip isn't saved
+  await axios.put('/api/trips/' + tripId + '/itinerary', savedShape())
 }

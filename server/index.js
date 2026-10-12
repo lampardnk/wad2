@@ -9,6 +9,8 @@ import preferenceRoutes from './routes/preferences.js'
 import tripRoutes from './routes/trips.js'
 import weatherRoutes from './routes/weather.js'
 import distanceRoutes from './routes/distance.js'
+import flightRoutes from './routes/flights.js'
+import placeRoutes from './routes/places.js'
 import User from './models/User.js'
 
 const app = express()
@@ -22,6 +24,8 @@ app.use('/api/preferences', preferenceRoutes)
 app.use('/api/trips', tripRoutes)
 app.use('/api/weather', weatherRoutes)
 app.use('/api/distance-matrix', distanceRoutes)
+app.use('/api/flights', flightRoutes)
+app.use('/api/places', placeRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })

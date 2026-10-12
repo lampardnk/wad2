@@ -27,7 +27,7 @@
           </select>
           <button class="btn btn-sm btn-danger" :disabled="anyLoading" @click="resolveConflict">Replace {{ shortName(rainConflicts[0].name) }}</button>
         </template>
-        <span v-else class="small">Your wishlist is empty. Add an indoor place in the wishlist below to swap in.</span>
+        <span v-else class="small">No indoor places in your wishlist yet. Add one in the Wishlist tab to swap in.</span>
       </div>
     </div>
     <p v-else-if="selectedDate && !dayWeather.length" class="small text-muted">
@@ -262,48 +262,6 @@
       </div>
     </div>
 
-    <!-- Wishlist -->
-    <div class="card p-3 mb-3">
-      <h5 class="mb-1">Wishlist</h5>
-      <p class="small text-muted">Indoor backup places. If rain is forecast during an outdoor stop, you can swap one in.</p>
-      <ul class="list-unstyled small mb-2">
-        <li v-for="w in wishlist" :key="w.id" class="py-1 border-bottom">
-          <form v-if="editWishId === w.id" class="row g-2" @submit.prevent="saveEditWish(w)">
-            <div class="col-md-5">
-              <label :for="'wedit-name-' + w.id" class="visually-hidden">Wishlist place</label>
-              <input :id="'wedit-name-' + w.id" v-model="wishEditForm.name" class="form-control form-control-sm" maxlength="120">
-            </div>
-            <div class="col-md-4">
-              <label :for="'wedit-address-' + w.id" class="visually-hidden">Wishlist address</label>
-              <input :id="'wedit-address-' + w.id" v-model="wishEditForm.address" class="form-control form-control-sm" maxlength="200" placeholder="Address (optional)">
-            </div>
-            <div class="col-md-3 d-flex gap-1">
-              <button type="submit" class="btn btn-success btn-sm flex-fill">Save</button>
-              <button type="button" class="btn btn-outline-secondary btn-sm flex-fill" @click="editWishId = null">Cancel</button>
-            </div>
-          </form>
-          <div v-else class="d-flex justify-content-between align-items-center">
-            <span>⭐ {{ w.name }}</span>
-            <span class="d-flex gap-1">
-              <button type="button" class="btn btn-sm btn-outline-secondary py-0" :aria-label="'Edit ' + w.name" @click="startEditWish(w)">✎</button>
-              <button type="button" class="btn btn-sm btn-outline-danger py-0" :aria-label="'Remove ' + w.name" @click="removeWish(w)">✕</button>
-            </span>
-          </div>
-        </li>
-        <li v-if="!wishlist.length" class="text-muted">Nothing here yet.</li>
-      </ul>
-      <form class="row g-2" @submit.prevent="addWish">
-        <div class="col-md-5">
-          <label for="wish-name" class="visually-hidden">Wishlist place</label>
-          <input id="wish-name" v-model="wishForm.name" class="form-control form-control-sm" maxlength="120" placeholder="Indoor place, e.g. teamLab Borderless">
-        </div>
-        <div class="col-md-5">
-          <label for="wish-address" class="visually-hidden">Wishlist address</label>
-          <input id="wish-address" v-model="wishForm.address" class="form-control form-control-sm" maxlength="200" placeholder="Address (optional)">
-        </div>
-        <div class="col-md-2"><button type="submit" class="btn btn-outline-primary btn-sm w-100">Add</button></div>
-      </form>
-    </div>
   </div>
 </template>
 
@@ -459,8 +417,9 @@ export default {
     itinerary() {
       return trip.stops.filter((s) => s.date === this.selectedDate).sort((a, b) => a.hour - b.hour)
     },
+    // Only indoor wishlist places make sense as rain replacements
     wishlist() {
-      return trip.wishlist
+      return trip.wishlist.filter((w) => !w.outdoor)
     },
     selectedWishlistItem() {
       return this.wishlist.find((w) => w.id === this.selectedWishlistId) || this.wishlist[0] || null
@@ -650,7 +609,7 @@ export default {
     addWish() {
       const name = this.wishForm.name.trim()
       if (!name) return
-      trip.wishlist.push({ id: newId('w'), name, address: this.wishForm.address.trim() || null, outdoor: false })
+      trip.wishlist.push({ id: newId('w'), name, address: this.wishForm.address.trim() || null, outdoor: false, type: 'custom', votes: [] })
       this.wishForm.name = ''
       this.wishForm.address = ''
     },

@@ -12,6 +12,8 @@ function toClient(t) {
     id: t._id,
     name: t.name,
     destination: t.destination,
+    // Older trips only have one destination
+    destinations: t.destinations && t.destinations.length ? t.destinations : [t.destination],
     startDate: t.startDate,
     endDate: t.endDate,
     travellers: t.travellers,
@@ -47,14 +49,23 @@ function cleanStops(list) {
 }
 
 function cleanWishlist(list) {
-  if (!Array.isArray(list) || list.length > 30) return null
+  if (!Array.isArray(list) || list.length > 100) return null
   const out = []
   for (const w of list) {
     if (!w || typeof w !== 'object') return null
     const name = typeof w.name === 'string' ? w.name.trim() : ''
     if (!name || name.length > 120) return null
     const address = typeof w.address === 'string' && w.address.trim() ? w.address.trim().slice(0, 200) : null
-    out.push({ id: String(w.id || new mongoose.Types.ObjectId()).slice(0, 40), name, address })
+    const type = typeof w.type === 'string' ? w.type.slice(0, 20) : null
+    // votes = names of the travellers who want to go, e.g. ['Sarah', 'Amy']
+    const votes = []
+    if (Array.isArray(w.votes)) {
+      for (const v of w.votes.slice(0, 20)) {
+        const voter = String(v).trim().slice(0, 40)
+        if (voter && !votes.includes(voter)) votes.push(voter)
+      }
+    }
+    out.push({ id: String(w.id || new mongoose.Types.ObjectId()).slice(0, 40), name, address, outdoor: !!w.outdoor, type, votes })
   }
   return out
 }
@@ -65,10 +76,23 @@ router.get('/', requireAuth, async (req, res) => {
   res.json(trips.map(toClient))
 })
 
-// POST /api/trips  { name, destination, startDate?, endDate?, travellers? }
+// POST /api/trips  { name, destinations: ['Kyoto, Japan', 'Osaka, Japan'], startDate?, endDate?, travellers? }
+// (a single { destination } still works)
 router.post('/', requireAuth, async (req, res) => {
   const name = (req.body.name || '').trim()
-  const destination = (req.body.destination || '').trim()
+
+  // Build the destinations list: trimmed, no blanks, no repeats, max 10
+  const raw = Array.isArray(req.body.destinations) ? req.body.destinations : [req.body.destination]
+  const destinations = []
+  for (const d of raw) {
+    const clean = String(d || '').trim()
+    if (clean && !destinations.includes(clean)) destinations.push(clean)
+  }
+  if (destinations.length > 10) return res.status(400).json({ message: 'A trip can have up to 10 destinations.' })
+  for (const d of destinations) {
+    if (d.length > 80) return res.status(400).json({ message: 'Each destination must be 80 characters or fewer.' })
+  }
+  const destination = destinations[0] || ''
   const startDate = req.body.startDate || ''
   const endDate = req.body.endDate || ''
 
@@ -88,7 +112,7 @@ router.post('/', requireAuth, async (req, res) => {
     if (user) travellers = [user.name] // default: just the creator
   }
 
-  const trip = await Trip.create({ owner: req.userId, name, destination, startDate, endDate, travellers })
+  const trip = await Trip.create({ owner: req.userId, name, destination, destinations, startDate, endDate, travellers })
   res.status(201).json(toClient(trip))
 })
 

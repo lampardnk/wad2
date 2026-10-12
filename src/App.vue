@@ -12,7 +12,12 @@
     <!-- Login/signup pages use the full screen; other pages sit in the container -->
     <router-view v-if="$route.meta.hideNav" />
     <div v-else class="container">
-      <router-view />
+      <!-- Pages fade and slide in when you open a trip or go back -->
+      <router-view v-slot="{ Component, route }">
+        <transition name="page" mode="out-in">
+          <component :is="Component" :key="route.path" />
+        </transition>
+      </router-view>
     </div>
   </div>
 </template>
