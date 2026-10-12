@@ -33,12 +33,23 @@ router.get('/', requireAuth, async (req, res) => {
   const f = body.data && body.data[0]
   if (!f) return res.status(404).json({ message: 'No live data for that flight right now.' })
 
+  // Delay = how much later than scheduled the flight arrives (or arrived).
+  // Comparing the times is more reliable than the API's "delay" field.
+  const arr = f.arrival || {}
+  const arrivedAt = arr.actual || arr.estimated
+  let delayMinutes
+  if (arr.scheduled && arrivedAt) {
+    delayMinutes = Math.round((new Date(arrivedAt) - new Date(arr.scheduled)) / 60000)
+  } else {
+    delayMinutes = arr.delay || 0
+  }
+
   const data = {
     flight,
     status: f.flight_status,
-    delayMinutes: (f.arrival && f.arrival.delay) || (f.departure && f.departure.delay) || 0,
-    originalArrival: f.arrival && f.arrival.scheduled,
-    newArrival: f.arrival && f.arrival.estimated
+    delayMinutes: Math.max(0, delayMinutes), // early arrivals count as 0, not negative
+    originalArrival: arr.scheduled,
+    newArrival: arrivedAt
   }
   cache[flight] = { time: Date.now(), data }
   res.json(data)

@@ -10,16 +10,23 @@ import tripRoutes from './routes/trips.js'
 import weatherRoutes from './routes/weather.js'
 import distanceRoutes from './routes/distance.js'
 import User from './models/User.js'
+import groupRoutes from './routes/groups.js'
+
+import flightRoutes from './routes/flights.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
+
+app.use('/api/distance-matrix', distanceRoutes)
+app.use('/api/flights', flightRoutes)
 
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/crowd', crowdRoutes)
 app.use('/api/preferences', preferenceRoutes)
 app.use('/api/trips', tripRoutes)
+app.use('/api/groups', groupRoutes)
 app.use('/api/weather', weatherRoutes)
 app.use('/api/distance-matrix', distanceRoutes)
 
