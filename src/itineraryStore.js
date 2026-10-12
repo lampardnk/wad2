@@ -60,6 +60,7 @@ export function loadDemo() {
 
 // A saved trip from the server
 export function loadFromServer(saved) {
+  trip.version = saved.version || 0 // sent back when saving, so we never overwrite someone else's changes
   trip.stops = (saved.stops || []).map(runtimeStop)
   trip.wishlist = (saved.wishlist || []).map((w) => ({
     id: w.id, name: w.name, address: w.address || null, outdoor: !!w.outdoor,
@@ -77,5 +78,12 @@ export function savedShape() {
 // Save the open trip's stops + wishlist (for pages that don't show the itinerary, e.g. trip setup)
 export async function saveTrip(tripId) {
   if (!tripId || tripId === 'seoul') return // the demo trip isn't saved
-  await axios.put('/api/trips/' + tripId + '/itinerary', savedShape())
+  try {
+    const res = await axios.put('/api/trips/' + tripId + '/itinerary', { ...savedShape(), version: trip.version })
+    trip.version = res.data.version
+  } catch (err) {
+    // 409: someone else saved first. Show their version instead of overwriting it.
+    if (err.response && err.response.status === 409) loadFromServer(err.response.data.trip)
+    throw err
+  }
 }

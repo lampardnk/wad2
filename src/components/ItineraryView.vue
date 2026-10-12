@@ -288,6 +288,7 @@ export default {
     startDate: { type: String, default: '' },
     endDate: { type: String, default: '' },
     initialStops: { type: Array, default: () => [] },
+    initialVersion: { type: Number, default: 0 },
     initialWishlist: { type: Array, default: () => [] }
   },
   data() {
@@ -321,7 +322,7 @@ export default {
   async mounted() {
     // Start from this trip's saved data (or the demo)
     if (this.isDemo) loadDemo()
-    else loadFromServer({ stops: this.initialStops, wishlist: this.initialWishlist })
+    else loadFromServer({ stops: this.initialStops, wishlist: this.initialWishlist, version: this.initialVersion })
 
     const firstStopDay = trip.stops.map((s) => s.date).sort()[0]
     this.selectedDate = firstStopDay || this.dayList[0] || ''
@@ -546,11 +547,19 @@ export default {
       if (this.isDemo) return
       const key = this.persistKey
       try {
-        await axios.put('/api/trips/' + this.tripId + '/itinerary', JSON.parse(key))
+        const res = await axios.put('/api/trips/' + this.tripId + '/itinerary', { ...JSON.parse(key), version: trip.version })
+        trip.version = res.data.version
         this.lastSavedKey = key
         this.saveStatus = 'All changes saved'
       } catch (err) {
-        this.saveStatus = 'Could not save changes. Is the server running?'
+        if (err.response && err.response.status === 409) {
+          // Someone else saved first: show their latest itinerary instead of overwriting it
+          loadFromServer(err.response.data.trip)
+          this.lastSavedKey = this.persistKey
+          this.saveStatus = 'Someone else just changed this trip, so you are now seeing their latest version.'
+        } else {
+          this.saveStatus = 'Could not save changes. Is the server running?'
+        }
       }
     },
 

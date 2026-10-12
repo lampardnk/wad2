@@ -3,8 +3,9 @@ import mongoose from 'mongoose'
 import Trip from '../models/trip.js'
 import User from '../models/User.js'
 import Photo from '../models/Photo.js'
+import Group from '../models/Group.js'
 import { requireAuth } from './auth.js'
-import { findTripFor, memberName, roleOf, ensureMembers, newInviteCode } from '../tripAccess.js'
+import { findTripFor, memberName, roleOf, ensureMembers, newInviteCode, accessQuery, addGroupMember } from '../tripAccess.js'
 
 const router = express.Router()
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -59,6 +60,9 @@ function cleanPacking(p) {
 function toClient(t, userId) {
   return {
     role: userId ? roleOf(t, userId) : null,   // 'owner' | 'member'
+    isOwner: userId ? String(t.owner) === String(userId) : false,
+    group: t.group || null,                    // family group it's shared with (or null)
+    version: t.version || 0,                   // itinerary version (see PUT /:id/itinerary)
     me: userId ? memberName(t, userId) : null, // my traveller name on this trip
     members: (t.members || []).map((m) => ({ id: m.user, name: m.name, role: m.role })),
     // Only filled in when the users were looked up (populate), e.g. on GET /api/trips/:id
@@ -139,8 +143,12 @@ function cleanWishlist(list) {
 
 // GET /api/trips -> the logged-in user's trips, newest first
 router.get('/', requireAuth, async (req, res) => {
-  const trips = await Trip.find({ $or: [{ owner: req.userId }, { 'members.user': req.userId }] }).sort({ createdAt: -1 })
-  for (const t of trips) await ensureMembers(t)
+  // My trips, trips I joined, and trips shared with my family groups
+  const trips = await Trip.find(await accessQuery(req.userId)).sort({ createdAt: -1 })
+  for (const t of trips) {
+    await ensureMembers(t)
+    await addGroupMember(t, req.userId)
+  }
   res.json(trips.map((t) => toClient(t, req.userId)))
 })
 
@@ -184,11 +192,20 @@ router.post('/', requireAuth, async (req, res) => {
   if (!travellers.includes(myName)) travellers.unshift(myName)
   const members = [{ user: req.userId, name: myName, role: 'owner' }]
 
+  // Sharing with a family group: only allowed if I am in it. Its members can then open the trip.
+  let groupId = null
+  if (req.body.group) {
+    if (!mongoose.isValidObjectId(req.body.group)) return res.status(400).json({ message: 'That group is not valid.' })
+    const group = await Group.findOne({ _id: req.body.group, members: req.userId })
+    if (!group) return res.status(403).json({ message: 'You are not a member of that group.' })
+    groupId = group._id
+  }
+
   const activities = pickKeys(req.body.activities, ACTIVITY_KEYS)
   const weather = pickKeys(req.body.weather, WEATHER_KEYS)
   const extras = pickKeys(req.body.extras, EXTRA_KEYS)
 
-  const trip = await Trip.create({ owner: req.userId, members, name, destination, destinations, startDate, endDate, travellers, activities, weather, extras })
+  const trip = await Trip.create({ owner: req.userId, members, group: groupId, name, destination, destinations, startDate, endDate, travellers, activities, weather, extras })
   res.status(201).json(toClient(trip, req.userId))
 })
 
@@ -200,21 +217,33 @@ router.get('/:id', requireAuth, async (req, res) => {
   res.json(toClient(trip, req.userId))
 })
 
-// PUT /api/trips/:id/itinerary  { stops: [...], wishlist: [...] }
+// PUT /api/trips/:id/itinerary  { stops: [...], wishlist: [...], version? }
+// "version" is the version the browser last saw. If someone else saved in between, the numbers
+// no longer match and we answer 409 with the latest trip instead of overwriting it (Gladys's idea).
+// Without a version (older pages) it just saves.
 router.put('/:id/itinerary', requireAuth, async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: 'Trip not found.' })
   const stops = cleanStops(req.body.stops)
   const wishlist = cleanWishlist(req.body.wishlist)
   if (!stops || !wishlist) return res.status(400).json({ message: 'Some itinerary details are invalid.' })
 
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  trip.stops = stops
-  trip.wishlist = wishlist
-  trip.markModified('stops')
-  trip.markModified('wishlist')
-  await trip.save()
-  res.json({ ok: true })
+
+  const filter = { _id: trip._id }
+  if (req.body.version !== undefined && req.body.version !== null) {
+    const sent = Number(req.body.version)
+    if (!Number.isInteger(sent) || sent < 0) return res.status(400).json({ message: 'Invalid trip version. Please refresh the page.' })
+    // Trips saved before versions existed have none, so 0 also matches "missing"
+    filter.version = sent === 0 ? { $in: [0, null] } : sent
+  }
+
+  // One atomic step: save only if the version still matches, and add 1 to it
+  const updated = await Trip.findOneAndUpdate(filter, { $set: { stops, wishlist }, $inc: { version: 1 } }, { new: true })
+  if (!updated) {
+    const latest = await Trip.findById(trip._id)
+    return res.status(409).json({ message: 'Someone else changed this trip. Showing their latest version.', trip: toClient(latest, req.userId) })
+  }
+  res.json({ ok: true, version: updated.version })
 })
 
 // PUT /api/trips/:id/packing  { activities, weather, extras, packing: { checked, qty, removed, custom } }

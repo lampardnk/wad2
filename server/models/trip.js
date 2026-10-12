@@ -31,6 +31,11 @@ const tripSchema = new mongoose.Schema({
   packing: { type: mongoose.Schema.Types.Mixed, default: null },
   // Expenses & Split: { homeCurrency, budget, items: [...], settlements: [...] } (see src/expenses.js)
   expenses: { type: mongoose.Schema.Types.Mixed, default: null },
+  // Optional: the family group this trip is shared with (null = not shared with a group).
+  // Everyone in the group can open the trip (they are added as members the first time they do).
+  group: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', default: null, index: true },
+  // Goes up by 1 on every itinerary save. Stops two people overwriting each other's stops.
+  version: { type: Number, default: 0 },
   // Photo albums for spots: [{ id, name, icon }]. Photos without an album are "Trip highlights".
   photoAlbums: { type: [mongoose.Schema.Types.Mixed], default: [] },
 

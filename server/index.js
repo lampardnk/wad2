@@ -16,6 +16,7 @@ import photoRoutes from './routes/photos.js'
 import expenseRoutes from './routes/expenses.js'
 import joinRoutes from './routes/join.js'
 import inviteRoutes from './routes/invites.js'
+import groupRoutes from './routes/groups.js'
 import User from './models/User.js'
 
 const app = express()
@@ -31,6 +32,7 @@ app.use('/api/trips/:tripId/expenses', expenseRoutes)
 app.use('/api/join', joinRoutes)
 app.use('/api/invites', inviteRoutes)
 app.use('/api/trips', tripRoutes)
+app.use('/api/groups', groupRoutes)
 app.use('/api/weather', weatherRoutes)
 app.use('/api/distance-matrix', distanceRoutes)
 app.use('/api/flights', flightRoutes)

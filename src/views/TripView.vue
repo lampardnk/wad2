@@ -130,7 +130,7 @@
           :start-date="itineraryInfo.startDate"
           :end-date="itineraryInfo.endDate"
           :initial-stops="itineraryInfo.stops"
-          :initial-wishlist="itineraryInfo.wishlist"
+          :initial-wishlist="itineraryInfo.wishlist" :initial-version="isDemo ? 0 : trip.version || 0"
           @itinerary-change="updatePackingActivities" />
       </div>
       <!-- Places = Wishlist + Group decisions. Both use the same wishlist, which the itinerary saves. -->
