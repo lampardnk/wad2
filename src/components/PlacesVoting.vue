@@ -15,20 +15,15 @@
     <div class="pv-intro">
       <div>
         <strong>Vote on your wishlist together.</strong>
-        Tap a traveller's name to record their vote. A place becomes a <strong>group pick</strong>
+        A place becomes a <strong>group pick</strong>
         when {{ needed }} of {{ travellers.length }} want to go.
+        <template v-if="canVoteFor.length > 1">As organiser, you can also vote for people without an account.</template>
       </div>
       <span class="pv-summary" data-testid="vote-summary">✓ {{ picks }} group pick{{ picks === 1 ? '' : 's' }}</span>
     </div>
 
     <div class="d-flex justify-content-end mb-3">
-      <label class="small text-muted d-flex align-items-center gap-2">
-        Sort by
-        <select v-model="sortBy" class="form-select form-select-sm w-auto">
-          <option value="votes">Most votes</option>
-          <option value="name">Name</option>
-        </select>
-      </label>
+      <CustomDropdown v-model="sortBy" :options="sortOptions" size="sm" header-text="Sort by" aria-label="Sort by" />
     </div>
 
     <transition-group name="pv" tag="div" class="pv-list" data-testid="vote-list">
@@ -50,10 +45,19 @@
 
           <!-- One button per traveller -->
           <div class="pv-voters" role="group" :aria-label="'Votes for ' + w.name">
-            <button v-for="person in travellers" :key="person" type="button" class="pv-voter" :class="{ yes: w.votes.includes(person) }"
-              :aria-pressed="w.votes.includes(person)" @click="toggle(w, person)" data-testid="vote-btn">
-              <span aria-hidden="true">{{ w.votes.includes(person) ? '👍' : '＋' }}</span> {{ person }}
-            </button>
+            <template v-for="person in travellers" :key="person">
+              <!-- Your own vote (and, for the organiser, people without an account) -->
+              <button v-if="canVoteFor.includes(person)" type="button" class="pv-voter" :class="{ yes: w.votes.includes(person), mine: person === me }"
+                :aria-pressed="w.votes.includes(person)" @click="toggle(w, person)" data-testid="vote-btn">
+                <span aria-hidden="true">{{ w.votes.includes(person) ? '👍' : '＋' }}</span> {{ person === me ? 'You' : person }}
+              </button>
+              <!-- Everyone else: shown, but only they can change it -->
+              <span v-else class="pv-voter readonly" :class="{ yes: w.votes.includes(person) }"
+                :title="person + (w.votes.includes(person) ? ' wants to go' : ' has not voted yet')">
+                <span aria-hidden="true">{{ w.votes.includes(person) ? '👍' : '…' }}</span> {{ person }}
+                <span class="visually-hidden">{{ w.votes.includes(person) ? 'wants to go' : "hasn't voted" }}</span>
+              </span>
+            </template>
           </div>
         </div>
 
@@ -67,15 +71,22 @@
 <script>
 import { trip } from '../itineraryStore.js'
 import { placeStyle } from '../placeStyle.js'
+import CustomDropdown from './CustomDropdown.vue'
 
 export default {
+  components: { CustomDropdown },
   props: {
-    travellers: { type: Array, default: () => [] }
+    travellers: { type: Array, default: () => [] },
+    me: { type: String, default: '' },                 // my name on this trip
+    canVoteFor: { type: Array, default: () => [] }     // whose votes I may change (me, + guests if organiser)
   },
   emits: ['go-wishlist'],
 
   data() {
-    return { sortBy: 'votes' }
+    return {
+      sortBy: 'votes',
+      sortOptions: [{ value: 'votes', label: 'Most votes', icon: '👍' }, { value: 'name', label: 'Name (A–Z)', icon: '🔤' }]
+    }
   },
 
   computed: {
@@ -286,5 +297,16 @@ export default {
 }
 @media (prefers-reduced-motion: reduce) {
   .pv-move, .pv-enter-active, .pv-leave-active, .pv-progress-fill { transition: none; }
+}
+.pv-voter.mine {
+  border-width: 2px;
+}
+.pv-voter.readonly {
+  cursor: default;
+  opacity: 0.85;
+  border-style: dashed;
+}
+.pv-voter.readonly.yes {
+  border-style: solid;
 }
 </style>

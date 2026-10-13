@@ -1,6 +1,6 @@
 <template>
-  <!-- New-trip setup: /trip/:id/setup/invite, then /wishlist, then /vote -->
   <div class="setup">
+    <!-- New-trip setup: /trip/:id/setup/invite, then /wishlist, then /vote -->
     <p v-if="loading" class="text-muted">Loading trip…</p>
     <div v-else-if="loadError" class="alert alert-warning">
       {{ loadError }} <router-link to="/">Back to your trips</router-link>
@@ -25,17 +25,13 @@
         <li><span class="dot">{{ steps.length + 1 }}</span> Plan your days</li>
       </ol>
 
-      <p class="setup-lead">
-        <template v-if="step === 'invite'">Who's coming? Invite friends by username or send them a link. Going solo? Just skip this.</template>
-        <template v-else-if="step === 'wishlist'">Save places you'd like to visit. Tap ♡ on a popular place, or add your own.</template>
-        <template v-else>Everyone votes on the saved places. The group picks are the ones to fit into your days.</template>
-      </p>
+      <p v-if="step === 'invite'" class="setup-lead">Who's coming? Invite friends by username or send them a link. Going solo? Just skip this.</p>
 
       <TripShare v-if="step === 'invite'" inline :trip-id="id" :trip-name="tripInfo.name" :members="tripInfo.members"
         :travellers="tripInfo.travellers" :role="tripInfo.role" :me="tripInfo.me" :pending-invites="tripInfo.pendingInvites"
         @changed="reloadInfo" />
       <WishlistView v-else-if="step === 'wishlist'" :destinations="tripInfo.destinations" />
-      <PlacesVoting v-else :travellers="tripInfo.travellers" @go-wishlist="goTo('wishlist')" />
+      <PlacesVoting v-else :travellers="tripInfo.travellers" :me="tripInfo.me" :can-vote-for="canVoteFor" @go-wishlist="goTo('wishlist')" />
 
       <!-- Bottom bar -->
       <div class="setup-bar">
@@ -95,6 +91,17 @@ export default {
   },
 
   computed: {
+    // My own vote, and (organiser only) people without an account
+    canVoteFor() {
+      const list = [this.tripInfo.me]
+      if (this.tripInfo.role === 'owner') {
+        const joined = this.tripInfo.members.map((m) => m.name)
+        for (const t of this.tripInfo.travellers) {
+          if (!joined.includes(t)) list.push(t)
+        }
+      }
+      return list
+    },
     stepIndex() {
       return this.steps.findIndex((s) => s.key === this.step)
     },

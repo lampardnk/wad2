@@ -12,7 +12,7 @@
 
     <template v-else>
       <!-- Dark header with the trip photo glowing behind it -->
-      <div class="trip-stage" :style="stagePhoto ? { '--trip-photo': 'url(' + stagePhoto + ')' } : null" aria-hidden="true"></div>
+      <div class="trip-stage" :style="stageStyle" aria-hidden="true"></div>
 
       <!-- Top bar: back, trip name, every section of the trip. Stays on screen while scrolling. -->
       <nav class="trip-nav" aria-label="Trip sections">
@@ -21,14 +21,7 @@
         </router-link>
         <span class="trip-nav-name" :title="headerTitle">{{ headerTitle }}</span>
 
-        <div class="trip-tabs" role="tablist" aria-label="Trip sections">
-          <button v-for="t in tabs" :key="t.key" type="button" role="tab" class="trip-tab"
-            :class="{ active: activeTab === t.key }" :aria-selected="activeTab === t.key" :aria-controls="'pane-' + t.key"
-            :data-testid="t.testid" @click="activeTab = t.key">
-            <span aria-hidden="true">{{ t.icon }}</span> {{ t.label }}
-            <span v-if="t.key === 'safety' && safetyWarning" class="trip-tab-dot" aria-label="(warning)"></span>
-          </button>
-        </div>
+        <TripTabs v-model="activeTab" :tabs="tabs" :alert-key="safetyWarning ? 'safety' : ''" class="trip-tabs" />
       </nav>
 
       <!-- Trip title -->
@@ -75,7 +68,7 @@
           <span class="trip-card-big">{{ pickCount }}<small> / {{ wishCount }} places</small></span>
           <span class="trip-card-sub">{{ wishCount ? 'Vote in Places → Group decisions' : 'Save places to your wishlist first' }}</span>
         </button>
-        <button type="button" class="trip-card" @click="activeTab = 'packing'">
+        <button type="button" class="trip-card" @click="activeTab = 'crew'">
           <span class="trip-card-label">Travellers</span>
           <span class="trip-card-big">{{ itineraryInfo.travellers.length }}<small> / people</small></span>
           <span class="trip-card-sub text-truncate">{{ itineraryInfo.travellers.join(', ') || 'Just you' }}</span>
@@ -87,9 +80,9 @@
       </p>
 
       <!-- The open section -->
-      <main class="trip-panel">
+      <main ref="panel" class="trip-panel">
         <div class="trip-panel-head">
-          <h2 class="trip-panel-title"><span aria-hidden="true">{{ currentTab.icon }}</span> {{ currentTab.title }}</h2>
+          <h2 class="trip-panel-title"><span class="trip-panel-icon"><TabIcon :name="currentTab.key" :size="18" /></span> {{ currentTab.title }}</h2>
         </div>
 
         <!-- Safety banner: shown on every tab when SafetyLayer reports High/Critical risk -->
@@ -143,7 +136,7 @@
         </div>
         <transition name="guide" mode="out-in">
           <WishlistView v-if="placesTab === 'wishlist'" key="w" :destinations="itineraryInfo.destinations" />
-          <PlacesVoting v-else key="v" :travellers="itineraryInfo.travellers" @go-wishlist="placesTab = 'wishlist'" />
+          <PlacesVoting v-else key="v" :travellers="itineraryInfo.travellers" :me="myName" :can-vote-for="canVoteFor" @go-wishlist="placesTab = 'wishlist'" />
         </transition>
       </div>
       <div v-show="activeTab === 'packing'" :id="'pane-packing'" role="tabpanel">
@@ -161,14 +154,24 @@
       </div>
       <div v-show="activeTab === 'photos'" :id="'pane-photos'" role="tabpanel">
         <PhotosView :key="'ph-' + id" :trip-id="id" :travellers="itineraryInfo.travellers"
-          :wishlist="wishlistPlaces" :initial-albums="isDemo ? [] : trip.photoAlbums || []" :me="myName" />
+          :wishlist="wishlistPlaces" :initial-albums="isDemo ? [] : trip.photoAlbums || []" :me="myName"
+          :filter-who="photoWho" />
+      </div>
+      <div v-show="activeTab === 'crew'" :id="'pane-crew'" role="tabpanel">
+        <CrewView :key="'crew-' + id" :trip-id="id" :city="itineraryInfo.destinations[0].split(', ')[0]"
+          :travellers="itineraryInfo.travellers" :members="isDemo ? [] : trip.members || []"
+          :pending-invites="isDemo ? [] : trip.pendingInvites || []" :crew="isDemo ? {} : trip.crew || {}"
+          :expenses="isDemo ? null : trip.expenses" :role="isDemo ? 'owner' : trip.role" :me="myName"
+          :my-id="authUserId" @invite="showShare = true" @go="goFromCrew" @changed="reloadTrip" />
       </div>
       <!--
-        v-show (not v-if) keeps SafetyLayer mounted when you switch tabs,
-        so live location tracking and alerts keep running in the background.
+        v-show (not v-if) keeps SafetyLayer mounted when you switch tabs. It only starts checking once
+        Safety is opened, or straight away while the trip is happening (for the warning banner).
       -->
       <div v-show="activeTab === 'safety'" :id="'pane-safety'" role="tabpanel">
-        <SafetyLayer @risk-change="handleRiskChange" />
+        <SafetyLayer :trip-id="id" :destinations="itineraryInfo.destinations" :start-date="itineraryInfo.startDate"
+          :end-date="itineraryInfo.endDate" :stay="isDemo ? null : trip.stay" :stops="safetyStops" :me="myName"
+          :active="activeTab === 'safety'" @risk-change="handleRiskChange" @stay-change="trip.stay = $event" />
       </div>
 
       <div v-show="activeTab === 'travelOptions'" :id="'pane-travelOptions'" role="tabpanel">
@@ -192,12 +195,16 @@ import SafetyLayer from '../components/SafetyLayer.vue'
 import FlightDelayWidget from '../components/FlightDelayWidget.vue'
 import TransportOptions from '../components/TransportOptions.vue'
 import TripShare from '../components/TripShare.vue'
+import CrewView from '../components/CrewView.vue'
+import TripTabs from '../components/TripTabs.vue'
+import TabIcon from '../components/TabIcon.vue'
+import { auth } from '../auth.js'
 import { trip as store } from '../itineraryStore.js'
 import { codeForDestination, flagEmoji } from '../destinations.js'
 
 
 export default {
-  components: { ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, TransportOptions, TripShare },
+  components: { ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, TransportOptions, TripShare, CrewView, TripTabs, TabIcon },
   props: { id: { type: String, default: 'seoul' } }, // from the route /trip/:id
   data() {
     return {
@@ -211,7 +218,8 @@ export default {
         { key: 'expenses', icon: '💸', label: 'Expenses', title: 'Expenses & split', desc: 'Log what the group spends and see who owes whom. Press N to add an expense.' },
         { key: 'photos', icon: '📷', label: 'Photos', title: 'Photos', desc: "The group's trip photos in one place." },
         { key: 'safety', icon: '🛡', label: 'Safety', title: 'Safety', desc: 'Live alerts and risk levels near you.', testid: 'safety-tab' },
-        { key: 'travelOptions', icon: '🚆', label: 'Getting around', title: 'Getting around', desc: 'Ways to travel between your stops.' }
+        { key: 'crew', icon: '👥', label: 'Crew', title: 'Trip crew', desc: '' },
+        { key: 'travelOptions', icon: '🚆', label: 'Getting around', short: 'Transport', title: 'Getting around', desc: 'Ways to travel between your stops.' }
       ],
       // Shown once, after setting up the user's first trip
       showGuide: this.$route.query.welcome === '1',
@@ -221,8 +229,10 @@ export default {
       loading: true,
       loadError: '',
       showShare: false,
+      photoWho: { name: '', at: 0 }, // set when "Photos" is clicked on a crew card
       stagePhoto: '', // photo of the first destination (Wikipedia); plain dark header until it loads
-      photoPage: ''
+      photoPage: '',
+      stageHeight: 0 // small screens: the dark header ends just above the white panel
     }
   },
   computed: {
@@ -257,9 +267,24 @@ export default {
     myName() {
       return this.isDemo ? 'Sarah' : this.trip.me || this.trip.travellers[0] || ''
     },
+    // Whose votes I may change: my own, and (organiser only) people without an account
+    canVoteFor() {
+      if (this.isDemo) return this.itineraryInfo.travellers
+      const list = [this.myName]
+      if (this.trip.role === 'owner') {
+        for (const t of this.trip.travellers) {
+          if (!this.joinedNames.includes(t)) list.push(t)
+        }
+      }
+      return list
+    },
     joinedNames() {
       if (this.isDemo) return ['Sarah', 'John', 'Amy']
       return (this.trip.members || []).map((m) => m.name)
+    },
+    // Itinerary stops for the safety radar
+    safetyStops() {
+      return store.stops
     },
     wishlistPlaces() {
       return store.wishlist
@@ -278,6 +303,15 @@ export default {
     isDemo() {
       return this.id === 'seoul'
     },
+    authUserId() {
+      return auth.user && auth.user.id ? String(auth.user.id) : ''
+    },
+    stageStyle() {
+      const style = {}
+      if (this.stagePhoto) style['--trip-photo'] = 'url(' + this.stagePhoto + ')'
+      if (this.stageHeight) style.height = this.stageHeight + 'px'
+      return style
+    },
     headerTitle() {
       return this.isDemo ? 'Seoul, South Korea' : this.trip.name
     },
@@ -288,6 +322,12 @@ export default {
       const dates = t.startDate ? (t.endDate ? fmt(t.startDate) + ' – ' + fmt(t.endDate) : 'From ' + fmt(t.startDate)) : 'Dates not set'
       const places = t.destinations && t.destinations.length ? t.destinations.join(' → ') : t.destination
       return places + ' | ' + dates + ' | Travellers: ' + t.travellers.join(', ')
+    }
+  },
+  watch: {
+    // The photo credit line appears once the photo loads, which moves the panel down a little
+    photoPage() {
+      this.$nextTick(this.fitStage)
     }
   },
   async mounted() {
@@ -303,8 +343,29 @@ export default {
     }
     this.loading = false
     this.loadPhoto()
+    window.addEventListener('resize', this.fitStage)
+    this.$nextTick(this.fitStage)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.fitStage)
   },
   methods: {
+    // On small screens the header is shorter than 610px, so stop the dark background
+    // 16px above the white panel instead of letting the two overlap
+    fitStage() {
+      const panel = this.$refs.panel
+      if (!panel || window.innerWidth > 900) {
+        this.stageHeight = 0
+        return
+      }
+      this.stageHeight = Math.max(200, panel.offsetTop - 16)
+    },
+    // A crew card asked to open another tab (Expenses, or Photos filtered to one person)
+    goFromCrew(tab, name) {
+      if (tab === 'photos') this.photoWho = { name: name || '', at: Date.now() }
+      this.activeTab = tab
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    },
     // After someone is removed: fetch the trip again
     async reloadTrip() {
       try {
@@ -465,44 +526,7 @@ export default {
   text-overflow: ellipsis;
 }
 .trip-tabs {
-  display: flex;
-  gap: 2px;
   margin-left: auto;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.trip-tabs::-webkit-scrollbar {
-  display: none;
-}
-.trip-tab {
-  position: relative;
-  border: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 15px;
-  font-weight: 500;
-  padding: 9px 14px;
-  border-radius: 12px;
-  white-space: nowrap;
-  transition: background 0.2s, color 0.2s;
-}
-.trip-tab:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
-}
-.trip-tab.active {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-.trip-tab-dot {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ff5a5f;
 }
 
 /* Title */
@@ -690,6 +714,18 @@ export default {
   font-family: 'Fredoka', sans-serif;
   font-size: 1.6rem;
   margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.trip-panel-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(47, 224, 161, 0.14);
+  color: #0b7f5f;
 }
 .trip-panel-desc {
   color: var(--app-muted, #5f6f6b);
@@ -719,7 +755,6 @@ export default {
 }
 
 /* Keyboard focus is always visible */
-.trip-tab:focus-visible,
 .trip-back:focus-visible,
 .trip-card:focus-visible,
 .places-switch button:focus-visible {
@@ -768,6 +803,36 @@ export default {
     padding: 20px 16px;
     border-radius: 22px;
   }
+  .trip-panel-head {
+    margin-bottom: 14px;
+  }
+  .trip-panel-title {
+    font-size: 1.3rem;
+  }
+  .trip-panel-icon {
+    width: 30px;
+    height: 30px;
+  }
+}
+/* Phones: the sections become one menu button, on the same row as the trip name */
+@media (max-width: 640px) {
+  .trip-nav {
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 8px;
+  }
+  .trip-nav-name {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+  .trip-tabs {
+    order: 0;
+    width: auto;
+    margin-left: auto;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
 }
 @media (max-width: 480px) {
   .trip-back-text {
@@ -787,7 +852,6 @@ export default {
 @media (prefers-reduced-motion: reduce) {
   .guide-enter-active,
   .guide-leave-active,
-  .trip-tab,
   .trip-card,
   .places-switch button { transition: none; }
   .trip-card:hover { transform: none; }

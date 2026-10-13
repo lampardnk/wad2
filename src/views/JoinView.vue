@@ -1,6 +1,6 @@
 <template>
-  <!-- Invite page: what you see after opening a /join/<code> link -->
   <div class="jv">
+    <!-- Invite page: what you see after opening a /join/<code> link -->
     <div v-if="loading" class="jv-card jv-skel" aria-busy="true">
       <div class="jv-photo"></div>
       <div class="jv-body"><p class="jv-muted">Opening your invite…</p></div>

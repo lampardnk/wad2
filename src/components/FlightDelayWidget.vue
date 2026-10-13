@@ -7,12 +7,8 @@
           {{ flight.flight }}: {{ delayMinutes > 0 ? '+' + delayMinutes + ' min delay' : 'on time' }}
         </span>
         <label class="small text-muted mb-0" for="demo-delay">Demo delay</label>
-        <select id="demo-delay" class="form-select form-select-sm w-auto" v-model.number="delayMinutes" @change="onDelayChange" data-testid="demo-delay-select">
-          <option :value="0">None</option>
-          <option :value="45">45 min</option>
-          <option :value="90">90 min</option>
-          <option :value="180">3 hours</option>
-        </select>
+        <CustomDropdown id="demo-delay" v-model="delayMinutes" :options="delayChoices" size="sm" header-text="Demo delay"
+          testid="demo-delay-select" @change="onDelayChange" />
       </div>
     </div>
 
@@ -55,11 +51,16 @@
 import { trip, resetDay1 } from '../itineraryStore.js'
 import { computeCascade, formatTime } from '../utils/delayCascade.js'
 import { checkFlightStatus } from '../services/api.js'
+import CustomDropdown from './CustomDropdown.vue'
 
 export default {
+  components: { CustomDropdown },
   emits: ['cascade-resolved'],
   data() {
-    return { trip, flight: null, delayMinutes: 0, loading: true, applied: false, dismissed: false }
+    return {
+      trip, flight: null, delayMinutes: 0, loading: true, applied: false, dismissed: false,
+      delayChoices: [{ value: 0, label: 'None' }, { value: 45, label: '45 min' }, { value: 90, label: '90 min' }, { value: 180, label: '3 hours' }]
+    }
   },
   computed: {
     cascade() {

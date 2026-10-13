@@ -97,19 +97,15 @@
       </form>
     </transition>
 
-    <!-- ===== Search + destination chips ===== -->
+    <!-- ===== Search + destination filter ===== -->
     <div class="toolbar">
       <div class="search">
         <span class="search-icon" aria-hidden="true">🔍</span>
         <label for="trip-search" class="visually-hidden">Search trips</label>
         <input id="trip-search" v-model="search" type="search" class="form-control" placeholder="Search trips or destinations" data-testid="trip-search">
       </div>
-      <div class="chips" role="group" aria-label="Filter by destination">
-        <button v-for="d in destinations" :key="d" type="button" class="chip" :class="{ active: activeDestination === d }"
-          :aria-pressed="activeDestination === d" @click="activeDestination = d">
-          {{ d }}
-        </button>
-      </div>
+      <CustomDropdown v-model="activeDestination" :options="destinationOptions" size="lg" class="dest-filter" :searchable="false"
+        header-text="Filter by destination" aria-label="Filter by destination" />
     </div>
 
     <!-- ===== Invites waiting for me ===== -->
@@ -213,6 +209,7 @@
 <script>
 import axios from 'axios'
 import { auth } from '../auth.js'
+import CustomDropdown from '../components/CustomDropdown.vue'
 import { POPULAR_DESTINATIONS, codeForDestination, flagEmoji } from '../destinations.js'
 
 // The built-in demo trip (all features are built around this one)
@@ -230,6 +227,7 @@ const DEMO_TRIP = {
 const DAY_MS = 86400000
 
 export default {
+  components: { CustomDropdown },
   data() {
     return {
       trips: [],
@@ -274,13 +272,15 @@ export default {
       return list
     },
 
-    // "All" plus each destination once, for the chips
-    destinations() {
-      const list = ['All']
+    // "All" plus one city per trip (the first one, for multi-city trips), for the filter dropdown
+    destinationOptions() {
+      const list = [{ value: 'All', label: 'All destinations', icon: '🌍' }]
+      const seen = []
       for (const t of this.allTrips) {
-        for (const d of t.destinations) {
-          if (!list.includes(d)) list.push(d)
-        }
+        const d = t.destinations[0]
+        if (!d || seen.includes(d)) continue
+        seen.push(d)
+        list.push({ value: d, label: d, icon: this.flagFor(d) })
       }
       return list
     },
@@ -896,7 +896,7 @@ export default {
   .suggest { animation: none; }
 }
 
-/* ---------- Search + chips ---------- */
+/* ---------- Search + destination filter ---------- */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -991,31 +991,10 @@ export default {
     flex: 1;
   }
 }
-.chips {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
+.dest-filter {
+  flex: 0 1 260px;
+  min-width: 200px;
 }
-.chip {
-  border: 1px solid var(--app-border);
-  background: #fff;
-  color: var(--app-ink);
-  border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 14px;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.chip:hover {
-  border-color: var(--app-primary);
-}
-.chip.active {
-  background: var(--app-ink);
-  border-color: var(--app-ink);
-  color: #fff;
-}
-.chip:focus-visible,
 .icon-btn:focus-visible,
 .trip-card:focus-visible {
   outline: 3px solid rgba(11, 127, 95, 0.4);

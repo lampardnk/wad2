@@ -40,7 +40,17 @@ export async function findTripFor(userId, tripId, ownerOnly = false) {
   if (!trip) return null
   await ensureMembers(trip)
   await addGroupMember(trip, userId)
+  await markSeen(trip, userId)
   return trip
+}
+
+// Remember when each member last used the trip (at most one write every 2 minutes)
+async function markSeen(trip, userId) {
+  const m = (trip.members || []).find((x) => String(x.user) === String(userId))
+  if (!m) return
+  if (m.lastSeenAt && Date.now() - new Date(m.lastSeenAt).getTime() < 2 * 60 * 1000) return
+  await Trip.updateOne({ _id: trip._id, 'members.user': m.user }, { $set: { 'members.$.lastSeenAt': new Date() } })
+  m.lastSeenAt = new Date()
 }
 
 // Someone from the trip's family group opening it for the first time becomes a member,

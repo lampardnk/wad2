@@ -86,11 +86,72 @@ router.post('/login', async (req, res) => {
   })
 })
 
+// What /me sends back
+const CURRENCY_CODES = ['SGD', 'USD', 'EUR', 'GBP', 'JPY', 'KRW', 'CNY', 'HKD', 'THB', 'MYR', 'IDR', 'PHP', 'INR', 'AUD', 'NZD', 'CAD', 'CHF', 'TRY']
+function meJson(user) {
+  const s = user.settings || {}
+  return {
+    id: user._id, name: user.name, username: user.username, email: user.email,
+    diet: user.diet || [], phone: user.phone || '',
+    settings: {
+      currency: s.currency || 'SGD',
+      units: s.units === 'imperial' ? 'imperial' : 'metric',
+      hazardAlerts: s.hazardAlerts !== false,
+      expenseAlerts: s.expenseAlerts !== false
+    }
+  }
+}
+
 // GET /api/auth/me  (needs token) — returns the logged-in user
 router.get('/me', requireAuth, async (req, res) => {
   const user = await User.findById(req.userId)
   if (!user) return res.status(404).json({ message: 'User not found.' })
-  res.json({ id: user._id, name: user.name, username: user.username, email: user.email })
+  res.json(meJson(user))
+})
+
+// PUT /api/auth/me  — Settings. Send only what changed:
+// { email?, diet?, phone?, settings?: { currency?, units?, hazardAlerts?, expenseAlerts? } }
+router.put('/me', requireAuth, async (req, res) => {
+  const user = await User.findById(req.userId)
+  if (!user) return res.status(404).json({ message: 'User not found.' })
+  const b = req.body || {}
+
+  if (typeof b.email === 'string') {
+    const email = b.email.trim().toLowerCase()
+    if (!EMAIL_PATTERN.test(email)) return res.status(400).json({ message: 'Please enter a valid email.' })
+    if (email !== user.email && await User.findOne({ email })) {
+      return res.status(409).json({ message: 'An account with this email already exists.' })
+    }
+    user.email = email
+  }
+
+  if (Array.isArray(b.diet)) {
+    const diet = []
+    for (const d of b.diet) {
+      const tag = typeof d === 'string' ? d.trim().slice(0, 30) : ''
+      if (tag && !diet.includes(tag) && diet.length < 8) diet.push(tag)
+    }
+    user.diet = diet
+    user.contactSaved = true
+  }
+
+  if (typeof b.phone === 'string') {
+    user.phone = b.phone.trim().slice(0, 20).replace(/[^\d+ ]/g, '')
+    user.contactSaved = true
+  }
+
+  if (b.settings && typeof b.settings === 'object') {
+    const next = { ...meJson(user).settings }
+    const s = b.settings
+    if (CURRENCY_CODES.includes(s.currency)) next.currency = s.currency
+    if (s.units === 'metric' || s.units === 'imperial') next.units = s.units
+    if (typeof s.hazardAlerts === 'boolean') next.hazardAlerts = s.hazardAlerts
+    if (typeof s.expenseAlerts === 'boolean') next.expenseAlerts = s.expenseAlerts
+    user.settings = next
+  }
+
+  await user.save()
+  res.json(meJson(user))
 })
 
 export default router

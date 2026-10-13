@@ -67,7 +67,7 @@ const CACHE_DAYS = 30
 // Public Overpass servers: if one is busy, down or rate-limiting us, the next one is tried
 const OVERPASS_SERVERS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']
 
-async function askOverpass(query, waitSeconds) {
+export async function askOverpass(query, waitSeconds) {
   let lastError = null
   for (const server of OVERPASS_SERVERS) {
     try {
@@ -89,6 +89,39 @@ async function askOverpass(query, waitSeconds) {
     }
   }
   throw lastError
+}
+
+// Same as askOverpass, but asks every server at once and takes the first good answer
+// (the others are cancelled). Much faster when one server is busy: no waiting for it to time out first.
+export async function askOverpassFast(query, waitSeconds) {
+  const stop = new AbortController()
+  const tries = OVERPASS_SERVERS.map(async (server) => {
+    // Stops when time runs out, or when another server already answered
+    const own = new AbortController()
+    const timer = setTimeout(() => own.abort(), waitSeconds * 1000)
+    stop.signal.addEventListener('abort', () => own.abort())
+    try {
+      const response = await fetch(server, {
+        method: 'POST',
+        headers: { ...HEADERS, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(query),
+        signal: own.signal
+      })
+      if (!response.ok) throw new Error('Overpass ' + response.status + ' (' + server + ')')
+      const data = JSON.parse(await response.text())
+      if (data.remark && !(data.elements || []).length) throw new Error('Overpass: ' + data.remark)
+      return data
+    } finally {
+      clearTimeout(timer)
+    }
+  })
+  try {
+    const data = await Promise.any(tries)
+    stop.abort() // cancel the slower servers
+    return data
+  } catch (err) {
+    throw new Error('All Overpass servers failed: ' + (err.errors || []).map((e) => e.message).join('; '))
+  }
 }
 
 // Backup source: Wikipedia articles within 10 km that look like places to visit

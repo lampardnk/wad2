@@ -14,7 +14,7 @@
         <button v-if="photos.length" type="button" class="ph-ghost" :disabled="zipping" @click="downloadAll" data-testid="photos-zip">
           <span aria-hidden="true">⬇</span> {{ zipping ? zipText : 'Download all (.zip)' }}
         </button>
-        <button type="button" class="ph-primary" @click="$refs.picker.click()" data-testid="photos-add">+ Drop photos</button>
+        <button v-if="photos.length" type="button" class="ph-primary" @click="$refs.picker.click()" data-testid="photos-add">+ Drop photos</button>
         <input ref="picker" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="visually-hidden"
           tabindex="-1" aria-hidden="true" @change="onPick">
       </div>
@@ -92,7 +92,7 @@
     <button v-if="!loading && !shown.length" type="button" class="ph-empty" @click="$refs.picker.click()">
       <span class="ph-empty-stack" aria-hidden="true"><span>🏞</span><span>📸</span><span>🍜</span></span>
       <strong class="ph-empty-title">{{ photos.length ? 'No photos here yet' : 'Start the shared roll' }}</strong>
-      <span class="ph-empty-text">Drop photos anywhere on this page, or click to browse.<br>Everyone's shots end up in one place, sorted by spot.</span>
+      <span class="ph-empty-text">Drop photos anywhere on this page, or click to browse.</span>
       <span class="ph-primary mt-2">+ Add the first memories</span>
     </button>
 
@@ -161,10 +161,8 @@
               </button>
             </div>
             <label class="ph-small" for="ph-move">Album</label>
-            <select id="ph-move" class="ph-input" :value="open.album" @change="move(open, $event.target.value)">
-              <option value="">✨ Highlights</option>
-              <option v-for="a in albums" :key="a.id" :value="a.id">{{ a.icon }} {{ a.name }}</option>
-            </select>
+            <CustomDropdown id="ph-move" :model-value="open.album || ''" :options="albumOptions" block header-text="Move to album"
+              @update:model-value="move(open, $event)" />
             <div class="d-flex gap-2 mt-auto flex-wrap">
               <button type="button" class="ph-ghost" @click="downloadOne(open)">⬇ Original</button>
               <button v-if="!confirmDelete" type="button" class="ph-ghost danger" @click="confirmDelete = true">Delete</button>
@@ -184,18 +182,21 @@
 import axios from 'axios'
 import { placeStyle } from '../placeStyle.js'
 import { makeZip } from '../zip.js'
+import CustomDropdown from './CustomDropdown.vue'
 
 const REACTIONS = ['❤️', '🔥', '😂', '😍', '👏']
 const TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const AVATAR_COLORS = ['#0b7f5f', '#2a78d6', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
 export default {
+  components: { CustomDropdown },
   props: {
     tripId: { type: String, default: '' },
     travellers: { type: Array, default: () => [] },
     wishlist: { type: Array, default: () => [] },       // for album suggestions
     initialAlbums: { type: Array, default: () => [] },
-    me: { type: String, default: '' } // my traveller name: photos and reactions are added as me
+    me: { type: String, default: '' }, // my traveller name: photos and reactions are added as me
+    filterWho: { type: Object, default: null } // { name, at } from the Crew tab: show only this person's photos
   },
 
   data() {
@@ -222,6 +223,11 @@ export default {
   },
 
   computed: {
+    albumOptions() {
+      const list = [{ value: '', label: 'Highlights', icon: '✨' }]
+      for (const a of this.albums) list.push({ value: a.id, label: a.name, icon: a.icon })
+      return list
+    },
     contributors() {
       const list = []
       for (const name of this.travellers) {
@@ -276,6 +282,11 @@ export default {
   },
 
   watch: {
+    filterWho(value) {
+      if (!value) return
+      this.album = 'all'
+      this.who = value.name
+    },
     // Load the full-size photo when the lightbox opens or moves
     async open(photo) {
       if (this.fullUrl) URL.revokeObjectURL(this.fullUrl)

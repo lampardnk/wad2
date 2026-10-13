@@ -21,6 +21,15 @@ body {
   background-color: var(--app-bg);
   font-family: 'Inter', Arial, sans-serif;
   color: var(--app-ink);
+  transition: background-color 0.25s ease;
+}
+/* Dark pages (Settings): set on <body> by App.vue as soon as you navigate there */
+body.dark-page {
+  background:
+    radial-gradient(900px 420px at 50% -120px, rgba(47, 224, 161, 0.14), transparent 70%),
+    radial-gradient(600px 300px at 85% 10%, rgba(11, 127, 95, 0.12), transparent 70%),
+    #0b0f15 fixed;
+  background-color: #0b0f15;
 }
 
 h2, h4, h5 {
@@ -32,6 +41,14 @@ h2 {
 
 .container {
   padding-bottom: 48px;
+}
+/* Small screens: use the full width (Bootstrap's 540px box leaves big side gaps on phones/small tablets) */
+@media (max-width: 767.98px) {
+  .container {
+    max-width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 }
 
 /* Navbar and trip header use the same dark green-blue as the login page */

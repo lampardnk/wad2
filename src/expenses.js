@@ -120,3 +120,18 @@ export function demoExpenses() {
     settlements: []
   }
 }
+
+// Currency codes with their names, for dropdowns: { value: 'JPY', label: 'JPY', description: 'Japanese Yen' }
+export function currencyOptions() {
+  let names = null
+  try {
+    names = new Intl.DisplayNames(['en'], { type: 'currency' })
+  } catch (err) {
+    names = null
+  }
+  const list = []
+  for (const c of CURRENCIES) {
+    list.push({ value: c, label: c, description: names ? names.of(c) : '' })
+  }
+  return list
+}

@@ -18,6 +18,7 @@
               <span class="profile-handle">@{{ auth.user.username }}</span>
             </span>
           </div>
+          <router-link to="/settings" class="profile-item settings" role="menuitem" data-testid="settings-link">⚙︎ Settings</router-link>
           <button type="button" class="profile-item" role="menuitem" @click="handleLogout" data-testid="logout-btn">↪ Log out</button>
         </div>
       </div>
@@ -51,8 +52,14 @@ export default {
   },
   watch: {
     // Close it when changing page
-    $route() {
-      this.menuOpen = false
+    $route: {
+      handler(to) {
+        this.menuOpen = false
+        // Pages with meta.dark (Settings) get a dark page background straight away,
+        // instead of waiting for the page fade-in to finish
+        document.body.classList.toggle('dark-page', !!to.meta.dark)
+      },
+      immediate: true
     }
   },
   methods: {
@@ -140,6 +147,15 @@ export default {
 .profile-item:focus-visible {
   background: #fdecec;
   outline: none;
+}
+.profile-item.settings {
+  display: block;
+  color: #1f2d2a;
+  text-decoration: none;
+}
+.profile-item.settings:hover,
+.profile-item.settings:focus-visible {
+  background: #eef6f3;
 }
 @keyframes profile-in {
   from { opacity: 0; transform: translateY(-4px); }
