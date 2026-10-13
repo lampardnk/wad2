@@ -1,5 +1,11 @@
 <template>
   <div>
+    <!-- Pop-up notice: stays on screen while scrolling, closes by itself -->
+    <div v-if="notice" class="notice-popup alert shadow d-flex align-items-start gap-2" :class="'alert-' + noticeType" role="alert">
+      <span class="flex-grow-1">{{ notice }}</span>
+      <button type="button" class="btn-close" aria-label="Close" @click="notice = ''"></button>
+    </div>
+
     <div class="d-flex flex-wrap align-items-baseline gap-2 mb-2">
       <h4 class="mb-0">Itinerary & Adaptive Conflict Engine</h4>
       <span v-if="saveStatus" class="small" :class="saveStatus.startsWith('Could not') ? 'text-danger' : 'text-muted'" role="status">{{ saveStatus }}</span>
@@ -130,6 +136,7 @@
             <span v-if="crowdInfo[i].closedToday" class="badge bg-danger">Closed {{ tripDay }}s</span>
             <CrowdBadge v-else-if="item.address" :loading="item.loading" :busyness="crowdInfo[i].busyness"
               :estimated="!!(item.forecast && item.forecast.estimated)" />
+            <span v-else class="small text-muted">Add an address for crowd info</span>  
 
             <label class="small text-muted ms-auto" title="Preserved stops are never moved by suggestions, Plan my day or weather swaps">
               <input type="checkbox" v-model="item.locked" @change="plan = null" class="form-check-input me-1">🔒 Preserve
@@ -269,8 +276,8 @@ export default {
     startDate: { type: String, default: '' },
     endDate: { type: String, default: '' },
     initialStops: { type: Array, default: () => [] },
-    initialVersion: { type: Number, default: 0 },
-    initialWishlist: { type: Array, default: () => [] }
+    initialWishlist: { type: Array, default: () => [] },
+    initialVersion: { type: Number, default: 0 }
   },
   data() {
     return {
@@ -290,6 +297,10 @@ export default {
       addError: '',
       wishForm: { name: '', address: '' },
       saveStatus: '',
+      notice: '',           // text of the pop-up (empty = hidden)
+      noticeType: 'warning', // 'warning' (yellow) or 'info' (blue)
+      tripVersion: 0, // the version of the trip we last saved or loaded
+      saving: false,
       loaded: false,
       lastSavedKey: '',
       editId: null,
@@ -303,8 +314,9 @@ export default {
   async mounted() {
     // Start from this trip's saved data (or the demo)
     if (this.isDemo) loadDemo()
-    else loadFromServer({ stops: this.initialStops, wishlist: this.initialWishlist, version: this.initialVersion })
-
+    else loadFromServer({ stops: this.initialStops, wishlist: this.initialWishlist})
+    this.tripVersion = this.initialVersion
+    
     const firstStopDay = trip.stops.map((s) => s.date).sort()[0]
     this.selectedDate = firstStopDay || this.dayList[0] || ''
 
@@ -331,9 +343,18 @@ export default {
     // From here on, changes are saved
     this.lastSavedKey = this.persistKey
     this.loaded = true
+
+    // Shared trips: check every 30 seconds whether someone else changed it
+    if (!this.isDemo) this.pollTimer = setInterval(this.pollTrip, 30000)
+
+    // Re-check the weather every 15 minutes while this page is open
+    this.weatherTimer = setInterval(this.refreshWeather, 15 * 60 * 1000)
   },
 
   beforeUnmount() {
+    clearInterval(this.pollTimer)
+    clearInterval(this.weatherTimer)
+    clearTimeout(this.noticeTimer)
     // Don't lose a change made just before leaving the page
     if (this.saveTimer) {
       clearTimeout(this.saveTimer)
@@ -546,29 +567,74 @@ export default {
       this.addForm.date = d
     },
 
+    // Show a pop-up message that hides itself after 8 seconds
+    showNotice(message, type = 'warning') {
+      this.notice = message
+      this.noticeType = type
+      clearTimeout(this.noticeTimer)
+      this.noticeTimer = setTimeout(() => { this.notice = '' }, 8000)
+    },
+
     // ---------- saving ----------
     async saveNow() {
       this.saveTimer = null
       if (this.isDemo) return
+      // A save is already running: try again shortly, so the version numbers don't clash
+      if (this.saving) {
+        this.saveTimer = setTimeout(this.saveNow, 500)
+        return
+      }
+      this.saving = true
       const key = this.persistKey
+      const body = JSON.parse(key)
+      body.version = this.tripVersion
       try {
-        const res = await axios.put('/api/trips/' + this.tripId + '/itinerary', { ...JSON.parse(key), version: trip.version })
-        trip.version = res.data.version
+        const res = await axios.put('/api/trips/' + this.tripId + '/itinerary', body)
+        this.tripVersion = res.data.version
         this.lastSavedKey = key
         this.saveStatus = 'All changes saved'
       } catch (err) {
         if (err.response && err.response.status === 409) {
-          // Someone else saved first: show their latest itinerary instead of overwriting it
-          loadFromServer(err.response.data.trip)
-          this.lastSavedKey = this.persistKey
-          this.saveStatus = 'Someone else just changed this trip, so you are now seeing their latest version.'
+          // Someone else saved first: show their version instead of overwriting it
+          this.saveStatus = 'Someone else changed this trip, so their version was loaded.'
+          this.showNotice('Someone in your group saved at the same time as you, so their version was loaded. Your last change was not saved, so please redo it.')
+          await this.applyServerTrip(err.response.data.trip)
         } else {
           this.saveStatus = 'Could not save changes. Is the server running?'
         }
       }
+      this.saving = false
     },
 
-    // ---------- adding / removing stops ----------
+    // Replace what is on screen with a saved version from the server
+    async applyServerTrip(saved) {
+      loadFromServer({ stops: saved.stops, wishlist: saved.wishlist })
+      this.tripVersion = saved.version
+      this.lastSavedKey = this.persistKey // so this load doesn't trigger a save
+      this.plan = null
+      this.retimeNotes = []
+      await Promise.all(trip.stops.map((item) => this.loadForecast(item)))
+      await this.updateTransitTimes()
+      this.reportItinerary()
+    },
+
+    // Every 30 seconds: has someone else changed this trip?
+    async pollTrip() {
+      // Don't interrupt anything the user is in the middle of
+      if (this.isDemo || this.saveTimer || this.saving || this.editId || this.anyLoading) return
+      if (this.persistKey !== this.lastSavedKey) return // we have unsaved changes of our own
+      try {
+        const res = await axios.get('/api/trips/' + this.tripId)
+        if (res.data.version !== this.tripVersion) {
+          await this.applyServerTrip(res.data)
+          this.saveStatus = 'Updated with changes from your group'
+          this.showNotice('Your group made changes, so this itinerary was updated.', 'info')
+        }
+      } catch (err) {
+        // ignore, we'll try again in 30 seconds
+      }
+    },
+    
     toggleAdd() {
       this.showAdd = !this.showAdd
       this.addError = ''
@@ -666,6 +732,15 @@ export default {
         item.error = this.errorText(err)
       }
       item.loading = false
+    },
+
+    async refreshWeather() {
+      try {
+        this.weather = await fetchWeatherForecast(this.weatherParams)
+        this.weatherError = false
+      } catch (err) {
+        // keep showing the last forecast if a refresh fails
+      }
     },
 
     // ---------- weather ----------
@@ -900,3 +975,15 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.notice-popup {
+  position: fixed;
+  top: 70px;                 /* just below the navbar */
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 560px;
+  z-index: 1080;             /* above the page content */
+}
+</style>
