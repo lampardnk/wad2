@@ -57,14 +57,28 @@ function cleanPacking(p) {
   return { checked, qty, removed, custom }
 }
 
-function toClient(t, userId) {
+// Food needs + WhatsApp from each member's Settings: { userId: { diet, phone } }
+async function memberContacts(trip) {
+  const ids = []
+  for (const m of trip.members || []) ids.push(m.user)
+  const users = await User.find({ _id: { $in: ids } }, 'diet phone contactSaved')
+  const map = {}
+  for (const u of users) map[String(u._id)] = { diet: u.diet || [], phone: u.phone || '', saved: !!u.contactSaved }
+  return map
+}
+
+function toClient(t, userId, contacts) {
   return {
     role: userId ? roleOf(t, userId) : null,   // 'owner' | 'member'
     isOwner: userId ? String(t.owner) === String(userId) : false,
     group: t.group || null,                    // family group it's shared with (or null)
     version: t.version || 0,                   // itinerary version (see PUT /:id/itinerary)
     me: userId ? memberName(t, userId) : null, // my traveller name on this trip
-    members: (t.members || []).map((m) => ({ id: m.user, name: m.name, role: m.role })),
+    members: (t.members || []).map((m) => {
+      const c = contacts ? contacts[String(m.user)] : null
+      return { id: m.user, name: m.name, role: m.role, joinedAt: m.joinedAt, lastSeenAt: m.lastSeenAt || null, diet: c ? c.diet : null, phone: c ? c.phone : null, contactSaved: c ? c.saved : false }
+    }),
+    crew: t.crew || {},
     // Only filled in when the users were looked up (populate), e.g. on GET /api/trips/:id
     pendingInvites: (t.pendingInvites || []).map((p) => ({
       id: p.user && p.user._id ? p.user._id : p.user,
@@ -87,6 +101,7 @@ function toClient(t, userId) {
     packing: t.packing || null,
     expenses: t.expenses || null,
     photoAlbums: t.photoAlbums || [],
+    stay: t.stay || null,
     stops: t.stops || [],
     wishlist: t.wishlist || []
   }
@@ -205,7 +220,12 @@ router.post('/', requireAuth, async (req, res) => {
   const weather = pickKeys(req.body.weather, WEATHER_KEYS)
   const extras = pickKeys(req.body.extras, EXTRA_KEYS)
 
-  const trip = await Trip.create({ owner: req.userId, members, group: groupId, name, destination, destinations, startDate, endDate, travellers, activities, weather, extras })
+  // Expenses start in the organiser's base currency (Settings)
+  const owner = await User.findById(req.userId, 'settings')
+  const homeCurrency = (owner && owner.settings && owner.settings.currency) || 'SGD'
+  const expenses = { homeCurrency, budget: null, items: [], settlements: [] }
+
+  const trip = await Trip.create({ owner: req.userId, members, group: groupId, name, destination, destinations, startDate, endDate, travellers, activities, weather, extras, expenses })
   res.status(201).json(toClient(trip, req.userId))
 })
 
@@ -214,7 +234,7 @@ router.get('/:id', requireAuth, async (req, res) => {
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
   await trip.populate('pendingInvites.user', 'name username')
-  res.json(toClient(trip, req.userId))
+  res.json(toClient(trip, req.userId, await memberContacts(trip)))
 })
 
 // PUT /api/trips/:id/itinerary  { stops: [...], wishlist: [...], version? }
@@ -228,6 +248,22 @@ router.put('/:id/itinerary', requireAuth, async (req, res) => {
 
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+
+  // Votes: you can only change your own (the organiser also for people without an account).
+  // Everyone else's votes are kept exactly as they are saved.
+  const me = memberName(trip, req.userId)
+  const allowed = [me]
+  if (roleOf(trip, req.userId) === 'owner') {
+    for (const t of trip.travellers) {
+      if (!trip.members.some((m) => m.name === t)) allowed.push(t)
+    }
+  }
+  for (const w of wishlist) {
+    const before = (trip.wishlist || []).find((x) => x.id === w.id)
+    const kept = before && Array.isArray(before.votes) ? before.votes.filter((v) => !allowed.includes(v)) : []
+    const mine = w.votes.filter((v) => allowed.includes(v))
+    w.votes = kept.concat(mine)
+  }
 
   const filter = { _id: trip._id }
   if (req.body.version !== undefined && req.body.version !== null) {
@@ -282,6 +318,87 @@ router.put('/:id/albums', requireAuth, async (req, res) => {
   // Photos in a deleted album go back to Trip highlights
   const ids = albums.map((a) => a.id)
   await Photo.updateMany({ trip: trip._id, album: { $nin: ids.concat('') } }, { album: '' })
+  res.json({ ok: true })
+})
+
+// PUT /api/trips/:id/stay  { name, address, nameLocal, addressLocal, lat, lon } or {} to clear
+router.put('/:id/stay', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const b = req.body || {}
+  const text = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+  const name = text(b.name, 120)
+  if (!name) {
+    trip.stay = null
+  } else {
+    const lat = Number(b.lat)
+    const lon = Number(b.lon)
+    trip.stay = {
+      name,
+      address: text(b.address, 200),
+      nameLocal: text(b.nameLocal, 120),
+      addressLocal: text(b.addressLocal, 200),
+      lat: Number.isFinite(lat) && Math.abs(lat) <= 90 ? lat : null,
+      lon: Number.isFinite(lon) && Math.abs(lon) <= 180 ? lon : null
+    }
+  }
+  trip.markModified('stay')
+  await trip.save()
+  res.json({ stay: trip.stay })
+})
+
+// PUT /api/trips/:id/crew/:name  { persona, flight, arrival, sameFlightAs, diet, phone }
+// Your own card, or (organiser only) the card of someone without an account.
+// diet: preset keys (e.g. 'halal', 'nut-allergy') or short custom tags (e.g. 'No spicy food').
+// sameFlightAs: another traveller's name. Their flight is shown instead, so it is only stored once.
+router.put('/:id/crew/:name', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const name = req.params.name
+  if (!trip.travellers.includes(name)) return res.status(404).json({ message: 'That person is not on this trip.' })
+  const isMe = memberName(trip, req.userId) === name
+  const isGuest = !trip.members.some((m) => m.name === name)
+  if (!isMe && !(isGuest && roleOf(trip, req.userId) === 'owner')) {
+    return res.status(403).json({ message: 'You can only edit your own details.' })
+  }
+  const b = req.body || {}
+  const text = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+
+  const diet = []
+  if (Array.isArray(b.diet)) {
+    for (const d of b.diet) {
+      const tag = text(d, 30)
+      if (tag && !diet.includes(tag) && diet.length < 8) diet.push(tag)
+    }
+  }
+
+  let sameFlightAs = text(b.sameFlightAs, 60)
+  if (sameFlightAs === name || !trip.travellers.includes(sameFlightAs)) sameFlightAs = ''
+
+  const arrival = text(b.arrival, 16)
+  const profile = {
+    persona: text(b.persona, 40),
+    sameFlightAs,
+    flight: sameFlightAs ? '' : text(b.flight, 12).toUpperCase(),
+    arrival: !sameFlightAs && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(arrival) ? arrival : '',
+    diet,
+    phone: text(b.phone, 20).replace(/[^\d+ ]/g, '')
+  }
+  trip.crew = { ...(trip.crew || {}), [name]: profile }
+  trip.markModified('crew')
+  await trip.save()
+  res.json({ crew: trip.crew })
+})
+
+// POST /api/trips/:id/invites/:userId/resend  -> moves the invite back to the top of their home page
+router.post('/:id/invites/:userId/resend', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const invite = trip.pendingInvites.find((p) => String(p.user) === String(req.params.userId))
+  if (!invite) return res.status(404).json({ message: 'That invite was already answered.' })
+  invite.at = new Date()
+  trip.markModified('pendingInvites')
+  await trip.save()
   res.json({ ok: true })
 })
 

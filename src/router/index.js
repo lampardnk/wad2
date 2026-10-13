@@ -5,10 +5,12 @@ import LoginView from '../views/LoginView.vue'
 import SignupView from '../views/SignupView.vue'
 import TripSetupView from '../views/TripSetupView.vue'
 import JoinView from '../views/JoinView.vue'
+import SettingsView from '../views/SettingsView.vue'
 import { auth } from '../auth.js'
 
 const routes = [
   { path: '/', name: 'Home', component: HomeView, meta: { requiresAuth: true } },
+  { path: '/settings', name: 'Settings', component: SettingsView, meta: { requiresAuth: true, dark: true } },
   { path: '/trip/:id', name: 'Trip', component: TripView, props: true, meta: { requiresAuth: true } },
   // New trips: step 1 = invite, step 2 = wishlist, step 3 = vote, then the trip page
   { path: '/trip/:id/setup/:step(invite|wishlist|vote)', name: 'TripSetup', component: TripSetupView, props: true, meta: { requiresAuth: true } },

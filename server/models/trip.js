@@ -13,7 +13,8 @@ const tripSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     name: String,
     role: { type: String, enum: ['owner', 'member'], default: 'member' },
-    joinedAt: { type: Date, default: Date.now }
+    joinedAt: { type: Date, default: Date.now },
+    lastSeenAt: Date // for the "active now" dot on the Crew page
   }],
   inviteCode: { type: String, index: true, sparse: true }, // for /join/<code> links
   // People invited by username who haven't answered yet
@@ -36,6 +37,10 @@ const tripSchema = new mongoose.Schema({
   group: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', default: null, index: true },
   // Goes up by 1 on every itinerary save. Stops two people overwriting each other's stops.
   version: { type: Number, default: 0 },
+  // Crew profiles, by traveller name: { persona, flight, arrival 'YYYY-MM-DDTHH:mm', diet: [...], dietNote, phone }
+  crew: { type: mongoose.Schema.Types.Mixed, default: {} },
+  // Where the group is staying (Safety tab taxi card): { name, address, nameLocal, addressLocal, lat, lon }
+  stay: { type: mongoose.Schema.Types.Mixed, default: null },
   // Photo albums for spots: [{ id, name, icon }]. Photos without an album are "Trip highlights".
   photoAlbums: { type: [mongoose.Schema.Types.Mixed], default: [] },
 

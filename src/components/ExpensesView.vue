@@ -2,12 +2,11 @@
   <div class="xp">
     <!-- ===== Toolbar ===== -->
     <div class="xp-toolbar">
-      <label class="xp-select">
+      <div class="xp-select">
         <span>Show totals in</span>
-        <select :value="state.homeCurrency" aria-label="Home currency" @change="changeCurrency($event.target.value)">
-          <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
-        </select>
-      </label>
+        <CustomDropdown :model-value="state.homeCurrency" :options="currencyOptions" size="sm" header-text="Home currency"
+          aria-label="Home currency" @update:model-value="changeCurrency" />
+      </div>
       <span v-if="!demo" class="xp-live" title="Changes from everyone on the trip show up here automatically">
         <span class="xp-live-dot" aria-hidden="true"></span> Synced with the group
       </span>
@@ -15,7 +14,7 @@
         <template v-if="ratesError">⚠ {{ ratesError }}</template>
         <template v-else-if="ratesDate">Live rates · {{ shortDate(ratesDate) }}</template>
       </span>
-      <button type="button" class="btn xp-add" @click="openForm(null)" data-testid="expense-add">
+      <button v-if="state.items.length" type="button" class="btn xp-add" @click="openForm(null)" data-testid="expense-add">
         + Add expense <kbd aria-hidden="true">N</kbd>
       </button>
     </div>
@@ -83,12 +82,8 @@
               <input id="xp-search" v-model="search" type="search" placeholder="Search">
             </div>
           </div>
-          <div class="xp-filters" role="group" aria-label="Filter by category">
-            <button type="button" class="xp-chip" :class="{ on: !filterCat }" :aria-pressed="!filterCat" @click="filterCat = ''">All</button>
-            <button v-for="c in CATEGORIES" :key="c.key" type="button" class="xp-chip" :class="{ on: filterCat === c.key }"
-              :aria-pressed="filterCat === c.key" @click="filterCat = filterCat === c.key ? '' : c.key">
-              {{ c.icon }} {{ c.label }}
-            </button>
+          <div class="xp-filters">
+            <CustomDropdown v-model="filterCat" :options="categoryOptions" size="sm" header-text="Category" aria-label="Filter by category" />
           </div>
 
           <p v-if="!feed.length" class="xp-muted text-center py-4 mb-0">Nothing matches. <button type="button" class="xp-link" @click="search = ''; filterCat = ''">Clear filters</button></p>
@@ -231,10 +226,11 @@
 <script>
 import axios from 'axios'
 import ExpenseForm from './ExpenseForm.vue'
-import { CATEGORIES, CURRENCIES, categoryOf, money, toHome, sharesOf, balances, settleUp, demoExpenses } from '../expenses.js'
+import CustomDropdown from './CustomDropdown.vue'
+import { CATEGORIES, CURRENCIES, currencyOptions, categoryOf, money, toHome, sharesOf, balances, settleUp, demoExpenses } from '../expenses.js'
 
 export default {
-  components: { ExpenseForm },
+  components: { ExpenseForm, CustomDropdown },
   props: {
     tripId: { type: String, default: '' },
     travellers: { type: Array, default: () => [] },
@@ -250,6 +246,8 @@ export default {
     return {
       CATEGORIES,
       CURRENCIES,
+      currencyOptions: currencyOptions(),
+      categoryOptions: [{ value: '', label: 'All categories', icon: '🗂' }].concat(CATEGORIES.map((c) => ({ value: c.key, label: c.label, icon: c.icon }))),
       demo,
       state: {
         homeCurrency: saved.homeCurrency || 'SGD',
@@ -633,14 +631,6 @@ export default {
   color: var(--muted);
   margin: 0;
 }
-.xp-select select {
-  border: 0;
-  background: #fff;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-weight: 600;
-  color: var(--ink);
-}
 .xp-live {
   display: inline-flex;
   align-items: center;
@@ -879,24 +869,7 @@ export default {
   width: 120px;
 }
 .xp-filters {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-}
-.xp-chip {
-  border: 1px solid var(--line);
-  background: #fff;
-  border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 13px;
-  white-space: nowrap;
-}
-.xp-chip.on {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #dcf5a6;
+  margin-bottom: 8px;
 }
 
 /* Feed */
@@ -1170,7 +1143,6 @@ export default {
 
 /* Keyboard focus */
 .xp-row:focus-visible,
-.xp-chip:focus-visible,
 .xp-legend-row:focus-visible,
 .xp-bar-hit:focus-visible,
 .xp-add:focus-visible,

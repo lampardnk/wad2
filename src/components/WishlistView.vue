@@ -1,22 +1,9 @@
 <template>
   <div>
-    <!-- Search + filter -->
-    <div class="wl-toolbar">
-      <div class="wl-search">
-        <span aria-hidden="true" class="wl-search-icon">🔍</span>
-        <label for="wl-search" class="visually-hidden">Search places</label>
-        <input id="wl-search" v-model="search" type="search" placeholder="Search places" data-testid="wl-search">
-        <button type="button" class="wl-filter-btn" :class="{ on: showFilters || filter !== 'all' }"
-          :aria-expanded="showFilters" aria-controls="wl-filters" title="Filter" @click="showFilters = !showFilters">
-          <span aria-hidden="true">⚙︎</span><span class="visually-hidden">Filters</span>
-        </button>
-      </div>
-      <transition name="fade">
-        <div v-if="showFilters" id="wl-filters" class="wl-filters" role="group" aria-label="Show">
-          <button v-for="f in filterOptions" :key="f.value" type="button" class="wl-chip" :class="{ active: filter === f.value }"
-            :aria-pressed="filter === f.value" @click="filter = f.value">{{ f.label }}</button>
-        </div>
-      </transition>
+    <!-- Indoor / outdoor filter (the "Find a place" box below is the only search) -->
+    <div class="wl-filters" role="group" aria-label="Show">
+      <button v-for="f in filterOptions" :key="f.value" type="button" class="wl-chip" :class="{ active: filter === f.value }"
+        :aria-pressed="filter === f.value" @click="filter = f.value">{{ f.label }}</button>
     </div>
 
     <!-- ===== Your wishlist ===== -->
@@ -39,7 +26,7 @@
       </article>
     </transition-group>
     <p v-else class="wl-empty">
-      {{ wishlist.length ? 'No saved places match your search.' : 'No places yet. Tap ♡ on a popular place below, or add your own.' }}
+      {{ wishlist.length ? 'No saved places match this filter.' : 'No places yet. Tap ♡ on a popular place below, or add your own.' }}
     </p>
 
     <!-- Edit panel -->
@@ -65,16 +52,12 @@
 
     <!-- Find a place (any shop, restaurant, temple...) or add your own -->
     <form class="wl-add" @submit.prevent="chooseActive">
-      <label v-if="destinations.length > 1" class="wl-in">
-        <span class="visually-hidden">Search in</span>
-        <select v-model="searchIn" class="form-select wl-input" @change="runSearch">
-          <option v-for="d in destinations" :key="d" :value="d">{{ flagFor(d) }} {{ d.split(', ')[0] }}</option>
-        </select>
-      </label>
+      <CustomDropdown v-if="destinations.length > 1" v-model="searchIn" :options="cityOptions" class="wl-in"
+        header-text="Search in" aria-label="Search in" @change="runSearch" />
       <div class="wl-add-name position-relative">
         <label for="wish-name" class="visually-hidden">Find a place</label>
         <input id="wish-name" v-model="form.name" class="form-control wl-input" maxlength="120" autocomplete="off"
-          :placeholder="'Find a place in ' + (searchIn ? searchIn.split(', ')[0] : 'your destination') + ', e.g. ramen, FamilyMart'"
+          :placeholder="'Find a place in ' + (searchIn ? searchIn.split(', ')[0] : 'your destination')"
           role="combobox" aria-autocomplete="list" aria-controls="wish-suggest"
           :aria-expanded="showSuggest && rows.length > 0"
           :aria-activedescendant="active >= 0 ? 'wish-opt-' + active : null"
@@ -151,8 +134,10 @@ import axios from 'axios'
 import { trip, newId } from '../itineraryStore.js'
 import { codeForDestination, flagEmoji } from '../destinations.js'
 import { placeStyle } from '../placeStyle.js'
+import CustomDropdown from './CustomDropdown.vue'
 
 export default {
+  components: { CustomDropdown },
   props: {
     // All of the trip's destinations, e.g. ['Tokyo, Japan', 'Kyoto, Japan']
     destinations: { type: Array, default: () => [] }
@@ -162,9 +147,7 @@ export default {
     return {
       popularByDest: {}, // destination -> list from the server
       status: {}, // destination -> { loading, error, shown }
-      search: '',
       filter: 'all',
-      showFilters: false,
       filterOptions: [
         { value: 'all', label: 'All' },
         { value: 'indoor', label: '🏛 Indoor' },
@@ -198,6 +181,11 @@ export default {
   },
 
   computed: {
+    cityOptions() {
+      const list = []
+      for (const d of this.destinations) list.push({ value: d, label: d.split(', ')[0], icon: this.flagFor(d), description: d.split(', ').slice(1).join(', ') })
+      return list
+    },
     // The shared wishlist (saved together with the itinerary)
     wishlist() {
       return trip.wishlist
@@ -273,11 +261,11 @@ export default {
   methods: {
     placeStyle,
 
-    // Search box + Indoor/Outdoor filter
+    // Indoor/Outdoor filter
     matches(name, indoor) {
       if (this.filter === 'indoor' && !indoor) return false
       if (this.filter === 'outdoor' && indoor) return false
-      return !this.search.trim() || name.toLowerCase().includes(this.search.trim().toLowerCase())
+      return true
     },
 
     // First part of the address, e.g. "13 Okazaki Park" (skipped if it is just the place's name)
@@ -470,7 +458,7 @@ export default {
 .wl-filters {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-bottom: 20px;
 }
 .wl-chip {
   border: 1px solid #dfe5e3;

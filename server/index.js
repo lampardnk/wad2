@@ -16,6 +16,7 @@ import photoRoutes from './routes/photos.js'
 import expenseRoutes from './routes/expenses.js'
 import joinRoutes from './routes/join.js'
 import inviteRoutes from './routes/invites.js'
+import safetyRoutes from './routes/safety.js'
 import groupRoutes from './routes/groups.js'
 import User from './models/User.js'
 
@@ -38,6 +39,7 @@ app.use('/api/distance-matrix', distanceRoutes)
 app.use('/api/flights', flightRoutes)
 app.use('/api/places', placeRoutes)
 app.use('/api/rates', rateRoutes)
+app.use('/api/safety', safetyRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })

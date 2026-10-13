@@ -1,6 +1,7 @@
 <script setup>
     import {computed, ref} from 'vue'
     import { savedOption } from '../savedRoutes.js';
+    import CustomDropdown from './CustomDropdown.vue'
 
 
     const data = {
@@ -33,6 +34,7 @@
     const startPoint = ref('Korean Street Food Breakfast');
     const endPoint = ref('');
     const destinations = Object.keys(data);
+    const startPoints = ['Korean Street Food Breakfast', 'Gyeongbokgung Palace', 'Namsan Park (Outdoor)', 'Dinner Reservation (Myeongdong Kyoja)'];
 
     const getOptions = computed(() => {
         return data[endPoint.value] || []
@@ -100,23 +102,13 @@
         <!-- Starting selection -->
         <div class="col-12 col-md-5 p-2">
             <h4>Starting Point</h4>
-            <select class="form-select" v-model="startPoint">
-                <option value="Korean Street Food Breakfast">Korean Street Food Breakfast</option>
-                <option value="Gyeongbokgung Palace">Gyeongbokgung Palace</option>
-                <option value="Namsan Park (Outdoor)">Namsan Park (Outdoor)</option>
-                <option value="Dinner Reservation (Myeongdong Kyoja)">Dinner Reservation (Myeongdong Kyoja)</option>
-            </select>
+            <CustomDropdown v-model="startPoint" :options="startPoints" block header-text="Starting point" aria-label="Starting point" />
         </div>
 
         <!-- destination selection -->
         <div class="col-12 col-md-5 p-2">
             <h4>Destination</h4>
-            <select class="form-select" v-model="endPoint">
-                <option value="" disabled>Select destination</option>
-                <option v-for="place in destinations" :key="place" :value="place">
-                    {{ place }}
-                </option>
-            </select>
+            <CustomDropdown v-model="endPoint" :options="destinations" block placeholder="Select destination" header-text="Destination" aria-label="Destination" />
         </div>
         <div class="col-6"></div>
     </div>

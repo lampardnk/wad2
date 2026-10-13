@@ -11,9 +11,8 @@
         <!-- Amount: the most important field, so it is the biggest -->
         <div class="ef-amount" :class="{ bad: tried && !(form.amount > 0) }">
           <label for="ef-amount" class="visually-hidden">Amount</label>
-          <select v-model="form.currency" class="ef-currency" aria-label="Currency">
-            <option v-for="c in CURRENCIES" :key="c" :value="c">{{ c }}</option>
-          </select>
+          <CustomDropdown v-model="form.currency" :options="currencyOptions" size="sm" class="ef-currency"
+            header-text="Currency" aria-label="Currency" />
           <input id="ef-amount" ref="amount" v-model.number="form.amount" type="number" min="0" step="any" inputmode="decimal"
             placeholder="0.00" data-testid="expense-amount">
         </div>
@@ -39,9 +38,7 @@
         <div class="row g-3">
           <div class="col-sm-6">
             <label for="ef-paid" class="ef-label">Paid by</label>
-            <select id="ef-paid" v-model="form.paidBy" class="form-select ef-input">
-              <option v-for="p in travellers" :key="p" :value="p">{{ p }}{{ p === me ? ' (you)' : '' }}</option>
-            </select>
+            <CustomDropdown id="ef-paid" v-model="form.paidBy" :options="payerOptions" block header-text="Paid by" />
           </div>
           <div class="col-sm-6">
             <label for="ef-date" class="ef-label">Date</label>
@@ -102,9 +99,11 @@
 </template>
 
 <script>
-import { CATEGORIES, CURRENCIES, money, toHome } from '../expenses.js'
+import { CATEGORIES, CURRENCIES, currencyOptions, money, toHome } from '../expenses.js'
+import CustomDropdown from './CustomDropdown.vue'
 
 export default {
+  components: { CustomDropdown },
   props: {
     expense: { type: Object, default: null }, // null = new expense
     travellers: { type: Array, required: true },
@@ -123,6 +122,7 @@ export default {
     return {
       CATEGORIES,
       CURRENCIES,
+      currencyOptions: currencyOptions(),
       tried: false,
       confirmDelete: false,
       form: {
@@ -140,6 +140,11 @@ export default {
   },
 
   computed: {
+    payerOptions() {
+      const list = []
+      for (const p of this.travellers) list.push({ value: p, label: p + (p === this.me ? ' (you)' : '') })
+      return list
+    },
     // Exact split: how much of the total is not given to anyone yet
     remaining() {
       let given = 0
@@ -238,12 +243,8 @@ export default {
   border-color: #c0392b;
 }
 .ef-currency {
-  border: 0;
-  background: #1f2d2a;
-  color: #dcf5a6;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 6px 10px;
+  flex: none;
+  width: 92px;
 }
 .ef-amount input {
   border: 0;

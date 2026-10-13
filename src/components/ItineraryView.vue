@@ -28,9 +28,7 @@
       Affected: {{ rainConflicts.map(i => shortName(i.name)).join(', ') }}.
       <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
         <template v-if="wishlist.length">
-          <select v-model="chosenWishId" class="form-select form-select-sm w-auto" aria-label="Wishlist replacement">
-            <option v-for="w in wishlist" :key="w.id" :value="w.id">⭐ {{ w.name }}</option>
-          </select>
+          <CustomDropdown v-model="chosenWishId" :options="wishChoices" size="sm" header-text="Swap in from your wishlist" aria-label="Wishlist replacement" />
           <button class="btn btn-sm btn-danger" :disabled="anyLoading" @click="resolveConflict">Replace {{ shortName(rainConflicts[0].name) }}</button>
         </template>
         <span v-else class="small">No indoor places in your wishlist yet. Add one in the Wishlist tab to swap in.</span>
@@ -74,16 +72,11 @@
         </div>
         <div class="col-6 col-md-3">
           <label for="stop-hour" class="form-label small">Start time</label>
-          <select id="stop-hour" v-model.number="addForm.hour" class="form-select form-select-sm">
-            <option v-for="h in hourOptions" :key="h" :value="h">{{ formatHour(h) }}</option>
-          </select>
+          <CustomDropdown id="stop-hour" v-model="addForm.hour" :options="hourChoices" size="sm" block header-text="Start time" />
         </div>
         <div class="col-6 col-md-3">
           <label for="stop-duration" class="form-label small">Duration</label>
-          <select id="stop-duration" v-model="addForm.duration" class="form-select form-select-sm">
-            <option :value="null">Auto</option>
-            <option v-for="d in durationOptions" :key="d" :value="d">{{ d }} h</option>
-          </select>
+          <CustomDropdown id="stop-duration" v-model="addForm.duration" :options="durationChoices(durationOptions, true)" size="sm" block header-text="Duration" />
         </div>
         <div class="col-6 col-md-3 d-flex align-items-end">
           <div class="form-check">
@@ -168,16 +161,11 @@
               </div>
               <div class="col-6 col-md-3">
                 <label :for="'edit-hour-' + i" class="form-label small">Start time</label>
-                <select :id="'edit-hour-' + i" v-model.number="editForm.hour" class="form-select form-select-sm">
-                  <option v-for="h in hourOptions" :key="h" :value="h">{{ formatHour(h) }}</option>
-                </select>
+                <CustomDropdown :id="'edit-hour-' + i" v-model="editForm.hour" :options="hourChoices" size="sm" block header-text="Start time" />
               </div>
               <div class="col-6 col-md-3">
                 <label :for="'edit-dur-' + i" class="form-label small">Duration</label>
-                <select :id="'edit-dur-' + i" v-model="editForm.duration" class="form-select form-select-sm">
-                  <option :value="null">Auto</option>
-                  <option v-for="d in editDurations" :key="d" :value="d">{{ d }} h</option>
-                </select>
+                <CustomDropdown :id="'edit-dur-' + i" v-model="editForm.duration" :options="durationChoices(editDurations, true)" size="sm" block header-text="Duration" />
               </div>
               <div class="col-6 col-md-3 d-flex align-items-end">
                 <div class="form-check">
@@ -207,17 +195,9 @@
           <!-- Preference + duration -->
           <div v-if="item.forecast && item.forecast.days && !crowdInfo[i].closedToday" class="small mt-1 d-flex flex-wrap align-items-center gap-2">
             <label :for="'best-' + i" class="text-muted">Preference</label>
-            <select :id="'best-' + i" v-model="item.bestTime" class="form-select form-select-sm w-auto">
-              <option v-for="opt in timeOptions" :key="opt" :value="opt">
-                {{ timeLabels[opt] }}{{ opt === item.forecast.bestTimeDefault ? ' (recommended)' : '' }}
-              </option>
-            </select>
+            <CustomDropdown :id="'best-' + i" v-model="item.bestTime" :options="bestTimeChoices(item)" size="sm" header-text="Preferred time" />
             <label :for="'dur-' + i" class="text-muted ms-1">Duration</label>
-            <select :id="'dur-' + i" v-model.number="item.duration" class="form-select form-select-sm w-auto">
-              <option v-for="d in durationOptions" :key="d" :value="d">
-                {{ d }} h{{ d === item.forecast.durationDefault ? ' (typical)' : '' }}
-              </option>
-            </select>
+            <CustomDropdown :id="'dur-' + i" v-model="item.duration" :options="durationChoices(durationOptions, false, item.forecast.durationDefault)" size="sm" header-text="Duration" />
           </div>
 
           <!-- Suggestion -->
@@ -277,6 +257,7 @@ import axios from 'axios'
 import CrowdBadge from './CrowdBadge.vue'
 import CrowdChart from './CrowdChart.vue'
 import PreferencesPanel from './PreferencesPanel.vue'
+import CustomDropdown from './CustomDropdown.vue'
 import { prefs, loadPreferences } from '../preferences.js'
 import { getForecast, suggestSlot, planDay, busynessAt, formatHour, TIME_WINDOWS, TIME_LABELS } from '../crowd.js'
 import { fetchTravelTime } from '../services/maps.js'
@@ -287,7 +268,7 @@ import { savedOption } from '../savedRoutes.js'
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export default {
-  components: { CrowdBadge, CrowdChart, PreferencesPanel },
+  components: { CrowdBadge, CrowdChart, PreferencesPanel, CustomDropdown },
   emits: ['itinerary-change'],
   props: {
     tripId: { type: String, default: 'seoul' }, // 'seoul' = the demo trip (not saved)
@@ -392,6 +373,17 @@ export default {
   },
 
   computed: {
+    // Options for the dropdowns
+    wishChoices() {
+      const list = []
+      for (const w of this.wishlist) list.push({ value: w.id, label: w.name, icon: '⭐' })
+      return list
+    },
+    hourChoices() {
+      const list = []
+      for (const h of this.hourOptions) list.push({ value: h, label: this.formatHour(h) })
+      return list
+    },
     isDemo() {
       return this.tripId === 'seoul'
     },
@@ -544,6 +536,19 @@ export default {
     }
   },
   methods: {
+    durationChoices(hours, withAuto, typical) {
+      const list = []
+      if (withAuto) list.push({ value: null, label: 'Auto', description: 'Typical time for this place' })
+      for (const d of hours) list.push({ value: d, label: d + ' h', description: d === typical ? 'Typical' : '' })
+      return list
+    },
+    bestTimeChoices(item) {
+      const list = []
+      for (const opt of this.timeOptions) {
+        list.push({ value: opt, label: this.timeLabels[opt], description: opt === item.forecast.bestTimeDefault ? 'Recommended' : '' })
+      }
+      return list
+    },
     formatHour,
 
     // "Dinner Reservation (Myeongdong Kyoja)" -> "Dinner Reservation"
