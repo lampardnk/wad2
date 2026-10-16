@@ -128,7 +128,7 @@ function submit() {
 
 <style scoped>
 .cd {
-  --mint: #2fe0a1;
+  --mint: #edae49;
   --line: rgba(255, 255, 255, 0.08);
   --muted: #8b949e;
   --text: #e6edf3;
@@ -163,7 +163,7 @@ function submit() {
 }
 .cd-input {
   width: 100%;
-  background: #0d1117;
+  background: #00283c;
   border: 1px solid var(--line);
   color: var(--text);
   border-radius: 10px;
@@ -201,9 +201,9 @@ function submit() {
   border-color: rgba(255, 255, 255, 0.2);
 }
 .cd-pick.on {
-  color: #b9ffe6;
+  color: #f8deb0;
   border-color: var(--mint);
-  background: rgba(47, 224, 161, 0.12);
+  background: rgba(237, 174, 73, 0.12);
 }
 
 /* Own flight / same as someone */
@@ -212,7 +212,7 @@ function submit() {
   flex-wrap: wrap;
   gap: 4px;
   padding: 3px;
-  background: #0d1117;
+  background: #00283c;
   border: 1px solid var(--line);
   border-radius: 12px;
   margin-bottom: 8px;
@@ -231,8 +231,8 @@ function submit() {
   color: var(--text);
 }
 .cd-seg button.on {
-  background: rgba(47, 224, 161, 0.16);
-  color: #b9ffe6;
+  background: rgba(237, 174, 73, 0.16);
+  color: #f8deb0;
 }
 .cd-seg-sub {
   font-weight: 400;
@@ -242,8 +242,8 @@ function submit() {
   margin: 0;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(47, 224, 161, 0.08);
-  border: 1px solid rgba(47, 224, 161, 0.25);
+  background: rgba(237, 174, 73, 0.08);
+  border: 1px solid rgba(237, 174, 73, 0.25);
   font-size: 13px;
   font-weight: 600;
 }
@@ -276,7 +276,7 @@ function submit() {
   color: var(--mint);
 }
 .cd-err {
-  color: #ff9a9a;
+  color: #f09aa5;
   font-size: 13px;
   margin: 10px 0 0;
 }
@@ -302,11 +302,11 @@ function submit() {
 .cd-save {
   border: 0;
   background: var(--mint);
-  color: #06261b;
+  color: #00283c;
   border-radius: 999px;
   padding: 7px 20px;
   font-weight: 700;
-  box-shadow: 0 6px 18px rgba(47, 224, 161, 0.25);
+  box-shadow: 0 6px 18px rgba(237, 174, 73, 0.25);
   transition: transform 0.15s, filter 0.15s;
 }
 .cd-save:hover:not(:disabled) {

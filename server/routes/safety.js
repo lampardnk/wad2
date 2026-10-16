@@ -34,26 +34,81 @@ function addressOf(p) {
   return [street, p.district || p.locality, p.city, p.postcode].filter(Boolean).join(', ')
 }
 
-// GET /api/safety/locate?place=Kyoto, Japan -> { lat, lon, city, countryCode, countryName }
+// GET /api/safety/locate?place=Kyoto, Japan[&near=Chengdu, China] -> { lat, lon, city, countryCode, countryName }
+// "near" = the trip city the place belongs to. Many names exist in several places (there are
+// Mao Zedong statues all over China), so we search around that city and keep a match within 80 km.
+async function locateOne(place) {
+  const data = await photon({ q: place, limit: '1', lang: 'en' })
+  return data.features && data.features[0]
+}
+function toResult(f, place) {
+  const p = f.properties || {}
+  return {
+    lat: f.geometry.coordinates[1],
+    lon: f.geometry.coordinates[0],
+    city: p.city || p.name || place,
+    countryCode: (p.countrycode || '').toUpperCase(),
+    countryName: p.country || ''
+  }
+}
+function kmBetween(a, b) {
+  const r = Math.PI / 180
+  const x = (b.lon - a.lon) * r * Math.cos(((a.lat + b.lat) / 2) * r)
+  const y = (b.lat - a.lat) * r
+  return Math.sqrt(x * x + y * y) * 6371
+}
+
 router.get('/locate', requireAuth, async (req, res) => {
   const place = String(req.query.place || '').trim().slice(0, 200)
+  const near = String(req.query.near || '').trim().slice(0, 120)
   if (!place) return res.status(400).json({ message: 'Which place?' })
-  const key = place.toLowerCase()
+  const key = (place + '|' + near).toLowerCase()
   if (placeCache.has(key)) return res.json(placeCache.get(key))
   try {
-    const data = await photon({ q: place, limit: '1', lang: 'en' })
-    const f = data.features && data.features[0]
-    if (!f) return res.status(404).json({ message: 'Could not find that place.' })
-    const p = f.properties || {}
-    const result = {
-      lat: f.geometry.coordinates[1],
-      lon: f.geometry.coordinates[0],
-      city: p.city || p.name || place,
-      countryCode: (p.countrycode || '').toUpperCase(),
-      countryName: p.country || ''
+    let found = null
+    if (near) {
+      // Where the city is (cached like any other lookup)
+      const cityKey = (near + '|').toLowerCase()
+      let city = placeCache.get(cityKey)
+      if (!city) {
+        const f = await locateOne(near)
+        if (f) {
+          city = toResult(f, near)
+          remember(placeCache, cityKey, city)
+        }
+      }
+      if (city) {
+        // Results ranked around the city; keep the closest one that's actually nearby
+        const data = await photon({ q: place, limit: '8', lang: 'en', lat: String(city.lat), lon: String(city.lon) })
+        let best = null
+        let bestKm = Infinity
+        for (const f of data.features || []) {
+          const r = toResult(f, place)
+          const km = kmBetween(city, r)
+          if (km < bestKm) {
+            best = r
+            bestKm = km
+          }
+        }
+        if (best && bestKm <= 80) found = best
+        // Nothing that close: try the name together with the city
+        if (!found) {
+          const f = await locateOne(place + ', ' + near)
+          if (f) {
+            const r = toResult(f, place)
+            if (kmBetween(city, r) <= 80) found = r
+          }
+        }
+        if (!found && best) found = best // closest we have
+      }
     }
-    remember(placeCache, key, result)
-    res.json(result)
+    if (!found) {
+      const f = await locateOne(place)
+      if (!f) return res.status(404).json({ message: 'Could not find that place.' })
+      found = toResult(f, place)
+    }
+    remember(placeCache, key, found)
+    res.json(found)
   } catch (err) {
     res.status(502).json({ message: 'Place lookup is unavailable right now.' })
   }

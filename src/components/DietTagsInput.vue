@@ -107,15 +107,15 @@ function onKey(e) {
   gap: 5px;
   min-height: 38px;
   padding: 4px 6px;
-  background: #0d1117;
+  background: #00283c;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   cursor: text;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .dt.focus {
-  border-color: #2fe0a1;
-  box-shadow: 0 0 0 3px rgba(47, 224, 161, 0.15);
+  border-color: #edae49;
+  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.15);
 }
 .dt-tag {
   display: inline-flex;
@@ -125,15 +125,15 @@ function onKey(e) {
   font-weight: 600;
   padding: 2px 4px 2px 8px;
   border-radius: 999px;
-  background: rgba(47, 224, 161, 0.12);
-  border: 1px solid rgba(47, 224, 161, 0.3);
-  color: #b9ffe6;
+  background: rgba(237, 174, 73, 0.12);
+  border: 1px solid rgba(237, 174, 73, 0.3);
+  color: #f8deb0;
   animation: dt-pop 0.15s ease-out;
 }
 .dt-tag.allergy {
-  background: rgba(255, 90, 95, 0.14);
-  border-color: rgba(255, 90, 95, 0.4);
-  color: #ffc1c3;
+  background: rgba(209, 73, 91, 0.14);
+  border-color: rgba(209, 73, 91, 0.4);
+  color: #f6c4cb;
 }
 .dt-x {
   border: 0;
@@ -177,7 +177,7 @@ function onKey(e) {
   padding: 4px;
   max-height: 220px;
   overflow-y: auto;
-  background: rgba(22, 27, 34, 0.96);
+  background: rgba(10, 53, 80, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -193,8 +193,8 @@ function onKey(e) {
   cursor: pointer;
 }
 .dt-menu li.active {
-  background: rgba(47, 224, 161, 0.12);
-  color: #b9ffe6;
+  background: rgba(237, 174, 73, 0.12);
+  color: #f8deb0;
 }
 .dt-hint {
   float: right;

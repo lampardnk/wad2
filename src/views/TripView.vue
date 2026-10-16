@@ -7,7 +7,7 @@
     </div>
 
     <div v-else-if="loadError" class="alert alert-warning">
-      {{ loadError }} <router-link to="/">Back to your trips</router-link>
+      {{ loadError }} <router-link to="/home">Back to your trips</router-link>
     </div>
 
     <template v-else>
@@ -16,12 +16,12 @@
 
       <!-- Top bar: back, trip name, every section of the trip. Stays on screen while scrolling. -->
       <nav class="trip-nav" aria-label="Trip sections">
-        <router-link to="/" class="trip-back" data-testid="back-to-trips" title="Back to my trips">
-          <span aria-hidden="true">‹</span><span class="trip-back-text">My trips</span>
+        <router-link to="/home" class="trip-back" data-testid="back-to-trips" title="Back to My Trips">
+          <span aria-hidden="true">‹</span><span class="trip-back-text">My Trips</span>
         </router-link>
         <span class="trip-nav-name" :title="headerTitle">{{ headerTitle }}</span>
 
-        <TripTabs v-model="activeTab" :tabs="tabs" :alert-key="safetyWarning ? 'safety' : ''" class="trip-tabs" />
+        <TripTabs :model-value="activeTab" @update:model-value="goToTab" :tabs="tabs" :alert-key="safetyWarning ? 'safety' : ''" class="trip-tabs" />
       </nav>
 
       <!-- Trip title -->
@@ -53,22 +53,28 @@
 
       <TripShare v-if="showShare" :trip-id="id" :trip-name="trip.name" :members="trip.members || []"
         :travellers="trip.travellers" :role="trip.role || 'member'" :me="myName" :pending-invites="trip.pendingInvites || []"
-        @close="showShare = false" @changed="reloadTrip" @left="$router.push('/')" />
+        @close="showShare = false" @changed="reloadTrip" @left="$router.push('/home')" />
 
       <!-- Summary cards: tap one to jump to that section -->
       <div class="trip-cards">
-        <button type="button" class="trip-card" @click="activeTab = 'itinerary'">
+        <!-- The card for the open section grows and gets a tick, so you can see which one is picked -->
+        <button type="button" class="trip-card" :class="{ selected: activeTab === 'itinerary' }" :aria-pressed="activeTab === 'itinerary'"
+          @click="activeTab = 'itinerary'">
+          <transition name="badge-pop"><span v-if="activeTab === 'itinerary'" class="trip-card-badge" aria-hidden="true">✓</span></transition>
           <span class="trip-card-label">Trip length</span>
           <span class="trip-card-big">{{ dayCount || '–' }}<small> / day{{ dayCount === 1 ? '' : 's' }}</small></span>
           <span class="trip-card-sub">{{ stopCount }} stop{{ stopCount === 1 ? '' : 's' }} planned</span>
         </button>
-        <button type="button" class="trip-card featured" @click="openPlaces('vote')">
-          <span class="trip-card-badge" aria-hidden="true">✓</span>
+        <button type="button" class="trip-card" :class="{ selected: activeTab === 'places' }" :aria-pressed="activeTab === 'places'"
+          @click="openPlaces('vote')">
+          <transition name="badge-pop"><span v-if="activeTab === 'places'" class="trip-card-badge" aria-hidden="true">✓</span></transition>
           <span class="trip-card-label">Group picks</span>
           <span class="trip-card-big">{{ pickCount }}<small> / {{ wishCount }} places</small></span>
           <span class="trip-card-sub">{{ wishCount ? 'Vote in Places → Group decisions' : 'Save places to your wishlist first' }}</span>
         </button>
-        <button type="button" class="trip-card" @click="activeTab = 'crew'">
+        <button type="button" class="trip-card" :class="{ selected: activeTab === 'crew' }" :aria-pressed="activeTab === 'crew'"
+          @click="activeTab = 'crew'">
+          <transition name="badge-pop"><span v-if="activeTab === 'crew'" class="trip-card-badge" aria-hidden="true">✓</span></transition>
           <span class="trip-card-label">Travellers</span>
           <span class="trip-card-big">{{ itineraryInfo.travellers.length }}<small> / people</small></span>
           <span class="trip-card-sub text-truncate">{{ itineraryInfo.travellers.join(', ') || 'Just you' }}</span>
@@ -105,8 +111,8 @@
                 <button type="button" class="btn btn-link btn-sm p-0 align-baseline" @click="openPlaces('wishlist')">Open Places</button>
               </li>
               <li>
-                <strong>Itinerary</strong>: pick a day and use <em>+ Add stop</em> to fit your group picks into it.
-                Crowd tips then suggest quieter times, and <em>✨ Plan my day</em> re-times the whole day.
+                <strong>Itinerary</strong>: pick a day and drag your saved places onto it.
+                Each stop shows its weather and crowds (tap them for options), and <em>✨ Optimize Route</em> re-orders the whole day.
               </li>
               <li>The other sections in the top bar cover packing, expenses, photos, safety and getting around.</li>
             </ol>
@@ -120,22 +126,33 @@
         <ItineraryView
           :trip-id="id"
           :destination="itineraryInfo.destination"
+          :destinations="itineraryInfo.destinations"
           :start-date="itineraryInfo.startDate"
           :end-date="itineraryInfo.endDate"
           :initial-stops="itineraryInfo.stops"
           :initial-wishlist="itineraryInfo.wishlist" :initial-version="isDemo ? 0 : trip.version || 0"
-          @itinerary-change="updatePackingActivities" />
+          @itinerary-change="updatePackingActivities" @set-end-date="setEndDate" @go-places="addFromItinerary" />
       </div>
       <!-- Places = Wishlist + Group decisions. Both use the same wishlist, which the itinerary saves. -->
-      <div v-show="activeTab === 'places'" :id="'pane-places'" role="tabpanel">
+      <div v-show="activeTab === 'places'" :id="'pane-places'" role="tabpanel" :class="{ 'has-return': returnTo }">
         <div class="places-switch mb-4" role="tablist" aria-label="Places">
           <button type="button" role="tab" :aria-selected="placesTab === 'wishlist'" :class="{ active: placesTab === 'wishlist' }"
             @click="placesTab = 'wishlist'" data-testid="places-wishlist">♥ Wishlist</button>
           <button type="button" role="tab" :aria-selected="placesTab === 'vote'" :class="{ active: placesTab === 'vote' }"
             @click="placesTab = 'vote'" data-testid="places-vote">👍 Group decisions</button>
         </div>
+        <!-- Came here from the itinerary's "Add stop": a clear way back, always in view -->
+        <transition name="return-bar">
+          <div v-if="returnTo && activeTab === 'places'" class="places-return" role="region" aria-label="Adding stops to your itinerary">
+            <p class="places-return-text" aria-live="polite">Save more places for your wishlist.</p>
+            <button type="button" class="places-return-btn" :class="{ ready: newSaved }" @click="backToItinerary">
+              <span aria-hidden="true">‹</span> {{ newSaved ? 'Done, back to ' + returnTo.day : 'Back to ' + returnTo.day }}
+            </button>
+          </div>
+        </transition>
         <transition name="guide" mode="out-in">
-          <WishlistView v-if="placesTab === 'wishlist'" key="w" :destinations="itineraryInfo.destinations" />
+          <WishlistView v-if="placesTab === 'wishlist'" key="w" :destinations="itineraryInfo.destinations"
+            :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate" />
           <PlacesVoting v-else key="v" :travellers="itineraryInfo.travellers" :me="myName" :can-vote-for="canVoteFor" @go-wishlist="placesTab = 'wishlist'" />
         </transition>
       </div>
@@ -210,9 +227,11 @@ export default {
     return {
       activeTab: 'itinerary',
       placesTab: 'wishlist', // inside Places: 'wishlist' | 'vote'
+      returnTo: null, // { date, day } when Places was opened from the itinerary's "Add stop"
+      savedAtStart: 0, // wishlist size at that moment, to count the new saves
       // Sections in the top bar (title + desc are shown above the open section)
       tabs: [
-        { key: 'itinerary', icon: '🗓', label: 'Itinerary', title: 'Itinerary & weather', desc: 'Your day-by-day plan, with crowd tips and the forecast.' },
+        { key: 'itinerary', icon: '🗓', label: 'Itinerary', title: 'Itinerary', desc: 'Your day-by-day plan, with crowd tips and the forecast.' },
         { key: 'places', icon: '📍', label: 'Places', title: 'Places', desc: 'Save places you like, then vote on them together.', testid: 'places-tab' },
         { key: 'packing', icon: '🎒', label: 'Packing', title: 'Packing list', desc: 'Built from your activities, the weather and how long you are away.' },
         { key: 'expenses', icon: '💸', label: 'Expenses', title: 'Expenses & split', desc: 'Log what the group spends and see who owes whom. Press N to add an expense.' },
@@ -303,6 +322,10 @@ export default {
     isDemo() {
       return this.id === 'seoul'
     },
+    // Places saved since "Add stop" opened Places
+    newSaved() {
+      return this.returnTo ? Math.max(0, store.wishlist.length - this.savedAtStart) : 0
+    },
     authUserId() {
       return auth.user && auth.user.id ? String(auth.user.id) : ''
     },
@@ -325,6 +348,10 @@ export default {
     }
   },
   watch: {
+    // Left Places some other way: the "Back to Day 2" bar isn't needed any more
+    activeTab(tab) {
+      if (tab !== 'places') this.returnTo = null
+    },
     // The photo credit line appears once the photo loads, which moves the panel down a little
     photoPage() {
       this.$nextTick(this.fitStage)
@@ -360,11 +387,35 @@ export default {
       }
       this.stageHeight = Math.max(200, panel.offsetTop - 16)
     },
+    // Planner added or removed a day (or undid that): save the trip's new end date
+    async setEndDate(endDate) {
+      if (this.isDemo || !this.trip.startDate || !endDate) return
+      const before = this.trip.endDate
+      this.trip.endDate = endDate // show it straight away
+      try {
+        const res = await axios.put('/api/trips/' + this.id + '/dates', { endDate })
+        this.trip.endDate = res.data.endDate
+      } catch (err) {
+        this.trip.endDate = before // couldn't save: put it back
+      }
+    },
     // A crew card asked to open another tab (Expenses, or Photos filtered to one person)
     goFromCrew(tab, name) {
       if (tab === 'photos') this.photoWho = { name: name || '', at: Date.now() }
+      this.goToTab(tab)
+    },
+    // Switch tab and bring the content panel up just under the sticky nav
+    goToTab(tab) {
       this.activeTab = tab
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      this.$nextTick(() => {
+        const panel = this.$refs.panel
+        if (!panel) return
+        const nav = this.$el.querySelector('.trip-nav')
+        const gap = nav ? nav.offsetHeight + 24 : 90
+        const top = panel.getBoundingClientRect().top + window.scrollY - gap
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        window.scrollTo({ top: top, behavior: reduce ? 'auto' : 'smooth' })
+      })
     },
     // After someone is removed: fetch the trip again
     async reloadTrip() {
@@ -400,6 +451,17 @@ export default {
       this.activeTab = 'places'
       this.placesTab = tab
     },
+    // Itinerary's "Add stop": open Places, remembering which day to come back to
+    addFromItinerary(info) {
+      this.placesTab = 'wishlist'
+      this.goToTab('places')
+      this.returnTo = info && info.day ? info : { day: 'your itinerary' }
+      this.savedAtStart = store.wishlist.length
+    },
+    backToItinerary() {
+      this.returnTo = null
+      this.goToTab('itinerary')
+    },
     updatePackingActivities(activities) {
       this.hasOutdoorActivity = activities.some((activity) => activity.outdoor)
     },
@@ -423,11 +485,11 @@ export default {
 <style scoped>
 /* First-trip guide */
 .guide {
-  background: #fff;
-  border: 1.5px solid #b8e4d2;
+  background: #fbf5ea;
+  border: 1.5px solid #f3d9a8;
   border-radius: 20px;
   padding: 18px 20px;
-  box-shadow: 0 8px 24px rgba(11, 127, 95, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 121, 140, 0.08);
 }
 .guide-steps {
   padding-left: 1.2rem;
@@ -451,18 +513,18 @@ export default {
   z-index: 0;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(8, 14, 12, 0.55) 0%, rgba(8, 14, 12, 0.88) 50%, #0b1210 85%),
-    linear-gradient(118deg, transparent 38%, rgba(111, 242, 189, 0.22) 48%, transparent 58%),
-    linear-gradient(118deg, transparent 55%, rgba(11, 127, 95, 0.35) 63%, transparent 72%),
+    linear-gradient(180deg, rgba(0, 24, 38, 0.55) 0%, rgba(0, 24, 38, 0.88) 50%, #002233 85%),
+    linear-gradient(118deg, transparent 38%, rgba(243, 194, 111, 0.22) 48%, transparent 58%),
+    linear-gradient(118deg, transparent 55%, rgba(0, 121, 140, 0.35) 63%, transparent 72%),
     var(--trip-photo, none) center 40% / cover no-repeat,
-    #0b1210;
+    #002233;
 }
 .trip-credit {
   position: relative;
   z-index: 1;
   text-align: right;
   font-size: 11px;
-  color: var(--app-muted, #5f6f6b);
+  color: var(--app-muted, #5a6b78);
   margin: 10px 28px 0;
 }
 .trip-credit a {
@@ -490,7 +552,7 @@ export default {
   gap: 14px;
   padding: 10px 12px;
   border-radius: 20px;
-  background: rgba(16, 24, 22, 0.6);
+  background: rgba(0, 40, 60, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
@@ -500,12 +562,13 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #fff;
+  color: #003d5b;
   text-decoration: none;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  font-weight: 600;
+  background: #fbf5ea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
   flex-shrink: 0;
 }
 .trip-back span:first-child {
@@ -513,8 +576,10 @@ export default {
   line-height: 1;
 }
 .trip-back:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  background: #fbf5ea;
+  color: #003d5b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
 .trip-nav-name {
   color: #fff;
@@ -549,7 +614,7 @@ export default {
 }
 .trip-arrow {
   margin: 0 8px;
-  color: #6ff2bd;
+  color: #f3c26f;
 }
 /* Pill like a Monthly / Yearly switch */
 .trip-toggle {
@@ -557,7 +622,7 @@ export default {
   gap: 4px;
   padding: 6px;
   border-radius: 999px;
-  background: rgba(10, 16, 14, 0.85);
+  background: rgba(0, 30, 46, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .trip-toggle-item {
@@ -588,14 +653,14 @@ export default {
   height: 32px;
   margin-left: -8px;
   border-radius: 50%;
-  background: #0b7f5f;
+  background: #00798c;
   color: #fff;
   font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #0b1210;
+  border: 2px solid #002233;
 }
 .trip-face:first-child {
   margin-left: 0;
@@ -612,18 +677,18 @@ export default {
 .trip-invite {
   border: 0;
   border-radius: 999px;
-  background: #2fe0a1;
-  color: #06261b;
+  background: #edae49;
+  color: #00283c;
   font-weight: 700;
   padding: 7px 16px;
-  box-shadow: 0 6px 18px rgba(47, 224, 161, 0.3);
+  box-shadow: 0 6px 18px rgba(237, 174, 73, 0.3);
   transition: transform 0.15s;
 }
 .trip-invite:hover {
   transform: translateY(-1px);
 }
 .trip-invite:focus-visible {
-  outline: 3px solid #6ff2bd;
+  outline: 3px solid #f3c26f;
   outline-offset: 2px;
 }
 .trip-cards {
@@ -644,22 +709,41 @@ export default {
   gap: 4px;
   padding: 26px 28px;
   color: #fff;
-  background: #121a18;
+  background: #062c42;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 22px;
-  transition: transform 0.2s, border-color 0.2s;
+  /* springy grow when picked */
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
   position: relative;
 }
 .trip-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(111, 242, 189, 0.4);
+  border-color: rgba(243, 194, 111, 0.4);
 }
-.trip-card.featured {
-  background: #1a2421;
-  padding-top: 36px;
-  padding-bottom: 36px;
+.trip-card:active {
+  transform: scale(0.98);
+}
+.trip-card.selected {
+  background: #0b3048;
   z-index: 1;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  border-color: rgba(243, 194, 111, 0.55);
+  transform: translateY(-14px) scale(1.06);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(237, 174, 73, 0.25);
+}
+.trip-card.selected:hover {
+  transform: translateY(-16px) scale(1.06);
+}
+/* The tick pops in */
+.badge-pop-enter-active {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+}
+.badge-pop-leave-active {
+  transition: transform 0.15s, opacity 0.15s;
+}
+.badge-pop-enter-from,
+.badge-pop-leave-to {
+  transform: scale(0.4);
+  opacity: 0;
 }
 .trip-card-badge {
   position: absolute;
@@ -668,13 +752,13 @@ export default {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 2px solid #6ff2bd;
-  color: #6ff2bd;
+  border: 2px solid #f3c26f;
+  color: #f3c26f;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  box-shadow: 0 0 14px rgba(111, 242, 189, 0.5);
+  box-shadow: 0 0 14px rgba(243, 194, 111, 0.5);
 }
 .trip-card-label {
   font-weight: 600;
@@ -702,10 +786,10 @@ export default {
   position: relative;
   z-index: 1;
   margin-top: 32px;
-  background: #fff;
+  background: #fbf5ea;
   border-radius: 28px;
   padding: 32px;
-  box-shadow: 0 16px 40px rgba(16, 40, 34, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 40, 62, 0.08);
 }
 .trip-panel-head {
   margin-bottom: 20px;
@@ -724,19 +808,99 @@ export default {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: rgba(47, 224, 161, 0.14);
-  color: #0b7f5f;
+  background: rgba(237, 174, 73, 0.14);
+  color: #00798c;
 }
 .trip-panel-desc {
-  color: var(--app-muted, #5f6f6b);
+  color: var(--app-muted, #5a6b78);
   margin: 0;
 }
 
 /* Wishlist | Group decisions: same pill style as the header switch */
+.has-return {
+  padding-bottom: 96px; /* room so the bar never covers the last row */
+}
+.places-return {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 1050;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 10px 10px 18px;
+  border-radius: 999px;
+  background: #003d5b;
+  color: #fff;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+}
+.places-return-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.places-return-btn {
+  flex-shrink: 0;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.15s;
+}
+.places-return-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.places-return-btn.ready {
+  border-color: #edae49;
+  background: #edae49;
+  color: #00283c;
+}
+.places-return-btn.ready:hover {
+  transform: translateY(-1px);
+}
+.places-return-btn:focus-visible {
+  outline: 3px solid #edae49;
+  outline-offset: 2px;
+}
+.return-bar-enter-active,
+.return-bar-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.return-bar-enter-from,
+.return-bar-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 16px);
+}
+@media (max-width: 560px) {
+  .places-return {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: 20px;
+    padding: 12px;
+    gap: 10px;
+  }
+  .places-return-text {
+    text-align: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .return-bar-enter-active,
+  .return-bar-leave-active {
+    transition: none;
+  }
+}
 .places-switch {
   display: inline-flex;
   gap: 4px;
-  background: #1f2d2a;
+  background: #003d5b;
   border-radius: 999px;
   padding: 5px;
 }
@@ -758,7 +922,7 @@ export default {
 .trip-back:focus-visible,
 .trip-card:focus-visible,
 .places-switch button:focus-visible {
-  outline: 3px solid #6ff2bd;
+  outline: 3px solid #f3c26f;
   outline-offset: 2px;
 }
 
@@ -780,9 +944,13 @@ export default {
     padding: 0 10px;
   }
   .trip-card,
-  .trip-card.featured {
+  .trip-card.selected {
     padding: 14px 12px;
     border-radius: 16px;
+  }
+  .trip-card.selected,
+  .trip-card.selected:hover {
+    transform: translateY(-6px) scale(1.04);
   }
   .trip-card-label {
     font-size: 13px;

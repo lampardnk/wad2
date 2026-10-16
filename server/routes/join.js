@@ -18,6 +18,21 @@ function guestsOf(trip) {
   return trip.travellers.filter((t) => !taken.includes(t))
 }
 
+// GET /api/join/:code/preview -> just enough to say "you're invited to ..." before signing in (no login needed)
+router.get('/:code/preview', async (req, res) => {
+  const trip = await tripForCode(req.params.code)
+  if (!trip) return res.status(404).json({ message: "That code doesn't match a trip. Check it, or ask for a new one." })
+  const owner = trip.members.find((m) => m.role === 'owner')
+  res.json({
+    name: trip.name,
+    destinations: trip.destinations && trip.destinations.length ? trip.destinations : [trip.destination],
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+    invitedBy: owner ? owner.name : '',
+    memberCount: trip.members.length
+  })
+})
+
 // GET /api/join/:code -> a preview of the trip before joining
 router.get('/:code', requireAuth, async (req, res) => {
   const trip = await tripForCode(req.params.code)

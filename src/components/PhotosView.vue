@@ -186,7 +186,7 @@ import CustomDropdown from './CustomDropdown.vue'
 
 const REACTIONS = ['❤️', '🔥', '😂', '😍', '👏']
 const TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const AVATAR_COLORS = ['#0b7f5f', '#2a78d6', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
+const AVATAR_COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
 export default {
   components: { CustomDropdown },
@@ -606,11 +606,11 @@ export default {
 
 <style scoped>
 .ph {
-  --mint: #2fe0a1;
+  --mint: #edae49;
   --glass: rgba(255, 255, 255, 0.08);
-  --text: #eef5f2;
-  --muted: rgba(238, 245, 242, 0.62);
-  background: linear-gradient(180deg, #121b19, #0d1412);
+  --text: #f6efe3;
+  --muted: rgba(245, 238, 226, 0.62);
+  background: linear-gradient(180deg, #121b19, #022538);
   color: var(--text);
   border: 1px solid var(--glass);
   border-radius: 24px;
@@ -675,22 +675,22 @@ export default {
 }
 .ph-as option,
 .ph-input option {
-  color: #1f2d2a;
+  color: #003d5b;
 }
 .ph-primary {
   display: inline-block;
   background: var(--mint);
-  color: #06261b;
+  color: #00283c;
   border: 0;
   border-radius: 999px;
   padding: 9px 18px;
   font-weight: 700;
-  box-shadow: 0 6px 20px rgba(47, 224, 161, 0.25);
+  box-shadow: 0 6px 20px rgba(237, 174, 73, 0.25);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .ph-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 26px rgba(47, 224, 161, 0.35);
+  box-shadow: 0 10px 26px rgba(237, 174, 73, 0.35);
 }
 .ph-primary:disabled {
   opacity: 0.5;
@@ -744,9 +744,9 @@ export default {
   background: rgba(255, 255, 255, 0.1);
 }
 .ph-pill.on {
-  background: rgba(47, 224, 161, 0.16);
-  border-color: rgba(47, 224, 161, 0.6);
-  color: #b9ffe6;
+  background: rgba(237, 174, 73, 0.16);
+  border-color: rgba(237, 174, 73, 0.6);
+  color: #f8deb0;
 }
 .ph-pill-add {
   border-style: dashed;
@@ -813,9 +813,9 @@ export default {
 .ph-tray {
   margin: 4px 0 16px;
   padding: 14px;
-  border: 1px solid rgba(47, 224, 161, 0.35);
+  border: 1px solid rgba(237, 174, 73, 0.35);
   border-radius: 16px;
-  background: rgba(47, 224, 161, 0.06);
+  background: rgba(237, 174, 73, 0.06);
 }
 .ph-tray-row {
   display: flex;
@@ -830,7 +830,7 @@ export default {
   margin: 0;
   border-radius: 12px;
   overflow: hidden;
-  background: #1a2421;
+  background: #0b3048;
 }
 .ph-tray-item img {
   width: 100%;
@@ -860,7 +860,7 @@ export default {
   height: 20px;
   border-radius: 50%;
   background: var(--mint);
-  color: #06261b;
+  color: #00283c;
   font-size: 12px;
   font-weight: 700;
   display: flex;
@@ -872,7 +872,7 @@ export default {
   color: #fff;
 }
 .ph-err {
-  color: #ff9a9a;
+  color: #f09aa5;
   font-size: 13px;
   margin: 8px 0 0;
 }
@@ -888,13 +888,13 @@ export default {
   margin-top: 8px;
   background: rgba(255, 255, 255, 0.02);
   color: var(--text);
-  border: 2px dashed rgba(47, 224, 161, 0.35);
+  border: 2px dashed rgba(237, 174, 73, 0.35);
   border-radius: 20px;
   transition: background 0.2s, border-color 0.2s;
 }
 .ph-empty:hover {
-  background: rgba(47, 224, 161, 0.05);
-  border-color: rgba(47, 224, 161, 0.6);
+  background: rgba(237, 174, 73, 0.05);
+  border-color: rgba(237, 174, 73, 0.6);
 }
 .ph-empty-stack {
   display: flex;
@@ -935,7 +935,7 @@ export default {
   break-inside: avoid;
   border-radius: 16px;
   overflow: hidden;
-  background: #1a2421;
+  background: #0b3048;
   border: 1px solid var(--glass);
 }
 .ph-tile img {
@@ -951,7 +951,7 @@ export default {
 .ph-tile-skel {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, #1a2421, #22302c, #1a2421);
+  background: linear-gradient(90deg, #0b3048, #22302c, #0b3048);
   background-size: 200% 100%;
   animation: ph-shimmer 1.2s infinite;
 }
@@ -987,7 +987,7 @@ export default {
   gap: 6px;
   padding: 2px 10px 2px 2px;
   border-radius: 999px;
-  background: rgba(10, 16, 14, 0.55);
+  background: rgba(0, 30, 46, 0.55);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   font-size: 12px;
@@ -1020,7 +1020,7 @@ export default {
   height: 32px;
   border-radius: 50%;
   border: 1px solid var(--glass);
-  background: rgba(10, 16, 14, 0.55);
+  background: rgba(0, 30, 46, 0.55);
   color: #fff;
   opacity: 0;
   transition: opacity 0.2s;
@@ -1049,7 +1049,7 @@ export default {
   gap: 3px;
   border: 1px solid var(--glass);
   border-radius: 999px;
-  background: rgba(10, 16, 14, 0.6);
+  background: rgba(0, 30, 46, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: #fff;
@@ -1061,8 +1061,8 @@ export default {
   transform: scale(1.08);
 }
 .ph-react.mine {
-  border-color: rgba(47, 224, 161, 0.8);
-  background: rgba(47, 224, 161, 0.22);
+  border-color: rgba(237, 174, 73, 0.8);
+  background: rgba(237, 174, 73, 0.22);
 }
 /* On the grid: only reactions with counts show until you hover */
 .ph-tile .ph-react:not(.has) {
@@ -1078,7 +1078,7 @@ export default {
   position: fixed;
   inset: 0;
   z-index: 1060;
-  background: rgba(8, 14, 12, 0.72);
+  background: rgba(0, 24, 38, 0.72);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -1089,10 +1089,10 @@ export default {
   pointer-events: none;
   width: min(520px, 100%);
   padding: 48px 24px;
-  border: 2px dashed #2fe0a1;
+  border: 2px dashed #edae49;
   border-radius: 24px;
-  background: rgba(47, 224, 161, 0.08);
-  color: #eef5f2;
+  background: rgba(237, 174, 73, 0.08);
+  color: #f6efe3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1157,7 +1157,7 @@ export default {
   padding: 24px 20px;
   background: #0f1715;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
-  color: #eef5f2;
+  color: #f6efe3;
 }
 
 /* Keyboard focus */
@@ -1169,7 +1169,7 @@ export default {
 .ph-empty:focus-visible,
 .ph-lb-nav:focus-visible,
 .ph-lb-close:focus-visible {
-  outline: 3px solid rgba(47, 224, 161, 0.6);
+  outline: 3px solid rgba(237, 174, 73, 0.6);
   outline-offset: 2px;
 }
 
@@ -1193,7 +1193,7 @@ export default {
   to { background-position: -200% 0; }
 }
 @keyframes ph-pulse {
-  50% { border-color: rgba(47, 224, 161, 0.4); }
+  50% { border-color: rgba(237, 174, 73, 0.4); }
 }
 
 @media (max-width: 768px) {

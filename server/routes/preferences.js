@@ -40,8 +40,8 @@ router.put('/', requireAuth, async (req, res) => {
   if (!['low', 'medium', 'high'].includes(crowdSensitivity)) {
     return res.status(400).json({ message: 'Crowd sensitivity must be low, medium or high.' })
   }
-  if (![0, 0.5, 1].includes(travelBuffer)) {
-    return res.status(400).json({ message: 'Travel buffer must be 0, 30 or 60 minutes.' })
+  if (![0, 0.25, 0.5, 1].includes(travelBuffer)) {
+    return res.status(400).json({ message: 'Travel buffer must be 0, 15, 30 or 60 minutes.' })
   }
 
   const user = await User.findById(req.userId)

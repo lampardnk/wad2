@@ -257,7 +257,7 @@ function onMenuKey(e) {
   width: 100%;
 }
 .dd-trigger {
-  --dd-mint: #2fe0a1;
+  --dd-mint: #edae49;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -266,7 +266,7 @@ function onMenuKey(e) {
   padding: 0 12px 0 14px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, #161b22, #0d1117);
+  background: linear-gradient(180deg, #0a3550, #00283c);
   color: #e6edf3;
   font-size: 14px;
   font-weight: 500;
@@ -293,7 +293,7 @@ function onMenuKey(e) {
 .dd-trigger:focus-visible {
   outline: none;
   border-color: var(--dd-mint);
-  box-shadow: 0 0 0 3px rgba(47, 224, 161, 0.15);
+  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.15);
 }
 .dd-trigger:disabled {
   opacity: 0.5;
@@ -330,11 +330,11 @@ function onMenuKey(e) {
   max-width: min(360px, calc(100vw - 16px));
   padding: 4px;
   border-radius: 14px;
-  background: rgba(22, 27, 34, 0.86);
+  background: rgba(10, 53, 80, 0.86);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(47, 224, 161, 0.04), 0 0 30px rgba(47, 224, 161, 0.06);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(237, 174, 73, 0.04), 0 0 30px rgba(237, 174, 73, 0.06);
   color: #e6edf3;
   transform-origin: top left;
 }
@@ -357,12 +357,12 @@ function onMenuKey(e) {
   margin: 2px 2px 4px;
   padding: 0 10px;
   border-radius: 10px;
-  background: rgba(13, 17, 23, 0.8);
+  background: rgba(0, 38, 58, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #7d8590;
 }
 .dd-search:focus-within {
-  border-color: rgba(47, 224, 161, 0.5);
+  border-color: rgba(237, 174, 73, 0.5);
 }
 .dd-search input {
   flex: 1;
@@ -398,10 +398,10 @@ function onMenuKey(e) {
   transform: translateX(2px);
 }
 .dd-list li.selected {
-  color: #b9ffe6;
+  color: #f8deb0;
 }
 .dd-list li.selected.active {
-  background: rgba(47, 224, 161, 0.12);
+  background: rgba(237, 174, 73, 0.12);
 }
 .dd-list li.off {
   opacity: 0.4;
@@ -424,8 +424,8 @@ function onMenuKey(e) {
 }
 .dd-check {
   flex: none;
-  color: #2fe0a1;
-  filter: drop-shadow(0 0 4px rgba(47, 224, 161, 0.5));
+  color: #edae49;
+  filter: drop-shadow(0 0 4px rgba(237, 174, 73, 0.5));
 }
 .dd-list li.dd-empty {
   color: #7d8590;

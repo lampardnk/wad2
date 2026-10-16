@@ -11,7 +11,7 @@ const router = express.Router({ mergeParams: true })
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const CATEGORIES = ['food', 'stay', 'transport', 'activities', 'shopping', 'other']
-const EMPTY = { homeCurrency: 'SGD', budget: null, items: [], settlements: [] }
+const EMPTY = { homeCurrency: 'SGD', budget: null, items: [], settlements: [], groupRates: {} }
 
 const code = (c) => (typeof c === 'string' && /^[A-Z]{3}$/.test(c) ? c : null)
 const amountOk = (n) => Number.isFinite(n) && n > 0 && n <= 1e9
@@ -114,6 +114,32 @@ router.delete('/settlements/:settlementId', requireAuth, async (req, res) => {
   const trip = await loadTrip(req, res)
   if (!trip) return
   await Trip.updateOne({ _id: trip._id }, { $pull: { 'expenses.settlements': { id: req.params.settlementId } } })
+  res.json(await current(trip._id))
+})
+
+// PUT /rates/:code  { rate }  -> the group's own exchange rate, e.g. what you got at the money changer.
+// rate = how much of :code you get for 1 home currency (1 SGD = 112.5 JPY -> rate 112.5).
+// Saved with the home currency it's for, who set it and when; it beats the live rate for this trip.
+router.put('/rates/:code', requireAuth, async (req, res) => {
+  const trip = await loadTrip(req, res)
+  if (!trip) return
+  const c = code(req.params.code)
+  const rate = Number(req.body.rate)
+  const home = (trip.expenses && trip.expenses.homeCurrency) || 'SGD'
+  if (!c || c === home) return res.status(400).json({ message: 'Pick a currency other than the one totals are shown in.' })
+  if (!Number.isFinite(rate) || rate <= 0 || rate > 1e7) return res.status(400).json({ message: 'Enter a rate above 0.' })
+  const entry = { base: home, rate, by: memberName(trip, req.userId) || 'Someone', at: new Date().toISOString() }
+  await Trip.updateOne({ _id: trip._id }, { $set: { ['expenses.groupRates.' + c]: entry } })
+  res.json(await current(trip._id))
+})
+
+// DELETE /rates/:code  -> back to the live rate
+router.delete('/rates/:code', requireAuth, async (req, res) => {
+  const trip = await loadTrip(req, res)
+  if (!trip) return
+  const c = code(req.params.code)
+  if (!c) return res.status(400).json({ message: 'Invalid currency.' })
+  await Trip.updateOne({ _id: trip._id }, { $unset: { ['expenses.groupRates.' + c]: '' } })
   res.json(await current(trip._id))
 })
 

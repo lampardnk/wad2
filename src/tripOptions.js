@@ -1,17 +1,17 @@
-// Choices asked when creating a trip. The packing list is built from these.
+// Choices asked when creating a trip. (short = label on the small tiles) The packing list is built from these.
 // (server/routes/trips.js keeps the same keys to check what is saved)
 
 export const ACTIVITIES = [
-  { key: 'sightseeing', icon: '📸', label: 'Sightseeing' },
-  { key: 'food', icon: '🍜', label: 'Food hunting' },
-  { key: 'shopping', icon: '🛍', label: 'Shopping' },
-  { key: 'beach', icon: '🏖', label: 'Beach & swimming' },
-  { key: 'hiking', icon: '🥾', label: 'Hiking & nature' },
-  { key: 'snow', icon: '⛷', label: 'Snow & skiing' },
-  { key: 'themepark', icon: '🎢', label: 'Theme parks' },
-  { key: 'nightlife', icon: '🍸', label: 'Nice dinners & nightlife' },
-  { key: 'business', icon: '💼', label: 'Business / work' },
-  { key: 'camping', icon: '⛺', label: 'Camping' }
+  { key: 'sightseeing', icon: '📸', label: 'Sightseeing' , short: 'Sightseeing' },
+  { key: 'food', icon: '🍜', label: 'Food hunting' , short: 'Food' },
+  { key: 'shopping', icon: '🛍', label: 'Shopping' , short: 'Shopping' },
+  { key: 'beach', icon: '🏖', label: 'Beach & swimming' , short: 'Beach' },
+  { key: 'hiking', icon: '🥾', label: 'Hiking & nature' , short: 'Hiking' },
+  { key: 'snow', icon: '⛷', label: 'Snow & skiing' , short: 'Snow' },
+  { key: 'themepark', icon: '🎢', label: 'Theme parks' , short: 'Theme parks' },
+  { key: 'nightlife', icon: '🍸', label: 'Nice dinners & nightlife' , short: 'Nightlife' },
+  { key: 'business', icon: '💼', label: 'Business / work' , short: 'Work' },
+  { key: 'camping', icon: '⛺', label: 'Camping' , short: 'Camping' }
 ]
 
 export const WEATHER = [

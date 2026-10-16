@@ -12,6 +12,7 @@ export const PLACE_TYPES = {
   park: { icon: '🌳', label: 'Park', color: '#dcf5a6' },
   transport: { icon: '🚉', label: 'Transport', color: '#e2e6ea' },
   heritage: { icon: '⛩', label: 'Temple & heritage', color: '#fde2b8' },
+  tour: { icon: '🎟', label: 'Tour & activity', color: '#e6dcff' },
   custom: { icon: '⭐', label: 'Your pick', color: '#cfeee1' }
 }
 

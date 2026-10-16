@@ -1,20 +1,23 @@
 /* ============ App theme (all pages except login/signup) ============ */
 :root {
-  --app-primary: #0b7f5f;
-  --app-primary-dark: #096a4f;
-  --app-bg: #f4f7f6;
-  --app-ink: #1f2d2a;
-  --app-muted: #5f6f6b;
-  --app-border: #e3e9e7;
+  --app-primary: #00798c;
+  --app-primary-dark: #00626f;
+  --app-bg: #efe4d2;
+  --app-ink: #003d5b;
+  --app-muted: #5a6b78;
+  --bs-body-bg: #fbf5ea;
+  --bs-secondary-bg: #f3ead9;
+  --bs-tertiary-bg: #f6eee0;
+  --app-border: #e6dfd2;
 
   /* Make Bootstrap's "primary" colour our green everywhere
      (badges, links, text-primary, bg-primary-subtle...) */
-  --bs-primary: #0b7f5f;
-  --bs-primary-rgb: 11, 127, 95;
-  --bs-link-color-rgb: 11, 127, 95;
-  --bs-link-hover-color-rgb: 9, 106, 79;
-  --bs-primary-bg-subtle: #d7f2e9;
-  --bs-primary-text-emphasis: #064a38;
+  --bs-primary: #00798c;
+  --bs-primary-rgb: 0, 121, 140;
+  --bs-link-color-rgb: 0, 121, 140;
+  --bs-link-hover-color-rgb: 0, 98, 111;
+  --bs-primary-bg-subtle: #d6eef1;
+  --bs-primary-text-emphasis: #004e5a;
 }
 
 body {
@@ -26,10 +29,10 @@ body {
 /* Dark pages (Settings): set on <body> by App.vue as soon as you navigate there */
 body.dark-page {
   background:
-    radial-gradient(900px 420px at 50% -120px, rgba(47, 224, 161, 0.14), transparent 70%),
-    radial-gradient(600px 300px at 85% 10%, rgba(11, 127, 95, 0.12), transparent 70%),
-    #0b0f15 fixed;
-  background-color: #0b0f15;
+    radial-gradient(900px 420px at 50% -120px, rgba(237, 174, 73, 0.14), transparent 70%),
+    radial-gradient(600px 300px at 85% 10%, rgba(0, 121, 140, 0.12), transparent 70%),
+    #00202f fixed;
+  background-color: #00202f;
 }
 
 h2, h4, h5 {
@@ -53,14 +56,14 @@ h2 {
 
 /* Navbar and trip header use the same dark green-blue as the login page */
 .navbar.bg-dark {
-  background: linear-gradient(90deg, #071224, #0a1d1a) !important;
+  background: linear-gradient(90deg, #002a40, #003d5b) !important;
 }
 .navbar-brand {
   font-family: 'Fredoka', sans-serif;
   font-size: 1.4rem;
 }
 .trip-hero {
-  background: linear-gradient(135deg, #071224, #0a3b2f);
+  background: linear-gradient(135deg, #002a40, #30638e);
   border: 0;
 }
 
@@ -68,7 +71,7 @@ h2 {
 .card {
   border-radius: 12px;
   border: 1px solid var(--app-border);
-  box-shadow: 0 2px 8px rgba(16, 40, 34, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 40, 62, 0.06);
 }
 
 /* Buttons */
@@ -101,7 +104,7 @@ h2 {
 .form-control:focus,
 .form-select:focus {
   border-color: var(--app-primary);
-  box-shadow: 0 0 0 0.2rem rgba(11, 127, 95, 0.2);
+  box-shadow: 0 0 0 0.2rem rgba(0, 121, 140, 0.2);
 }
 
 /* The 7 trip tabs scroll sideways on phones instead of wrapping into a mess */
@@ -139,9 +142,9 @@ h2 {
 /* ============ Login & Sign-up pages ============ */
 /* Night sky with an aurora, logo on top, dark glass card in the middle */
 :root {
-  --auth-accent: #3ee8a5;        /* aurora green */
-  --auth-accent-hover: #6ff2bd;
-  --auth-accent-text: #062a1d;
+  --auth-accent: #edae49;        /* aurora green */
+  --auth-accent-hover: #f3c26f;
+  --auth-accent-text: #00283c;
   --auth-card: rgba(18, 21, 28, 0.72);
   --auth-input: rgba(255, 255, 255, 0.07);
   --auth-input-border: rgba(255, 255, 255, 0.12);
@@ -167,7 +170,7 @@ h2 {
     /* aurora photo: put the file at public/aurora.jpg */
     url('/aurora.jpg') center / cover no-repeat,
     /* fallback night sky if the photo is missing */
-    linear-gradient(180deg, #03060f 0%, #071224 50%, #0a1d1a 100%);
+    linear-gradient(180deg, #03060f 0%, #002a40 50%, #003d5b 100%);
   background-size: 100% 100%, cover, 100% 100%;
 }
 
@@ -184,10 +187,10 @@ h2 {
 /* main green curtain sweeping across the sky */
 .auth-page::before {
   background:
-    radial-gradient(ellipse 55% 9% at 35% 38%, rgba(62, 232, 165, 0.85), transparent 72%),
+    radial-gradient(ellipse 55% 9% at 35% 38%, rgba(237, 174, 73, 0.85), transparent 72%),
     radial-gradient(ellipse 40% 7% at 62% 30%, rgba(80, 250, 180, 0.7), transparent 72%),
     radial-gradient(ellipse 60% 14% at 45% 46%, rgba(34, 197, 120, 0.45), transparent 75%),
-    radial-gradient(ellipse 30% 22% at 30% 30%, rgba(62, 232, 165, 0.25), transparent 75%);
+    radial-gradient(ellipse 30% 22% at 30% 30%, rgba(237, 174, 73, 0.25), transparent 75%);
   transform: rotate(-18deg);
   animation: aurora-drift 16s ease-in-out infinite alternate;
 }
@@ -233,7 +236,7 @@ h2 {
   border-radius: 11px;
   background: var(--auth-accent);
   color: var(--auth-accent-text);
-  box-shadow: 0 0 24px rgba(62, 232, 165, 0.45);
+  box-shadow: 0 0 24px rgba(237, 174, 73, 0.45);
 }
 .auth-brand-name {
   font-family: 'Fredoka', sans-serif;
@@ -320,7 +323,7 @@ h2 {
   transform: translateY(1px);
 }
 .auth-btn:focus-visible {
-  outline: 3px solid rgba(62, 232, 165, 0.5);
+  outline: 3px solid rgba(237, 174, 73, 0.5);
   outline-offset: 2px;
 }
 .auth-btn:disabled {
@@ -333,8 +336,8 @@ h2 {
   margin: 2px 0 8px;
 }
 .auth-success {
-  background: rgba(62, 232, 165, 0.12);
-  border: 1px solid rgba(62, 232, 165, 0.35);
+  background: rgba(237, 174, 73, 0.12);
+  border: 1px solid rgba(237, 174, 73, 0.35);
   color: var(--auth-accent);
   font-size: 14px;
   border-radius: 10px;
@@ -374,4 +377,12 @@ h2 {
   .auth-brand-name {
     font-size: 22px;
   }
+}
+
+/* Trial theme: Bootstrap's white/light helper backgrounds use the ivory/sand tones too */
+.bg-white {
+  background-color: #fbf5ea !important;
+}
+.bg-light {
+  background-color: #f3ead9 !important;
 }

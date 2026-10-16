@@ -10,10 +10,9 @@
       <span v-if="!demo" class="xp-live" title="Changes from everyone on the trip show up here automatically">
         <span class="xp-live-dot" aria-hidden="true"></span> Synced with the group
       </span>
-      <span class="xp-rates" role="status">
-        <template v-if="ratesError">⚠ {{ ratesError }}</template>
-        <template v-else-if="ratesDate">Live rates · {{ shortDate(ratesDate) }}</template>
-      </span>
+      <!-- Live rates, or the group's own (click to see and change) -->
+      <ExchangeRates :home="home" :live="liveRates" :live-date="ratesDate" :live-error="ratesError" :group="state.groupRates"
+        :totals="currencyTotals" :me="me" @set="setGroupRate" @reset="resetGroupRate" />
       <button v-if="state.items.length" type="button" class="btn xp-add" @click="openForm(null)" data-testid="expense-add">
         + Add expense <kbd aria-hidden="true">N</kbd>
       </button>
@@ -226,11 +225,12 @@
 <script>
 import axios from 'axios'
 import ExpenseForm from './ExpenseForm.vue'
+import ExchangeRates from './ExchangeRates.vue'
 import CustomDropdown from './CustomDropdown.vue'
 import { CATEGORIES, CURRENCIES, currencyOptions, categoryOf, money, toHome, sharesOf, balances, settleUp, demoExpenses } from '../expenses.js'
 
 export default {
-  components: { ExpenseForm, CustomDropdown },
+  components: { ExpenseForm, CustomDropdown, ExchangeRates },
   props: {
     tripId: { type: String, default: '' },
     travellers: { type: Array, default: () => [] },
@@ -253,9 +253,10 @@ export default {
         homeCurrency: saved.homeCurrency || 'SGD',
         budget: saved.budget || null,
         items: saved.items || [],
-        settlements: saved.settlements || []
+        settlements: saved.settlements || [],
+        groupRates: saved.groupRates || {}
       },
-      rates: {},
+      liveRates: {}, // from /api/rates; the group's own rates (state.groupRates) win, see rates()
       ratesDate: '',
       ratesError: '',
       showForm: false,
@@ -273,6 +274,21 @@ export default {
   },
 
   computed: {
+    // Rates used for every conversion: live, with the group's own rates on top (if set for this home currency)
+    rates() {
+      const merged = { ...this.liveRates }
+      for (const c in this.state.groupRates || {}) {
+        const g = this.state.groupRates[c]
+        if (g && g.base === this.home && g.rate > 0) merged[c] = g.rate
+      }
+      return merged
+    },
+    // How much was spent in each currency (for the rates panel's "what would change")
+    currencyTotals() {
+      const totals = {}
+      for (const e of this.state.items) totals[e.currency] = (totals[e.currency] || 0) + e.amount
+      return totals
+    },
     home() {
       return this.state.homeCurrency
     },
@@ -443,10 +459,10 @@ export default {
       this.ratesError = ''
       try {
         const res = await axios.get('/api/rates', { params: { base: this.home } })
-        this.rates = res.data.rates
+        this.liveRates = res.data.rates
         this.ratesDate = res.data.date
       } catch (err) {
-        this.rates = {}
+        this.liveRates = {}
         this.ratesError = 'Live rates unavailable, other currencies are not converted'
       }
     },
@@ -495,12 +511,22 @@ export default {
           }
         }
       }
+      if (notify) {
+        const mine = this.state.groupRates || {}
+        for (const c in data.groupRates || {}) {
+          const g = data.groupRates[c]
+          if (g && g.by !== this.me && (!mine[c] || mine[c].at !== g.at)) {
+            this.toast(g.by, g.by + ' set the group rate: 1 ' + g.base + ' = ' + g.rate + ' ' + c)
+          }
+        }
+      }
       const currencyChanged = data.homeCurrency && data.homeCurrency !== this.state.homeCurrency
       this.state = {
         homeCurrency: data.homeCurrency || 'SGD',
         budget: data.budget || null,
         items: data.items || [],
-        settlements: data.settlements || []
+        settlements: data.settlements || [],
+        groupRates: data.groupRates || {}
       }
       if (currencyChanged) this.loadRates()
     },
@@ -550,6 +576,24 @@ export default {
       else this.send('delete', '/settlements/' + id)
     },
 
+    // The group's own exchange rate (saved for everyone on the trip)
+    setGroupRate(code, rate) {
+      if (this.demo) {
+        this.state.groupRates = { ...this.state.groupRates, [code]: { base: this.home, rate, by: this.me, at: new Date().toISOString() } }
+        return
+      }
+      this.send('put', '/rates/' + code, { rate })
+    },
+    resetGroupRate(code) {
+      if (this.demo) {
+        const copy = { ...this.state.groupRates }
+        delete copy[code]
+        this.state.groupRates = copy
+        return
+      }
+      this.send('delete', '/rates/' + code)
+    },
+
     changeCurrency(code) {
       this.state.homeCurrency = code
       this.loadRates()
@@ -593,11 +637,11 @@ export default {
 
 <style scoped>
 .xp {
-  --ink: #1f2d2a;
-  --muted: #5f6f6b;
-  --line: #e3e9e7;
-  --soft: #f4f7f6;
-  --pos: #0b7f5f;
+  --ink: #003d5b;
+  --muted: #5a6b78;
+  --line: #e6dfd2;
+  --soft: #f6f2ea;
+  --pos: #00798c;
   --neg: #c4472e;
 }
 .xp-muted {
@@ -643,13 +687,13 @@ export default {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #2fe0a1;
-  box-shadow: 0 0 0 0 rgba(47, 224, 161, 0.6);
+  background: #edae49;
+  box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.6);
   animation: xp-pulse 2s infinite;
 }
 @keyframes xp-pulse {
-  70% { box-shadow: 0 0 0 8px rgba(47, 224, 161, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(47, 224, 161, 0); }
+  70% { box-shadow: 0 0 0 8px rgba(237, 174, 73, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0); }
 }
 .xp-toasts {
   position: fixed;
@@ -664,7 +708,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #121a18;
+  background: #062c42;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
@@ -693,7 +737,7 @@ export default {
 .xp-add {
   margin-left: auto;
   background: var(--ink);
-  color: #dcf5a6;
+  color: #edae49;
   border-radius: 999px;
   padding: 9px 18px;
   font-weight: 600;
@@ -740,11 +784,11 @@ export default {
   padding: 18px 20px;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: #fff;
+  background: #fbf5ea;
 }
 .xp-tile-dark {
-  background: #121a18;
-  border-color: #121a18;
+  background: #062c42;
+  border-color: #062c42;
   color: #fff;
 }
 .xp-tile-label {
@@ -782,7 +826,7 @@ export default {
 .xp-budget-fill {
   height: 100%;
   border-radius: 999px;
-  background: #6ff2bd;
+  background: #f3c26f;
 }
 .xp-budget-fill.over {
   background: #ff8a70;
@@ -795,7 +839,7 @@ export default {
 .xp-link-light {
   border: 0;
   background: none;
-  color: #6ff2bd;
+  color: #f3c26f;
   font-size: 12px;
   font-weight: 600;
   padding: 0 0 0 4px;
@@ -810,7 +854,7 @@ export default {
 }
 .xp-mini {
   background: var(--ink);
-  color: #dcf5a6;
+  color: #edae49;
   border-radius: 999px;
   font-weight: 600;
   white-space: nowrap;
@@ -836,7 +880,7 @@ export default {
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: 18px 20px;
-  background: #fff;
+  background: #fbf5ea;
 }
 .xp-card-head {
   display: flex;
@@ -974,7 +1018,7 @@ export default {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #0b7f5f;
+  background: #00798c;
   color: #fff;
   font-size: 13px;
   font-weight: 700;
@@ -998,7 +1042,7 @@ export default {
   top: -3px;
   bottom: -3px;
   width: 1px;
-  background: #c5d0cd;
+  background: #d2c8b6;
 }
 .xp-bal-bar {
   position: absolute;
@@ -1131,11 +1175,11 @@ export default {
 }
 .xp-bar {
   width: 100%;
-  background: #0b7f5f;
+  background: #00798c;
   border-radius: 4px 4px 0 0;
 }
 .xp-bar.zero {
-  background: #d5dedb;
+  background: #dcd3c4;
 }
 .xp-bar-hit.active .xp-bar {
   background: #0a5f47;
@@ -1147,7 +1191,7 @@ export default {
 .xp-bar-hit:focus-visible,
 .xp-add:focus-visible,
 .xp-mini:focus-visible {
-  outline: 3px solid rgba(11, 127, 95, 0.45);
+  outline: 3px solid rgba(0, 121, 140, 0.45);
   outline-offset: 2px;
 }
 

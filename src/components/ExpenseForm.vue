@@ -196,7 +196,7 @@ export default {
   position: fixed;
   inset: 0;
   z-index: 1050;
-  background: rgba(11, 18, 16, 0.45);
+  background: rgba(0, 30, 46, 0.45);
   backdrop-filter: blur(2px);
   display: flex;
   justify-content: flex-end;
@@ -205,7 +205,7 @@ export default {
 .ef {
   width: min(460px, 100%);
   height: 100%;
-  background: #fff;
+  background: #fbf5ea;
   display: flex;
   flex-direction: column;
   box-shadow: -20px 0 40px rgba(0, 0, 0, 0.18);
@@ -231,16 +231,16 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f4f7f6;
+  background: #f6f2ea;
   border: 2px solid transparent;
   border-radius: 20px;
   padding: 10px 14px;
 }
 .ef-amount:focus-within {
-  border-color: #0b7f5f;
+  border-color: #00798c;
 }
 .ef-amount.bad {
-  border-color: #c0392b;
+  border-color: #d1495b;
 }
 .ef-currency {
   flex: none;
@@ -266,21 +266,21 @@ export default {
 }
 .ef-hint {
   font-size: 13px;
-  color: #5f6f6b;
+  color: #5a6b78;
   margin: 6px 4px 0;
 }
 .ef-label {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #5f6f6b;
+  color: #5a6b78;
   margin: 16px 0 6px;
 }
 .ef-input {
   border-radius: 14px;
 }
 .ef-error {
-  color: #c0392b;
+  color: #d1495b;
   font-size: 13px;
   margin: 4px 4px 0;
 }
@@ -294,8 +294,8 @@ export default {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  border: 1.5px solid #e3e9e7;
-  background: #fff;
+  border: 1.5px solid #e6dfd2;
+  background: #fbf5ea;
   border-radius: 16px;
   padding: 10px 4px;
   font-size: 13px;
@@ -305,13 +305,13 @@ export default {
   font-size: 20px;
 }
 .ef-cat.on {
-  border-color: #1f2d2a;
-  background: #1f2d2a;
-  color: #dcf5a6;
+  border-color: #003d5b;
+  background: #003d5b;
+  color: #edae49;
 }
 .ef-seg {
   display: inline-flex;
-  background: #f1f5f4;
+  background: #f4efe6;
   border-radius: 999px;
   padding: 3px;
 }
@@ -322,11 +322,11 @@ export default {
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 600;
-  color: #5f6f6b;
+  color: #5a6b78;
 }
 .ef-seg button.on {
-  background: #fff;
-  color: #1f2d2a;
+  background: #fbf5ea;
+  color: #003d5b;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 .ef-people {
@@ -340,7 +340,7 @@ export default {
   justify-content: space-between;
   gap: 10px;
   padding: 8px 4px;
-  border-bottom: 1px solid #eef2f1;
+  border-bottom: 1px solid #efe9df;
 }
 .ef-check {
   display: flex;
@@ -352,13 +352,13 @@ export default {
 .ef-check input {
   width: 18px;
   height: 18px;
-  accent-color: #0b7f5f;
+  accent-color: #00798c;
 }
 .ef-avatar {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #0b7f5f;
+  background: #00798c;
   color: #fff;
   font-weight: 700;
   font-size: 13px;
@@ -368,7 +368,7 @@ export default {
 }
 .ef-share {
   font-variant-numeric: tabular-nums;
-  color: #5f6f6b;
+  color: #5a6b78;
 }
 .ef-exact {
   width: 130px;
@@ -382,44 +382,44 @@ export default {
   color: #9a6b00;
 }
 .ef-remaining.ok {
-  color: #0b7f5f;
+  color: #00798c;
 }
 .ef-remaining.bad {
-  color: #c0392b;
+  color: #d1495b;
 }
 .ef-foot {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 14px 24px;
-  border-top: 1px solid #eef2f1;
+  border-top: 1px solid #efe9df;
 }
 .ef-save {
-  background: #1f2d2a;
-  color: #dcf5a6;
+  background: #003d5b;
+  color: #edae49;
   border-radius: 999px;
   padding: 8px 20px;
   font-weight: 600;
 }
 .ef-save:hover {
-  background: #0b7f5f;
+  background: #00798c;
   color: #fff;
 }
 .ef-ghost {
   border-radius: 999px;
-  border: 1px solid #e3e9e7;
+  border: 1px solid #e6dfd2;
 }
 .ef-delete {
-  color: #c0392b;
+  color: #d1495b;
   border-radius: 999px;
 }
 .ef-delete:hover {
-  background: #fdecec;
+  background: #fbe7ea;
 }
 .ef-cat:focus-visible,
 .ef-seg button:focus-visible,
 .ef-save:focus-visible {
-  outline: 3px solid rgba(11, 127, 95, 0.45);
+  outline: 3px solid rgba(0, 121, 140, 0.45);
   outline-offset: 2px;
 }
 @keyframes ef-slide {

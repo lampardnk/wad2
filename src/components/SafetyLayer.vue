@@ -751,15 +751,15 @@ onUnmounted(() => {
 
 <style scoped>
 .sf {
-  --mint: #2fe0a1;
+  --mint: #3fb8c6;
   --glass: rgba(255, 255, 255, 0.08);
-  --text: #eef5f2;
-  --muted: rgba(238, 245, 242, 0.65);
-  --clear: #2fe0a1;
+  --text: #f6efe3;
+  --muted: rgba(245, 238, 226, 0.65);
+  --clear: #3fb8c6;
   --advisory: #ffb020;
-  --warning: #ff5a5f;
+  --warning: #d1495b;
   --critical: #b37feb;
-  background: linear-gradient(180deg, #121b19, #0d1412);
+  background: linear-gradient(180deg, #121b19, #022538);
   color: var(--text);
   border: 1px solid var(--glass);
   border-radius: 24px;
@@ -798,9 +798,9 @@ onUnmounted(() => {
   font-size: 14px;
 }
 .sf-pill.on {
-  background: rgba(47, 224, 161, 0.16);
-  border-color: rgba(47, 224, 161, 0.6);
-  color: #b9ffe6;
+  background: rgba(63, 184, 198, 0.16);
+  border-color: rgba(63, 184, 198, 0.6);
+  color: #bfeaf0;
 }
 .sf-ghost {
   border: 1px solid var(--glass);
@@ -826,7 +826,7 @@ onUnmounted(() => {
   border-radius: 20px;
   padding: 18px 20px 14px;
   margin-bottom: 16px;
-  background: color-mix(in srgb, var(--tone) 12%, #0d1412);
+  background: color-mix(in srgb, var(--tone) 12%, #022538);
   border: 1.5px solid color-mix(in srgb, var(--tone) 55%, transparent);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--tone) 8%, transparent);
 }
@@ -1030,8 +1030,8 @@ onUnmounted(() => {
   color: #fff;
 }
 .sf-btn.danger {
-  border-color: rgba(255, 90, 95, 0.6);
-  color: #ffb3b5;
+  border-color: rgba(209, 73, 91, 0.6);
+  color: #f3b7bf;
 }
 .sf-btn:disabled {
   opacity: 0.5;
@@ -1107,15 +1107,15 @@ onUnmounted(() => {
 }
 .sf-badge.best {
   background: var(--mint);
-  color: #06261b;
+  color: #00283c;
 }
 .sf-badge.er {
-  background: rgba(255, 90, 95, 0.2);
-  color: #ffb3b5;
+  background: rgba(209, 73, 91, 0.2);
+  color: #f3b7bf;
 }
 .sf-badge.open {
-  background: rgba(47, 224, 161, 0.15);
-  color: #b9ffe6;
+  background: rgba(63, 184, 198, 0.15);
+  color: #bfeaf0;
 }
 .sf-badge.shut {
   background: rgba(255, 176, 32, 0.18);
@@ -1211,7 +1211,7 @@ onUnmounted(() => {
   inset: 0;
   z-index: 1080;
   border-radius: 0;
-  background: #0d1412;
+  background: #022538;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1252,13 +1252,13 @@ onUnmounted(() => {
   margin-bottom: 6px;
 }
 .sf-result:hover {
-  background: rgba(47, 224, 161, 0.1);
+  background: rgba(63, 184, 198, 0.1);
 }
 .sf-result small {
   color: var(--muted);
 }
 .sf-err {
-  color: #ff9a9a;
+  color: #f09aa5;
   font-size: 13px;
 }
 
@@ -1285,11 +1285,11 @@ onUnmounted(() => {
   font-weight: 700;
   padding: 5px 12px;
   border-radius: 999px;
-  background: rgba(47, 224, 161, 0.15);
+  background: rgba(63, 184, 198, 0.15);
   color: var(--clear);
 }
 .sf-level.lvl-2 { background: rgba(255, 176, 32, 0.15); color: var(--advisory); }
-.sf-level.lvl-3 { background: rgba(255, 90, 95, 0.15); color: #ff8a8d; }
+.sf-level.lvl-3 { background: rgba(209, 73, 91, 0.15); color: #ec8a97; }
 .sf-level.lvl-4 { background: rgba(179, 127, 235, 0.18); color: var(--critical); }
 .sf-link {
   color: var(--mint);
@@ -1326,7 +1326,7 @@ onUnmounted(() => {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 .sf-toast.lv-warning {
-  border-color: #ff5a5f;
+  border-color: #d1495b;
 }
 
 /* Keyboard focus */
@@ -1370,8 +1370,8 @@ onUnmounted(() => {
   height: 12px;
   margin-right: 6px;
   vertical-align: -1px;
-  border: 2px solid rgba(47, 224, 161, 0.25);
-  border-top-color: #2fe0a1;
+  border: 2px solid rgba(63, 184, 198, 0.25);
+  border-top-color: #3fb8c6;
   border-radius: 50%;
   animation: sf-spin 0.8s linear infinite;
 }

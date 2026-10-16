@@ -1,58 +1,49 @@
 <template>
-  <div class="auth-page">
-    <AuthHero />
+  <AuthShell title="Explore the world to experience the beauty of nature" subtitle="Sign up to begin your journey."
+    :switch-to="{ path: '/login', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }" switch-label="Log in">
+    <form class="as-form" @submit.prevent="signup" novalidate>
+      <label for="name" class="visually-hidden">Name</label>
+      <input id="name" type="text" class="as-input" v-model="name"
+        placeholder="Name" autocomplete="name" data-testid="signup-name" required>
 
-    <div class="auth-card">
-      <div class="auth-sheet">
-        <h1 class="auth-title">Create your account</h1>
-        <p class="auth-subtitle">Plan trips together with friends and family.</p>
+      <label for="username" class="visually-hidden">Username</label>
+      <input id="username" type="text" class="as-input" v-model="username"
+        placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false"
+        data-testid="signup-username" required>
 
-        <form @submit.prevent="signup" novalidate>
-          <label for="name" class="visually-hidden">Name</label>
-          <input id="name" type="text" class="auth-input" v-model="name"
-            placeholder="Name" autocomplete="name" data-testid="signup-name" required>
+      <label for="email" class="visually-hidden">Email</label>
+      <input id="email" type="email" class="as-input" v-model="email"
+        placeholder="Email" autocomplete="email" autocapitalize="none" spellcheck="false"
+        data-testid="signup-email" required>
 
-          <label for="username" class="visually-hidden">Username</label>
-          <input id="username" type="text" class="auth-input" v-model="username"
-            placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false"
-            data-testid="signup-username" required>
+      <label for="password" class="visually-hidden">Password</label>
+      <input id="password" type="password" class="as-input" v-model="password"
+        placeholder="Password (min. 8 characters)" autocomplete="new-password" data-testid="signup-password" required>
 
-          <label for="email" class="visually-hidden">Email</label>
-          <input id="email" type="email" class="auth-input" v-model="email"
-            placeholder="Email" autocomplete="email" autocapitalize="none" spellcheck="false"
-            data-testid="signup-email" required>
+      <label for="confirm" class="visually-hidden">Confirm password</label>
+      <input id="confirm" type="password" class="as-input" v-model="confirmPassword"
+        placeholder="Confirm password" autocomplete="new-password" data-testid="signup-confirm" required>
 
-          <label for="password" class="visually-hidden">Password</label>
-          <input id="password" type="password" class="auth-input" v-model="password"
-            placeholder="Password (min. 8 characters)" autocomplete="new-password" data-testid="signup-password" required>
+      <p v-if="errorMessage" class="as-error" role="alert" data-testid="signup-error">{{ errorMessage }}</p>
 
-          <label for="confirm" class="visually-hidden">Confirm password</label>
-          <input id="confirm" type="password" class="auth-input" v-model="confirmPassword"
-            placeholder="Confirm password" autocomplete="new-password" data-testid="signup-confirm" required>
+      <button type="submit" class="as-btn" :disabled="loading" data-testid="signup-submit">
+        {{ loading ? 'Creating your account…' : "Let's go!" }}
+      </button>
+    </form>
 
-          <p v-if="errorMessage" class="auth-error" role="alert" data-testid="signup-error">{{ errorMessage }}</p>
-
-          <button type="submit" class="auth-btn" :disabled="loading" data-testid="signup-submit">
-            {{ loading ? 'Creating account…' : 'Sign Up' }}
-          </button>
-        </form>
-
-        <hr class="auth-divider">
-
-        <p class="auth-switch">
-          Already have an account? <router-link :to="{ path: '/login', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }" class="auth-link">Sign In</router-link>
-        </p>
-      </div>
-    </div>
-  </div>
+    <p class="as-or">Already travelling with us?</p>
+    <p class="as-foot">
+      <router-link :to="{ path: '/login', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }">Log in</router-link> to see your trips.
+    </p>
+  </AuthShell>
 </template>
 
 <script>
 import axios from 'axios'
-import AuthHero from '../components/AuthHero.vue'
+import AuthShell from '../components/AuthShell.vue'
 
 export default {
-  components: { AuthHero },
+  components: { AuthShell },
   data() {
     return {
       name: '',

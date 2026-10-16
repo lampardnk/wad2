@@ -65,7 +65,7 @@ router.post('/register', async (req, res) => {
   })
 })
 
-// POST /api/auth/login  { username, password }
+// POST /api/auth/login  { username, password }  (username can also be the account's email)
 router.post('/login', async (req, res) => {
   const { password } = req.body
   const username = (req.body.username || '').trim().toLowerCase()
@@ -74,10 +74,10 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'Username and password are required.' })
   }
 
-  const user = await User.findOne({ username })
+  const user = username.includes('@') ? await User.findOne({ email: username }) : await User.findOne({ username })
   // Same message for "no such user" and "wrong password" so attackers can't guess usernames
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    return res.status(401).json({ message: 'Invalid username or password.' })
+    return res.status(401).json({ message: 'Invalid username/email or password.' })
   }
 
   res.json({
@@ -93,6 +93,7 @@ function meJson(user) {
   return {
     id: user._id, name: user.name, username: user.username, email: user.email,
     diet: user.diet || [], phone: user.phone || '',
+    shortlist: user.discoverShortlist || [],
     settings: {
       currency: s.currency || 'SGD',
       units: s.units === 'imperial' ? 'imperial' : 'metric',
@@ -138,6 +139,15 @@ router.put('/me', requireAuth, async (req, res) => {
   if (typeof b.phone === 'string') {
     user.phone = b.phone.trim().slice(0, 20).replace(/[^\d+ ]/g, '')
     user.contactSaved = true
+  }
+
+  // Discover shortlist: city ids like 'kyoto-japan'
+  if (Array.isArray(b.shortlist)) {
+    const list = []
+    for (const id of b.shortlist) {
+      if (typeof id === 'string' && /^[a-z0-9-]{2,60}$/.test(id) && !list.includes(id) && list.length < 50) list.push(id)
+    }
+    user.discoverShortlist = list
   }
 
   if (b.settings && typeof b.settings === 'object') {

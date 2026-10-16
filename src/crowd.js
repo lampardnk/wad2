@@ -67,9 +67,10 @@ export function busynessAt(forecast, dayName, hour) {
 
 export function formatHour(h) {
   const hour = Math.floor(h) % 24
+  const minutes = Math.round((h - Math.floor(h)) * 60) // 13.25 -> 15 (the day optimizer uses 15-minute steps)
   const suffix = hour >= 12 ? 'PM' : 'AM'
   const h12 = hour % 12 === 0 ? 12 : hour % 12
-  return h12 + ':00 ' + suffix
+  return h12 + ':' + String(minutes).padStart(2, '0') + ' ' + suffix
 }
 
 // Score one place at one start hour (lower = better), or null if it can't go there.
