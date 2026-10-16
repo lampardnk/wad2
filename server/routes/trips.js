@@ -76,7 +76,7 @@ function toClient(t, userId, contacts) {
     me: userId ? memberName(t, userId) : null, // my traveller name on this trip
     members: (t.members || []).map((m) => {
       const c = contacts ? contacts[String(m.user)] : null
-      return { id: m.user, name: m.name, role: m.role, joinedAt: m.joinedAt, lastSeenAt: m.lastSeenAt || null, diet: c ? c.diet : null, phone: c ? c.phone : null, contactSaved: c ? c.saved : false }
+      return { id: m.user, name: m.name, role: m.role, joinedAt: m.joinedAt, lastSeenAt: m.lastSeenAt || null, viewing: m.viewing || '', diet: c ? c.diet : null, phone: c ? c.phone : null, contactSaved: c ? c.saved : false }
     }),
     crew: t.crew || {},
     // Only filled in when the users were looked up (populate), e.g. on GET /api/trips/:id
@@ -151,7 +151,12 @@ function cleanWishlist(list) {
         if (voter && !votes.includes(voter)) votes.push(voter)
       }
     }
-    out.push({ id: String(w.id || new mongoose.Types.ObjectId()).slice(0, 40), name, address, outdoor: !!w.outdoor, type, city, votes })
+    // Tours and activities added by hand: how long, where it was booked, and the booking link
+    let duration = Number(w.duration)
+    if (!Number.isFinite(duration) || duration <= 0 || duration > 24) duration = null
+    const bookedVia = typeof w.bookedVia === 'string' && w.bookedVia.trim() ? w.bookedVia.trim().slice(0, 40) : null
+    const link = typeof w.link === 'string' && /^https?:\/\//i.test(w.link.trim()) ? w.link.trim().slice(0, 500) : null
+    out.push({ id: String(w.id || new mongoose.Types.ObjectId()).slice(0, 40), name, address, outdoor: !!w.outdoor, type, city, votes, duration, bookedVia, link })
   }
   return out
 }
@@ -237,6 +242,24 @@ router.get('/:id', requireAuth, async (req, res) => {
   res.json(toClient(trip, req.userId, await memberContacts(trip)))
 })
 
+// POST /api/trips/:id/presence  { viewing: 'Day 2' }  -> the crew list (with who is online)
+// The open trip page sends this every 30 seconds, so the crew drawer can show "Active now · Viewing Day 2".
+router.post('/:id/presence', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const viewing = String(req.body.viewing || '').replace(/[<>]/g, '').trim().slice(0, 40)
+  const now = new Date()
+  await Trip.updateOne({ _id: trip._id, 'members.user': req.userId }, { $set: { 'members.$.lastSeenAt': now, 'members.$.viewing': viewing } })
+  for (const m of trip.members) {
+    if (String(m.user) === String(req.userId)) {
+      m.lastSeenAt = now
+      m.viewing = viewing
+    }
+  }
+  const t = toClient(trip, req.userId, await memberContacts(trip))
+  res.json({ members: t.members, travellers: t.travellers, me: t.me, role: t.role })
+})
+
 // PUT /api/trips/:id/itinerary  { stops: [...], wishlist: [...], version? }
 // "version" is the version the browser last saw. If someone else saved in between, the numbers
 // no longer match and we answer 409 with the latest trip instead of overwriting it (Gladys's idea).
@@ -280,6 +303,19 @@ router.put('/:id/itinerary', requireAuth, async (req, res) => {
     return res.status(409).json({ message: 'Someone else changed this trip. Showing their latest version.', trip: toClient(latest, req.userId) })
   }
   res.json({ ok: true, version: updated.version })
+})
+
+// PUT /api/trips/:id/dates  { endDate }  -> the planner's "+ Add Day" (anyone on the trip)
+router.put('/:id/dates', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const endDate = String(req.body.endDate || '')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate) || (trip.startDate && endDate < trip.startDate)) {
+    return res.status(400).json({ message: 'Invalid end date.' })
+  }
+  trip.endDate = endDate
+  await trip.save()
+  res.json({ startDate: trip.startDate, endDate: trip.endDate })
 })
 
 // PUT /api/trips/:id/packing  { activities, weather, extras, packing: { checked, qty, removed, custom } }

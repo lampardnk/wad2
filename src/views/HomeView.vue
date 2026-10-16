@@ -8,7 +8,10 @@
           Explore the world,<br><span class="hero-accent">skip the crowds</span>
         </h1>
         <p class="hero-text">Group Planning Made Easy!</p>
-        <button class="btn hero-btn" @click="openForm" data-testid="new-trip-btn">+ Plan a new trip</button>
+        <div class="hero-btns">
+          <button class="btn hero-btn" @click="openForm" data-testid="new-trip-btn">+ Plan a new trip</button>
+          <router-link to="/discover" class="btn hero-btn ghost">✨ Help me choose</router-link>
+        </div>
       </div>
     </section>
 
@@ -72,14 +75,15 @@
           <div class="col-6">
             <div class="field" :class="'is-' + states.startDate">
               <label for="trip-start" class="field-label">Start date</label>
-              <input id="trip-start" type="date" class="field-input" v-model="newTrip.startDate" @blur="touched.startDate = true">
+              <input id="trip-start" type="date" class="field-input" v-model="newTrip.startDate" :min="todayStr"
+                :aria-invalid="states.startDate === 'error'" @blur="touched.startDate = true">
             </div>
             <p class="field-msg" :class="'is-' + states.startDate">{{ messages.startDate }}</p>
           </div>
           <div class="col-6">
             <div class="field" :class="'is-' + states.endDate">
               <label for="trip-end" class="field-label">End date</label>
-              <input id="trip-end" type="date" class="field-input" v-model="newTrip.endDate" :min="newTrip.startDate"
+              <input id="trip-end" type="date" class="field-input" v-model="newTrip.endDate" :min="newTrip.startDate || todayStr"
                 :aria-invalid="states.endDate === 'error'" aria-describedby="trip-end-msg" @blur="touched.endDate = true">
             </div>
             <p id="trip-end-msg" class="field-msg" :class="'is-' + states.endDate">{{ messages.endDate }}</p>
@@ -128,10 +132,32 @@
     </transition-group>
 
     <!-- ===== Trips ===== -->
-    <div class="d-flex justify-content-between align-items-baseline mb-3">
+    <div class="trips-head">
       <h2 class="section-title">My Trips</h2>
-      <span v-if="!loading" class="small text-muted">{{ visibleTrips.length }} of {{ allTrips.length }}</span>
+      <!-- Planning / Upcoming / Archive (finished trips) -->
+      <div class="stage-tabs" role="tablist" aria-label="Show trips">
+        <button v-for="st in STAGES" :key="st.key" type="button" role="tab" class="stage-tab"
+          :class="{ on: stage === st.key }" :aria-selected="stage === st.key" :data-testid="'stage-' + st.key"
+          @click="stage = st.key">
+          {{ st.label }} <span class="stage-count">{{ stageCounts[st.key] }}</span>
+        </button>
+      </div>
     </div>
+
+    <!-- Passport: a stamp for every city you've finished a trip to -->
+    <section v-if="stage === 'archive' && stamps.length" class="passport" aria-label="Your passport">
+      <div class="passport-head">
+        <strong>🛂 Your passport</strong>
+        <span>{{ stamps.length }} cit{{ stamps.length === 1 ? 'y' : 'ies' }} · {{ countryCount }} countr{{ countryCount === 1 ? 'y' : 'ies' }}</span>
+      </div>
+      <ul class="stamps">
+        <li v-for="(st, k) in stamps" :key="st.place" class="stamp" :style="{ '--tilt': (k % 2 ? 4 : -4) + 'deg' }" :title="st.place + ' · ' + st.year">
+          <span class="stamp-flag" aria-hidden="true">{{ flagFor(st.place) }}</span>
+          <strong>{{ shortPlace(st.place) }}</strong>
+          <small>{{ st.year }}</small>
+        </li>
+      </ul>
+    </section>
 
     <div v-if="loadError" class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
       <span>{{ loadError }}</span>
@@ -144,13 +170,18 @@
     </div>
 
     <!-- Nothing matches the search -->
-    <div v-else-if="!visibleTrips.length" class="empty">
-      <p class="mb-2">No trips match “{{ search || activeDestination }}”.</p>
+    <div v-else-if="!visibleTrips.length && (search || activeDestination !== 'All')" class="empty">
+      <p class="mb-2">No {{ stageName.toLowerCase() }} trips match “{{ search || activeDestination }}”.</p>
       <button class="btn btn-sm btn-outline-primary" @click="clearFilters">Clear filters</button>
     </div>
 
+    <!-- Archive is empty -->
+    <div v-else-if="!visibleTrips.length && stage === 'archive'" class="empty">
+      <p class="mb-0">🗂 Trips you've finished end up here.</p>
+    </div>
+
     <transition-group v-else name="list" tag="div" class="trip-grid">
-      <article v-for="t in visibleTrips" :key="t.id" class="trip-card" data-testid="trip-card">
+      <article v-for="t in visibleTrips" :key="t.id" class="trip-card" :class="{ archived: stage === 'archive' }" data-testid="trip-card" @click="openCard($event, t)">
         <!-- Illustrated header (colour picked from the destination) -->
         <router-link :to="'/trip/' + t.id" class="trip-art" :class="'theme-' + themeFor(t.destinations[0])" :aria-label="'Open ' + t.name" tabindex="-1">
           <svg viewBox="0 0 300 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -198,7 +229,7 @@
       </article>
 
       <!-- "New trip" tile at the end -->
-      <button key="new" type="button" class="trip-card new-tile" @click="openForm">
+      <button v-if="stage !== 'archive'" key="new" type="button" class="trip-card new-tile" @click="openForm">
         <span class="plus" aria-hidden="true">+</span>
         <span>Plan a new trip</span>
       </button>
@@ -226,6 +257,12 @@ const DEMO_TRIP = {
 
 const DAY_MS = 86400000
 
+const STAGES = [
+  { key: 'planning', label: 'Planning' },
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'archive', label: 'Archive' }
+]
+
 export default {
   components: { CustomDropdown },
   data() {
@@ -248,6 +285,8 @@ export default {
       confirmingId: null,
       search: '',
       activeDestination: 'All',
+      STAGES,
+      stage: null, // 'planning' | 'upcoming' | 'archive' (picked once the trips load, see shownStage)
       // destination = what's being typed; destinations = the ones already added
       photos: {}, // destination -> photo url
       invites: [], // trips I've been invited to by username
@@ -256,10 +295,42 @@ export default {
   },
 
   async mounted() {
+    // Coming from Discover ("Plan Tokyo"): open the form with the city and dates filled in
+    const q = this.$route.query
+    if (q.dest) {
+      // One place, or several (a trip across a country)
+      const dests = Array.isArray(q.dest) ? q.dest : [q.dest]
+      for (const d of dests) this.pickDestination(String(d))
+      this.newTrip.name = q.name ? String(q.name) : 'Trip to ' + String(dests[0]).split(', ')[0]
+      if (q.start) this.newTrip.startDate = String(q.start)
+      if (q.end) this.newTrip.endDate = String(q.end)
+      this.openForm()
+      this.$router.replace({ path: '/home' }) // so a refresh doesn't open it again
+    }
     await this.loadTrips()
   },
 
   computed: {
+    // One stamp per city from finished trips (earliest year first)
+    stamps() {
+      const list = []
+      for (const t of this.allTrips) {
+        if (t.demo || this.stageOf(t) !== 'archive') continue
+        for (const d of t.destinations) {
+          if (!list.some((st) => st.place === d)) list.push({ place: d, year: (t.endDate || t.startDate || '').slice(0, 4) })
+        }
+      }
+      list.sort((a, b) => a.year.localeCompare(b.year))
+      return list
+    },
+    countryCount() {
+      const countries = []
+      for (const st of this.stamps) {
+        const c = this.flagFor(st.place)
+        if (!countries.includes(c)) countries.push(c)
+      }
+      return countries.length
+    },
     firstName() {
       return auth.user ? auth.user.name.split(' ')[0] : ''
     },
@@ -285,11 +356,23 @@ export default {
       return list
     },
 
-    // Trips that match the search box and the chosen chip
+    // How many trips are in each stage
+    stageCounts() {
+      const counts = { planning: 0, upcoming: 0, archive: 0 }
+      for (const t of this.allTrips) counts[this.stageOf(t)]++
+      return counts
+    },
+    stageName() {
+      for (const st of STAGES) if (st.key === this.stage) return st.label
+      return ''
+    },
+
+    // Trips that match the stage tab, the search box and the destination filter
     visibleTrips() {
       const q = this.search.trim().toLowerCase()
       const result = []
       for (const t of this.allTrips) {
+        if (this.stageOf(t) !== this.stage) continue
         const matchesChip = this.activeDestination === 'All' || t.destinations.includes(this.activeDestination)
         let matchesSearch = !q || t.name.toLowerCase().includes(q)
         for (const d of t.destinations) {
@@ -343,8 +426,9 @@ export default {
       if (this.touched.name) result.name = t.name.trim() ? 'success' : 'error'
       if (t.destinations.length) result.destination = 'success'
       else if (this.touched.destination) result.destination = t.destination.trim() ? '' : 'error'
-      if (t.startDate) result.startDate = 'success'
-      if (t.endDate) result.endDate = t.startDate && t.endDate < t.startDate ? 'error' : 'success'
+      // Past dates are greyed out in the calendar; typing one in still shows an error
+      if (t.startDate) result.startDate = t.startDate < this.todayStr ? 'error' : 'success'
+      if (t.endDate) result.endDate = t.endDate < this.todayStr || (t.startDate && t.endDate < t.startDate) ? 'error' : 'success'
       return result
     },
 
@@ -356,9 +440,16 @@ export default {
       else if (this.newTrip.destinations.length === 0) msg.destination = 'Pick a suggestion or press Enter to add it'
       else if (this.newTrip.destinations.length === 1) msg.destination = 'Going to more places? Add another'
       else msg.destination = this.newTrip.destinations.length + ' destinations, in this order'
-      if (this.states.endDate === 'error') msg.endDate = 'Must be on or after the start date'
+      if (this.states.startDate === 'error') msg.startDate = "Can't start in the past"
+      if (this.states.endDate === 'error') msg.endDate = this.newTrip.endDate < this.todayStr ? "Can't end in the past" : 'Must be on or after the start date'
       else if (this.formLength) msg.endDate = this.formLength
       return msg
+    },
+
+    // Today as YYYY-MM-DD in local time (the earliest date you can pick)
+    todayStr() {
+      const d = new Date()
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
     },
 
     // Live preview of the trip length while filling in the form
@@ -369,6 +460,11 @@ export default {
   },
 
   methods: {
+    // Clicking anywhere on a trip card opens it (except its own buttons, e.g. Delete)
+    openCard(e, t) {
+      if (e.target.closest('button, a')) return
+      this.$router.push('/trip/' + t.id)
+    },
     // ----- Destination type-ahead -----
     onDestInput() {
       this.destOpen = true
@@ -396,9 +492,17 @@ export default {
     },
 
     // Add a destination to the list and clear the box for the next one
+    // "Singapore, Singapore" -> "Singapore" (a city-state named after itself)
+    tidyPlace(label) {
+      const parts = label.trim().split(', ')
+      if (parts.length === 2 && parts[0].toLowerCase() === parts[1].toLowerCase()) return parts[0]
+      return label.trim()
+    },
     pickDestination(label) {
-      const clean = label.trim()
-      if (clean && !this.newTrip.destinations.includes(clean) && this.newTrip.destinations.length < 10) {
+      const clean = this.tidyPlace(label)
+      // Already on the list (ignoring capitals)? Don't add it twice
+      const already = this.newTrip.destinations.some((d) => d.toLowerCase() === clean.toLowerCase())
+      if (clean && !already && this.newTrip.destinations.length < 10) {
         this.newTrip.destinations.push(clean)
       }
       this.newTrip.destination = ''
@@ -468,6 +572,7 @@ export default {
         this.loadError = 'Could not load your trips. Is the server running?'
       }
       this.loading = false
+      this.pickStartStage()
       this.loadPhotos()
       this.loadInvites()
     },
@@ -532,6 +637,12 @@ export default {
       this.activeDestination = 'All'
     },
 
+    // First visit: open Upcoming if there's anything coming up, otherwise Planning
+    pickStartStage() {
+      if (this.stage) return
+      this.stage = this.stageCounts.upcoming ? 'upcoming' : 'planning'
+    },
+
     async createTrip() {
       this.formError = ''
       for (const key in this.touched) this.touched[key] = true
@@ -546,8 +657,8 @@ export default {
         })
         return
       }
-      if (this.newTrip.startDate && this.newTrip.endDate && this.newTrip.endDate < this.newTrip.startDate) {
-        return // the End date field already shows the problem
+      if (this.states.startDate === 'error' || this.states.endDate === 'error') {
+        return // the date fields already show the problem
       }
       this.saving = true
       try {
@@ -593,6 +704,16 @@ export default {
     },
 
     // Upcoming / ongoing / past, from today's date
+    // Archive: the trip has ended. Upcoming: dates set and the itinerary has stops (or it's on now).
+    // Planning: everything else (no dates yet, or nothing planned yet).
+    stageOf(t) {
+      const status = this.statusFor(t).kind
+      if (status === 'past') return 'archive'
+      if (status === 'ongoing') return 'upcoming'
+      if (status === 'upcoming' && (t.demo || (t.stops && t.stops.length))) return 'upcoming'
+      return 'planning'
+    },
+
     statusFor(t) {
       if (!t.startDate) return { kind: 'none', label: 'Planning' }
       const today = new Date()
@@ -632,9 +753,9 @@ export default {
   align-items: stretch;
   margin-bottom: 24px;
   background:
-    linear-gradient(90deg, rgba(4, 12, 20, 0.15), rgba(4, 12, 20, 0)),
+    linear-gradient(90deg, rgba(0, 20, 32, 0.15), rgba(0, 20, 32, 0)),
     url('/giza.jpg') center 30% / cover no-repeat,
-    linear-gradient(135deg, #071224, #0a3b2f);
+    linear-gradient(135deg, #002a40, #30638e);
   box-shadow: 0 16px 40px rgba(7, 18, 36, 0.18);
 }
 .hero-panel {
@@ -659,7 +780,7 @@ export default {
   margin-bottom: 12px;
 }
 .hero-accent {
-  color: #6ff2bd;
+  color: #f3c26f;
 }
 .hero-text {
   color: rgba(255, 255, 255, 0.8);
@@ -667,8 +788,8 @@ export default {
 }
 .hero-btn {
   align-self: flex-start;
-  background: #3ee8a5;
-  color: #062a1d;
+  background: #edae49;
+  color: #00283c;
   font-weight: 700;
   border-radius: 999px;
   padding: 10px 22px;
@@ -676,19 +797,106 @@ export default {
 }
 .hero-btn:hover,
 .hero-btn:focus-visible {
-  background: #6ff2bd;
-  color: #062a1d;
+  background: #f3c26f;
+  color: #00283c;
   transform: translateY(-1px);
+}
+
+.hero-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.hero-btn.ghost {
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+}
+.hero-btn.ghost:hover,
+.hero-btn.ghost:focus-visible {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* ---------- Passport (Archive tab) ---------- */
+.passport {
+  background: #fbf5ea;
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+.passport-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.passport-head span {
+  font-size: 13px;
+  color: #5a6b78;
+}
+.stamps {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+.stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 92px;
+  height: 92px;
+  border: 2.5px dashed #00798c;
+  border-radius: 50%;
+  color: #00798c;
+  transform: rotate(var(--tilt));
+  text-align: center;
+  line-height: 1.1;
+  transition: transform 0.2s;
+}
+.stamp:hover {
+  transform: rotate(0deg) scale(1.06);
+}
+.stamp:nth-child(3n + 2) {
+  border-color: #d1495b;
+  color: #d1495b;
+}
+.stamp:nth-child(3n) {
+  border-color: #30638e;
+  color: #30638e;
+}
+.stamp-flag {
+  font-size: 22px;
+}
+.stamp strong {
+  font-size: 12px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stamp small {
+  font-size: 11px;
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp { transition: none; }
 }
 
 /* ---------- Create form ---------- */
 .create-card {
-  background: #fff;
+  background: #fbf5ea;
   border: 1px solid var(--app-border);
   border-radius: 16px;
   padding: 20px 24px;
   margin-bottom: 24px;
-  box-shadow: 0 8px 24px rgba(16, 40, 34, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 40, 62, 0.08);
   scroll-margin-top: 16px;
 }
 .slide-enter-active,
@@ -703,7 +911,7 @@ export default {
 
 /* ---------- Form fields: pill inputs with the label on the border ---------- */
 .field {
-  --field-color: #cfd8d5;
+  --field-color: #d6ccbb;
   --field-bg: #fff;
   position: relative;
 }
@@ -733,16 +941,16 @@ export default {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .field-input::placeholder {
-  color: #a9b4b1;
+  color: #9aa7b1;
   font-weight: 500;
 }
 .field-input:focus {
   border-color: var(--app-primary);
-  box-shadow: 0 0 0 4px rgba(11, 127, 95, 0.15);
+  box-shadow: 0 0 0 4px rgba(0, 121, 140, 0.15);
 }
 .field-input:disabled {
   background: #f1f3f3;
-  color: #a9b4b1;
+  color: #9aa7b1;
 }
 .field-icon {
   position: absolute;
@@ -752,7 +960,7 @@ export default {
   font-weight: 700;
   pointer-events: none;
 }
-.field.is-success { --field-color: #8fd9b6; }
+.field.is-success { --field-color: #f1c47a; }
 .field.is-success .field-icon { color: #1f9d6b; }
 .field.is-error { --field-color: #ef9a8a; }
 .field.is-error .field-input:focus { box-shadow: 0 0 0 4px rgba(214, 69, 46, 0.15); }
@@ -791,9 +999,9 @@ export default {
   color: #fff;
 }
 .pill-ghost {
-  border: 1.5px solid var(--field-color, #cfd8d5);
+  border: 1.5px solid var(--field-color, #d6ccbb);
   color: var(--app-ink);
-  background: #fff;
+  background: #fbf5ea;
 }
 .pill-ghost:hover {
   border-color: var(--app-ink);
@@ -813,9 +1021,9 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #e6f5ef;
-  color: #064a38;
-  border: 1px solid #b8e4d2;
+  background: #fbefd9;
+  color: #004e5a;
+  border: 1px solid #f3d9a8;
   border-radius: 999px;
   padding: 4px 6px 4px 12px;
   font-size: 14px;
@@ -838,7 +1046,7 @@ export default {
 .dest-chip-x {
   border: 0;
   background: transparent;
-  color: #064a38;
+  color: #004e5a;
   font-size: 18px;
   line-height: 1;
   width: 24px;
@@ -860,10 +1068,10 @@ export default {
   list-style: none;
   margin: 0;
   padding: 6px;
-  background: #fff;
+  background: #fbf5ea;
   border: 1px solid var(--app-border);
   border-radius: 18px;
-  box-shadow: 0 14px 30px rgba(16, 40, 34, 0.14);
+  box-shadow: 0 14px 30px rgba(0, 40, 62, 0.14);
   max-height: 300px;
   overflow-y: auto;
   animation: pop 0.12s ease-out;
@@ -882,7 +1090,7 @@ export default {
   color: var(--app-primary);
 }
 .suggest-item.active {
-  background: #e6f5ef;
+  background: #fbefd9;
 }
 .suggest-icon {
   font-size: 18px;
@@ -921,7 +1129,7 @@ export default {
   border-radius: 999px;
   padding-left: 38px;
   height: 44px;
-  background: #fff;
+  background: #fbf5ea;
 }
 .invites {
   display: flex;
@@ -934,17 +1142,17 @@ export default {
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  background: #fff;
-  border: 1.5px solid #b8e4d2;
+  background: #fbf5ea;
+  border: 1.5px solid #f3d9a8;
   border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(11, 127, 95, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 121, 140, 0.08);
 }
 .invite-icon {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
   border-radius: 14px;
-  background: #e6f5ef;
+  background: #fbefd9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -964,8 +1172,8 @@ export default {
   flex-shrink: 0;
 }
 .invite-join {
-  background: #1f2d2a;
-  color: #dcf5a6;
+  background: #003d5b;
+  color: #edae49;
   border-radius: 999px;
   font-weight: 600;
   padding: 7px 18px;
@@ -997,13 +1205,83 @@ export default {
 }
 .icon-btn:focus-visible,
 .trip-card:focus-visible {
-  outline: 3px solid rgba(11, 127, 95, 0.4);
+  outline: 3px solid rgba(0, 121, 140, 0.4);
   outline-offset: 2px;
 }
 
 .section-title {
   font-size: 1.5rem;
   margin: 0;
+}
+.trips-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stage-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #fbf5ea;
+  border: 1px solid var(--app-border);
+}
+.stage-tab {
+  border: 0;
+  background: transparent;
+  color: var(--app-muted);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.stage-tab:hover {
+  color: var(--app-ink);
+}
+.stage-tab.on {
+  background: var(--app-ink);
+  color: #fff;
+}
+.stage-count {
+  display: inline-block;
+  min-width: 20px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(31, 45, 42, 0.08);
+}
+.stage-tab.on .stage-count {
+  background: rgba(237, 174, 73, 0.25);
+  color: #f8deb0;
+}
+.stage-tab:focus-visible {
+  outline: 3px solid rgba(0, 121, 140, 0.4);
+  outline-offset: 2px;
+}
+/* Finished trips look a little faded until you hover */
+.trip-card.archived .trip-photo,
+.trip-card.archived .trip-art svg {
+  filter: grayscale(0.6);
+  transition: filter 0.2s;
+}
+.trip-card.archived:hover .trip-photo,
+.trip-card.archived:hover .trip-art svg {
+  filter: none;
+}
+@media (max-width: 480px) {
+  .stage-tabs {
+    width: 100%;
+  }
+  .stage-tab {
+    flex: 1;
+    padding: 7px 8px;
+  }
 }
 
 /* ---------- Trip grid ---------- */
@@ -1013,18 +1291,21 @@ export default {
   gap: 20px;
 }
 .trip-card {
-  background: #fff;
+  background: #fbf5ea;
   border: 1px solid var(--app-border);
   border-radius: 20px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 10px rgba(16, 40, 34, 0.06);
+  box-shadow: 0 2px 10px rgba(0, 40, 62, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.trip-card[data-testid="trip-card"] {
+  cursor: pointer;
 }
 .trip-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 14px 30px rgba(16, 40, 34, 0.12);
+  box-shadow: 0 14px 30px rgba(0, 40, 62, 0.12);
 }
 
 /* Illustrated header */
@@ -1039,15 +1320,15 @@ export default {
   z-index: 1;
 }
 .avatar.guest {
-  background: #fff;
-  color: #9aa8a4;
-  border: 2px dashed #c5d0cd;
+  background: #fbf5ea;
+  color: #8a99a5;
+  border: 2px dashed #d2c8b6;
 }
 .shared-tag {
   font-size: 12px;
   font-weight: 600;
-  color: #0b7f5f;
-  background: #eef4f2;
+  color: #00798c;
+  background: #f5eee2;
   border-radius: 999px;
   padding: 3px 10px;
 }
@@ -1100,8 +1381,8 @@ export default {
 }
 .trip-status { left: 10px; }
 .trip-demo { right: 10px; }
-.status-upcoming { color: #064a38; }
-.status-ongoing { background: #0b7f5f; color: #fff; }
+.status-upcoming { color: #004e5a; }
+.status-ongoing { background: #00798c; color: #fff; }
 .status-past { color: var(--app-muted); }
 
 .trip-body {
@@ -1156,7 +1437,7 @@ export default {
 }
 .icon-btn:hover {
   opacity: 1;
-  background: #fdecec;
+  background: #fbe7ea;
 }
 
 .open-btn {
@@ -1196,7 +1477,7 @@ export default {
 /* Loading skeleton */
 .skeleton {
   min-height: 300px;
-  background: linear-gradient(90deg, #eef2f1 25%, #f7f9f8 50%, #eef2f1 75%);
+  background: linear-gradient(90deg, #efe9df 25%, #f9f6f0 50%, #efe9df 75%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite;
 }
@@ -1208,7 +1489,7 @@ export default {
   text-align: center;
   padding: 40px 16px;
   color: var(--app-muted);
-  background: #fff;
+  background: #fbf5ea;
   border: 1px dashed var(--app-border);
   border-radius: 16px;
 }

@@ -2,6 +2,7 @@
 // reactive() means any component showing auth.user updates automatically.
 import { reactive } from 'vue'
 import axios from 'axios'
+import { shortlist, syncShortlist } from './shortlist.js'
 
 // A corrupted value in localStorage shouldn't crash the whole app on load
 function readSavedUser() {
@@ -29,6 +30,7 @@ export function saveLogin(token, user) {
   localStorage.setItem('token', token)
   localStorage.setItem('user', JSON.stringify(user))
   axios.defaults.headers.common['Authorization'] = 'Bearer ' + token
+  syncShortlist() // a guest's Discover picks move into the account
 }
 
 export function logout() {
@@ -37,6 +39,7 @@ export function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
   delete axios.defaults.headers.common['Authorization']
+  shortlist.value = [] // the next person on this browser starts fresh
 }
 
 // If the server says our token is invalid/expired, log out and go to /login.

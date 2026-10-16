@@ -38,7 +38,9 @@ export const COUNTRY_CODES = {
   'Austria': 'AT', 'Switzerland': 'CH', 'Hungary': 'HU', 'Greece': 'GR', 'Iceland': 'IS',
   'Denmark': 'DK', 'Sweden': 'SE', 'Norway': 'NO', 'Finland': 'FI', 'Ireland': 'IE',
   'United States': 'US', 'Canada': 'CA', 'Mexico': 'MX', 'Peru': 'PE', 'Brazil': 'BR',
-  'Argentina': 'AR', 'Australia': 'AU', 'New Zealand': 'NZ'
+  'Argentina': 'AR', 'Australia': 'AU', 'New Zealand': 'NZ',
+  // Middle East and Eastern Europe (Discover)
+  'Saudi Arabia': 'SA', 'Qatar': 'QA', 'Bahrain': 'BH', 'Kuwait': 'KW', 'Israel': 'IL', 'Lebanon': 'LB', 'Iran': 'IR', 'Poland': 'PL', 'Croatia': 'HR', 'Slovenia': 'SI', 'Slovakia': 'SK', 'Romania': 'RO', 'Bulgaria': 'BG', 'Serbia': 'RS', 'Bosnia and Herzegovina': 'BA', 'Montenegro': 'ME', 'Albania': 'AL', 'North Macedonia': 'MK', 'Estonia': 'EE', 'Latvia': 'LV', 'Lithuania': 'LT', 'Georgia': 'GE', 'Armenia': 'AM', 'Azerbaijan': 'AZ', 'Moldova': 'MD'
 }
 
 // "Kyoto, Japan" -> "JP" (the country is the last part; "Singapore" on its own also works)

@@ -52,13 +52,13 @@ watch(() => props.modelValue, (value) => {
   display: flex;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  background: #0d1117;
+  background: #00283c;
   overflow: hidden;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .pi:focus-within {
-  border-color: #2fe0a1;
-  box-shadow: 0 0 0 3px rgba(47, 224, 161, 0.15);
+  border-color: #edae49;
+  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.15);
 }
 .pi-code {
   flex: none;

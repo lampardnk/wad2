@@ -1,5 +1,6 @@
 <template>
-  <!-- "Trip preferences" card. Edits a copy, then saves to MongoDB via /api/preferences. -->
+  <!-- "Trip preferences" card. Every change applies straight away (the itinerary re-times itself)
+       and is saved to MongoDB via /api/preferences a moment later. -->
   <div class="card mb-3" data-testid="prefs-panel">
     <button type="button" class="btn btn-link text-start text-decoration-none p-3 d-flex justify-content-between align-items-center"
       :aria-expanded="open" @click="toggle" data-testid="prefs-toggle">
@@ -10,7 +11,7 @@
       <span aria-hidden="true">{{ open ? '▲' : '▼' }}</span>
     </button>
 
-    <form v-if="open" class="px-3 pb-3" @submit.prevent="save" novalidate>
+    <form v-if="open" class="px-3 pb-3" @submit.prevent novalidate>
       <div class="row g-3">
         <div class="col-6 col-md-3">
           <label for="pref-start" class="form-label small">Day starts</label>
@@ -30,14 +31,9 @@
         </div>
       </div>
 
-      <div class="d-flex align-items-center gap-2 mt-3">
-        <button type="submit" class="btn btn-primary btn-sm" :disabled="saving" data-testid="prefs-save">
-          {{ saving ? 'Saving…' : 'Save' }}
-        </button>
-        <span v-if="message" class="small" :class="isError ? 'text-danger' : 'text-success'" role="status" data-testid="prefs-message">
-          {{ message }}
-        </span>
-      </div>
+      <p v-if="message" class="small mt-2 mb-0" :class="isError ? 'text-danger' : 'text-success'" role="status" data-testid="prefs-message">
+        {{ message }}
+      </p>
     </form>
   </div>
 </template>
@@ -58,7 +54,7 @@ export default {
 
     return {
       open: false,
-      form: { ...prefs }, // a copy, so nothing changes until Save
+      form: { ...prefs }, // what's picked in the dropdowns
       startChoices,
       endChoices,
       crowdChoices: [
@@ -72,8 +68,30 @@ export default {
         { value: 1, label: '1 hour' }
       ],
       saving: false,
+      saveTimer: null,
       message: '',
       isError: false
+    }
+  },
+  watch: {
+    // Any change: apply it now, save it shortly after (so quick changes are one save)
+    form: {
+      deep: true,
+      handler() {
+        if (!this.open) return
+        let changed = false
+        for (const key in this.form) if (this.form[key] !== prefs[key]) changed = true
+        if (!changed) return // just opened, nothing picked yet
+        this.message = ''
+        if (this.form.dayEnd - this.form.dayStart < 4) {
+          this.isError = true
+          this.message = 'Your day needs to be at least 4 hours long.'
+          return
+        }
+        Object.assign(prefs, this.form) // the itinerary re-times itself straight away
+        clearTimeout(this.saveTimer)
+        this.saveTimer = setTimeout(this.save, 600)
+      }
     }
   },
   computed: {
@@ -91,17 +109,11 @@ export default {
       this.message = ''
     },
     async save() {
-      this.message = ''
-      if (this.form.dayEnd - this.form.dayStart < 4) {
-        this.isError = true
-        this.message = 'Your day needs to be at least 4 hours long.'
-        return
-      }
       this.saving = true
       try {
         await savePreferences(this.form)
         this.isError = false
-        this.message = 'Saved'
+        this.message = '✓ Saved · your itinerary has been updated'
       } catch (err) {
         this.isError = true
         this.message = (err.response && err.response.data && err.response.data.message) || 'Could not save. Is the server running?'

@@ -6,10 +6,15 @@ import SignupView from '../views/SignupView.vue'
 import TripSetupView from '../views/TripSetupView.vue'
 import JoinView from '../views/JoinView.vue'
 import SettingsView from '../views/SettingsView.vue'
+import DiscoverView from '../views/DiscoverView.vue'
+import LandingView from '../views/LandingView.vue'
 import { auth } from '../auth.js'
 
 const routes = [
-  { path: '/', name: 'Home', component: HomeView, meta: { requiresAuth: true } },
+  { path: '/', name: 'Landing', component: LandingView, meta: { hideNav: true } },
+  { path: '/home', name: 'Home', component: HomeView, meta: { requiresAuth: true } },
+  { path: '/welcome', redirect: '/' }, // old address
+  { path: '/discover', name: 'Discover', component: DiscoverView }, // open to guests
   { path: '/settings', name: 'Settings', component: SettingsView, meta: { requiresAuth: true, dark: true } },
   { path: '/trip/:id', name: 'Trip', component: TripView, props: true, meta: { requiresAuth: true } },
   // New trips: step 1 = invite, step 2 = wishlist, step 3 = vote, then the trip page
@@ -25,14 +30,14 @@ const router = createRouter({
   routes
 })
 
-// Before every page change: send logged-out users to /login
+// Before every page change: logged-out users go to /login for pages that need an account
 router.beforeEach((to) => {
   if (to.meta.requiresAuth && !auth.token) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
-  // Logged-in users don't need the login/signup pages
-  if ((to.path === '/login' || to.path === '/signup') && auth.token) {
-    return '/'
+  // Signed in: the landing, login and signup pages go straight to your trips
+  if ((to.path === '/' || to.path === '/login' || to.path === '/signup') && auth.token) {
+    return '/home'
   }
 })
 

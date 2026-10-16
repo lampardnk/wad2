@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
   position: relative;
   min-width: 0;
   border-radius: 9999px;
-  background: rgba(13, 17, 23, 0.85);
+  background: rgba(0, 38, 58, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -202,13 +202,13 @@ onBeforeUnmount(() => {
   transform: scale(0.96);
 }
 .tt-tab.active {
-  background: rgba(47, 224, 161, 0.12);
-  color: #2fe0a1;
-  border-color: rgba(47, 224, 161, 0.3);
+  background: rgba(237, 174, 73, 0.12);
+  color: #edae49;
+  border-color: rgba(237, 174, 73, 0.3);
   font-weight: 600;
 }
 .tt-tab:focus-visible {
-  outline: 2px solid #2fe0a1;
+  outline: 2px solid #edae49;
   outline-offset: -2px;
 }
 .tt-dot {
@@ -218,8 +218,8 @@ onBeforeUnmount(() => {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #ff5a5f;
-  box-shadow: 0 0 0 2px rgba(13, 17, 23, 0.9);
+  background: #d1495b;
+  box-shadow: 0 0 0 2px rgba(0, 38, 58, 0.9);
 }
 
 /* ----- Small-screen menu button ----- */
@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
   height: 42px;
   border-radius: 999px;
   padding: 0 12px;
-  background: rgba(13, 17, 23, 0.85);
+  background: rgba(0, 38, 58, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -246,9 +246,9 @@ onBeforeUnmount(() => {
   min-width: 0;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(47, 224, 161, 0.12);
-  border: 1px solid rgba(47, 224, 161, 0.3);
-  color: #2fe0a1;
+  background: rgba(237, 174, 73, 0.12);
+  border: 1px solid rgba(237, 174, 73, 0.3);
+  color: #edae49;
   font-weight: 600;
 }
 .tt-menu-label {

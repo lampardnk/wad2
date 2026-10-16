@@ -22,18 +22,49 @@
       <span class="pv-summary" data-testid="vote-summary">✓ {{ picks }} group pick{{ picks === 1 ? '' : 's' }}</span>
     </div>
 
-    <div class="d-flex justify-content-end mb-3">
+    <!-- Quick vote: the whole list in one tap. Shows where you're at, and every bulk vote can be undone. -->
+    <section v-if="voter" class="pv-quick" :class="{ done: !leftFor(voter) }" aria-labelledby="pv-quick-title">
+      <span class="pv-quick-icon" aria-hidden="true">{{ leftFor(voter) ? '👍' : '✓' }}</span>
+      <div class="pv-quick-text">
+        <h3 id="pv-quick-title" class="pv-quick-title">{{ leftFor(voter) ? 'Like everything on the list?' : "You've voted on every place" }}</h3>
+        <p class="pv-quick-sub">
+          <template v-if="leftFor(voter)">
+            You've said yes to {{ places.length - leftFor(voter) }} of {{ places.length }} places. Vote yes on the rest in one tap, then remove any you don't want.
+          </template>
+          <template v-else>Changed your mind? Tap your 👍 on any card below to take it back.</template>
+        </p>
+        <!-- Organiser: the same for people without an account -->
+        <div v-if="others.length" class="pv-quick-others">
+          <span class="pv-quick-for">Also vote for:</span>
+          <button v-for="person in others" :key="person" type="button" class="pv-voter" :class="{ yes: !leftFor(person) }"
+            :disabled="!leftFor(person)" @click="voteAll(person)">
+            {{ leftFor(person) ? '👍 Yes to all · ' + person : '✓ ' + person }}
+          </button>
+        </div>
+      </div>
+      <button v-if="leftFor(voter)" type="button" class="pv-quick-btn" @click="voteAll(voter)" data-testid="vote-all">
+        👍 Yes to {{ leftFor(voter) === places.length ? 'all ' + places.length : 'the other ' + leftFor(voter) }}
+      </button>
+      <p v-if="undoInfo" class="pv-quick-undo" role="status">
+        ✓ {{ undoInfo.text }}
+        <button type="button" class="pv-undo-btn" @click="undoAll">Undo</button>
+      </p>
+    </section>
+
+    <div class="pv-tools">
       <CustomDropdown v-model="sortBy" :options="sortOptions" size="sm" header-text="Sort by" aria-label="Sort by" />
     </div>
 
+    <section v-for="g in groups" :key="g.key" class="pv-section" :aria-labelledby="'pv-h-' + g.key">
+    <h3 :id="'pv-h-' + g.key" class="pv-heading">{{ g.title }} <span class="pv-count-pill">{{ g.list.length }}</span></h3>
+    <p v-if="!g.list.length" class="pv-empty">{{ g.empty }}</p>
     <transition-group name="pv" tag="div" class="pv-list" data-testid="vote-list">
-      <article v-for="w in sorted" :key="w.id" class="pv-card" :class="{ picked: isPick(w) }">
+      <article v-for="w in g.list" :key="w.id" class="pv-card" :class="{ picked: isPick(w) }">
         <span class="pv-icon" :style="{ background: placeStyle(w.type).color }" aria-hidden="true">{{ placeStyle(w.type).icon }}</span>
 
         <div class="pv-body">
           <div class="d-flex flex-wrap align-items-center gap-2">
             <h4 class="pv-name">{{ w.name }}</h4>
-            <span v-if="isPick(w)" class="pv-badge">✓ Group pick</span>
           </div>
           <p v-if="whereOf(w)" class="pv-where">📍 {{ whereOf(w) }}</p>
 
@@ -64,6 +95,7 @@
         <span class="pv-count" :aria-hidden="true">{{ w.votes.length }}/{{ travellers.length }}</span>
       </article>
     </transition-group>
+    </section>
     </template>
   </div>
 </template>
@@ -85,6 +117,8 @@ export default {
   data() {
     return {
       sortBy: 'votes',
+      undoInfo: null, // { text, before } after "Yes to all", for the Undo button
+      undoTimer: null,
       sortOptions: [{ value: 'votes', label: 'Most votes', icon: '👍' }, { value: 'name', label: 'Name (A–Z)', icon: '🔤' }]
     }
   },
@@ -96,6 +130,15 @@ export default {
     // More than half the group (2 of 3, 3 of 4, 3 of 5...)
     needed() {
       return Math.floor(this.travellers.length / 2) + 1
+    },
+    // Who the big Quick vote button is for: me (or the first person I can vote for)
+    voter() {
+      if (this.canVoteFor.includes(this.me)) return this.me
+      return this.canVoteFor[0] || ''
+    },
+    // Organiser: people without an account they can also vote for
+    others() {
+      return this.canVoteFor.filter((p) => p !== this.voter)
     },
     picks() {
       let count = 0
@@ -109,7 +152,24 @@ export default {
       if (this.sortBy === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
       else list.sort((a, b) => (b.votes || []).length - (a.votes || []).length)
       return list
+    },
+    // Group picks first, then everything still being voted on
+    groups() {
+      const picked = []
+      const rest = []
+      for (const w of this.sorted) {
+        if (this.isPick(w)) picked.push(w)
+        else rest.push(w)
+      }
+      return [
+        { key: 'picks', title: '✓ Group picks', list: picked, empty: 'Nothing has enough votes yet.' },
+        { key: 'rest', title: 'Still voting', list: rest, empty: 'Every place is a group pick.' }
+      ]
     }
+  },
+
+  beforeUnmount() {
+    clearTimeout(this.undoTimer)
   },
 
   methods: {
@@ -124,6 +184,37 @@ export default {
     },
     isPick(w) {
       return this.travellers.length > 0 && (w.votes || []).length >= this.needed
+    },
+    // How many places this person hasn't said yes to yet
+    leftFor(person) {
+      let n = 0
+      for (const w of this.places) {
+        if (!(w.votes || []).includes(person)) n++
+      }
+      return n
+    },
+    // Yes to every place they haven't voted for. Remembers the votes before, so Undo puts them back exactly.
+    voteAll(person) {
+      const before = []
+      let added = 0
+      for (const w of this.places) {
+        if (!w.votes) w.votes = []
+        before.push({ w, votes: w.votes.slice() })
+        if (!w.votes.includes(person)) {
+          w.votes.push(person)
+          added++
+        }
+      }
+      const who = person === this.me ? '' : ' for ' + person
+      this.undoInfo = { text: 'Voted yes on ' + added + ' place' + (added === 1 ? '' : 's') + who + '.', before }
+      clearTimeout(this.undoTimer)
+      this.undoTimer = setTimeout(() => { this.undoInfo = null }, 10000)
+    },
+    undoAll() {
+      if (!this.undoInfo) return
+      for (const b of this.undoInfo.before) b.w.votes = b.votes
+      this.undoInfo = null
+      clearTimeout(this.undoTimer)
     },
     toggle(w, person) {
       if (!w.votes) w.votes = []
@@ -141,15 +232,15 @@ export default {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  background: #fff;
-  border: 1px solid #dfe5e3;
+  background: #fbf5ea;
+  border: 1px solid #e2dacb;
   border-radius: 20px;
   padding: 14px 18px;
   margin-bottom: 12px;
 }
 .pv-summary {
-  background: #e6f5ef;
-  color: #064a38;
+  background: #fbefd9;
+  color: #004e5a;
   font-weight: 700;
   border-radius: 999px;
   padding: 6px 14px;
@@ -160,7 +251,7 @@ export default {
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
-  background: #fdecec;
+  background: #fbe7ea;
   border: 1px solid #f3b7b7;
   color: #8a1f1f;
   border-radius: 20px;
@@ -189,6 +280,30 @@ export default {
   padding: 8px 20px;
   font-weight: 600;
 }
+.pv-section + .pv-section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #e2dacb;
+}
+.pv-heading {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+}
+.pv-count-pill {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  background: #fbefd9;
+  color: #004e5a;
+  border-radius: 999px;
+  padding: 2px 10px;
+  vertical-align: middle;
+}
+.pv-empty {
+  color: #5a6b78;
+  font-size: 14px;
+  margin: 0;
+}
 .pv-list {
   display: flex;
   flex-direction: column;
@@ -198,15 +313,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: #fff;
-  border: 1.5px solid #e3e9e7;
+  background: #fbf5ea;
+  border: 1.5px solid #e6dfd2;
   border-radius: 22px;
   padding: 14px 18px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .pv-card.picked {
-  border-color: #8fd9b6;
-  box-shadow: 0 6px 18px rgba(11, 127, 95, 0.1);
+  border-color: #f1c47a;
+  box-shadow: 0 6px 18px rgba(0, 121, 140, 0.1);
 }
 .pv-icon {
   flex-shrink: 0;
@@ -230,7 +345,7 @@ export default {
 .pv-badge {
   font-size: 12px;
   font-weight: 700;
-  background: #0b7f5f;
+  background: #00798c;
   color: #fff;
   border-radius: 999px;
   padding: 3px 10px;
@@ -238,18 +353,18 @@ export default {
 .pv-where {
   margin: 2px 0 0;
   font-size: 12px;
-  color: var(--app-muted, #5f6f6b);
+  color: var(--app-muted, #5a6b78);
 }
 .pv-progress {
   height: 6px;
-  background: #eef2f1;
+  background: #efe9df;
   border-radius: 999px;
   margin: 10px 0;
   overflow: hidden;
 }
 .pv-progress-fill {
   height: 100%;
-  background: #3ee8a5;
+  background: #edae49;
   border-radius: 999px;
   transition: width 0.3s ease;
 }
@@ -258,9 +373,124 @@ export default {
   flex-wrap: wrap;
   gap: 6px;
 }
+.pv-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+.pv-quick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  margin-bottom: 14px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 2px solid #edae49;
+  background: #fdf3e1;
+  box-shadow: 0 6px 18px rgba(0, 40, 62, 0.08);
+}
+.pv-quick.done {
+  border-color: #e2dacb;
+  background: #fbf5ea;
+  box-shadow: none;
+}
+.pv-quick-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: #edae49;
+}
+.pv-quick.done .pv-quick-icon {
+  background: #fbefd9;
+  color: #004e5a;
+  font-weight: 800;
+}
+.pv-quick-text {
+  flex: 1;
+  min-width: 220px;
+}
+.pv-quick-title {
+  margin: 0 0 2px;
+  font-size: 17px;
+  font-weight: 800;
+}
+.pv-quick-sub {
+  margin: 0;
+  font-size: 14px;
+  color: #5a6b78;
+}
+.pv-quick-btn {
+  min-height: 48px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: #edae49;
+  color: #00283c;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 40, 62, 0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.pv-quick-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 40, 62, 0.2);
+}
+.pv-quick-btn:active {
+  transform: translateY(0);
+}
+.pv-quick-btn:focus-visible {
+  outline: 3px solid #003d5b;
+  outline-offset: 3px;
+}
+.pv-quick-others {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+.pv-quick-for {
+  font-size: 13px;
+  color: #5a6b78;
+}
+.pv-quick-undo {
+  flex-basis: 100%;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid #e2dacb;
+  font-size: 14px;
+  font-weight: 600;
+  color: #004e5a;
+}
+.pv-undo-btn {
+  margin-left: 6px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 800;
+  text-decoration: underline;
+  color: #003d5b;
+}
+@media (max-width: 560px) {
+  .pv-quick-btn {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pv-quick-btn {
+    transition: none;
+  }
+}
 .pv-voter {
-  border: 1.5px solid #dfe5e3;
-  background: #fff;
+  border: 1.5px solid #e2dacb;
+  background: #fbf5ea;
   border-radius: 999px;
   padding: 4px 12px;
   font-size: 13px;
@@ -268,18 +498,18 @@ export default {
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .pv-voter.yes {
-  background: #e6f5ef;
-  border-color: #8fd9b6;
-  color: #064a38;
+  background: #fbefd9;
+  border-color: #f1c47a;
+  color: #004e5a;
 }
 .pv-voter:focus-visible {
-  outline: 3px solid rgba(11, 127, 95, 0.45);
+  outline: 3px solid rgba(0, 121, 140, 0.45);
   outline-offset: 2px;
 }
 .pv-count {
   font-family: 'Fredoka', sans-serif;
   font-size: 1.4rem;
-  color: var(--app-muted, #5f6f6b);
+  color: var(--app-muted, #5a6b78);
 }
 .pv-move,
 .pv-enter-active,

@@ -83,6 +83,40 @@
           </div>
         </div>
 
+        <!-- ===== Pacing: how the itinerary planner times your days ===== -->
+        <h2 id="pacing" class="st-group-title">Trip Pacing</h2>
+        <div class="st-group">
+          <div class="st-row">
+            <span class="st-row-text">
+              <span class="st-row-label">Day starts</span>
+              <span class="st-row-hint">Earliest first stop</span>
+            </span>
+            <CustomDropdown id="st-day-start" v-model="pace.dayStart" :options="startChoices" size="sm" header-text="Day starts" aria-label="Day starts" />
+          </div>
+          <div class="st-row">
+            <span class="st-row-text">
+              <span class="st-row-label">Day ends</span>
+              <span class="st-row-hint">Back at the hotel by</span>
+            </span>
+            <CustomDropdown id="st-day-end" v-model="pace.dayEnd" :options="endChoices" size="sm" header-text="Day ends" aria-label="Day ends" />
+          </div>
+          <div class="st-row">
+            <span class="st-row-text">
+              <span class="st-row-label">Crowds bother me</span>
+              <span class="st-row-hint">More = avoid busy times harder</span>
+            </span>
+            <CustomDropdown id="st-crowd" v-model="pace.crowdSensitivity" :options="crowdChoices" size="sm" header-text="Crowds bother me" aria-label="Crowds bother me" />
+          </div>
+          <div class="st-row">
+            <span class="st-row-text">
+              <span class="st-row-label">Travel buffer</span>
+              <span class="st-row-hint">Free time kept between stops</span>
+            </span>
+            <CustomDropdown id="st-buffer" v-model="pace.travelBuffer" :options="bufferChoices" size="sm" header-text="Travel buffer" aria-label="Travel buffer" />
+          </div>
+          <p v-if="paceError" class="st-err" role="alert">{{ paceError }}</p>
+        </div>
+
         <!-- ===== Safety & notifications ===== -->
         <h2 class="st-group-title">Safety & Notifications</h2>
         <div class="st-group">
@@ -112,15 +146,18 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { auth, logout, saveLogin } from '../auth.js'
 import { CURRENCIES } from '../expenses.js'
+import { prefs, loadPreferences, savePreferences } from '../preferences.js'
+import { formatHour } from '../crowd.js'
 import CustomDropdown from '../components/CustomDropdown.vue'
 import DietTagsInput from '../components/DietTagsInput.vue'
 import PhoneInput from '../components/PhoneInput.vue'
 
 const router = useRouter()
+const route = useRoute()
 
 const UNITS = [
   { value: 'metric', label: 'km · °C' },
@@ -202,6 +239,62 @@ async function load() {
 }
 load()
 
+// ----- Pacing (its own API: /api/preferences) -----
+const startChoices = []
+for (let h = 5; h <= 12; h++) startChoices.push({ value: h, label: formatHour(h) })
+const endChoices = []
+for (let h = 17; h <= 24; h++) endChoices.push({ value: h, label: h === 24 ? 'Midnight' : formatHour(h) })
+const crowdChoices = [
+  { value: 'low', label: 'A little' },
+  { value: 'medium', label: 'Somewhat' },
+  { value: 'high', label: 'A lot' }
+]
+const bufferChoices = [
+  { value: 0, label: 'None' },
+  { value: 0.25, label: '15 min' },
+  { value: 0.5, label: '30 min' },
+  { value: 1, label: '1 hour' }
+]
+const pace = reactive({ ...prefs })
+const paceError = ref('')
+let paceTimer = null
+async function loadPace() {
+  try {
+    await loadPreferences()
+    Object.assign(pace, prefs)
+  } catch (err) {
+    // keep the defaults
+  }
+  watch(pace, () => {
+    paceError.value = ''
+    if (pace.dayEnd - pace.dayStart < 4) {
+      paceError.value = 'Your day needs to be at least 4 hours long.'
+      return
+    }
+    status.value = 'saving'
+    clearTimeout(paceTimer)
+    paceTimer = setTimeout(savePace, 500)
+  })
+  // Opened from the menu's "Trip pacing": scroll down to it
+  if (route.hash === '#pacing') {
+    setTimeout(() => {
+      const el = document.getElementById('pacing')
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 350) // after the page has faded in
+  }
+}
+async function savePace() {
+  paceTimer = null
+  try {
+    await savePreferences({ ...pace })
+    status.value = 'saved'
+  } catch (err) {
+    status.value = 'error'
+    paceError.value = (err.response && err.response.data && err.response.data.message) || 'Could not save.'
+  }
+}
+loadPace()
+
 // Email saves when you leave the box (half-typed emails aren't sent)
 function saveEmail() {
   const value = email.value.trim().toLowerCase()
@@ -217,6 +310,10 @@ function saveEmail() {
 // Save anything still waiting when leaving the page
 onBeforeUnmount(() => {
   clearTimeout(timer)
+  if (paceTimer) {
+    clearTimeout(paceTimer)
+    savePace()
+  }
   if (Object.keys(pending).length) flush()
 })
 
@@ -232,7 +329,7 @@ function onSegKey(e) {
 
 function goBack() {
   if (window.history.state && window.history.state.back) router.back()
-  else router.push('/')
+  else router.push('/home')
 }
 
 function handleLogout() {
@@ -247,7 +344,7 @@ function handleLogout() {
   max-width: 1080px;
   margin: 0 auto;
   padding-bottom: 48px;
-  --mint: #2fe0a1;
+  --mint: #edae49;
   --text: #e6edf3;
   --muted: #8b949e;
 }
@@ -272,7 +369,7 @@ function handleLogout() {
   transition: transform 0.15s;
 }
 .st-back:hover {
-  border-color: rgba(47, 224, 161, 0.5);
+  border-color: rgba(237, 174, 73, 0.5);
   color: var(--mint);
 }
 .st-back:hover svg {
@@ -284,7 +381,7 @@ function handleLogout() {
 
 /* Card */
 .st {
-  background: rgba(17, 23, 32, 0.82);
+  background: rgba(0, 45, 68, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--text);
@@ -338,15 +435,15 @@ function handleLogout() {
   font-size: 12px;
   font-weight: 600;
   color: var(--mint);
-  background: rgba(47, 224, 161, 0.08);
-  border: 1px solid rgba(47, 224, 161, 0.2);
+  background: rgba(237, 174, 73, 0.08);
+  border: 1px solid rgba(237, 174, 73, 0.2);
 }
 .st-status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: 0 0 0 0 rgba(47, 224, 161, 0.6);
+  box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.6);
   animation: st-pulse 2s infinite;
 }
 .st-status.saving {
@@ -358,9 +455,9 @@ function handleLogout() {
   animation: st-blink 0.8s infinite alternate;
 }
 .st-status.error {
-  color: #ff8a8f;
-  background: rgba(255, 90, 95, 0.1);
-  border-color: rgba(255, 90, 95, 0.3);
+  color: #ec8a97;
+  background: rgba(209, 73, 91, 0.1);
+  border-color: rgba(209, 73, 91, 0.3);
 }
 .st-status.error .st-status-dot {
   animation: none;
@@ -376,7 +473,7 @@ function handleLogout() {
   margin: 20px 4px 8px;
 }
 .st-group {
-  background: #161d27;
+  background: #0b3a56;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
   overflow: visible;
@@ -432,7 +529,7 @@ function handleLogout() {
   flex: 1;
   max-width: 280px;
   min-width: 0;
-  background: #0d1117;
+  background: #00283c;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   color: var(--text);
@@ -446,13 +543,13 @@ function handleLogout() {
   outline: none;
   text-align: left;
   border-color: var(--mint);
-  box-shadow: 0 0 0 3px rgba(47, 224, 161, 0.15);
+  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.15);
 }
 .st-input[aria-invalid='true'] {
-  border-color: rgba(255, 90, 95, 0.6);
+  border-color: rgba(209, 73, 91, 0.6);
 }
 .st-err {
-  color: #ff9a9a;
+  color: #f09aa5;
   font-size: 12px;
   margin: 0;
   padding: 0 14px 10px;
@@ -467,7 +564,7 @@ function handleLogout() {
   flex: none;
   padding: 3px;
   border-radius: 999px;
-  background: #0d1117;
+  background: #00283c;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .st-seg-thumb {
@@ -477,9 +574,9 @@ function handleLogout() {
   left: 3px;
   width: calc(50% - 3px);
   border-radius: 999px;
-  background: rgba(47, 224, 161, 0.14);
-  border: 1px solid rgba(47, 224, 161, 0.35);
-  box-shadow: 0 0 12px rgba(47, 224, 161, 0.15);
+  background: rgba(237, 174, 73, 0.14);
+  border: 1px solid rgba(237, 174, 73, 0.35);
+  box-shadow: 0 0 12px rgba(237, 174, 73, 0.15);
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .st-seg.right .st-seg-thumb {
@@ -525,13 +622,13 @@ function handleLogout() {
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
 }
 .st-switch[aria-checked='true'] {
-  background: rgba(47, 224, 161, 0.85);
-  border-color: rgba(47, 224, 161, 0.9);
-  box-shadow: 0 0 14px rgba(47, 224, 161, 0.3);
+  background: rgba(237, 174, 73, 0.85);
+  border-color: rgba(237, 174, 73, 0.9);
+  box-shadow: 0 0 14px rgba(237, 174, 73, 0.3);
 }
 .st-switch[aria-checked='true'] .st-knob {
   transform: translateX(18px);
-  background: #fff;
+  background: #fbf5ea;
 }
 .st-switch:active .st-knob {
   width: 24px;
@@ -554,7 +651,7 @@ function handleLogout() {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0b7f5f, #2fe0a1);
+  background: linear-gradient(135deg, #00798c, #edae49);
   color: #fff;
   font-weight: 700;
 }
@@ -570,9 +667,9 @@ function handleLogout() {
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .st-logout:hover {
-  color: #ff8a8f;
-  border-color: rgba(255, 90, 95, 0.45);
-  background: rgba(255, 90, 95, 0.08);
+  color: #ec8a97;
+  border-color: rgba(209, 73, 91, 0.45);
+  background: rgba(209, 73, 91, 0.08);
 }
 
 /* Focus rings */
@@ -585,9 +682,9 @@ function handleLogout() {
 }
 
 @keyframes st-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(47, 224, 161, 0.55); }
-  70% { box-shadow: 0 0 0 6px rgba(47, 224, 161, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(47, 224, 161, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.55); }
+  70% { box-shadow: 0 0 0 6px rgba(237, 174, 73, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0); }
 }
 @keyframes st-blink {
   from { opacity: 0.3; }

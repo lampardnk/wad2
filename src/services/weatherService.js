@@ -5,7 +5,7 @@ import axios from 'axios'
 const RAIN = ['Rain', 'Drizzle', 'Thunderstorm']
 
 // Give either { q: 'Kyoto, Japan' } or { lat, lon }.
-// Returns [{ date, time, span, condition, rain, simulated? }] for every forecast day (about 5 days ahead),
+// Returns [{ date, time, span, condition, temp, rain, simulated? }] for every forecast day (about 5 days ahead),
 // in the destination's local time. Each OpenWeatherMap entry covers a 3-hour block (span: 3).
 // If the request fails: throws, unless simulateOnFail is true (demo trip only), which returns fake rain.
 export async function fetchWeatherForecast({ q, lat, lon, fallbackDate, simulateOnFail = false }) {
@@ -21,6 +21,7 @@ export async function fetchWeatherForecast({ q, lat, lon, fallbackDate, simulate
         time: local.getUTCHours(),
         span: 3,
         condition,
+        temp: item.main ? Math.round(item.main.temp) : null, // °C
         rain: RAIN.includes(condition) || item.pop >= 0.6
       }
     })

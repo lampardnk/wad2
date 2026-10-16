@@ -14,7 +14,8 @@ const tripSchema = new mongoose.Schema({
     name: String,
     role: { type: String, enum: ['owner', 'member'], default: 'member' },
     joinedAt: { type: Date, default: Date.now },
-    lastSeenAt: Date // for the "active now" dot on the Crew page
+    lastSeenAt: Date, // for the "active now" dot on the Crew page
+    viewing: { type: String, default: '' } // what they have open, e.g. 'Day 2' (sent by the trip page every 30s)
   }],
   inviteCode: { type: String, index: true, sparse: true }, // for /join/<code> links
   // People invited by username who haven't answered yet

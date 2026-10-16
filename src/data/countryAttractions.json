@@ -1,0 +1,3073 @@
+{
+ "_about": "Top sights per Discover country, hand-picked. name = Wikipedia-style title (used for the photo); city = the Discover city it belongs near.",
+ "countries": {
+  "South Korea": [
+   {
+    "name": "Gyeongbokgung",
+    "city": "Seoul"
+   },
+   {
+    "name": "Bukchon Hanok Village",
+    "city": "Seoul"
+   },
+   {
+    "name": "N Seoul Tower",
+    "city": "Seoul"
+   },
+   {
+    "name": "Myeongdong",
+    "city": "Seoul"
+   },
+   {
+    "name": "Gamcheon Culture Village",
+    "city": "Busan"
+   },
+   {
+    "name": "Haeundae Beach",
+    "city": "Busan"
+   },
+   {
+    "name": "Seongsan Ilchulbong",
+    "city": "Jeju"
+   },
+   {
+    "name": "Hallasan",
+    "city": "Jeju"
+   },
+   {
+    "name": "Bulguksa",
+    "city": "Gyeongju"
+   },
+   {
+    "name": "Changdeokgung",
+    "city": "Seoul"
+   }
+  ],
+  "Japan": [
+   {
+    "name": "Fushimi Inari-taisha",
+    "city": "Kyoto"
+   },
+   {
+    "name": "Kinkaku-ji",
+    "city": "Kyoto"
+   },
+   {
+    "name": "Arashiyama",
+    "city": "Kyoto"
+   },
+   {
+    "name": "Senso-ji",
+    "city": "Tokyo"
+   },
+   {
+    "name": "Shibuya Crossing",
+    "city": "Tokyo"
+   },
+   {
+    "name": "Mount Fuji",
+    "city": "Tokyo"
+   },
+   {
+    "name": "Dotonbori",
+    "city": "Osaka"
+   },
+   {
+    "name": "Nara Park",
+    "city": "Nara"
+   },
+   {
+    "name": "Hiroshima Peace Memorial",
+    "city": "Fukuoka"
+   },
+   {
+    "name": "Sapporo Snow Festival",
+    "city": "Sapporo"
+   }
+  ],
+  "Taiwan": [
+   {
+    "name": "Taipei 101",
+    "city": "Taipei"
+   },
+   {
+    "name": "Shilin Night Market",
+    "city": "Taipei"
+   },
+   {
+    "name": "Jiufen",
+    "city": "Taipei"
+   },
+   {
+    "name": "National Palace Museum",
+    "city": "Taipei"
+   },
+   {
+    "name": "Taroko Gorge",
+    "city": "Hualien"
+   },
+   {
+    "name": "Sun Moon Lake",
+    "city": "Taipei"
+   },
+   {
+    "name": "Chihkan Tower",
+    "city": "Tainan"
+   },
+   {
+    "name": "Anping Fort",
+    "city": "Tainan"
+   },
+   {
+    "name": "Beitou Hot Spring",
+    "city": "Taipei"
+   },
+   {
+    "name": "Yehliu Geopark",
+    "city": "Taipei"
+   }
+  ],
+  "Hong Kong": [
+   {
+    "name": "Victoria Peak",
+    "city": "Hong Kong Island"
+   },
+   {
+    "name": "Victoria Harbour",
+    "city": "Hong Kong Island"
+   },
+   {
+    "name": "Tian Tan Buddha",
+    "city": "Lantau Island"
+   },
+   {
+    "name": "Ngong Ping 360",
+    "city": "Lantau Island"
+   },
+   {
+    "name": "Temple Street Night Market",
+    "city": "Hong Kong Island"
+   },
+   {
+    "name": "Man Mo Temple",
+    "city": "Hong Kong Island"
+   },
+   {
+    "name": "Hong Kong Disneyland",
+    "city": "Lantau Island"
+   },
+   {
+    "name": "Tai O",
+    "city": "Lantau Island"
+   },
+   {
+    "name": "Dragon's Back",
+    "city": "Hong Kong Island"
+   },
+   {
+    "name": "Star Ferry",
+    "city": "Hong Kong Island"
+   }
+  ],
+  "Macau": [
+   {
+    "name": "Ruins of St. Paul's",
+    "city": "Macau Peninsula"
+   },
+   {
+    "name": "Senado Square",
+    "city": "Macau Peninsula"
+   },
+   {
+    "name": "A-Ma Temple",
+    "city": "Macau Peninsula"
+   },
+   {
+    "name": "Macau Tower",
+    "city": "Macau Peninsula"
+   },
+   {
+    "name": "Guia Fortress",
+    "city": "Macau Peninsula"
+   },
+   {
+    "name": "Taipa Village",
+    "city": "Taipa"
+   },
+   {
+    "name": "Cotai Strip",
+    "city": "Taipa"
+   },
+   {
+    "name": "Mount Fortress",
+    "city": "Macau Peninsula"
+   }
+  ],
+  "China": [
+   {
+    "name": "Great Wall of China",
+    "city": "Beijing"
+   },
+   {
+    "name": "Forbidden City",
+    "city": "Beijing"
+   },
+   {
+    "name": "Temple of Heaven",
+    "city": "Beijing"
+   },
+   {
+    "name": "The Bund",
+    "city": "Shanghai"
+   },
+   {
+    "name": "Yu Garden",
+    "city": "Shanghai"
+   },
+   {
+    "name": "Terracotta Army",
+    "city": "Xi'an"
+   },
+   {
+    "name": "Li River",
+    "city": "Guilin"
+   },
+   {
+    "name": "Chengdu Research Base of Giant Panda Breeding",
+    "city": "Chengdu"
+   },
+   {
+    "name": "Summer Palace",
+    "city": "Beijing"
+   },
+   {
+    "name": "Leshan Giant Buddha",
+    "city": "Chengdu"
+   }
+  ],
+  "Thailand": [
+   {
+    "name": "Grand Palace",
+    "city": "Bangkok"
+   },
+   {
+    "name": "Wat Arun",
+    "city": "Bangkok"
+   },
+   {
+    "name": "Wat Pho",
+    "city": "Bangkok"
+   },
+   {
+    "name": "Chatuchak Weekend Market",
+    "city": "Bangkok"
+   },
+   {
+    "name": "Doi Suthep",
+    "city": "Chiang Mai"
+   },
+   {
+    "name": "Old City, Chiang Mai",
+    "city": "Chiang Mai"
+   },
+   {
+    "name": "Phi Phi Islands",
+    "city": "Phuket"
+   },
+   {
+    "name": "Big Buddha Phuket",
+    "city": "Phuket"
+   },
+   {
+    "name": "Ang Thong National Marine Park",
+    "city": "Koh Samui"
+   },
+   {
+    "name": "Pai Canyon",
+    "city": "Pai"
+   }
+  ],
+  "Indonesia": [
+   {
+    "name": "Tegallalang Rice Terrace",
+    "city": "Bali"
+   },
+   {
+    "name": "Uluwatu Temple",
+    "city": "Bali"
+   },
+   {
+    "name": "Tanah Lot",
+    "city": "Bali"
+   },
+   {
+    "name": "Ubud Monkey Forest",
+    "city": "Bali"
+   },
+   {
+    "name": "Borobudur",
+    "city": "Yogyakarta"
+   },
+   {
+    "name": "Prambanan",
+    "city": "Yogyakarta"
+   },
+   {
+    "name": "Mount Bromo",
+    "city": "Yogyakarta"
+   },
+   {
+    "name": "Komodo National Park",
+    "city": "Labuan Bajo"
+   },
+   {
+    "name": "Gili Islands",
+    "city": "Lombok"
+   },
+   {
+    "name": "Mount Rinjani",
+    "city": "Lombok"
+   }
+  ],
+  "Malaysia": [
+   {
+    "name": "Petronas Towers",
+    "city": "Kuala Lumpur"
+   },
+   {
+    "name": "Batu Caves",
+    "city": "Kuala Lumpur"
+   },
+   {
+    "name": "George Town, Penang",
+    "city": "Penang"
+   },
+   {
+    "name": "Penang Hill",
+    "city": "Penang"
+   },
+   {
+    "name": "Langkawi Sky Bridge",
+    "city": "Langkawi"
+   },
+   {
+    "name": "Jonker Street",
+    "city": "Malacca"
+   },
+   {
+    "name": "Cameron Highlands",
+    "city": "Kuala Lumpur"
+   },
+   {
+    "name": "Merdeka Square",
+    "city": "Kuala Lumpur"
+   },
+   {
+    "name": "Kek Lok Si",
+    "city": "Penang"
+   },
+   {
+    "name": "Pantai Cenang",
+    "city": "Langkawi"
+   }
+  ],
+  "Vietnam": [
+   {
+    "name": "Ha Long Bay",
+    "city": "Hanoi"
+   },
+   {
+    "name": "Hoan Kiem Lake",
+    "city": "Hanoi"
+   },
+   {
+    "name": "Hanoi Old Quarter",
+    "city": "Hanoi"
+   },
+   {
+    "name": "Hoi An Ancient Town",
+    "city": "Hoi An"
+   },
+   {
+    "name": "Golden Bridge (Vietnam)",
+    "city": "Hoi An"
+   },
+   {
+    "name": "Ben Thanh Market",
+    "city": "Ho Chi Minh City"
+   },
+   {
+    "name": "Cu Chi tunnels",
+    "city": "Ho Chi Minh City"
+   },
+   {
+    "name": "Ha Giang Loop",
+    "city": "Ha Giang"
+   },
+   {
+    "name": "Xuan Huong Lake",
+    "city": "Da Lat"
+   },
+   {
+    "name": "Trang An",
+    "city": "Hanoi"
+   }
+  ],
+  "Philippines": [
+   {
+    "name": "Intramuros",
+    "city": "Manila"
+   },
+   {
+    "name": "Rizal Park",
+    "city": "Manila"
+   },
+   {
+    "name": "Chocolate Hills",
+    "city": "Cebu"
+   },
+   {
+    "name": "Kawasan Falls",
+    "city": "Cebu"
+   },
+   {
+    "name": "Oslob whale sharks",
+    "city": "Cebu"
+   },
+   {
+    "name": "Big Lagoon El Nido",
+    "city": "El Nido"
+   },
+   {
+    "name": "Puerto Princesa Subterranean River National Park",
+    "city": "El Nido"
+   },
+   {
+    "name": "Magellan's Cross",
+    "city": "Cebu"
+   },
+   {
+    "name": "Binondo",
+    "city": "Manila"
+   },
+   {
+    "name": "Moalboal",
+    "city": "Cebu"
+   }
+  ],
+  "Cambodia": [
+   {
+    "name": "Angkor Wat",
+    "city": "Siem Reap"
+   },
+   {
+    "name": "Bayon",
+    "city": "Siem Reap"
+   },
+   {
+    "name": "Ta Prohm",
+    "city": "Siem Reap"
+   },
+   {
+    "name": "Banteay Srei",
+    "city": "Siem Reap"
+   },
+   {
+    "name": "Royal Palace, Phnom Penh",
+    "city": "Phnom Penh"
+   },
+   {
+    "name": "Tuol Sleng Genocide Museum",
+    "city": "Phnom Penh"
+   },
+   {
+    "name": "Silver Pagoda",
+    "city": "Phnom Penh"
+   },
+   {
+    "name": "Tonlé Sap",
+    "city": "Siem Reap"
+   },
+   {
+    "name": "Central Market (Phnom Penh)",
+    "city": "Phnom Penh"
+   },
+   {
+    "name": "Pub Street",
+    "city": "Siem Reap"
+   }
+  ],
+  "Sri Lanka": [
+   {
+    "name": "Sigiriya",
+    "city": "Kandy"
+   },
+   {
+    "name": "Temple of the Tooth",
+    "city": "Kandy"
+   },
+   {
+    "name": "Nine Arch Bridge",
+    "city": "Ella"
+   },
+   {
+    "name": "Galle Fort",
+    "city": "Galle"
+   },
+   {
+    "name": "Yala National Park",
+    "city": "Ella"
+   },
+   {
+    "name": "Dambulla cave temple",
+    "city": "Kandy"
+   },
+   {
+    "name": "Kandy to Ella train",
+    "city": "Kandy"
+   },
+   {
+    "name": "Adam's Peak",
+    "city": "Ella"
+   },
+   {
+    "name": "Gangaramaya Temple",
+    "city": "Colombo"
+   },
+   {
+    "name": "Mirissa",
+    "city": "Galle"
+   }
+  ],
+  "Maldives": [
+   {
+    "name": "Malé Friday Mosque",
+    "city": "Malé"
+   },
+   {
+    "name": "Maafushi beach",
+    "city": "Maafushi"
+   },
+   {
+    "name": "Banana Reef",
+    "city": "Malé"
+   },
+   {
+    "name": "Maldives Islamic Centre",
+    "city": "Malé"
+   },
+   {
+    "name": "Malé Fish Market",
+    "city": "Malé"
+   },
+   {
+    "name": "Hulhumalé",
+    "city": "Malé"
+   },
+   {
+    "name": "Biyadhoo",
+    "city": "Maafushi"
+   },
+   {
+    "name": "Sandbank picnics",
+    "city": "Maafushi"
+   }
+  ],
+  "Nepal": [
+   {
+    "name": "Swayambhunath",
+    "city": "Kathmandu"
+   },
+   {
+    "name": "Boudhanath",
+    "city": "Kathmandu"
+   },
+   {
+    "name": "Pashupatinath Temple",
+    "city": "Kathmandu"
+   },
+   {
+    "name": "Kathmandu Durbar Square",
+    "city": "Kathmandu"
+   },
+   {
+    "name": "Bhaktapur Durbar Square",
+    "city": "Kathmandu"
+   },
+   {
+    "name": "Phewa Lake",
+    "city": "Pokhara"
+   },
+   {
+    "name": "Sarangkot",
+    "city": "Pokhara"
+   },
+   {
+    "name": "Annapurna Base Camp",
+    "city": "Pokhara"
+   },
+   {
+    "name": "Chitwan National Park",
+    "city": "Pokhara"
+   },
+   {
+    "name": "Everest Base Camp",
+    "city": "Kathmandu"
+   }
+  ],
+  "India": [
+   {
+    "name": "Taj Mahal",
+    "city": "Delhi"
+   },
+   {
+    "name": "Red Fort",
+    "city": "Delhi"
+   },
+   {
+    "name": "Qutub Minar",
+    "city": "Delhi"
+   },
+   {
+    "name": "Hawa Mahal",
+    "city": "Jaipur"
+   },
+   {
+    "name": "Amber Fort",
+    "city": "Jaipur"
+   },
+   {
+    "name": "Ganges ghats in Varanasi",
+    "city": "Varanasi"
+   },
+   {
+    "name": "Baga Beach",
+    "city": "Goa"
+   },
+   {
+    "name": "Basilica of Bom Jesus",
+    "city": "Goa"
+   },
+   {
+    "name": "India Gate",
+    "city": "Delhi"
+   },
+   {
+    "name": "City Palace, Jaipur",
+    "city": "Jaipur"
+   }
+  ],
+  "United Arab Emirates": [
+   {
+    "name": "Burj Khalifa",
+    "city": "Dubai"
+   },
+   {
+    "name": "Dubai Mall",
+    "city": "Dubai"
+   },
+   {
+    "name": "Palm Jumeirah",
+    "city": "Dubai"
+   },
+   {
+    "name": "Dubai Creek",
+    "city": "Dubai"
+   },
+   {
+    "name": "Museum of the Future",
+    "city": "Dubai"
+   },
+   {
+    "name": "Sheikh Zayed Grand Mosque",
+    "city": "Abu Dhabi"
+   },
+   {
+    "name": "Louvre Abu Dhabi",
+    "city": "Abu Dhabi"
+   },
+   {
+    "name": "Ferrari World",
+    "city": "Abu Dhabi"
+   },
+   {
+    "name": "Desert safari Dubai",
+    "city": "Dubai"
+   },
+   {
+    "name": "Qasr Al Watan",
+    "city": "Abu Dhabi"
+   }
+  ],
+  "Oman": [
+   {
+    "name": "Sultan Qaboos Grand Mosque",
+    "city": "Muscat"
+   },
+   {
+    "name": "Mutrah Souq",
+    "city": "Muscat"
+   },
+   {
+    "name": "Royal Opera House Muscat",
+    "city": "Muscat"
+   },
+   {
+    "name": "Nizwa Fort",
+    "city": "Nizwa"
+   },
+   {
+    "name": "Jebel Shams",
+    "city": "Nizwa"
+   },
+   {
+    "name": "Wadi Shab",
+    "city": "Muscat"
+   },
+   {
+    "name": "Bimmah Sinkhole",
+    "city": "Muscat"
+   },
+   {
+    "name": "Wahiba Sands",
+    "city": "Nizwa"
+   },
+   {
+    "name": "Jabrin Castle",
+    "city": "Nizwa"
+   },
+   {
+    "name": "Misfat al Abriyeen",
+    "city": "Nizwa"
+   }
+  ],
+  "Jordan": [
+   {
+    "name": "Petra",
+    "city": "Petra"
+   },
+   {
+    "name": "Al-Khazneh",
+    "city": "Petra"
+   },
+   {
+    "name": "Ad Deir",
+    "city": "Petra"
+   },
+   {
+    "name": "Wadi Rum",
+    "city": "Wadi Rum"
+   },
+   {
+    "name": "Dead Sea",
+    "city": "Amman"
+   },
+   {
+    "name": "Amman Citadel",
+    "city": "Amman"
+   },
+   {
+    "name": "Roman Theatre (Amman)",
+    "city": "Amman"
+   },
+   {
+    "name": "Jerash",
+    "city": "Amman"
+   },
+   {
+    "name": "Wadi Mujib",
+    "city": "Amman"
+   },
+   {
+    "name": "Mount Nebo",
+    "city": "Amman"
+   }
+  ],
+  "Turkey": [
+   {
+    "name": "Hagia Sophia",
+    "city": "Istanbul"
+   },
+   {
+    "name": "Blue Mosque",
+    "city": "Istanbul"
+   },
+   {
+    "name": "Grand Bazaar",
+    "city": "Istanbul"
+   },
+   {
+    "name": "Topkapı Palace",
+    "city": "Istanbul"
+   },
+   {
+    "name": "Basilica Cistern",
+    "city": "Istanbul"
+   },
+   {
+    "name": "Göreme National Park",
+    "city": "Cappadocia"
+   },
+   {
+    "name": "Hot air balloons over Cappadocia",
+    "city": "Cappadocia"
+   },
+   {
+    "name": "Pamukkale",
+    "city": "Antalya"
+   },
+   {
+    "name": "Ephesus",
+    "city": "Antalya"
+   },
+   {
+    "name": "Kaleiçi",
+    "city": "Antalya"
+   }
+  ],
+  "Egypt": [
+   {
+    "name": "Giza pyramid complex",
+    "city": "Cairo"
+   },
+   {
+    "name": "Great Sphinx of Giza",
+    "city": "Cairo"
+   },
+   {
+    "name": "Egyptian Museum",
+    "city": "Cairo"
+   },
+   {
+    "name": "Grand Egyptian Museum",
+    "city": "Cairo"
+   },
+   {
+    "name": "Khan el-Khalili",
+    "city": "Cairo"
+   },
+   {
+    "name": "Karnak",
+    "city": "Luxor"
+   },
+   {
+    "name": "Valley of the Kings",
+    "city": "Luxor"
+   },
+   {
+    "name": "Luxor Temple",
+    "city": "Luxor"
+   },
+   {
+    "name": "Abu Simbel",
+    "city": "Luxor"
+   },
+   {
+    "name": "Blue Hole (Red Sea)",
+    "city": "Dahab"
+   }
+  ],
+  "Morocco": [
+   {
+    "name": "Jemaa el-Fnaa",
+    "city": "Marrakech"
+   },
+   {
+    "name": "Majorelle Garden",
+    "city": "Marrakech"
+   },
+   {
+    "name": "Bahia Palace",
+    "city": "Marrakech"
+   },
+   {
+    "name": "Koutoubia Mosque",
+    "city": "Marrakech"
+   },
+   {
+    "name": "Fes el Bali",
+    "city": "Fes"
+   },
+   {
+    "name": "Chouara Tannery",
+    "city": "Fes"
+   },
+   {
+    "name": "Chefchaouen medina",
+    "city": "Chefchaouen"
+   },
+   {
+    "name": "Aït Benhaddou",
+    "city": "Marrakech"
+   },
+   {
+    "name": "Erg Chebbi",
+    "city": "Marrakech"
+   },
+   {
+    "name": "Atlas Mountains",
+    "city": "Marrakech"
+   }
+  ],
+  "South Africa": [
+   {
+    "name": "Table Mountain",
+    "city": "Cape Town"
+   },
+   {
+    "name": "Cape of Good Hope",
+    "city": "Cape Town"
+   },
+   {
+    "name": "Boulders Beach",
+    "city": "Cape Town"
+   },
+   {
+    "name": "Robben Island",
+    "city": "Cape Town"
+   },
+   {
+    "name": "V&A Waterfront",
+    "city": "Cape Town"
+   },
+   {
+    "name": "Kirstenbosch National Botanical Garden",
+    "city": "Cape Town"
+   },
+   {
+    "name": "Kruger National Park",
+    "city": "Kruger National Park"
+   },
+   {
+    "name": "Blyde River Canyon",
+    "city": "Kruger National Park"
+   },
+   {
+    "name": "Chapman's Peak Drive",
+    "city": "Cape Town"
+   },
+   {
+    "name": "Stellenbosch",
+    "city": "Cape Town"
+   }
+  ],
+  "United Kingdom": [
+   {
+    "name": "British Museum",
+    "city": "London"
+   },
+   {
+    "name": "Tower of London",
+    "city": "London"
+   },
+   {
+    "name": "Buckingham Palace",
+    "city": "London"
+   },
+   {
+    "name": "Big Ben",
+    "city": "London"
+   },
+   {
+    "name": "London Eye",
+    "city": "London"
+   },
+   {
+    "name": "Edinburgh Castle",
+    "city": "Edinburgh"
+   },
+   {
+    "name": "Royal Mile",
+    "city": "Edinburgh"
+   },
+   {
+    "name": "Stonehenge",
+    "city": "Bath"
+   },
+   {
+    "name": "Roman Baths (Bath)",
+    "city": "Bath"
+   },
+   {
+    "name": "Old Man of Storr",
+    "city": "Isle of Skye"
+   }
+  ],
+  "France": [
+   {
+    "name": "Eiffel Tower",
+    "city": "Paris"
+   },
+   {
+    "name": "Louvre",
+    "city": "Paris"
+   },
+   {
+    "name": "Montmartre",
+    "city": "Paris"
+   },
+   {
+    "name": "Palace of Versailles",
+    "city": "Paris"
+   },
+   {
+    "name": "Musée d'Orsay",
+    "city": "Paris"
+   },
+   {
+    "name": "Mont-Saint-Michel",
+    "city": "Paris"
+   },
+   {
+    "name": "Promenade des Anglais",
+    "city": "Nice"
+   },
+   {
+    "name": "Vieux Lyon",
+    "city": "Lyon"
+   },
+   {
+    "name": "Cité du Vin",
+    "city": "Bordeaux"
+   },
+   {
+    "name": "Lake Annecy",
+    "city": "Annecy"
+   }
+  ],
+  "Italy": [
+   {
+    "name": "Colosseum",
+    "city": "Rome"
+   },
+   {
+    "name": "Trevi Fountain",
+    "city": "Rome"
+   },
+   {
+    "name": "Vatican Museums",
+    "city": "Rome"
+   },
+   {
+    "name": "Pantheon, Rome",
+    "city": "Rome"
+   },
+   {
+    "name": "Florence Cathedral",
+    "city": "Florence"
+   },
+   {
+    "name": "Uffizi",
+    "city": "Florence"
+   },
+   {
+    "name": "Grand Canal (Venice)",
+    "city": "Venice"
+   },
+   {
+    "name": "St Mark's Basilica",
+    "city": "Venice"
+   },
+   {
+    "name": "Positano",
+    "city": "Amalfi Coast"
+   },
+   {
+    "name": "Manarola",
+    "city": "Cinque Terre"
+   }
+  ],
+  "Spain": [
+   {
+    "name": "Sagrada Família",
+    "city": "Barcelona"
+   },
+   {
+    "name": "Park Güell",
+    "city": "Barcelona"
+   },
+   {
+    "name": "Casa Batlló",
+    "city": "Barcelona"
+   },
+   {
+    "name": "La Rambla, Barcelona",
+    "city": "Barcelona"
+   },
+   {
+    "name": "Museo del Prado",
+    "city": "Madrid"
+   },
+   {
+    "name": "Royal Palace of Madrid",
+    "city": "Madrid"
+   },
+   {
+    "name": "Alhambra",
+    "city": "Granada"
+   },
+   {
+    "name": "Plaza de España (Seville)",
+    "city": "Seville"
+   },
+   {
+    "name": "Seville Cathedral",
+    "city": "Seville"
+   },
+   {
+    "name": "Cathedral of Santa Maria of Palma",
+    "city": "Mallorca"
+   }
+  ],
+  "Portugal": [
+   {
+    "name": "Belém Tower",
+    "city": "Lisbon"
+   },
+   {
+    "name": "Jerónimos Monastery",
+    "city": "Lisbon"
+   },
+   {
+    "name": "Alfama",
+    "city": "Lisbon"
+   },
+   {
+    "name": "Pena Palace",
+    "city": "Lisbon"
+   },
+   {
+    "name": "Tram 28",
+    "city": "Lisbon"
+   },
+   {
+    "name": "Ribeira (Porto)",
+    "city": "Porto"
+   },
+   {
+    "name": "Livraria Lello",
+    "city": "Porto"
+   },
+   {
+    "name": "Dom Luís I Bridge",
+    "city": "Porto"
+   },
+   {
+    "name": "Ponta da Piedade",
+    "city": "Lagos"
+   },
+   {
+    "name": "Benagil Cave",
+    "city": "Lagos"
+   }
+  ],
+  "Netherlands": [
+   {
+    "name": "Rijksmuseum",
+    "city": "Amsterdam"
+   },
+   {
+    "name": "Van Gogh Museum",
+    "city": "Amsterdam"
+   },
+   {
+    "name": "Anne Frank House",
+    "city": "Amsterdam"
+   },
+   {
+    "name": "Canals of Amsterdam",
+    "city": "Amsterdam"
+   },
+   {
+    "name": "Keukenhof",
+    "city": "Amsterdam"
+   },
+   {
+    "name": "Zaanse Schans",
+    "city": "Amsterdam"
+   },
+   {
+    "name": "Kinderdijk",
+    "city": "Utrecht"
+   },
+   {
+    "name": "Dom Tower of Utrecht",
+    "city": "Utrecht"
+   },
+   {
+    "name": "Vondelpark",
+    "city": "Amsterdam"
+   },
+   {
+    "name": "Giethoorn",
+    "city": "Utrecht"
+   }
+  ],
+  "Germany": [
+   {
+    "name": "Brandenburg Gate",
+    "city": "Berlin"
+   },
+   {
+    "name": "Berlin Wall Memorial",
+    "city": "Berlin"
+   },
+   {
+    "name": "Museum Island",
+    "city": "Berlin"
+   },
+   {
+    "name": "Reichstag building",
+    "city": "Berlin"
+   },
+   {
+    "name": "Neuschwanstein Castle",
+    "city": "Munich"
+   },
+   {
+    "name": "Marienplatz",
+    "city": "Munich"
+   },
+   {
+    "name": "English Garden",
+    "city": "Munich"
+   },
+   {
+    "name": "Elbphilharmonie",
+    "city": "Hamburg"
+   },
+   {
+    "name": "Speicherstadt",
+    "city": "Hamburg"
+   },
+   {
+    "name": "Cologne Cathedral",
+    "city": "Berlin"
+   }
+  ],
+  "Czechia": [
+   {
+    "name": "Charles Bridge",
+    "city": "Prague"
+   },
+   {
+    "name": "Prague Castle",
+    "city": "Prague"
+   },
+   {
+    "name": "Old Town Square (Prague)",
+    "city": "Prague"
+   },
+   {
+    "name": "Prague astronomical clock",
+    "city": "Prague"
+   },
+   {
+    "name": "St. Vitus Cathedral",
+    "city": "Prague"
+   },
+   {
+    "name": "Český Krumlov Castle",
+    "city": "Český Krumlov"
+   },
+   {
+    "name": "Kutná Hora Sedlec Ossuary",
+    "city": "Prague"
+   },
+   {
+    "name": "Petřín",
+    "city": "Prague"
+   },
+   {
+    "name": "Karlštejn",
+    "city": "Prague"
+   },
+   {
+    "name": "Vyšehrad",
+    "city": "Prague"
+   }
+  ],
+  "Austria": [
+   {
+    "name": "Schönbrunn Palace",
+    "city": "Vienna"
+   },
+   {
+    "name": "Belvedere, Vienna",
+    "city": "Vienna"
+   },
+   {
+    "name": "St. Stephen's Cathedral, Vienna",
+    "city": "Vienna"
+   },
+   {
+    "name": "Vienna State Opera",
+    "city": "Vienna"
+   },
+   {
+    "name": "Hofburg",
+    "city": "Vienna"
+   },
+   {
+    "name": "Hohensalzburg Fortress",
+    "city": "Salzburg"
+   },
+   {
+    "name": "Mirabell Palace",
+    "city": "Salzburg"
+   },
+   {
+    "name": "Getreidegasse",
+    "city": "Salzburg"
+   },
+   {
+    "name": "Hallstatt",
+    "city": "Hallstatt"
+   },
+   {
+    "name": "Grossglockner High Alpine Road",
+    "city": "Salzburg"
+   }
+  ],
+  "Switzerland": [
+   {
+    "name": "Matterhorn",
+    "city": "Zermatt"
+   },
+   {
+    "name": "Jungfraujoch",
+    "city": "Interlaken"
+   },
+   {
+    "name": "Chapel Bridge",
+    "city": "Lucerne"
+   },
+   {
+    "name": "Mount Pilatus",
+    "city": "Lucerne"
+   },
+   {
+    "name": "Lake Geneva",
+    "city": "Zurich"
+   },
+   {
+    "name": "Rhine Falls",
+    "city": "Zurich"
+   },
+   {
+    "name": "Grindelwald",
+    "city": "Interlaken"
+   },
+   {
+    "name": "Lauterbrunnen",
+    "city": "Interlaken"
+   },
+   {
+    "name": "Old Town Zurich",
+    "city": "Zurich"
+   },
+   {
+    "name": "Glacier Express",
+    "city": "Zermatt"
+   }
+  ],
+  "Hungary": [
+   {
+    "name": "Hungarian Parliament Building",
+    "city": "Budapest"
+   },
+   {
+    "name": "Buda Castle",
+    "city": "Budapest"
+   },
+   {
+    "name": "Fisherman's Bastion",
+    "city": "Budapest"
+   },
+   {
+    "name": "Széchenyi thermal bath",
+    "city": "Budapest"
+   },
+   {
+    "name": "Chain Bridge",
+    "city": "Budapest"
+   },
+   {
+    "name": "St. Stephen's Basilica",
+    "city": "Budapest"
+   },
+   {
+    "name": "Gellért Baths",
+    "city": "Budapest"
+   },
+   {
+    "name": "Szimpla Kert",
+    "city": "Budapest"
+   },
+   {
+    "name": "Eger Castle",
+    "city": "Eger"
+   },
+   {
+    "name": "Valley of the Beautiful Women",
+    "city": "Eger"
+   }
+  ],
+  "Greece": [
+   {
+    "name": "Acropolis of Athens",
+    "city": "Athens"
+   },
+   {
+    "name": "Parthenon",
+    "city": "Athens"
+   },
+   {
+    "name": "Plaka",
+    "city": "Athens"
+   },
+   {
+    "name": "Oia",
+    "city": "Santorini"
+   },
+   {
+    "name": "Red Beach (Santorini)",
+    "city": "Santorini"
+   },
+   {
+    "name": "Knossos",
+    "city": "Crete"
+   },
+   {
+    "name": "Balos",
+    "city": "Crete"
+   },
+   {
+    "name": "Little Venice (Mykonos)",
+    "city": "Mykonos"
+   },
+   {
+    "name": "Windmills of Mykonos",
+    "city": "Mykonos"
+   },
+   {
+    "name": "Meteora",
+    "city": "Athens"
+   }
+  ],
+  "Iceland": [
+   {
+    "name": "Blue Lagoon",
+    "city": "Reykjavik"
+   },
+   {
+    "name": "Golden Circle",
+    "city": "Reykjavik"
+   },
+   {
+    "name": "Gullfoss",
+    "city": "Reykjavik"
+   },
+   {
+    "name": "Þingvellir",
+    "city": "Reykjavik"
+   },
+   {
+    "name": "Hallgrímskirkja",
+    "city": "Reykjavik"
+   },
+   {
+    "name": "Jökulsárlón",
+    "city": "Vík"
+   },
+   {
+    "name": "Reynisfjara",
+    "city": "Vík"
+   },
+   {
+    "name": "Skógafoss",
+    "city": "Vík"
+   },
+   {
+    "name": "Seljalandsfoss",
+    "city": "Vík"
+   },
+   {
+    "name": "Northern lights in Iceland",
+    "city": "Reykjavik"
+   }
+  ],
+  "Denmark": [
+   {
+    "name": "Nyhavn",
+    "city": "Copenhagen"
+   },
+   {
+    "name": "Tivoli Gardens",
+    "city": "Copenhagen"
+   },
+   {
+    "name": "The Little Mermaid (statue)",
+    "city": "Copenhagen"
+   },
+   {
+    "name": "Rosenborg Castle",
+    "city": "Copenhagen"
+   },
+   {
+    "name": "Christiania",
+    "city": "Copenhagen"
+   },
+   {
+    "name": "Kronborg",
+    "city": "Copenhagen"
+   },
+   {
+    "name": "Frederiksborg Castle",
+    "city": "Copenhagen"
+   },
+   {
+    "name": "ARoS Aarhus Art Museum",
+    "city": "Aarhus"
+   },
+   {
+    "name": "Den Gamle By",
+    "city": "Aarhus"
+   },
+   {
+    "name": "Louisiana Museum of Modern Art",
+    "city": "Copenhagen"
+   }
+  ],
+  "Sweden": [
+   {
+    "name": "Gamla stan",
+    "city": "Stockholm"
+   },
+   {
+    "name": "Vasa Museum",
+    "city": "Stockholm"
+   },
+   {
+    "name": "Stockholm City Hall",
+    "city": "Stockholm"
+   },
+   {
+    "name": "ABBA The Museum",
+    "city": "Stockholm"
+   },
+   {
+    "name": "Skansen",
+    "city": "Stockholm"
+   },
+   {
+    "name": "Djurgården",
+    "city": "Stockholm"
+   },
+   {
+    "name": "Stockholm archipelago",
+    "city": "Stockholm"
+   },
+   {
+    "name": "Abisko National Park",
+    "city": "Abisko"
+   },
+   {
+    "name": "Aurora Sky Station",
+    "city": "Abisko"
+   },
+   {
+    "name": "Icehotel",
+    "city": "Abisko"
+   }
+  ],
+  "Norway": [
+   {
+    "name": "Geirangerfjord",
+    "city": "Bergen"
+   },
+   {
+    "name": "Bryggen",
+    "city": "Bergen"
+   },
+   {
+    "name": "Preikestolen",
+    "city": "Bergen"
+   },
+   {
+    "name": "Trolltunga",
+    "city": "Bergen"
+   },
+   {
+    "name": "Oslo Opera House",
+    "city": "Oslo"
+   },
+   {
+    "name": "Vigeland installation",
+    "city": "Oslo"
+   },
+   {
+    "name": "Lofoten",
+    "city": "Tromsø"
+   },
+   {
+    "name": "Northern lights in Tromsø",
+    "city": "Tromsø"
+   },
+   {
+    "name": "Flåm Railway",
+    "city": "Bergen"
+   },
+   {
+    "name": "Fram Museum",
+    "city": "Oslo"
+   }
+  ],
+  "Finland": [
+   {
+    "name": "Suomenlinna",
+    "city": "Helsinki"
+   },
+   {
+    "name": "Helsinki Cathedral",
+    "city": "Helsinki"
+   },
+   {
+    "name": "Temppeliaukio Church",
+    "city": "Helsinki"
+   },
+   {
+    "name": "Market Square (Helsinki)",
+    "city": "Helsinki"
+   },
+   {
+    "name": "Oodi Helsinki Central Library",
+    "city": "Helsinki"
+   },
+   {
+    "name": "Löyly",
+    "city": "Helsinki"
+   },
+   {
+    "name": "Santa Claus Village",
+    "city": "Rovaniemi"
+   },
+   {
+    "name": "Arktikum",
+    "city": "Rovaniemi"
+   },
+   {
+    "name": "Northern lights in Lapland",
+    "city": "Rovaniemi"
+   },
+   {
+    "name": "Nuuksio National Park",
+    "city": "Helsinki"
+   }
+  ],
+  "Ireland": [
+   {
+    "name": "Cliffs of Moher",
+    "city": "Galway"
+   },
+   {
+    "name": "Guinness Storehouse",
+    "city": "Dublin"
+   },
+   {
+    "name": "Trinity College Library",
+    "city": "Dublin"
+   },
+   {
+    "name": "Temple Bar",
+    "city": "Dublin"
+   },
+   {
+    "name": "Ring of Kerry",
+    "city": "Galway"
+   },
+   {
+    "name": "Giant's Causeway",
+    "city": "Dublin"
+   },
+   {
+    "name": "Kylemore Abbey",
+    "city": "Galway"
+   },
+   {
+    "name": "Connemara National Park",
+    "city": "Galway"
+   },
+   {
+    "name": "Dublin Castle",
+    "city": "Dublin"
+   },
+   {
+    "name": "Rock of Cashel",
+    "city": "Dublin"
+   }
+  ],
+  "United States": [
+   {
+    "name": "Statue of Liberty",
+    "city": "New York"
+   },
+   {
+    "name": "Times Square",
+    "city": "New York"
+   },
+   {
+    "name": "Central Park",
+    "city": "New York"
+   },
+   {
+    "name": "Golden Gate Bridge",
+    "city": "San Francisco"
+   },
+   {
+    "name": "Alcatraz Island",
+    "city": "San Francisco"
+   },
+   {
+    "name": "Grand Canyon",
+    "city": "Las Vegas"
+   },
+   {
+    "name": "Las Vegas Strip",
+    "city": "Las Vegas"
+   },
+   {
+    "name": "Hollywood Walk of Fame",
+    "city": "Los Angeles"
+   },
+   {
+    "name": "Santa Monica Pier",
+    "city": "Los Angeles"
+   },
+   {
+    "name": "Waikiki",
+    "city": "Honolulu"
+   }
+  ],
+  "Canada": [
+   {
+    "name": "Niagara Falls",
+    "city": "Toronto"
+   },
+   {
+    "name": "CN Tower",
+    "city": "Toronto"
+   },
+   {
+    "name": "Moraine Lake",
+    "city": "Banff"
+   },
+   {
+    "name": "Lake Louise",
+    "city": "Banff"
+   },
+   {
+    "name": "Stanley Park",
+    "city": "Vancouver"
+   },
+   {
+    "name": "Granville Island",
+    "city": "Vancouver"
+   },
+   {
+    "name": "Capilano Suspension Bridge",
+    "city": "Vancouver"
+   },
+   {
+    "name": "Icefields Parkway",
+    "city": "Banff"
+   },
+   {
+    "name": "Old Quebec",
+    "city": "Toronto"
+   },
+   {
+    "name": "Distillery District",
+    "city": "Toronto"
+   }
+  ],
+  "Mexico": [
+   {
+    "name": "Chichen Itza",
+    "city": "Cancún"
+   },
+   {
+    "name": "Tulum (Maya site)",
+    "city": "Tulum"
+   },
+   {
+    "name": "Teotihuacan",
+    "city": "Mexico City"
+   },
+   {
+    "name": "Zócalo",
+    "city": "Mexico City"
+   },
+   {
+    "name": "Frida Kahlo Museum",
+    "city": "Mexico City"
+   },
+   {
+    "name": "Xochimilco",
+    "city": "Mexico City"
+   },
+   {
+    "name": "Cenote Ik Kil",
+    "city": "Cancún"
+   },
+   {
+    "name": "Isla Mujeres",
+    "city": "Cancún"
+   },
+   {
+    "name": "Monte Albán",
+    "city": "Oaxaca"
+   },
+   {
+    "name": "Hierve el Agua",
+    "city": "Oaxaca"
+   }
+  ],
+  "Peru": [
+   {
+    "name": "Machu Picchu",
+    "city": "Cusco"
+   },
+   {
+    "name": "Sacred Valley",
+    "city": "Cusco"
+   },
+   {
+    "name": "Rainbow Mountain (Peru)",
+    "city": "Cusco"
+   },
+   {
+    "name": "Sacsayhuamán",
+    "city": "Cusco"
+   },
+   {
+    "name": "Plaza de Armas, Cusco",
+    "city": "Cusco"
+   },
+   {
+    "name": "Lake Titicaca",
+    "city": "Cusco"
+   },
+   {
+    "name": "Miraflores",
+    "city": "Lima"
+   },
+   {
+    "name": "Historic Centre of Lima",
+    "city": "Lima"
+   },
+   {
+    "name": "Nazca Lines",
+    "city": "Lima"
+   },
+   {
+    "name": "Huacachina",
+    "city": "Lima"
+   }
+  ],
+  "Brazil": [
+   {
+    "name": "Christ the Redeemer",
+    "city": "Rio de Janeiro"
+   },
+   {
+    "name": "Sugarloaf Mountain",
+    "city": "Rio de Janeiro"
+   },
+   {
+    "name": "Copacabana Beach",
+    "city": "Rio de Janeiro"
+   },
+   {
+    "name": "Ipanema",
+    "city": "Rio de Janeiro"
+   },
+   {
+    "name": "Selarón Steps",
+    "city": "Rio de Janeiro"
+   },
+   {
+    "name": "Iguazu Falls",
+    "city": "Foz do Iguaçu"
+   },
+   {
+    "name": "Avenida Paulista",
+    "city": "São Paulo"
+   },
+   {
+    "name": "Ibirapuera Park",
+    "city": "São Paulo"
+   },
+   {
+    "name": "São Paulo Museum of Art",
+    "city": "São Paulo"
+   },
+   {
+    "name": "Tijuca Forest",
+    "city": "Rio de Janeiro"
+   }
+  ],
+  "Argentina": [
+   {
+    "name": "Perito Moreno Glacier",
+    "city": "El Calafate"
+   },
+   {
+    "name": "Iguazu Falls",
+    "city": "Buenos Aires"
+   },
+   {
+    "name": "La Boca",
+    "city": "Buenos Aires"
+   },
+   {
+    "name": "Teatro Colón",
+    "city": "Buenos Aires"
+   },
+   {
+    "name": "Recoleta Cemetery",
+    "city": "Buenos Aires"
+   },
+   {
+    "name": "Plaza de Mayo",
+    "city": "Buenos Aires"
+   },
+   {
+    "name": "Fitz Roy",
+    "city": "El Calafate"
+   },
+   {
+    "name": "Aconcagua",
+    "city": "Mendoza"
+   },
+   {
+    "name": "Mendoza wine region",
+    "city": "Mendoza"
+   },
+   {
+    "name": "San Telmo",
+    "city": "Buenos Aires"
+   }
+  ],
+  "Australia": [
+   {
+    "name": "Sydney Opera House",
+    "city": "Sydney"
+   },
+   {
+    "name": "Sydney Harbour Bridge",
+    "city": "Sydney"
+   },
+   {
+    "name": "Bondi Beach",
+    "city": "Sydney"
+   },
+   {
+    "name": "Blue Mountains",
+    "city": "Sydney"
+   },
+   {
+    "name": "Great Barrier Reef",
+    "city": "Cairns"
+   },
+   {
+    "name": "Daintree Rainforest",
+    "city": "Cairns"
+   },
+   {
+    "name": "Great Ocean Road",
+    "city": "Melbourne"
+   },
+   {
+    "name": "Federation Square",
+    "city": "Melbourne"
+   },
+   {
+    "name": "Rottnest Island",
+    "city": "Perth"
+   },
+   {
+    "name": "Uluru",
+    "city": "Perth"
+   }
+  ],
+  "New Zealand": [
+   {
+    "name": "Milford Sound",
+    "city": "Queenstown"
+   },
+   {
+    "name": "Hobbiton Movie Set",
+    "city": "Rotorua"
+   },
+   {
+    "name": "Waitomo Glowworm Caves",
+    "city": "Auckland"
+   },
+   {
+    "name": "Sky Tower",
+    "city": "Auckland"
+   },
+   {
+    "name": "Te Puia",
+    "city": "Rotorua"
+   },
+   {
+    "name": "Lake Wanaka",
+    "city": "Wanaka"
+   },
+   {
+    "name": "Roys Peak",
+    "city": "Wanaka"
+   },
+   {
+    "name": "Tongariro Alpine Crossing",
+    "city": "Rotorua"
+   },
+   {
+    "name": "Lake Tekapo",
+    "city": "Queenstown"
+   },
+   {
+    "name": "Franz Josef Glacier",
+    "city": "Queenstown"
+   }
+  ],
+  "Saudi Arabia": [
+   {
+    "name": "Hegra",
+    "city": "AlUla"
+   },
+   {
+    "name": "Elephant Rock (AlUla)",
+    "city": "AlUla"
+   },
+   {
+    "name": "Maraya",
+    "city": "AlUla"
+   },
+   {
+    "name": "Edge of the World (Saudi Arabia)",
+    "city": "Riyadh"
+   },
+   {
+    "name": "Kingdom Centre",
+    "city": "Riyadh"
+   },
+   {
+    "name": "Diriyah",
+    "city": "Riyadh"
+   },
+   {
+    "name": "Masmak Fort",
+    "city": "Riyadh"
+   },
+   {
+    "name": "Al-Balad, Jeddah",
+    "city": "Jeddah"
+   },
+   {
+    "name": "King Fahd's Fountain",
+    "city": "Jeddah"
+   },
+   {
+    "name": "Jeddah Corniche",
+    "city": "Jeddah"
+   }
+  ],
+  "Qatar": [
+   {
+    "name": "Museum of Islamic Art, Doha",
+    "city": "Doha"
+   },
+   {
+    "name": "National Museum of Qatar",
+    "city": "Doha"
+   },
+   {
+    "name": "Souq Waqif",
+    "city": "Doha"
+   },
+   {
+    "name": "The Pearl-Qatar",
+    "city": "Doha"
+   },
+   {
+    "name": "Katara Cultural Village",
+    "city": "Doha"
+   },
+   {
+    "name": "Doha Corniche",
+    "city": "Doha"
+   },
+   {
+    "name": "Khor Al Adaid",
+    "city": "Khor Al Adaid"
+   },
+   {
+    "name": "Msheireb Downtown Doha",
+    "city": "Doha"
+   },
+   {
+    "name": "Qatar National Library",
+    "city": "Doha"
+   },
+   {
+    "name": "Zekreet",
+    "city": "Khor Al Adaid"
+   }
+  ],
+  "Bahrain": [
+   {
+    "name": "Bahrain Fort",
+    "city": "Manama"
+   },
+   {
+    "name": "Bahrain National Museum",
+    "city": "Manama"
+   },
+   {
+    "name": "Al Fateh Grand Mosque",
+    "city": "Manama"
+   },
+   {
+    "name": "Bab Al Bahrain",
+    "city": "Manama"
+   },
+   {
+    "name": "Pearling Path",
+    "city": "Muharraq"
+   },
+   {
+    "name": "Bahrain World Trade Center",
+    "city": "Manama"
+   },
+   {
+    "name": "Tree of Life (Bahrain)",
+    "city": "Manama"
+   },
+   {
+    "name": "Bahrain International Circuit",
+    "city": "Manama"
+   }
+  ],
+  "Kuwait": [
+   {
+    "name": "Kuwait Towers",
+    "city": "Kuwait City"
+   },
+   {
+    "name": "Grand Mosque (Kuwait)",
+    "city": "Kuwait City"
+   },
+   {
+    "name": "Souq Al-Mubarakiya",
+    "city": "Kuwait City"
+   },
+   {
+    "name": "Sheikh Jaber Al-Ahmad Cultural Centre",
+    "city": "Kuwait City"
+   },
+   {
+    "name": "Liberation Tower",
+    "city": "Kuwait City"
+   },
+   {
+    "name": "Al Shaheed Park",
+    "city": "Kuwait City"
+   },
+   {
+    "name": "Failaka Island",
+    "city": "Failaka Island"
+   },
+   {
+    "name": "The Avenues (Kuwait)",
+    "city": "Kuwait City"
+   }
+  ],
+  "Israel": [
+   {
+    "name": "Western Wall",
+    "city": "Jerusalem"
+   },
+   {
+    "name": "Church of the Holy Sepulchre",
+    "city": "Jerusalem"
+   },
+   {
+    "name": "Old City (Jerusalem)",
+    "city": "Jerusalem"
+   },
+   {
+    "name": "Dome of the Rock",
+    "city": "Jerusalem"
+   },
+   {
+    "name": "Masada",
+    "city": "Ein Bokek"
+   },
+   {
+    "name": "Dead Sea",
+    "city": "Ein Bokek"
+   },
+   {
+    "name": "Jaffa",
+    "city": "Tel Aviv"
+   },
+   {
+    "name": "Carmel Market",
+    "city": "Tel Aviv"
+   },
+   {
+    "name": "Yad Vashem",
+    "city": "Jerusalem"
+   },
+   {
+    "name": "Mahane Yehuda Market",
+    "city": "Jerusalem"
+   }
+  ],
+  "Lebanon": [
+   {
+    "name": "Jeita Grotto",
+    "city": "Beirut"
+   },
+   {
+    "name": "Baalbek",
+    "city": "Baalbek"
+   },
+   {
+    "name": "Byblos Castle",
+    "city": "Byblos"
+   },
+   {
+    "name": "Raouché",
+    "city": "Beirut"
+   },
+   {
+    "name": "Corniche Beirut",
+    "city": "Beirut"
+   },
+   {
+    "name": "Cedars of God",
+    "city": "Byblos"
+   },
+   {
+    "name": "Harissa",
+    "city": "Byblos"
+   },
+   {
+    "name": "National Museum of Beirut",
+    "city": "Beirut"
+   },
+   {
+    "name": "Mohammad Al-Amin Mosque",
+    "city": "Beirut"
+   },
+   {
+    "name": "Gemmayzeh",
+    "city": "Beirut"
+   }
+  ],
+  "Iran": [
+   {
+    "name": "Naqsh-e Jahan Square",
+    "city": "Isfahan"
+   },
+   {
+    "name": "Shah Mosque",
+    "city": "Isfahan"
+   },
+   {
+    "name": "Si-o-se-pol",
+    "city": "Isfahan"
+   },
+   {
+    "name": "Nasir al-Mulk Mosque",
+    "city": "Shiraz"
+   },
+   {
+    "name": "Persepolis",
+    "city": "Shiraz"
+   },
+   {
+    "name": "Eram Garden",
+    "city": "Shiraz"
+   },
+   {
+    "name": "Golestan Palace",
+    "city": "Tehran"
+   },
+   {
+    "name": "Azadi Tower",
+    "city": "Tehran"
+   },
+   {
+    "name": "Jameh Mosque of Yazd",
+    "city": "Yazd"
+   },
+   {
+    "name": "Dowlatabad Garden",
+    "city": "Yazd"
+   }
+  ],
+  "Poland": [
+   {
+    "name": "Main Market Square, Kraków",
+    "city": "Kraków"
+   },
+   {
+    "name": "Wawel Castle",
+    "city": "Kraków"
+   },
+   {
+    "name": "Wieliczka Salt Mine",
+    "city": "Kraków"
+   },
+   {
+    "name": "Auschwitz-Birkenau State Museum",
+    "city": "Kraków"
+   },
+   {
+    "name": "Kazimierz",
+    "city": "Kraków"
+   },
+   {
+    "name": "Warsaw Old Town",
+    "city": "Warsaw"
+   },
+   {
+    "name": "Łazienki Park",
+    "city": "Warsaw"
+   },
+   {
+    "name": "Long Market, Gdańsk",
+    "city": "Gdańsk"
+   },
+   {
+    "name": "Malbork Castle",
+    "city": "Gdańsk"
+   },
+   {
+    "name": "Morskie Oko",
+    "city": "Zakopane"
+   }
+  ],
+  "Croatia": [
+   {
+    "name": "Walls of Dubrovnik",
+    "city": "Dubrovnik"
+   },
+   {
+    "name": "Dubrovnik Old Town",
+    "city": "Dubrovnik"
+   },
+   {
+    "name": "Diocletian's Palace",
+    "city": "Split"
+   },
+   {
+    "name": "Plitvice Lakes National Park",
+    "city": "Plitvice Lakes"
+   },
+   {
+    "name": "Krka National Park",
+    "city": "Split"
+   },
+   {
+    "name": "Hvar (town)",
+    "city": "Hvar"
+   },
+   {
+    "name": "Pakleni Islands",
+    "city": "Hvar"
+   },
+   {
+    "name": "Zlatni Rat",
+    "city": "Split"
+   },
+   {
+    "name": "Lokrum",
+    "city": "Dubrovnik"
+   },
+   {
+    "name": "Upper Town (Zagreb)",
+    "city": "Zagreb"
+   }
+  ],
+  "Slovenia": [
+   {
+    "name": "Lake Bled",
+    "city": "Lake Bled"
+   },
+   {
+    "name": "Bled Castle",
+    "city": "Lake Bled"
+   },
+   {
+    "name": "Lake Bohinj",
+    "city": "Lake Bled"
+   },
+   {
+    "name": "Vintgar Gorge",
+    "city": "Lake Bled"
+   },
+   {
+    "name": "Postojna Cave",
+    "city": "Ljubljana"
+   },
+   {
+    "name": "Predjama Castle",
+    "city": "Ljubljana"
+   },
+   {
+    "name": "Ljubljana Castle",
+    "city": "Ljubljana"
+   },
+   {
+    "name": "Triple Bridge",
+    "city": "Ljubljana"
+   },
+   {
+    "name": "Škocjan Caves",
+    "city": "Piran"
+   },
+   {
+    "name": "Tartini Square",
+    "city": "Piran"
+   }
+  ],
+  "Slovakia": [
+   {
+    "name": "Bratislava Castle",
+    "city": "Bratislava"
+   },
+   {
+    "name": "Old Town Bratislava",
+    "city": "Bratislava"
+   },
+   {
+    "name": "St. Martin's Cathedral, Bratislava",
+    "city": "Bratislava"
+   },
+   {
+    "name": "Devín Castle",
+    "city": "Bratislava"
+   },
+   {
+    "name": "Blue Church",
+    "city": "Bratislava"
+   },
+   {
+    "name": "Štrbské Pleso",
+    "city": "High Tatras"
+   },
+   {
+    "name": "Lomnický štít",
+    "city": "High Tatras"
+   },
+   {
+    "name": "Spiš Castle",
+    "city": "High Tatras"
+   },
+   {
+    "name": "Slovak Paradise National Park",
+    "city": "High Tatras"
+   },
+   {
+    "name": "Bojnice Castle",
+    "city": "Bratislava"
+   }
+  ],
+  "Romania": [
+   {
+    "name": "Bran Castle",
+    "city": "Brașov"
+   },
+   {
+    "name": "Peleș Castle",
+    "city": "Brașov"
+   },
+   {
+    "name": "Brașov Council Square",
+    "city": "Brașov"
+   },
+   {
+    "name": "Black Church",
+    "city": "Brașov"
+   },
+   {
+    "name": "Palace of the Parliament",
+    "city": "Bucharest"
+   },
+   {
+    "name": "Old Town Bucharest",
+    "city": "Bucharest"
+   },
+   {
+    "name": "Sibiu Large Square",
+    "city": "Sibiu"
+   },
+   {
+    "name": "Transfăgărășan",
+    "city": "Sibiu"
+   },
+   {
+    "name": "Sighișoara",
+    "city": "Brașov"
+   },
+   {
+    "name": "Merry Cemetery",
+    "city": "Sibiu"
+   }
+  ],
+  "Bulgaria": [
+   {
+    "name": "Alexander Nevsky Cathedral, Sofia",
+    "city": "Sofia"
+   },
+   {
+    "name": "Rila Monastery",
+    "city": "Rila Monastery"
+   },
+   {
+    "name": "Seven Rila Lakes",
+    "city": "Rila Monastery"
+   },
+   {
+    "name": "Plovdiv Old Town",
+    "city": "Plovdiv"
+   },
+   {
+    "name": "Roman Theatre of Philippopolis",
+    "city": "Plovdiv"
+   },
+   {
+    "name": "Boyana Church",
+    "city": "Sofia"
+   },
+   {
+    "name": "Vitosha",
+    "city": "Sofia"
+   },
+   {
+    "name": "Nesebar",
+    "city": "Plovdiv"
+   },
+   {
+    "name": "Belogradchik Rocks",
+    "city": "Sofia"
+   },
+   {
+    "name": "Kapana",
+    "city": "Plovdiv"
+   }
+  ],
+  "Serbia": [
+   {
+    "name": "Belgrade Fortress",
+    "city": "Belgrade"
+   },
+   {
+    "name": "Church of Saint Sava",
+    "city": "Belgrade"
+   },
+   {
+    "name": "Skadarlija",
+    "city": "Belgrade"
+   },
+   {
+    "name": "Knez Mihailova Street",
+    "city": "Belgrade"
+   },
+   {
+    "name": "Zemun",
+    "city": "Belgrade"
+   },
+   {
+    "name": "Petrovaradin Fortress",
+    "city": "Novi Sad"
+   },
+   {
+    "name": "Novi Sad Old Town",
+    "city": "Novi Sad"
+   },
+   {
+    "name": "Fruška Gora",
+    "city": "Novi Sad"
+   },
+   {
+    "name": "Đavolja Varoš",
+    "city": "Belgrade"
+   },
+   {
+    "name": "Tara National Park",
+    "city": "Belgrade"
+   }
+  ],
+  "Bosnia and Herzegovina": [
+   {
+    "name": "Stari Most",
+    "city": "Mostar"
+   },
+   {
+    "name": "Baščaršija",
+    "city": "Sarajevo"
+   },
+   {
+    "name": "Latin Bridge",
+    "city": "Sarajevo"
+   },
+   {
+    "name": "Gazi Husrev-beg Mosque",
+    "city": "Sarajevo"
+   },
+   {
+    "name": "Sarajevo Tunnel",
+    "city": "Sarajevo"
+   },
+   {
+    "name": "Kravice waterfall",
+    "city": "Mostar"
+   },
+   {
+    "name": "Blagaj Tekke",
+    "city": "Mostar"
+   },
+   {
+    "name": "Počitelj",
+    "city": "Mostar"
+   },
+   {
+    "name": "Trebević",
+    "city": "Sarajevo"
+   },
+   {
+    "name": "Vrelo Bosne",
+    "city": "Sarajevo"
+   }
+  ],
+  "Montenegro": [
+   {
+    "name": "Kotor Old Town",
+    "city": "Kotor"
+   },
+   {
+    "name": "Bay of Kotor",
+    "city": "Kotor"
+   },
+   {
+    "name": "Kotor Fortress",
+    "city": "Kotor"
+   },
+   {
+    "name": "Our Lady of the Rocks",
+    "city": "Kotor"
+   },
+   {
+    "name": "Perast",
+    "city": "Kotor"
+   },
+   {
+    "name": "Budva Old Town",
+    "city": "Budva"
+   },
+   {
+    "name": "Sveti Stefan",
+    "city": "Budva"
+   },
+   {
+    "name": "Durmitor National Park",
+    "city": "Durmitor"
+   },
+   {
+    "name": "Tara River Canyon",
+    "city": "Durmitor"
+   },
+   {
+    "name": "Ostrog Monastery",
+    "city": "Durmitor"
+   }
+  ],
+  "Albania": [
+   {
+    "name": "Ksamil Beach",
+    "city": "Ksamil"
+   },
+   {
+    "name": "Butrint",
+    "city": "Ksamil"
+   },
+   {
+    "name": "Blue Eye (Albania)",
+    "city": "Ksamil"
+   },
+   {
+    "name": "Berat Castle",
+    "city": "Berat"
+   },
+   {
+    "name": "Gjirokastër",
+    "city": "Berat"
+   },
+   {
+    "name": "Skanderbeg Square",
+    "city": "Tirana"
+   },
+   {
+    "name": "Bunk'Art",
+    "city": "Tirana"
+   },
+   {
+    "name": "Dajti Mountain",
+    "city": "Tirana"
+   },
+   {
+    "name": "Llogara Pass",
+    "city": "Ksamil"
+   },
+   {
+    "name": "Theth",
+    "city": "Tirana"
+   }
+  ],
+  "North Macedonia": [
+   {
+    "name": "Lake Ohrid",
+    "city": "Ohrid"
+   },
+   {
+    "name": "Church of St. John at Kaneo",
+    "city": "Ohrid"
+   },
+   {
+    "name": "Samuel's Fortress",
+    "city": "Ohrid"
+   },
+   {
+    "name": "Plaošnik",
+    "city": "Ohrid"
+   },
+   {
+    "name": "Old Bazaar, Skopje",
+    "city": "Skopje"
+   },
+   {
+    "name": "Stone Bridge (Skopje)",
+    "city": "Skopje"
+   },
+   {
+    "name": "Matka Canyon",
+    "city": "Skopje"
+   },
+   {
+    "name": "Millennium Cross",
+    "city": "Skopje"
+   },
+   {
+    "name": "Galičica",
+    "city": "Ohrid"
+   },
+   {
+    "name": "Saint Naum Monastery",
+    "city": "Ohrid"
+   }
+  ],
+  "Estonia": [
+   {
+    "name": "Tallinn Old Town",
+    "city": "Tallinn"
+   },
+   {
+    "name": "Toompea Castle",
+    "city": "Tallinn"
+   },
+   {
+    "name": "Alexander Nevsky Cathedral, Tallinn",
+    "city": "Tallinn"
+   },
+   {
+    "name": "Kadriorg Palace",
+    "city": "Tallinn"
+   },
+   {
+    "name": "Telliskivi Creative City",
+    "city": "Tallinn"
+   },
+   {
+    "name": "Lennusadam",
+    "city": "Tallinn"
+   },
+   {
+    "name": "Estonian National Museum",
+    "city": "Tartu"
+   },
+   {
+    "name": "Tartu Town Hall Square",
+    "city": "Tartu"
+   },
+   {
+    "name": "Lahemaa National Park",
+    "city": "Tallinn"
+   },
+   {
+    "name": "Saaremaa",
+    "city": "Tallinn"
+   }
+  ],
+  "Latvia": [
+   {
+    "name": "Riga Old Town",
+    "city": "Riga"
+   },
+   {
+    "name": "House of the Blackheads",
+    "city": "Riga"
+   },
+   {
+    "name": "Riga Central Market",
+    "city": "Riga"
+   },
+   {
+    "name": "Art Nouveau architecture in Riga",
+    "city": "Riga"
+   },
+   {
+    "name": "Freedom Monument",
+    "city": "Riga"
+   },
+   {
+    "name": "Rundāle Palace",
+    "city": "Riga"
+   },
+   {
+    "name": "Jūrmala beach",
+    "city": "Jūrmala"
+   },
+   {
+    "name": "Gauja National Park",
+    "city": "Riga"
+   },
+   {
+    "name": "Sigulda",
+    "city": "Riga"
+   },
+   {
+    "name": "Kemeri National Park",
+    "city": "Jūrmala"
+   }
+  ],
+  "Lithuania": [
+   {
+    "name": "Vilnius Old Town",
+    "city": "Vilnius"
+   },
+   {
+    "name": "Gediminas' Tower",
+    "city": "Vilnius"
+   },
+   {
+    "name": "Vilnius Cathedral",
+    "city": "Vilnius"
+   },
+   {
+    "name": "Gates of Dawn",
+    "city": "Vilnius"
+   },
+   {
+    "name": "Užupis",
+    "city": "Vilnius"
+   },
+   {
+    "name": "Trakai Island Castle",
+    "city": "Trakai"
+   },
+   {
+    "name": "Hill of Crosses",
+    "city": "Vilnius"
+   },
+   {
+    "name": "Curonian Spit",
+    "city": "Vilnius"
+   },
+   {
+    "name": "Kaunas Old Town",
+    "city": "Vilnius"
+   },
+   {
+    "name": "Lake Galvė",
+    "city": "Trakai"
+   }
+  ],
+  "Georgia": [
+   {
+    "name": "Narikala",
+    "city": "Tbilisi"
+   },
+   {
+    "name": "Old Tbilisi",
+    "city": "Tbilisi"
+   },
+   {
+    "name": "Abanotubani",
+    "city": "Tbilisi"
+   },
+   {
+    "name": "Bridge of Peace",
+    "city": "Tbilisi"
+   },
+   {
+    "name": "Gergeti Trinity Church",
+    "city": "Kazbegi"
+   },
+   {
+    "name": "Kazbek",
+    "city": "Kazbegi"
+   },
+   {
+    "name": "Ananuri",
+    "city": "Kazbegi"
+   },
+   {
+    "name": "Batumi Boulevard",
+    "city": "Batumi"
+   },
+   {
+    "name": "Sighnaghi",
+    "city": "Tbilisi"
+   },
+   {
+    "name": "Uplistsikhe",
+    "city": "Tbilisi"
+   }
+  ],
+  "Armenia": [
+   {
+    "name": "Tatev Monastery",
+    "city": "Yerevan"
+   },
+   {
+    "name": "Geghard",
+    "city": "Yerevan"
+   },
+   {
+    "name": "Garni Temple",
+    "city": "Yerevan"
+   },
+   {
+    "name": "Khor Virap",
+    "city": "Yerevan"
+   },
+   {
+    "name": "Lake Sevan",
+    "city": "Dilijan"
+   },
+   {
+    "name": "Sevanavank",
+    "city": "Dilijan"
+   },
+   {
+    "name": "Yerevan Cascade",
+    "city": "Yerevan"
+   },
+   {
+    "name": "Republic Square, Yerevan",
+    "city": "Yerevan"
+   },
+   {
+    "name": "Haghartsin Monastery",
+    "city": "Dilijan"
+   },
+   {
+    "name": "Dilijan National Park",
+    "city": "Dilijan"
+   }
+  ],
+  "Azerbaijan": [
+   {
+    "name": "Icherisheher",
+    "city": "Baku"
+   },
+   {
+    "name": "Maiden Tower (Baku)",
+    "city": "Baku"
+   },
+   {
+    "name": "Palace of the Shirvanshahs",
+    "city": "Baku"
+   },
+   {
+    "name": "Flame Towers",
+    "city": "Baku"
+   },
+   {
+    "name": "Heydar Aliyev Center",
+    "city": "Baku"
+   },
+   {
+    "name": "Baku Boulevard",
+    "city": "Baku"
+   },
+   {
+    "name": "Gobustan National Park",
+    "city": "Baku"
+   },
+   {
+    "name": "Yanar Dag",
+    "city": "Baku"
+   },
+   {
+    "name": "Palace of Shaki Khans",
+    "city": "Sheki"
+   },
+   {
+    "name": "Sheki Caravanserai",
+    "city": "Sheki"
+   }
+  ],
+  "Moldova": [
+   {
+    "name": "Old Orhei",
+    "city": "Old Orhei"
+   },
+   {
+    "name": "Cricova (winery)",
+    "city": "Chișinău"
+   },
+   {
+    "name": "Mileștii Mici",
+    "city": "Chișinău"
+   },
+   {
+    "name": "Stephen the Great Monument",
+    "city": "Chișinău"
+   },
+   {
+    "name": "Nativity Cathedral, Chișinău",
+    "city": "Chișinău"
+   },
+   {
+    "name": "Capriana Monastery",
+    "city": "Chișinău"
+   },
+   {
+    "name": "Soroca Fortress",
+    "city": "Chișinău"
+   },
+   {
+    "name": "Saharna Monastery",
+    "city": "Old Orhei"
+   }
+  ]
+ }
+}

@@ -51,19 +51,17 @@
           </div>
 
           <div class="cw-foot">
-            <span class="cw-balance" :class="p.balance > 0.009 ? 'pos' : p.balance < -0.009 ? 'neg' : ''">
+            <button type="button" class="cw-balance" :class="p.balance > 0.009 ? 'pos' : p.balance < -0.009 ? 'neg' : ''"
+              :title="'See ' + p.name + ' in Expenses'" @click="$emit('go', 'expenses', p.name)">
               <template v-if="p.balance === null">No expenses yet</template>
               <template v-else-if="p.balance > 0.009">Gets back {{ money(p.balance, home) }}</template>
               <template v-else-if="p.balance < -0.009">Owes {{ money(-p.balance, home) }}</template>
               <template v-else>All settled</template>
-            </span>
-            <span class="cw-icons">
-              <a v-if="p.profile.phone" class="cw-icon" :href="'https://wa.me/' + p.profile.phone.replace(/[^\d]/g, '')" target="_blank" rel="noopener"
-                :aria-label="'WhatsApp ' + p.name" title="WhatsApp">💬</a>
-              <span v-else class="cw-icon off" :title="p.name + ' has not added a number'" aria-hidden="true">💬</span>
-              <button type="button" class="cw-icon" :aria-label="p.name + ' in Expenses'" title="Balance in Expenses" @click="$emit('go', 'expenses', p.name)">💸</button>
-              <button type="button" class="cw-icon" :aria-label="p.name + ' photos'" title="Their photos" @click="$emit('go', 'photos', p.name)">📷</button>
-              <button v-if="p.canEdit" type="button" class="cw-icon" :aria-label="'Edit ' + p.name" title="Edit details" @click="startEdit(p)">✎</button>
+            </button>
+            <span class="cw-links">
+              <a v-if="p.profile.phone" class="cw-link" :href="'https://wa.me/' + p.profile.phone.replace(/[^\d]/g, '')"
+                target="_blank" rel="noopener" :aria-label="'WhatsApp ' + p.name">Message</a>
+              <button v-if="p.canEdit" type="button" class="cw-link" :aria-label="'Edit ' + p.name" @click="startEdit(p)">Edit</button>
             </span>
           </div>
         </template>
@@ -117,7 +115,7 @@ import { balances, money } from '../expenses.js'
 import { dietTag } from '../crewOptions.js'
 import CrewDetailsForm from './CrewDetailsForm.vue'
 
-const COLORS = ['#0b7f5f', '#2a78d6', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
+const COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
 // Example crew for the Seoul demo trip: 3 active travellers and 1 pending invite
 const DEMO = {
@@ -395,10 +393,10 @@ export default {
 
 <style scoped>
 .cw {
-  --bg: #0d1117;
-  --card: #161b22;
+  --bg: #00283c;
+  --card: #0a3550;
   --line: rgba(255, 255, 255, 0.08);
-  --mint: #2fe0a1;
+  --mint: #edae49;
   --text: #e9f1ee;
   --muted: rgba(233, 241, 238, 0.62);
   position: relative;
@@ -437,17 +435,17 @@ export default {
   border: 0;
   border-radius: 999px;
   background: var(--mint);
-  color: #06261b;
+  color: #00283c;
   font-weight: 700;
   padding: 9px 18px;
-  box-shadow: 0 6px 20px rgba(47, 224, 161, 0.25);
+  box-shadow: 0 6px 20px rgba(237, 174, 73, 0.25);
   transition: transform 0.15s, background 0.15s;
 }
 .cw-primary:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 .cw-primary.done {
-  background: #b9ffe6;
+  background: #f8deb0;
 }
 .cw-primary:disabled {
   opacity: 0.6;
@@ -465,7 +463,7 @@ export default {
   background: rgba(255, 255, 255, 0.12);
 }
 .cw-ghost.danger {
-  color: #ff9a9a;
+  color: #f09aa5;
 }
 
 /* Cards */
@@ -475,7 +473,7 @@ export default {
   gap: 14px;
 }
 .cw-card {
-  background: rgba(22, 27, 34, 0.85);
+  background: rgba(10, 53, 80, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--line);
@@ -488,11 +486,11 @@ export default {
 }
 .cw-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(47, 224, 161, 0.35);
+  border-color: rgba(237, 174, 73, 0.35);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
 }
 .cw-card.me {
-  border-color: rgba(47, 224, 161, 0.45);
+  border-color: rgba(237, 174, 73, 0.45);
 }
 .cw-card.editing {
   transform: none;
@@ -573,7 +571,7 @@ export default {
   color: var(--muted);
 }
 .cw-role.r-owner {
-  background: rgba(47, 224, 161, 0.16);
+  background: rgba(237, 174, 73, 0.16);
   color: var(--mint);
 }
 .cw-role.r-member {
@@ -616,14 +614,14 @@ export default {
   border-style: dashed;
 }
 .cw-pill.allergy {
-  background: rgba(255, 90, 95, 0.16);
-  border-color: rgba(255, 90, 95, 0.45);
-  color: #ffc1c3;
+  background: rgba(209, 73, 91, 0.16);
+  border-color: rgba(209, 73, 91, 0.45);
+  color: #f6c4cb;
 }
 .cw-pill.diet {
-  background: rgba(47, 224, 161, 0.1);
-  border-color: rgba(47, 224, 161, 0.3);
-  color: #b9ffe6;
+  background: rgba(237, 174, 73, 0.1);
+  border-color: rgba(237, 174, 73, 0.3);
+  color: #f8deb0;
 }
 .cw-foot {
   display: flex;
@@ -635,40 +633,40 @@ export default {
   border-top: 1px solid var(--line);
 }
 .cw-balance {
+  border: 0;
+  background: none;
+  padding: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cw-balance:hover {
+  text-decoration: underline;
 }
 .cw-balance.pos {
   color: var(--mint);
 }
 .cw-balance.neg {
-  color: #ff8a8d;
+  color: #ec8a97;
 }
-.cw-icons {
+.cw-links {
   display: flex;
-  gap: 4px;
+  gap: 14px;
 }
-.cw-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
+.cw-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
   text-decoration: none;
-  transition: background 0.15s, transform 0.15s;
+  cursor: pointer;
 }
-.cw-icon:hover {
-  background: rgba(47, 224, 161, 0.15);
-  transform: translateY(-1px);
-}
-.cw-icon.off {
-  opacity: 0.3;
-  cursor: not-allowed;
+.cw-link:hover {
+  color: var(--mint);
 }
 
 /* Edit form */
@@ -715,9 +713,9 @@ export default {
   bottom: 24px;
   transform: translateX(-50%);
   z-index: 1080;
-  background: #161b22;
+  background: #0a3550;
   color: #fff;
-  border: 1px solid rgba(47, 224, 161, 0.5);
+  border: 1px solid rgba(237, 174, 73, 0.5);
   border-radius: 999px;
   padding: 10px 18px;
   font-size: 14px;
@@ -728,7 +726,8 @@ export default {
 /* Keyboard focus */
 .cw-primary:focus-visible,
 .cw-ghost:focus-visible,
-.cw-icon:focus-visible,
+.cw-link:focus-visible,
+.cw-balance:focus-visible,
 .cw-persona.add:focus-visible {
   outline: 3px solid var(--mint);
   outline-offset: 2px;
@@ -754,7 +753,7 @@ export default {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cw-card, .cw-icon, .cw-primary { transition: none; }
+  .cw-card, .cw-primary { transition: none; }
   .cw-card:hover { transform: none; }
 }
 </style>

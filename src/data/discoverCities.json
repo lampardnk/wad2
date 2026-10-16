@@ -1,0 +1,4964 @@
+{
+ "_about": "Mock Discover data. tier 'base' = flagship cities (always shown). tier 'extended' = hidden gems, shown when the country's popularity >= 85 or the city matches an active vibe. heroImage left empty is filled from Wikipedia at runtime. estDailyBudget in USD per person. bestMonths 1-12.",
+ "countries": [
+  {
+   "country": "South Korea",
+   "cc": "KR",
+   "popularity": 88,
+   "tagline": "K-culture, sizzling BBQ and palaces next to glass towers"
+  },
+  {
+   "country": "Japan",
+   "cc": "JP",
+   "popularity": 95,
+   "tagline": "Ancient temples, neon cities and food worth flying for"
+  },
+  {
+   "country": "Taiwan",
+   "cc": "TW",
+   "popularity": 74,
+   "tagline": "Night markets, misty mountains and the friendliest people around"
+  },
+  {
+   "country": "Hong Kong",
+   "cc": "HK",
+   "popularity": 70,
+   "tagline": "A skyline on the sea, dim sum at dawn and hikes above it all"
+  },
+  {
+   "country": "Macau",
+   "cc": "MO",
+   "popularity": 55,
+   "tagline": "Portuguese lanes, egg tarts and dazzling resorts"
+  },
+  {
+   "country": "China",
+   "cc": "CN",
+   "popularity": 78,
+   "tagline": "Imperial history, epic landscapes and regional food without end"
+  },
+  {
+   "country": "Thailand",
+   "cc": "TH",
+   "popularity": 92,
+   "tagline": "Golden temples, island hopping and the best street food on earth"
+  },
+  {
+   "country": "Indonesia",
+   "cc": "ID",
+   "popularity": 82,
+   "tagline": "Rice terraces, surf breaks and temples wrapped in jungle"
+  },
+  {
+   "country": "Malaysia",
+   "cc": "MY",
+   "popularity": 78,
+   "tagline": "Hawker feasts, rainforest and colonial streets close to home"
+  },
+  {
+   "country": "Vietnam",
+   "cc": "VN",
+   "popularity": 80,
+   "tagline": "Phở at dawn, limestone bays and buzzing old quarters"
+  },
+  {
+   "country": "Philippines",
+   "cc": "PH",
+   "popularity": 72,
+   "tagline": "Turquoise lagoons, island hopping and warm hospitality"
+  },
+  {
+   "country": "Cambodia",
+   "cc": "KH",
+   "popularity": 62,
+   "tagline": "Sunrise over Angkor and a gentle, soulful pace"
+  },
+  {
+   "country": "Sri Lanka",
+   "cc": "LK",
+   "popularity": 70,
+   "tagline": "Tea hills, leopards and golden beaches on one small island"
+  },
+  {
+   "country": "Maldives",
+   "cc": "MV",
+   "popularity": 70,
+   "tagline": "Overwater villas and water so clear it looks unreal"
+  },
+  {
+   "country": "Nepal",
+   "cc": "NP",
+   "popularity": 65,
+   "tagline": "Himalayan peaks, prayer flags and trails for every level"
+  },
+  {
+   "country": "India",
+   "cc": "IN",
+   "popularity": 75,
+   "tagline": "Palaces, spice and colour turned all the way up"
+  },
+  {
+   "country": "United Arab Emirates",
+   "cc": "AE",
+   "popularity": 80,
+   "tagline": "Record-breaking towers, desert dunes and luxury everything"
+  },
+  {
+   "country": "Oman",
+   "cc": "OM",
+   "popularity": 60,
+   "tagline": "Desert dunes, turquoise wadis and real Arabian hospitality"
+  },
+  {
+   "country": "Jordan",
+   "cc": "JO",
+   "popularity": 65,
+   "tagline": "Petra by candlelight and nights under Wadi Rum stars"
+  },
+  {
+   "country": "Turkey",
+   "cc": "TR",
+   "popularity": 80,
+   "tagline": "Where Europe meets Asia: bazaars, balloons and long breakfasts"
+  },
+  {
+   "country": "Egypt",
+   "cc": "EG",
+   "popularity": 70,
+   "tagline": "Pyramids, Nile sunsets and 5,000 years of stories"
+  },
+  {
+   "country": "Morocco",
+   "cc": "MA",
+   "popularity": 72,
+   "tagline": "Spice-scented medinas, riads and Sahara nights"
+  },
+  {
+   "country": "South Africa",
+   "cc": "ZA",
+   "popularity": 68,
+   "tagline": "Safaris, wine country and a city under a mountain"
+  },
+  {
+   "country": "United Kingdom",
+   "cc": "GB",
+   "popularity": 85,
+   "tagline": "Royal history, cosy pubs and world-class museums for free"
+  },
+  {
+   "country": "France",
+   "cc": "FR",
+   "popularity": 89,
+   "tagline": "Café mornings, art everywhere and food that sets the standard"
+  },
+  {
+   "country": "Italy",
+   "cc": "IT",
+   "popularity": 90,
+   "tagline": "Pasta, piazzas and Renaissance art on every corner"
+  },
+  {
+   "country": "Spain",
+   "cc": "ES",
+   "popularity": 86,
+   "tagline": "Late dinners, tapas crawls and Gaudí-bright streets"
+  },
+  {
+   "country": "Portugal",
+   "cc": "PT",
+   "popularity": 82,
+   "tagline": "Pastel hills, custard tarts and Atlantic sunsets"
+  },
+  {
+   "country": "Netherlands",
+   "cc": "NL",
+   "popularity": 75,
+   "tagline": "Canals, bikes, tulips and masterpieces"
+  },
+  {
+   "country": "Germany",
+   "cc": "DE",
+   "popularity": 78,
+   "tagline": "Fairytale castles, beer halls and electric city nightlife"
+  },
+  {
+   "country": "Czechia",
+   "cc": "CZ",
+   "popularity": 72,
+   "tagline": "A fairytale old town and some of the best beer anywhere"
+  },
+  {
+   "country": "Austria",
+   "cc": "AT",
+   "popularity": 72,
+   "tagline": "Alpine views, grand cafés and music in the air"
+  },
+  {
+   "country": "Switzerland",
+   "cc": "CH",
+   "popularity": 78,
+   "tagline": "Postcard Alps, glacier lakes and trains that go everywhere"
+  },
+  {
+   "country": "Hungary",
+   "cc": "HU",
+   "popularity": 68,
+   "tagline": "Thermal baths, ruin bars and a city split by the Danube"
+  },
+  {
+   "country": "Greece",
+   "cc": "GR",
+   "popularity": 82,
+   "tagline": "Whitewashed islands, ancient ruins and long seaside lunches"
+  },
+  {
+   "country": "Iceland",
+   "cc": "IS",
+   "popularity": 70,
+   "tagline": "Northern lights, waterfalls and hot springs at the edge of the world"
+  },
+  {
+   "country": "Denmark",
+   "cc": "DK",
+   "popularity": 68,
+   "tagline": "Hygge, design and the happiest bike lanes"
+  },
+  {
+   "country": "Sweden",
+   "cc": "SE",
+   "popularity": 65,
+   "tagline": "Archipelagos, fika and calm Scandinavian cool"
+  },
+  {
+   "country": "Norway",
+   "cc": "NO",
+   "popularity": 70,
+   "tagline": "Fjords, midnight sun and northern lights"
+  },
+  {
+   "country": "Finland",
+   "cc": "FI",
+   "popularity": 62,
+   "tagline": "Saunas, lakes and Santa's home in Lapland"
+  },
+  {
+   "country": "Ireland",
+   "cc": "IE",
+   "popularity": 72,
+   "tagline": "Rolling green hills, wild coasts and live music in every town"
+  },
+  {
+   "country": "United States",
+   "cc": "US",
+   "popularity": 87,
+   "tagline": "Big cities, bigger national parks and every cuisine on earth"
+  },
+  {
+   "country": "Canada",
+   "cc": "CA",
+   "popularity": 75,
+   "tagline": "Mountain lakes, friendly cities and wilderness without end"
+  },
+  {
+   "country": "Mexico",
+   "cc": "MX",
+   "popularity": 78,
+   "tagline": "Tacos, Mayan ruins and Caribbean blues"
+  },
+  {
+   "country": "Peru",
+   "cc": "PE",
+   "popularity": 68,
+   "tagline": "Machu Picchu, Andean trails and a world-class food scene"
+  },
+  {
+   "country": "Brazil",
+   "cc": "BR",
+   "popularity": 70,
+   "tagline": "Beaches, samba and rainforest on a huge scale"
+  },
+  {
+   "country": "Argentina",
+   "cc": "AR",
+   "popularity": 66,
+   "tagline": "Tango, steak and glaciers at the end of the world"
+  },
+  {
+   "country": "Australia",
+   "cc": "AU",
+   "popularity": 85,
+   "tagline": "Beach cities, the reef and wildlife you won't see anywhere else"
+  },
+  {
+   "country": "New Zealand",
+   "cc": "NZ",
+   "popularity": 72,
+   "tagline": "Fjords, glaciers and adventure on every road"
+  },
+  {
+   "country": "Saudi Arabia",
+   "cc": "SA",
+   "popularity": 62,
+   "tagline": "Desert canyons, Red Sea reefs and the ancient tombs of AlUla"
+  },
+  {
+   "country": "Qatar",
+   "cc": "QA",
+   "popularity": 60,
+   "tagline": "Futuristic museums, desert meeting the sea and seriously good food"
+  },
+  {
+   "country": "Bahrain",
+   "cc": "BH",
+   "popularity": 50,
+   "tagline": "Pearl-diving heritage, souqs and island calm"
+  },
+  {
+   "country": "Kuwait",
+   "cc": "KW",
+   "popularity": 45,
+   "tagline": "Waterfront towers, old souqs and Gulf seafood"
+  },
+  {
+   "country": "Israel",
+   "cc": "IL",
+   "popularity": 60,
+   "tagline": "Ancient cities, Dead Sea floats and Tel Aviv beach life"
+  },
+  {
+   "country": "Lebanon",
+   "cc": "LB",
+   "popularity": 50,
+   "tagline": "Mezze feasts, Roman temples and mountain cedars"
+  },
+  {
+   "country": "Iran",
+   "cc": "IR",
+   "popularity": 52,
+   "tagline": "Turquoise domes, Persian gardens and legendary hospitality"
+  },
+  {
+   "country": "Poland",
+   "cc": "PL",
+   "popularity": 75,
+   "tagline": "Medieval squares, pierogi and buzzing city nights"
+  },
+  {
+   "country": "Croatia",
+   "cc": "HR",
+   "popularity": 80,
+   "tagline": "Island hopping, walled towns and crystal-clear Adriatic water"
+  },
+  {
+   "country": "Slovenia",
+   "cc": "SI",
+   "popularity": 62,
+   "tagline": "Emerald lakes, Alpine villages and a tiny green capital"
+  },
+  {
+   "country": "Slovakia",
+   "cc": "SK",
+   "popularity": 50,
+   "tagline": "Castles on every hill and the High Tatras"
+  },
+  {
+   "country": "Romania",
+   "cc": "RO",
+   "popularity": 60,
+   "tagline": "Painted monasteries, Carpathian castles and Transylvanian villages"
+  },
+  {
+   "country": "Bulgaria",
+   "cc": "BG",
+   "popularity": 55,
+   "tagline": "Black Sea beaches, mountain monasteries and great value"
+  },
+  {
+   "country": "Serbia",
+   "cc": "RS",
+   "popularity": 48,
+   "tagline": "Riverside nightlife, hearty food and Belgrade's fortress"
+  },
+  {
+   "country": "Bosnia and Herzegovina",
+   "cc": "BA",
+   "popularity": 48,
+   "tagline": "Ottoman bridges, coffee culture and mountain rivers"
+  },
+  {
+   "country": "Montenegro",
+   "cc": "ME",
+   "popularity": 55,
+   "tagline": "A fjord-like bay, medieval towns and dramatic mountains"
+  },
+  {
+   "country": "Albania",
+   "cc": "AL",
+   "popularity": 55,
+   "tagline": "Riviera beaches, Ottoman towns and some of Europe's best value"
+  },
+  {
+   "country": "North Macedonia",
+   "cc": "MK",
+   "popularity": 42,
+   "tagline": "Lake Ohrid's shores and a quirky, statue-filled capital"
+  },
+  {
+   "country": "Estonia",
+   "cc": "EE",
+   "popularity": 55,
+   "tagline": "A fairytale old town, saunas and wild Baltic islands"
+  },
+  {
+   "country": "Latvia",
+   "cc": "LV",
+   "popularity": 48,
+   "tagline": "Art nouveau streets, pine forests and Baltic beaches"
+  },
+  {
+   "country": "Lithuania",
+   "cc": "LT",
+   "popularity": 48,
+   "tagline": "Baroque old towns, lakes and a castle on an island"
+  },
+  {
+   "country": "Georgia",
+   "cc": "GE",
+   "popularity": 62,
+   "tagline": "Wine, long feasts and Caucasus mountain villages"
+  },
+  {
+   "country": "Armenia",
+   "cc": "AM",
+   "popularity": 50,
+   "tagline": "Ancient monasteries, Mount Ararat views and brandy"
+  },
+  {
+   "country": "Azerbaijan",
+   "cc": "AZ",
+   "popularity": 45,
+   "tagline": "Flame towers, old caravanserais and Caspian views"
+  },
+  {
+   "country": "Moldova",
+   "cc": "MD",
+   "popularity": 35,
+   "tagline": "Underground wine cities and quiet countryside"
+  }
+ ],
+ "cities": [
+  {
+   "cityName": "Seoul",
+   "country": "South Korea",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 37.566,
+   "lon": 126.978,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Busan",
+   "country": "South Korea",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 35.18,
+   "lon": 129.075,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Jeju",
+   "country": "South Korea",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 33.499,
+   "lon": 126.531,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 85
+  },
+  {
+   "cityName": "Gyeongju",
+   "country": "South Korea",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 35.856,
+   "lon": 129.225,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Tokyo",
+   "country": "Japan",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 35.676,
+   "lon": 139.65,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 160
+  },
+  {
+   "cityName": "Kyoto",
+   "country": "Japan",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 35.012,
+   "lon": 135.768,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Osaka",
+   "country": "Japan",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 34.694,
+   "lon": 135.502,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 130
+  },
+  {
+   "cityName": "Nara",
+   "country": "Japan",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 34.685,
+   "lon": 135.805,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living",
+    "Nature"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 110
+  },
+  {
+   "cityName": "Fukuoka",
+   "country": "Japan",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 33.59,
+   "lon": 130.402,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 115
+  },
+  {
+   "cityName": "Sapporo",
+   "country": "Japan",
+   "tier": "extended",
+   "popularityRank": 6,
+   "lat": 43.062,
+   "lon": 141.354,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    7,
+    8
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Taipei",
+   "country": "Taiwan",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 25.033,
+   "lon": 121.565,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    3,
+    4
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Tainan",
+   "country": "Taiwan",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 22.999,
+   "lon": 120.227,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Hualien",
+   "country": "Taiwan",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 23.977,
+   "lon": 121.604,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    3,
+    4,
+    5
+   ],
+   "estDailyBudget": 75
+  },
+  {
+   "cityName": "Hong Kong Island",
+   "country": "Hong Kong",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 22.282,
+   "lon": 114.159,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    3
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Lantau Island",
+   "country": "Hong Kong",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 22.266,
+   "lon": 113.946,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Macau Peninsula",
+   "country": "Macau",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 22.193,
+   "lon": 113.541,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12
+   ],
+   "estDailyBudget": 130
+  },
+  {
+   "cityName": "Taipa",
+   "country": "Macau",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 22.155,
+   "lon": 113.556,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Beijing",
+   "country": "China",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 39.904,
+   "lon": 116.407,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Shanghai",
+   "country": "China",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 31.23,
+   "lon": 121.474,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Xi'an",
+   "country": "China",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 34.341,
+   "lon": 108.94,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Guilin",
+   "country": "China",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 25.274,
+   "lon": 110.29,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 55
+  },
+  {
+   "cityName": "Chengdu",
+   "country": "China",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 30.573,
+   "lon": 104.066,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 65
+  },
+  {
+   "cityName": "Bangkok",
+   "country": "Thailand",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 13.756,
+   "lon": 100.502,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Chiang Mai",
+   "country": "Thailand",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 18.788,
+   "lon": 98.985,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living",
+    "Nature"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Phuket",
+   "country": "Thailand",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 7.88,
+   "lon": 98.392,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 85
+  },
+  {
+   "cityName": "Koh Samui",
+   "country": "Thailand",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 9.512,
+   "lon": 100.014,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 95
+  },
+  {
+   "cityName": "Pai",
+   "country": "Thailand",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 19.358,
+   "lon": 98.44,
+   "heroImage": "",
+   "vibeTags": [
+    "Slow Living",
+    "Nature"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1
+   ],
+   "estDailyBudget": 35
+  },
+  {
+   "cityName": "Bali",
+   "country": "Indonesia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": -8.409,
+   "lon": 115.189,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living",
+    "Culture"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Yogyakarta",
+   "country": "Indonesia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": -7.797,
+   "lon": 110.37,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Lombok",
+   "country": "Indonesia",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": -8.65,
+   "lon": 116.32,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Labuan Bajo",
+   "country": "Indonesia",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": -8.496,
+   "lon": 119.888,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Kuala Lumpur",
+   "country": "Malaysia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 3.139,
+   "lon": 101.687,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    12,
+    1,
+    2
+   ],
+   "estDailyBudget": 55
+  },
+  {
+   "cityName": "Penang",
+   "country": "Malaysia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 5.414,
+   "lon": 100.329,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Langkawi",
+   "country": "Malaysia",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 6.35,
+   "lon": 99.8,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Malacca",
+   "country": "Malaysia",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 2.189,
+   "lon": 102.25,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Hanoi",
+   "country": "Vietnam",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 21.028,
+   "lon": 105.854,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    3,
+    4
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Hoi An",
+   "country": "Vietnam",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 15.88,
+   "lon": 108.338,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Ho Chi Minh City",
+   "country": "Vietnam",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 10.776,
+   "lon": 106.7,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Da Lat",
+   "country": "Vietnam",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 11.94,
+   "lon": 108.458,
+   "heroImage": "",
+   "vibeTags": [
+    "Slow Living",
+    "Nature"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Ha Giang",
+   "country": "Vietnam",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 22.823,
+   "lon": 104.984,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    9,
+    10,
+    11
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Manila",
+   "country": "Philippines",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 14.599,
+   "lon": 120.984,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3,
+    4
+   ],
+   "estDailyBudget": 55
+  },
+  {
+   "cityName": "Cebu",
+   "country": "Philippines",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 10.316,
+   "lon": 123.885,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "estDailyBudget": 55
+  },
+  {
+   "cityName": "El Nido",
+   "country": "Philippines",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 11.196,
+   "lon": 119.408,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Siem Reap",
+   "country": "Cambodia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 13.367,
+   "lon": 103.844,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Phnom Penh",
+   "country": "Cambodia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 11.556,
+   "lon": 104.928,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Colombo",
+   "country": "Sri Lanka",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 6.927,
+   "lon": 79.861,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Kandy",
+   "country": "Sri Lanka",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 7.29,
+   "lon": 80.633,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Ella",
+   "country": "Sri Lanka",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 6.867,
+   "lon": 81.046,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "estDailyBudget": 35
+  },
+  {
+   "cityName": "Galle",
+   "country": "Sri Lanka",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 6.053,
+   "lon": 80.221,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Malé",
+   "country": "Maldives",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 4.175,
+   "lon": 73.509,
+   "heroImage": "",
+   "vibeTags": [
+    "Slow Living"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Maafushi",
+   "country": "Maldives",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 3.943,
+   "lon": 73.49,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Kathmandu",
+   "country": "Nepal",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 27.717,
+   "lon": 85.324,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    3,
+    4
+   ],
+   "estDailyBudget": 35
+  },
+  {
+   "cityName": "Pokhara",
+   "country": "Nepal",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 28.21,
+   "lon": 83.986,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    3,
+    4
+   ],
+   "estDailyBudget": 35
+  },
+  {
+   "cityName": "Delhi",
+   "country": "India",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 28.614,
+   "lon": 77.209,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Jaipur",
+   "country": "India",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 26.912,
+   "lon": 75.787,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Goa",
+   "country": "India",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 15.299,
+   "lon": 74.124,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Varanasi",
+   "country": "India",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 25.318,
+   "lon": 82.973,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 30
+  },
+  {
+   "cityName": "Dubai",
+   "country": "United Arab Emirates",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 25.205,
+   "lon": 55.271,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Abu Dhabi",
+   "country": "United Arab Emirates",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 24.453,
+   "lon": 54.377,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 180
+  },
+  {
+   "cityName": "Muscat",
+   "country": "Oman",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 23.588,
+   "lon": 58.383,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 110
+  },
+  {
+   "cityName": "Nizwa",
+   "country": "Oman",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 22.933,
+   "lon": 57.533,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Amman",
+   "country": "Jordan",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 31.954,
+   "lon": 35.911,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Petra",
+   "country": "Jordan",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 30.329,
+   "lon": 35.444,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Wadi Rum",
+   "country": "Jordan",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 29.576,
+   "lon": 35.42,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Istanbul",
+   "country": "Turkey",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 41.008,
+   "lon": 28.978,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Cappadocia",
+   "country": "Turkey",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 38.643,
+   "lon": 34.828,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 85
+  },
+  {
+   "cityName": "Antalya",
+   "country": "Turkey",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 36.897,
+   "lon": 30.713,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Cairo",
+   "country": "Egypt",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 30.044,
+   "lon": 31.236,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Luxor",
+   "country": "Egypt",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 25.687,
+   "lon": 32.639,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Dahab",
+   "country": "Egypt",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 28.509,
+   "lon": 34.513,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Marrakech",
+   "country": "Morocco",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 31.629,
+   "lon": -7.981,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Fes",
+   "country": "Morocco",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 34.033,
+   "lon": -5.0,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Chefchaouen",
+   "country": "Morocco",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 35.171,
+   "lon": -5.27,
+   "heroImage": "",
+   "vibeTags": [
+    "Slow Living",
+    "Culture"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Cape Town",
+   "country": "South Africa",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": -33.925,
+   "lon": 18.424,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Kruger National Park",
+   "country": "South Africa",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": -23.988,
+   "lon": 31.555,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "London",
+   "country": "United Kingdom",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 51.507,
+   "lon": -0.128,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Edinburgh",
+   "country": "United Kingdom",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 55.953,
+   "lon": -3.189,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Bath",
+   "country": "United Kingdom",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 51.381,
+   "lon": -2.359,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Isle of Skye",
+   "country": "United Kingdom",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 57.536,
+   "lon": -6.226,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Paris",
+   "country": "France",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 48.857,
+   "lon": 2.352,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Nice",
+   "country": "France",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 43.71,
+   "lon": 7.262,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Lyon",
+   "country": "France",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 45.764,
+   "lon": 4.836,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Bordeaux",
+   "country": "France",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 44.838,
+   "lon": -0.579,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Annecy",
+   "country": "France",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 45.9,
+   "lon": 6.129,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Rome",
+   "country": "Italy",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 41.903,
+   "lon": 12.496,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Florence",
+   "country": "Italy",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 43.77,
+   "lon": 11.255,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 160
+  },
+  {
+   "cityName": "Venice",
+   "country": "Italy",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 45.441,
+   "lon": 12.316,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 190
+  },
+  {
+   "cityName": "Amalfi Coast",
+   "country": "Italy",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 40.634,
+   "lon": 14.603,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Cinque Terre",
+   "country": "Italy",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 44.127,
+   "lon": 9.708,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Barcelona",
+   "country": "Spain",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 41.385,
+   "lon": 2.173,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Madrid",
+   "country": "Spain",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 40.417,
+   "lon": -3.704,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Seville",
+   "country": "Spain",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 37.389,
+   "lon": -5.984,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Granada",
+   "country": "Spain",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 37.177,
+   "lon": -3.599,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10
+   ],
+   "estDailyBudget": 110
+  },
+  {
+   "cityName": "Mallorca",
+   "country": "Spain",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 39.57,
+   "lon": 2.65,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 160
+  },
+  {
+   "cityName": "Lisbon",
+   "country": "Portugal",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 38.722,
+   "lon": -9.139,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Porto",
+   "country": "Portugal",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 41.158,
+   "lon": -8.629,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 110
+  },
+  {
+   "cityName": "Lagos",
+   "country": "Portugal",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 37.102,
+   "lon": -8.673,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Amsterdam",
+   "country": "Netherlands",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 52.368,
+   "lon": 4.904,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Utrecht",
+   "country": "Netherlands",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 52.091,
+   "lon": 5.122,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Berlin",
+   "country": "Germany",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 52.52,
+   "lon": 13.405,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 130
+  },
+  {
+   "cityName": "Munich",
+   "country": "Germany",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 48.135,
+   "lon": 11.582,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    9,
+    12
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Hamburg",
+   "country": "Germany",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 53.551,
+   "lon": 9.994,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Prague",
+   "country": "Czechia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 50.075,
+   "lon": 14.438,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    12
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Český Krumlov",
+   "country": "Czechia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 48.811,
+   "lon": 14.315,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Vienna",
+   "country": "Austria",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 48.208,
+   "lon": 16.373,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    12
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Salzburg",
+   "country": "Austria",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 47.81,
+   "lon": 13.055,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    12
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Hallstatt",
+   "country": "Austria",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 47.562,
+   "lon": 13.649,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Zurich",
+   "country": "Switzerland",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 47.377,
+   "lon": 8.542,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 250
+  },
+  {
+   "cityName": "Interlaken",
+   "country": "Switzerland",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 46.686,
+   "lon": 7.863,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9,
+    1,
+    2
+   ],
+   "estDailyBudget": 230
+  },
+  {
+   "cityName": "Lucerne",
+   "country": "Switzerland",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 47.05,
+   "lon": 8.309,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 230
+  },
+  {
+   "cityName": "Zermatt",
+   "country": "Switzerland",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 46.02,
+   "lon": 7.749,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    7,
+    8,
+    1,
+    2
+   ],
+   "estDailyBudget": 280
+  },
+  {
+   "cityName": "Budapest",
+   "country": "Hungary",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 47.498,
+   "lon": 19.04,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10,
+    12
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Eger",
+   "country": "Hungary",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 47.902,
+   "lon": 20.377,
+   "heroImage": "",
+   "vibeTags": [
+    "Slow Living",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Athens",
+   "country": "Greece",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 37.984,
+   "lon": 23.728,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 110
+  },
+  {
+   "cityName": "Santorini",
+   "country": "Greece",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 36.393,
+   "lon": 25.461,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Crete",
+   "country": "Greece",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 35.24,
+   "lon": 24.81,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Mykonos",
+   "country": "Greece",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 37.446,
+   "lon": 25.329,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 220
+  },
+  {
+   "cityName": "Reykjavik",
+   "country": "Iceland",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 64.147,
+   "lon": -21.942,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    2,
+    3
+   ],
+   "estDailyBudget": 220
+  },
+  {
+   "cityName": "Vík",
+   "country": "Iceland",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 63.419,
+   "lon": -19.006,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Copenhagen",
+   "country": "Denmark",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 55.676,
+   "lon": 12.568,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Aarhus",
+   "country": "Denmark",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 56.157,
+   "lon": 10.211,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Stockholm",
+   "country": "Sweden",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 59.329,
+   "lon": 18.069,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 180
+  },
+  {
+   "cityName": "Abisko",
+   "country": "Sweden",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 68.349,
+   "lon": 18.831,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    2,
+    3,
+    9
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Oslo",
+   "country": "Norway",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 59.914,
+   "lon": 10.752,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 210
+  },
+  {
+   "cityName": "Tromsø",
+   "country": "Norway",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 69.649,
+   "lon": 18.956,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    3,
+    11,
+    12
+   ],
+   "estDailyBudget": 210
+  },
+  {
+   "cityName": "Bergen",
+   "country": "Norway",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 60.391,
+   "lon": 5.322,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 210
+  },
+  {
+   "cityName": "Helsinki",
+   "country": "Finland",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 60.17,
+   "lon": 24.938,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Rovaniemi",
+   "country": "Finland",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 66.503,
+   "lon": 25.729,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 190
+  },
+  {
+   "cityName": "Dublin",
+   "country": "Ireland",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 53.35,
+   "lon": -6.26,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Galway",
+   "country": "Ireland",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 53.271,
+   "lon": -9.057,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "New York",
+   "country": "United States",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 40.713,
+   "lon": -74.006,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10,
+    12
+   ],
+   "estDailyBudget": 250
+  },
+  {
+   "cityName": "Los Angeles",
+   "country": "United States",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 34.052,
+   "lon": -118.244,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Nature"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 220
+  },
+  {
+   "cityName": "San Francisco",
+   "country": "United States",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 37.775,
+   "lon": -122.419,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    9,
+    10
+   ],
+   "estDailyBudget": 230
+  },
+  {
+   "cityName": "Las Vegas",
+   "country": "United States",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 36.17,
+   "lon": -115.14,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Honolulu",
+   "country": "United States",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 21.307,
+   "lon": -157.858,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 230
+  },
+  {
+   "cityName": "Vancouver",
+   "country": "Canada",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 49.283,
+   "lon": -123.121,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Toronto",
+   "country": "Canada",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 43.653,
+   "lon": -79.383,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 160
+  },
+  {
+   "cityName": "Banff",
+   "country": "Canada",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 51.178,
+   "lon": -115.571,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9,
+    1,
+    2
+   ],
+   "estDailyBudget": 200
+  },
+  {
+   "cityName": "Mexico City",
+   "country": "Mexico",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 19.433,
+   "lon": -99.133,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Cancún",
+   "country": "Mexico",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 21.162,
+   "lon": -86.851,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3,
+    4
+   ],
+   "estDailyBudget": 130
+  },
+  {
+   "cityName": "Oaxaca",
+   "country": "Mexico",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 17.073,
+   "lon": -96.726,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    3,
+    4
+   ],
+   "estDailyBudget": 55
+  },
+  {
+   "cityName": "Tulum",
+   "country": "Mexico",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 20.211,
+   "lon": -87.465,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3,
+    4
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Cusco",
+   "country": "Peru",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": -13.532,
+   "lon": -71.968,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Lima",
+   "country": "Peru",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": -12.046,
+   "lon": -77.043,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Rio de Janeiro",
+   "country": "Brazil",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": -22.907,
+   "lon": -43.173,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3,
+    9
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "São Paulo",
+   "country": "Brazil",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": -23.551,
+   "lon": -46.633,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Foz do Iguaçu",
+   "country": "Brazil",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": -25.516,
+   "lon": -54.585,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    8,
+    9
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Buenos Aires",
+   "country": "Argentina",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": -34.604,
+   "lon": -58.382,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Mendoza",
+   "country": "Argentina",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": -32.889,
+   "lon": -68.845,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 75
+  },
+  {
+   "cityName": "El Calafate",
+   "country": "Argentina",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": -50.338,
+   "lon": -72.265,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Sydney",
+   "country": "Australia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": -33.869,
+   "lon": 151.209,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    9,
+    10,
+    11,
+    3,
+    4
+   ],
+   "estDailyBudget": 180
+  },
+  {
+   "cityName": "Melbourne",
+   "country": "Australia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": -37.814,
+   "lon": 144.963,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Cairns",
+   "country": "Australia",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": -16.92,
+   "lon": 145.77,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "estDailyBudget": 160
+  },
+  {
+   "cityName": "Perth",
+   "country": "Australia",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": -31.95,
+   "lon": 115.861,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    10,
+    11,
+    12,
+    3,
+    4
+   ],
+   "estDailyBudget": 160
+  },
+  {
+   "cityName": "Queenstown",
+   "country": "New Zealand",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": -45.031,
+   "lon": 168.663,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 190
+  },
+  {
+   "cityName": "Auckland",
+   "country": "New Zealand",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": -36.849,
+   "lon": 174.763,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Nature"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 160
+  },
+  {
+   "cityName": "Wanaka",
+   "country": "New Zealand",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": -44.7,
+   "lon": 169.132,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Rotorua",
+   "country": "New Zealand",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": -38.137,
+   "lon": 176.251,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 140
+  },
+  {
+   "cityName": "Riyadh",
+   "country": "Saudi Arabia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 24.713,
+   "lon": 46.675,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 130
+  },
+  {
+   "cityName": "AlUla",
+   "country": "Saudi Arabia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 26.608,
+   "lon": 37.923,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 180
+  },
+  {
+   "cityName": "Jeddah",
+   "country": "Saudi Arabia",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 21.485,
+   "lon": 39.193,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Doha",
+   "country": "Qatar",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 25.285,
+   "lon": 51.531,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Khor Al Adaid",
+   "country": "Qatar",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 24.6,
+   "lon": 51.33,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Manama",
+   "country": "Bahrain",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 26.228,
+   "lon": 50.586,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Muharraq",
+   "country": "Bahrain",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 26.257,
+   "lon": 50.612,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Kuwait City",
+   "country": "Kuwait",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 29.376,
+   "lon": 47.977,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 130
+  },
+  {
+   "cityName": "Failaka Island",
+   "country": "Kuwait",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 29.43,
+   "lon": 48.33,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    11,
+    12,
+    1,
+    2,
+    3
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Jerusalem",
+   "country": "Israel",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 31.768,
+   "lon": 35.214,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Tel Aviv",
+   "country": "Israel",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 32.085,
+   "lon": 34.782,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Nature"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 170
+  },
+  {
+   "cityName": "Ein Bokek",
+   "country": "Israel",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 31.2,
+   "lon": 35.36,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Beirut",
+   "country": "Lebanon",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 33.894,
+   "lon": 35.502,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Byblos",
+   "country": "Lebanon",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 34.121,
+   "lon": 35.648,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Baalbek",
+   "country": "Lebanon",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 34.006,
+   "lon": 36.204,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Isfahan",
+   "country": "Iran",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 32.654,
+   "lon": 51.668,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    5,
+    10,
+    11
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Shiraz",
+   "country": "Iran",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 29.592,
+   "lon": 52.584,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Tehran",
+   "country": "Iran",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 35.689,
+   "lon": 51.389,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    10
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Yazd",
+   "country": "Iran",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 31.897,
+   "lon": 54.357,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    3,
+    4,
+    10,
+    11
+   ],
+   "estDailyBudget": 40
+  },
+  {
+   "cityName": "Kraków",
+   "country": "Poland",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 50.065,
+   "lon": 19.945,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    12
+   ],
+   "estDailyBudget": 75
+  },
+  {
+   "cityName": "Warsaw",
+   "country": "Poland",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 52.23,
+   "lon": 21.012,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Gdańsk",
+   "country": "Poland",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 54.352,
+   "lon": 18.646,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 75
+  },
+  {
+   "cityName": "Zakopane",
+   "country": "Poland",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 49.299,
+   "lon": 19.95,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Dubrovnik",
+   "country": "Croatia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 42.65,
+   "lon": 18.094,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 150
+  },
+  {
+   "cityName": "Split",
+   "country": "Croatia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 43.508,
+   "lon": 16.44,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 130
+  },
+  {
+   "cityName": "Hvar",
+   "country": "Croatia",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 43.172,
+   "lon": 16.442,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 160
+  },
+  {
+   "cityName": "Plitvice Lakes",
+   "country": "Croatia",
+   "tier": "extended",
+   "popularityRank": 4,
+   "lat": 44.865,
+   "lon": 15.582,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Zagreb",
+   "country": "Croatia",
+   "tier": "extended",
+   "popularityRank": 5,
+   "lat": 45.815,
+   "lon": 15.982,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    12
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Ljubljana",
+   "country": "Slovenia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 46.057,
+   "lon": 14.506,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Lake Bled",
+   "country": "Slovenia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 46.369,
+   "lon": 14.114,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 120
+  },
+  {
+   "cityName": "Piran",
+   "country": "Slovenia",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 45.528,
+   "lon": 13.568,
+   "heroImage": "",
+   "vibeTags": [
+    "Slow Living",
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 110
+  },
+  {
+   "cityName": "Bratislava",
+   "country": "Slovakia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 48.149,
+   "lon": 17.107,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "High Tatras",
+   "country": "Slovakia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 49.139,
+   "lon": 20.22,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    1,
+    2,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Bucharest",
+   "country": "Romania",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 44.427,
+   "lon": 26.103,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 65
+  },
+  {
+   "cityName": "Brașov",
+   "country": "Romania",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 45.657,
+   "lon": 25.601,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10,
+    12
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Sibiu",
+   "country": "Romania",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 45.799,
+   "lon": 24.152,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    12
+   ],
+   "estDailyBudget": 55
+  },
+  {
+   "cityName": "Sofia",
+   "country": "Bulgaria",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 42.698,
+   "lon": 23.322,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 55
+  },
+  {
+   "cityName": "Plovdiv",
+   "country": "Bulgaria",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 42.136,
+   "lon": 24.745,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Rila Monastery",
+   "country": "Bulgaria",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 42.133,
+   "lon": 23.34,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Belgrade",
+   "country": "Serbia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 44.787,
+   "lon": 20.457,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Novi Sad",
+   "country": "Serbia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 45.267,
+   "lon": 19.833,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    9
+   ],
+   "estDailyBudget": 55
+  },
+  {
+   "cityName": "Sarajevo",
+   "country": "Bosnia and Herzegovina",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 43.856,
+   "lon": 18.413,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Mostar",
+   "country": "Bosnia and Herzegovina",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 43.343,
+   "lon": 17.807,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Kotor",
+   "country": "Montenegro",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 42.425,
+   "lon": 18.771,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Budva",
+   "country": "Montenegro",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 42.286,
+   "lon": 18.84,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Durmitor",
+   "country": "Montenegro",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 43.15,
+   "lon": 19.08,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Tirana",
+   "country": "Albania",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 41.327,
+   "lon": 19.819,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Ksamil",
+   "country": "Albania",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 39.77,
+   "lon": 20.0,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Berat",
+   "country": "Albania",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 40.705,
+   "lon": 19.952,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    4,
+    5,
+    9,
+    10
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Skopje",
+   "country": "North Macedonia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 41.998,
+   "lon": 21.425,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Ohrid",
+   "country": "North Macedonia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 41.117,
+   "lon": 20.802,
+   "heroImage": "",
+   "vibeTags": [
+    "Slow Living",
+    "Nature"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Tallinn",
+   "country": "Estonia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 59.437,
+   "lon": 24.754,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    12
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Tartu",
+   "country": "Estonia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 58.378,
+   "lon": 26.729,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Riga",
+   "country": "Latvia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 56.95,
+   "lon": 24.105,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    12
+   ],
+   "estDailyBudget": 90
+  },
+  {
+   "cityName": "Jūrmala",
+   "country": "Latvia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 56.968,
+   "lon": 23.77,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 100
+  },
+  {
+   "cityName": "Vilnius",
+   "country": "Lithuania",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 54.687,
+   "lon": 25.28,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8,
+    12
+   ],
+   "estDailyBudget": 80
+  },
+  {
+   "cityName": "Trakai",
+   "country": "Lithuania",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 54.637,
+   "lon": 24.934,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Tbilisi",
+   "country": "Georgia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 41.716,
+   "lon": 44.783,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Kazbegi",
+   "country": "Georgia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 42.657,
+   "lon": 44.643,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Batumi",
+   "country": "Georgia",
+   "tier": "extended",
+   "popularityRank": 3,
+   "lat": 41.643,
+   "lon": 41.64,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 60
+  },
+  {
+   "cityName": "Yerevan",
+   "country": "Armenia",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 40.179,
+   "lon": 44.499,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Dilijan",
+   "country": "Armenia",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 40.741,
+   "lon": 44.863,
+   "heroImage": "",
+   "vibeTags": [
+    "Nature",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Baku",
+   "country": "Azerbaijan",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 40.409,
+   "lon": 49.867,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Food & Nightlife"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9,
+    10
+   ],
+   "estDailyBudget": 70
+  },
+  {
+   "cityName": "Sheki",
+   "country": "Azerbaijan",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 41.197,
+   "lon": 47.169,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Slow Living"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 50
+  },
+  {
+   "cityName": "Chișinău",
+   "country": "Moldova",
+   "tier": "base",
+   "popularityRank": 1,
+   "lat": 47.011,
+   "lon": 28.863,
+   "heroImage": "",
+   "vibeTags": [
+    "Food & Nightlife",
+    "Culture"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 45
+  },
+  {
+   "cityName": "Old Orhei",
+   "country": "Moldova",
+   "tier": "base",
+   "popularityRank": 2,
+   "lat": 47.302,
+   "lon": 28.97,
+   "heroImage": "",
+   "vibeTags": [
+    "Culture",
+    "Nature"
+   ],
+   "bestMonths": [
+    5,
+    6,
+    9
+   ],
+   "estDailyBudget": 40
+  }
+ ]
+}

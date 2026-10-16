@@ -9,7 +9,6 @@ const cache = new Map()
 const CACHE_LIMIT = 300
 
 // Place types we want to suggest (cities, towns, regions, countries...)
-const WANTED = ['city', 'town', 'village', 'country', 'state', 'province', 'region', 'island', 'county', 'municipality']
 
 // GET /api/places?q=kyo  -> [{ label: 'Kyoto, Japan', name, country, countryCode: 'JP', type }]
 // Uses Photon (photon.komoot.io): a free place search built for type-ahead, based on OpenStreetMap.
@@ -32,17 +31,32 @@ router.get('/', requireAuth, async (req, res) => {
     return res.status(502).json({ message: 'Place search is unavailable right now.' })
   }
 
-  // Keep the useful fields, skip duplicates, max 6 results
-  const results = []
+  // Rank what came back so travel destinations win over same-named small towns:
+  // a country or big city beats a town, and an exact name match beats a partial one.
+  // Searching "Russia" should give Russia, not Russia (Ohio), Russiaville or Russian Island.
+  const TYPE_WEIGHT = { country: 100, city: 80, state: 60, province: 60, region: 60, island: 40, town: 30 }
+  const wantedName = q.toLowerCase()
+  const ranked = []
   const seen = []
   for (const f of data.features || []) {
     const p = f.properties || {}
-    if (!p.name || !WANTED.includes(p.osm_value)) continue
-    const label = p.osm_value === 'country' || !p.country ? p.name : p.name + ', ' + p.country
+    const weight = TYPE_WEIGHT[p.osm_value]
+    if (!p.name || weight === undefined) continue // villages, hamlets, counties... aren't trip destinations
+    // A country, or a city-state named after itself ("Singapore, Singapore"), is just its name
+    const label = p.osm_value === 'country' || !p.country || p.name === p.country ? p.name : p.name + ', ' + p.country
     if (seen.includes(label)) continue
     seen.push(label)
-    results.push({ label, name: p.name, country: p.country || '', countryCode: (p.countrycode || '').toUpperCase(), type: p.osm_value })
-    if (results.length === 6) break
+    const name = p.name.toLowerCase()
+    const match = name === wantedName ? 50 : name.startsWith(wantedName) ? 20 : 0
+    ranked.push({ label, name: p.name, country: p.country || '', countryCode: (p.countrycode || '').toUpperCase(), type: p.osm_value, score: weight + match })
+  }
+  ranked.sort((x, y) => y.score - x.score)
+  // Keep only results close to the best one (a famous match hides obscure look-alikes), max 6
+  const best = ranked.length ? ranked[0].score : 0
+  const results = []
+  for (const r of ranked) {
+    if (r.score < best - 60 || results.length === 6) break
+    results.push({ label: r.label, name: r.name, country: r.country, countryCode: r.countryCode, type: r.type })
   }
 
   if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value) // forget the oldest

@@ -1,52 +1,39 @@
 <template>
-  <div class="auth-page">
-    <AuthHero />
+  <AuthShell title="Welcome back, explorer" :subtitle="invited ? 'Log in to join the trip you were invited to.' : 'Log in to pick up where you left off.'"
+    :switch-to="{ path: '/signup', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }" switch-label="Sign up">
+    <p v-if="$route.query.registered" class="as-success" data-testid="login-registered">Account created! Log in to start planning.</p>
 
-    <div class="auth-card">
-      <div class="auth-sheet">
-        <h1 class="auth-title">Welcome back</h1>
-        <p class="auth-subtitle">
-          {{ invited ? "Log in to join the trip you were invited to." : 'Log in to plan smarter trips.' }}
-        </p>
+    <form class="as-form" @submit.prevent="login" novalidate>
+      <label for="username" class="visually-hidden">Username or email</label>
+      <input id="username" type="text" class="as-input" v-model="username"
+        placeholder="Username or email" autocomplete="username" autocapitalize="none" spellcheck="false"
+        data-testid="login-username" required>
 
-        <p v-if="$route.query.registered" class="auth-success" data-testid="login-registered">
-          Account created! Please sign in.
-        </p>
+      <label for="password" class="visually-hidden">Password</label>
+      <input id="password" type="password" class="as-input" v-model="password"
+        placeholder="Password" autocomplete="current-password" data-testid="login-password" required>
 
-        <form @submit.prevent="login" novalidate>
-          <label for="username" class="visually-hidden">Username</label>
-          <input id="username" type="text" class="auth-input" v-model="username"
-            placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false"
-            data-testid="login-username" required>
+      <p v-if="errorMessage" class="as-error" role="alert" data-testid="login-error">{{ errorMessage }}</p>
 
-          <label for="password" class="visually-hidden">Password</label>
-          <input id="password" type="password" class="auth-input" v-model="password"
-            placeholder="Password" autocomplete="current-password" data-testid="login-password" required>
+      <button type="submit" class="as-btn" :disabled="loading" data-testid="login-submit">
+        {{ loading ? 'Logging in…' : "Let's go!" }}
+      </button>
+    </form>
 
-          <p v-if="errorMessage" class="auth-error" role="alert" data-testid="login-error">{{ errorMessage }}</p>
-
-          <button type="submit" class="auth-btn" :disabled="loading" data-testid="login-submit">
-            {{ loading ? 'Signing in…' : 'Sign In' }}
-          </button>
-        </form>
-
-        <hr class="auth-divider">
-
-        <p class="auth-switch">
-          Don't have an account? <router-link :to="{ path: '/signup', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }" class="auth-link">Sign Up</router-link>
-        </p>
-      </div>
-    </div>
-  </div>
+    <p class="as-or">New here?</p>
+    <p class="as-foot">
+      <router-link :to="{ path: '/signup', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }">Create an account</router-link> to start planning with your crew.
+    </p>
+  </AuthShell>
 </template>
 
 <script>
 import axios from 'axios'
-import AuthHero from '../components/AuthHero.vue'
+import AuthShell from '../components/AuthShell.vue'
 import { saveLogin } from '../auth.js'
 
 export default {
-  components: { AuthHero },
+  components: { AuthShell },
   data() {
     return {
       username: this.$route.query.username || '',
@@ -65,7 +52,7 @@ export default {
     async login() {
       this.errorMessage = ''
       if (!this.username || !this.password) {
-        this.errorMessage = 'Please enter your username and password.'
+        this.errorMessage = 'Please enter your username (or email) and password.'
         return
       }
 
@@ -77,7 +64,7 @@ export default {
         })
         saveLogin(res.data.token, res.data.user)
         // Go to the page they originally wanted, otherwise the homepage
-        this.$router.push(this.$route.query.redirect || '/')
+        this.$router.push(this.$route.query.redirect || '/home')
       } catch (err) {
         // Show the server's message if it sent one, otherwise a general one
         if (err.response && err.response.data && err.response.data.message) {

@@ -3,7 +3,7 @@
     <!-- New-trip setup: /trip/:id/setup/invite, then /wishlist, then /vote -->
     <p v-if="loading" class="text-muted">Loading trip…</p>
     <div v-else-if="loadError" class="alert alert-warning">
-      {{ loadError }} <router-link to="/">Back to your trips</router-link>
+      {{ loadError }} <router-link to="/home">Back to your trips</router-link>
     </div>
 
     <template v-else>
@@ -38,19 +38,19 @@
         <template v-if="step === 'invite'">
           <button type="button" class="btn btn-link text-muted" @click="goTo('wishlist')">Skip for now</button>
           <button type="button" class="btn setup-next" @click="goTo('wishlist')" data-testid="setup-invite-next">
-            Next: save places →
+            Next: Save places →
           </button>
         </template>
         <template v-else-if="step === 'wishlist'">
           <button type="button" class="btn btn-link text-muted" @click="finish">Skip setup</button>
           <button type="button" class="btn setup-next" :disabled="saving" @click="goTo('vote')" data-testid="setup-next">
-            Next: vote together →
+            Next: Vote together →
           </button>
         </template>
         <template v-else>
           <button type="button" class="btn btn-link text-muted" @click="goTo('wishlist')">← Back to wishlist</button>
           <button type="button" class="btn setup-next" :disabled="saving" @click="finish" data-testid="setup-finish">
-            Finish: plan my days →
+            Finish: Plan my days →
           </button>
         </template>
       </div>
@@ -214,18 +214,18 @@ export default {
   width: 56px;
   height: 56px;
   border-radius: 20px;
-  border: 1.5px solid #dfe5e3;
-  background: #fff;
+  border: 1.5px solid #e2dacb;
+  background: #fbf5ea;
   font-size: 28px;
   line-height: 1;
   flex-shrink: 0;
 }
 .setup-back:hover {
-  background: #f1f5f4;
+  background: #f4efe6;
 }
 .setup-trip {
   margin: 0;
-  color: var(--app-muted, #5f6f6b);
+  color: var(--app-muted, #5a6b78);
   font-size: 14px;
 }
 .setup-title {
@@ -246,9 +246,9 @@ export default {
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: var(--app-muted, #5f6f6b);
-  background: #fff;
-  border: 1px solid #dfe5e3;
+  color: var(--app-muted, #5a6b78);
+  background: #fbf5ea;
+  border: 1px solid #e2dacb;
   border-radius: 999px;
   padding: 6px 14px 6px 6px;
 }
@@ -256,7 +256,7 @@ export default {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #eef2f1;
+  background: #efe9df;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -264,20 +264,20 @@ export default {
   font-weight: 700;
 }
 .setup-steps li.current {
-  color: #1f2d2a;
+  color: #003d5b;
   font-weight: 600;
-  border-color: #1f2d2a;
+  border-color: #003d5b;
 }
 .setup-steps li.current .dot {
-  background: #1f2d2a;
-  color: #dcf5a6;
+  background: #003d5b;
+  color: #edae49;
 }
 .setup-steps li.done .dot {
-  background: #0b7f5f;
+  background: #00798c;
   color: #fff;
 }
 .setup-lead {
-  color: var(--app-muted, #5f6f6b);
+  color: var(--app-muted, #5a6b78);
   margin-bottom: 24px;
 }
 /* Floating bottom bar, like the reference's dark nav */
@@ -291,10 +291,10 @@ export default {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  background: #1f2d2a;
+  background: #003d5b;
   border-radius: 999px;
   padding: 8px 8px 8px 16px;
-  box-shadow: 0 16px 36px rgba(16, 40, 34, 0.3);
+  box-shadow: 0 16px 36px rgba(0, 40, 62, 0.3);
   z-index: 30;
 }
 .setup-bar .btn-link {
@@ -302,8 +302,8 @@ export default {
   text-decoration: none;
 }
 .setup-next {
-  background: #dcf5a6;
-  color: #1f2d2a;
+  background: #edae49;
+  color: #003d5b;
   border-radius: 999px;
   font-weight: 700;
   padding: 10px 22px;
@@ -311,7 +311,7 @@ export default {
 .setup-next:hover,
 .setup-next:focus-visible {
   background: #c9ef7f;
-  color: #1f2d2a;
+  color: #003d5b;
 }
 @media (max-width: 576px) {
   .setup-title { font-size: 1.6rem; }

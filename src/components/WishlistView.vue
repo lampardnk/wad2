@@ -20,7 +20,9 @@
         <button type="button" class="wl-heart filled" :aria-label="'Remove ' + w.name + ' from wishlist'" title="Remove" @click="remove(w)">♥</button>
         <span class="wl-art" aria-hidden="true">{{ placeStyle(w.type).icon }}</span>
         <div class="wl-bar">
-          <span class="wl-bar-text"><span v-if="w.city">{{ flagFor(w.city) }} {{ w.city.split(', ')[0] }} · </span>{{ placeStyle(w.type).label }}<span v-if="!w.outdoor"> · Indoor</span></span>
+          <span v-if="w.type === 'tour'" class="wl-bar-text">{{ w.bookedVia ? 'Booked · ' + w.bookedVia : 'Tour' }}<span v-if="w.duration"> · {{ lengthText(w.duration) }}</span></span>
+          <span v-else class="wl-bar-text"><span v-if="w.city">{{ flagFor(w.city) }} {{ w.city.split(', ')[0] }} · </span>{{ placeStyle(w.type).label }}<span v-if="!w.outdoor"> · Indoor</span></span>
+          <a v-if="w.link" :href="w.link" target="_blank" rel="noopener" class="wl-round wl-link" :aria-label="'Open booking for ' + w.name" title="Open booking">↗</a>
           <button type="button" class="wl-round" :aria-label="'Edit ' + w.name" title="Edit" @click="startEdit(w)">✎</button>
         </div>
       </article>
@@ -41,6 +43,10 @@
           <div class="col-md-5">
             <label for="wl-edit-address" class="form-label small">Address <span class="text-muted">(optional, turns on crowd info)</span></label>
             <input id="wl-edit-address" v-model="editForm.address" class="form-control wl-input" maxlength="200">
+          </div>
+          <div v-if="editForm.isTour" class="col-md-10">
+            <label for="wl-edit-link" class="form-label small">Booking link</label>
+            <input id="wl-edit-link" v-model="editForm.link" type="url" class="form-control wl-input" maxlength="500" placeholder="https://">
           </div>
           <div class="col-md-2 d-flex align-items-end gap-1">
             <button type="submit" class="btn btn-primary wl-pill-btn flex-fill">Save</button>
@@ -84,7 +90,73 @@
       <label for="wish-address" class="visually-hidden">Address</label>
       <input id="wish-address" v-model="form.address" class="form-control wl-input wl-add-address" maxlength="200" placeholder="Address (optional, for your own place)">
       <button type="submit" class="btn btn-primary wl-pill-btn" :disabled="!form.name.trim()" data-testid="wish-add">+ Add</button>
+      <button type="button" class="btn wl-pill-btn wl-tour-btn" :class="{ on: tourOpen }" :aria-expanded="tourOpen"
+        title="Add a tour or activity you booked, e.g. on GetYourGuide" @click="tourOpen ? (tourOpen = false) : openTour()">🎟 Add a tour</button>
     </form>
+
+    <!-- A tour or activity that isn't on the map (eagle hunting, a GetYourGuide day trip...) -->
+    <transition name="fade">
+      <form v-if="tourOpen" class="wl-tour" @submit.prevent="saveTour" aria-labelledby="wl-tour-title">
+        <div class="wl-tour-head">
+          <strong id="wl-tour-title">🎟 Add a tour or activity</strong>
+          <button type="button" class="wl-tour-x" aria-label="Close" @click="tourOpen = false">✕</button>
+        </div>
+
+        <label for="wl-tour-name" class="wl-tour-label">What is it?</label>
+        <input id="wl-tour-name" ref="tourName" v-model="tour.name" class="form-control wl-input" maxlength="120"
+          placeholder="e.g. Eagle hunting show at Bokonbaevo" required>
+
+        <div class="wl-tour-row">
+          <div>
+            <span class="wl-tour-label">Booked on</span>
+            <CustomDropdown v-model="tour.bookedVia" :options="providerOptions" block aria-label="Booked on" />
+          </div>
+          <div>
+            <label for="wl-tour-link" class="wl-tour-label">Booking link <span class="wl-opt">optional</span></label>
+            <input id="wl-tour-link" v-model="tour.link" type="url" class="form-control wl-input" maxlength="500"
+              placeholder="Paste the confirmation or tour page" @input="guessProvider">
+          </div>
+        </div>
+
+        <label for="wl-tour-where" class="wl-tour-label">Meeting point <span class="wl-opt">optional</span></label>
+        <input id="wl-tour-where" v-model="tour.address" class="form-control wl-input" maxlength="200" placeholder="Hotel pickup, or an address">
+
+        <span class="wl-tour-label">How long?</span>
+        <div class="wl-seg" role="group" aria-label="How long">
+          <button v-for="d in lengthOptions" :key="d.value" type="button" :class="{ on: tour.duration === d.value }"
+            :aria-pressed="tour.duration === d.value" @click="tour.duration = d.value">{{ d.label }}</button>
+        </div>
+
+        <span class="wl-tour-label">Mostly</span>
+        <div class="wl-seg" role="group" aria-label="Indoor or outdoor">
+          <button type="button" :class="{ on: tour.outdoor }" :aria-pressed="tour.outdoor" @click="tour.outdoor = true">🌳 Outdoor</button>
+          <button type="button" :class="{ on: !tour.outdoor }" :aria-pressed="!tour.outdoor" @click="tour.outdoor = false">🏛 Indoor</button>
+        </div>
+
+        <div v-if="tripDays.length" class="wl-tour-row">
+          <div>
+            <span class="wl-tour-label">Already have a date? <span class="wl-opt">optional</span></span>
+            <CustomDropdown v-model="tour.date" :options="dayOptions" block aria-label="Day" />
+          </div>
+          <div>
+            <label for="wl-tour-time" class="wl-tour-label">Starts at</label>
+            <input id="wl-tour-time" v-model="tour.time" type="time" class="form-control wl-input" :disabled="!tour.date">
+          </div>
+        </div>
+        <p class="wl-tour-note">
+          <template v-if="tour.date && tour.time">It goes straight into your itinerary as a fixed booking, so the optimizer plans around it.</template>
+          <template v-else>It goes into your wishlist, ready to drop into any day.</template>
+        </p>
+        <p v-if="tourError" class="text-danger small mb-2" role="alert">{{ tourError }}</p>
+
+        <div class="d-flex gap-2 justify-content-end">
+          <button type="button" class="btn btn-outline-secondary wl-pill-btn" @click="tourOpen = false">Cancel</button>
+          <button type="submit" class="btn btn-primary wl-pill-btn" :disabled="!tour.name.trim()">
+            {{ tour.date && tour.time ? 'Add to Day ' + dayNumber(tour.date) : 'Add to wishlist' }}
+          </button>
+        </div>
+      </form>
+    </transition>
 
     <!-- ===== Popular places: one section per destination ===== -->
     <section v-for="sec in sections" :key="sec.dest" class="mt-5" :aria-label="'Popular in ' + sec.city">
@@ -105,13 +177,14 @@
 
       <template v-else>
         <div class="wl-grid" data-testid="popular-list">
-          <article v-for="p in sec.list.slice(0, sec.shown)" :key="p.name" class="wl-card" :style="{ background: placeStyle(p.type).color }">
+          <!-- The whole card is the button: tap to save, tap again to un-save -->
+          <article v-for="p in sec.list.slice(0, sec.shown)" :key="p.name" class="wl-card wl-tap" :style="{ background: placeStyle(p.type).color }"
+            role="button" tabindex="0" :aria-pressed="isAdded(p)" :aria-label="(isAdded(p) ? 'Remove ' : 'Add ') + p.name + (isAdded(p) ? ' from' : ' to') + ' wishlist'"
+            @click="togglePopular(p)" @keydown.enter.prevent="togglePopular(p)" @keydown.space.prevent="togglePopular(p)" data-testid="popular-add">
             <div class="wl-card-top">
               <h4 class="wl-name" :title="p.name">{{ p.name }}</h4>
             </div>
-            <button v-if="isAdded(p)" type="button" class="wl-heart filled" disabled :aria-label="p.name + ' is in your wishlist'">♥</button>
-            <button v-else type="button" class="wl-heart" :aria-label="'Add ' + p.name + ' to wishlist'" title="Add to wishlist"
-              @click="addPopular(p)" data-testid="popular-add">♡</button>
+            <span class="wl-heart" :class="{ filled: isAdded(p) }" aria-hidden="true">{{ isAdded(p) ? '♥' : '♡' }}</span>
             <span class="wl-art" aria-hidden="true">{{ placeStyle(p.type).icon }}</span>
             <div class="wl-bar">
               <span class="wl-bar-text">{{ placeStyle(p.type).label }}<span v-if="p.indoor"> · Indoor</span></span>
@@ -131,16 +204,22 @@
 
 <script>
 import axios from 'axios'
-import { trip, newId } from '../itineraryStore.js'
+import { trip, newId, runtimeStop } from '../itineraryStore.js'
 import { codeForDestination, flagEmoji } from '../destinations.js'
 import { placeStyle } from '../placeStyle.js'
 import CustomDropdown from './CustomDropdown.vue'
+
+function emptyTour() {
+  return { name: '', bookedVia: '', link: '', address: '', duration: 3, outdoor: true, date: '', time: '' }
+}
 
 export default {
   components: { CustomDropdown },
   props: {
     // All of the trip's destinations, e.g. ['Tokyo, Japan', 'Kyoto, Japan']
-    destinations: { type: Array, default: () => [] }
+    destinations: { type: Array, default: () => [] },
+    startDate: { type: String, default: '' },
+    endDate: { type: String, default: '' }
   },
 
   data() {
@@ -163,7 +242,27 @@ export default {
       openChain: null,   // name of the chain whose branches are shown
       active: -1,
       editId: null,
-      editForm: { name: '', address: '' }
+      editForm: { name: '', address: '', link: '', isTour: false },
+      tourOpen: false,
+      tour: emptyTour(),
+      tourError: '',
+      providerOptions: [
+        { value: '', label: 'Not booked yet' },
+        { value: 'GetYourGuide', label: 'GetYourGuide' },
+        { value: 'Tripadvisor', label: 'Tripadvisor' },
+        { value: 'Viator', label: 'Viator' },
+        { value: 'Klook', label: 'Klook' },
+        { value: 'Airbnb Experiences', label: 'Airbnb Experiences' },
+        { value: 'Local operator', label: 'Directly with a local operator' },
+        { value: 'Other', label: 'Somewhere else' }
+      ],
+      lengthOptions: [
+        { value: 1, label: '1 h' },
+        { value: 2, label: '2 h' },
+        { value: 3, label: '3 h' },
+        { value: 4, label: 'Half day' },
+        { value: 8, label: 'Full day' }
+      ]
     }
   },
 
@@ -181,6 +280,26 @@ export default {
   },
 
   computed: {
+    // Every date of the trip, e.g. ['2026-10-12', '2026-10-13', ...]
+    tripDays() {
+      const days = []
+      if (!this.startDate || !this.endDate) return days
+      const d = new Date(this.startDate + 'T00:00:00')
+      const end = new Date(this.endDate + 'T00:00:00')
+      while (d <= end && days.length < 60) {
+        days.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'))
+        d.setDate(d.getDate() + 1)
+      }
+      return days
+    },
+    dayOptions() {
+      const list = [{ value: '', label: 'Not yet' }]
+      for (let i = 0; i < this.tripDays.length; i++) {
+        const d = new Date(this.tripDays[i] + 'T00:00:00')
+        list.push({ value: this.tripDays[i], label: 'Day ' + (i + 1) + ' · ' + d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) })
+      }
+      return list
+    },
     cityOptions() {
       const list = []
       for (const d of this.destinations) list.push({ value: d, label: d.split(', ')[0], icon: this.flagFor(d), description: d.split(', ').slice(1).join(', ') })
@@ -261,6 +380,55 @@ export default {
   methods: {
     placeStyle,
 
+    lengthText(h) {
+      if (h >= 8) return 'Full day'
+      if (h >= 4) return 'Half day'
+      return h + ' h'
+    },
+    dayNumber(date) {
+      return this.tripDays.indexOf(date) + 1
+    },
+
+    openTour() {
+      this.tour = emptyTour()
+      this.tour.name = this.form.name.trim() // carry over whatever was typed in "Find a place"
+      this.tourError = ''
+      this.tourOpen = true
+      this.$nextTick(() => this.$refs.tourName && this.$refs.tourName.focus())
+    },
+    // Pasting a GetYourGuide / Klook... link picks the site for you
+    guessProvider() {
+      const link = this.tour.link.toLowerCase()
+      const sites = [['getyourguide', 'GetYourGuide'], ['tripadvisor', 'Tripadvisor'], ['viator', 'Viator'], ['klook', 'Klook'], ['airbnb', 'Airbnb Experiences']]
+      for (const site of sites) {
+        if (link.includes(site[0])) this.tour.bookedVia = site[1]
+      }
+    },
+    saveTour() {
+      const t = this.tour
+      const name = t.name.trim()
+      if (!name) return
+      let link = t.link.trim()
+      if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link
+      if (link && !/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(link)) {
+        this.tourError = 'That booking link doesn\'t look right. Check it or leave it empty.'
+        return
+      }
+      const item = {
+        id: newId('w'), name, address: t.address.trim() || null, outdoor: t.outdoor, type: 'tour',
+        city: this.searchIn || null, votes: [], duration: t.duration, bookedVia: t.bookedVia || null, link: link || null
+      }
+      trip.wishlist.push(item)
+      // A booked date + time: put it straight on that day, locked so nothing moves it
+      if (t.date && t.time) {
+        const parts = t.time.split(':')
+        const hour = Math.min(23.75, Number(parts[0]) + Number(parts[1]) / 60)
+        trip.stops.push(runtimeStop({ id: newId('s'), name, address: item.address, date: t.date, hour, duration: t.duration, outdoor: t.outdoor, locked: true }))
+      }
+      this.form.name = ''
+      this.tourOpen = false
+    },
+
     // Indoor/Outdoor filter
     matches(name, indoor) {
       if (this.filter === 'indoor' && !indoor) return false
@@ -295,6 +463,14 @@ export default {
       this.status[dest].loading = false
     },
 
+    togglePopular(p) {
+      if (!this.isAdded(p)) {
+        this.addPopular(p)
+        return
+      }
+      const w = this.wishlist.find((x) => x.name.toLowerCase() === p.name.toLowerCase())
+      if (w) this.remove(w)
+    },
     isAdded(p) {
       for (const w of this.wishlist) {
         if (w.name.toLowerCase() === p.name.toLowerCase()) return true
@@ -390,7 +566,7 @@ export default {
 
     startEdit(w) {
       this.editId = w.id
-      this.editForm = { name: w.name, address: w.address || '' }
+      this.editForm = { name: w.name, address: w.address || '', link: w.link || '', isTour: w.type === 'tour' }
     },
 
     saveEdit() {
@@ -400,6 +576,11 @@ export default {
         if (w.id === this.editId) {
           w.name = name
           w.address = this.editForm.address.trim() || null
+          if (this.editForm.isTour) {
+            let link = this.editForm.link.trim()
+            if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link
+            w.link = link || null
+          }
         }
       }
       this.editId = null
@@ -421,15 +602,15 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  background: #fff;
-  border: 1.5px solid #dfe5e3;
+  background: #fbf5ea;
+  border: 1.5px solid #e2dacb;
   border-radius: 999px;
   height: 52px;
   padding: 0 8px 0 18px;
 }
 .wl-search:focus-within {
-  border-color: var(--app-primary, #0b7f5f);
-  box-shadow: 0 0 0 4px rgba(11, 127, 95, 0.12);
+  border-color: var(--app-primary, #00798c);
+  box-shadow: 0 0 0 4px rgba(0, 121, 140, 0.12);
 }
 .wl-search-icon {
   opacity: 0.6;
@@ -461,16 +642,16 @@ export default {
   margin-bottom: 20px;
 }
 .wl-chip {
-  border: 1px solid #dfe5e3;
-  background: #fff;
+  border: 1px solid #e2dacb;
+  background: #fbf5ea;
   border-radius: 999px;
   padding: 7px 16px;
   font-size: 14px;
   transition: background 0.15s, color 0.15s;
 }
 .wl-chip.active {
-  background: var(--app-ink, #1f2d2a);
-  border-color: var(--app-ink, #1f2d2a);
+  background: var(--app-ink, #003d5b);
+  border-color: var(--app-ink, #003d5b);
   color: #fff;
 }
 
@@ -482,16 +663,16 @@ export default {
 .wl-count {
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
-  background: #e6f5ef;
-  color: #064a38;
+  background: #fbefd9;
+  color: #004e5a;
   border-radius: 999px;
   padding: 2px 10px;
   vertical-align: middle;
 }
 .wl-empty {
-  color: var(--app-muted, #5f6f6b);
-  background: #fff;
-  border: 1px dashed #dfe5e3;
+  color: var(--app-muted, #5a6b78);
+  background: #fbf5ea;
+  border: 1px dashed #e2dacb;
   border-radius: 20px;
   padding: 24px;
   text-align: center;
@@ -513,9 +694,21 @@ export default {
   flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+.wl-tap {
+  cursor: pointer;
+}
+.wl-tap:focus-visible {
+  outline: 3px solid rgba(0, 121, 140, 0.45);
+  outline-offset: 3px;
+}
+.wl-tap .wl-heart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .wl-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(16, 40, 34, 0.12);
+  box-shadow: 0 12px 24px rgba(0, 40, 62, 0.12);
 }
 .wl-card-top {
   display: flex;
@@ -528,7 +721,7 @@ export default {
 .wl-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #1f2d2a;
+  color: #003d5b;
   margin: 0;
   overflow: hidden;
   display: -webkit-box;
@@ -562,7 +755,7 @@ export default {
   border-radius: 50%;
   border: 0;
   background: rgba(255, 255, 255, 0.85);
-  color: #e0475b;
+  color: #d1495b;
   font-size: 18px;
   line-height: 1;
   transition: transform 0.15s;
@@ -571,7 +764,7 @@ export default {
   transform: scale(1.1);
 }
 .wl-heart.filled {
-  color: #e0475b;
+  color: #d1495b;
 }
 .wl-art {
   position: absolute;
@@ -601,7 +794,7 @@ export default {
 .wl-bar-text {
   font-size: 13px;
   font-weight: 600;
-  color: #1f2d2a;
+  color: #003d5b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -612,20 +805,20 @@ export default {
   height: 32px;
   border-radius: 50%;
   border: 0;
-  background: #1f2d2a;
-  color: #dcf5a6;
+  background: #003d5b;
+  color: #edae49;
   font-size: 14px;
 }
 .wl-added {
   font-size: 12px;
   font-weight: 700;
-  color: #064a38;
+  color: #004e5a;
   padding-right: 8px;
 }
 .wl-heart:focus-visible,
 .wl-round:focus-visible,
 .wl-chip:focus-visible {
-  outline: 3px solid rgba(11, 127, 95, 0.45);
+  outline: 3px solid rgba(0, 121, 140, 0.45);
   outline-offset: 2px;
 }
 
@@ -658,8 +851,8 @@ export default {
   padding: 6px 16px;
 }
 .wl-panel {
-  background: #fff;
-  border: 1px solid #dfe5e3;
+  background: #fbf5ea;
+  border: 1px solid #e2dacb;
   border-radius: 20px;
   padding: 16px 18px;
   margin-top: 16px;
@@ -673,10 +866,10 @@ export default {
   list-style: none;
   margin: 0;
   padding: 6px;
-  background: #fff;
-  border: 1px solid #dfe5e3;
+  background: #fbf5ea;
+  border: 1px solid #e2dacb;
   border-radius: 18px;
-  box-shadow: 0 14px 30px rgba(16, 40, 34, 0.14);
+  box-shadow: 0 14px 30px rgba(0, 40, 62, 0.14);
   max-height: 360px;
   overflow-y: auto;
 }
@@ -697,7 +890,7 @@ export default {
 }
 .wl-row-note {
   margin-left: 6px;
-  color: var(--app-muted, #5f6f6b);
+  color: var(--app-muted, #5a6b78);
   font-size: 13px;
 }
 .wl-row-icon {
@@ -706,7 +899,7 @@ export default {
   flex-shrink: 0;
 }
 .wl-row-arrow {
-  color: var(--app-muted, #5f6f6b);
+  color: var(--app-muted, #5a6b78);
   font-size: 18px;
 }
 .wl-suggest li.wl-row-branch {
@@ -717,8 +910,8 @@ export default {
   font-weight: 500;
 }
 .wl-suggest li.wl-row-own {
-  border-top: 1px solid #eef2f1;
-  color: #0b7f5f;
+  border-top: 1px solid #efe9df;
+  color: #00798c;
 }
 .wl-searching {
   position: absolute;
@@ -728,12 +921,12 @@ export default {
   pointer-events: none;
 }
 .wl-suggest li.active {
-  background: #e6f5ef;
+  background: #fbefd9;
 }
 
 /* ---------- Loading + animations ---------- */
 .skeleton {
-  background: linear-gradient(90deg, #eef2f1 25%, #f7f9f8 50%, #eef2f1 75%);
+  background: linear-gradient(90deg, #efe9df 25%, #f9f6f0 50%, #efe9df 75%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite;
 }
@@ -756,7 +949,103 @@ export default {
   opacity: 0;
 }
 
+/* ---------- Tour / activity ---------- */
+.wl-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  margin-right: 6px;
+}
+.wl-tour-btn {
+  border: 1.5px solid #003d5b;
+  color: #003d5b;
+  background: #fbf5ea;
+}
+.wl-tour-btn:hover,
+.wl-tour-btn.on {
+  background: #003d5b;
+  color: #fff;
+}
+.wl-tour {
+  margin-top: 16px;
+  background: #fbf5ea;
+  border: 1px solid #e2dacb;
+  border-radius: 22px;
+  padding: 18px 20px;
+  max-width: 720px;
+  box-shadow: 0 10px 28px rgba(0, 40, 62, 0.08);
+}
+.wl-tour-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 1.05rem;
+}
+.wl-tour-x {
+  border: 0;
+  background: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #5a6b78;
+}
+.wl-tour-x:hover {
+  background: #f1f4f3;
+}
+.wl-tour-label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #003d5b;
+}
+.wl-opt {
+  font-weight: 400;
+  color: #5a6b78;
+}
+.wl-tour-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.wl-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: #f1f4f3;
+  border-radius: 999px;
+}
+.wl-seg button {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a6b78;
+  transition: background 0.15s, color 0.15s;
+}
+.wl-seg button.on {
+  background: #003d5b;
+  color: #fff;
+}
+.wl-tour-note {
+  margin: 14px 0 12px;
+  font-size: 13px;
+  color: #5a6b78;
+}
+.wl-tour-x:focus-visible,
+.wl-seg button:focus-visible {
+  outline: 3px solid rgba(0, 121, 140, 0.45);
+  outline-offset: 2px;
+}
+
 @media (max-width: 576px) {
+  .wl-tour-row { grid-template-columns: 1fr; gap: 0; }
+  .wl-tour { padding: 16px; }
   .wl-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .wl-art { font-size: 56px; }
 }

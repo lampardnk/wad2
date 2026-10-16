@@ -172,7 +172,7 @@ export default {
 }
 .sr-chip:focus-visible,
 .sr-pt:focus-visible {
-  outline: 3px solid rgba(47, 224, 161, 0.7);
+  outline: 3px solid rgba(63, 184, 198, 0.7);
   outline-offset: 2px;
 }
 .sr-swatch {
@@ -204,27 +204,27 @@ export default {
 }
 .sr-ring {
   fill: none;
-  stroke: rgba(47, 224, 161, 0.22);
+  stroke: rgba(63, 184, 198, 0.22);
   stroke-width: 1;
 }
 .sr-ring:last-of-type {
-  fill: rgba(47, 224, 161, 0.03);
+  fill: rgba(63, 184, 198, 0.03);
 }
 .sr-ring-label {
-  fill: rgba(232, 241, 238, 0.45);
+  fill: rgba(241, 234, 222, 0.45);
   font-size: 10px;
 }
 .sr-axis {
   stroke: rgba(255, 255, 255, 0.06);
 }
 .sr-north {
-  fill: rgba(232, 241, 238, 0.6);
+  fill: rgba(241, 234, 222, 0.6);
   font-size: 11px;
   font-weight: 700;
   text-anchor: middle;
 }
 .sr-sweep {
-  fill: rgba(47, 224, 161, 0.08);
+  fill: rgba(63, 184, 198, 0.08);
   transform-box: view-box;
   transform-origin: 160px 160px;
   animation: sr-spin 6s linear infinite;
@@ -237,7 +237,7 @@ export default {
   outline: none;
 }
 .sr-dot {
-  stroke: #0e1513;
+  stroke: #032739;
   stroke-width: 2;
 }
 .sr-glyph {
@@ -248,17 +248,17 @@ export default {
   pointer-events: none;
 }
 .sr-stop {
-  fill: #0e1513;
+  fill: #032739;
   stroke: #fff;
   stroke-width: 2.5;
 }
 .sr-home {
-  fill: #2fe0a1;
-  stroke: #0e1513;
+  fill: #3fb8c6;
+  stroke: #032739;
   stroke-width: 3;
 }
 .sr-home-pulse {
-  fill: rgba(47, 224, 161, 0.25);
+  fill: rgba(63, 184, 198, 0.25);
   transform-box: fill-box;
   transform-origin: center;
   animation: sr-pulse 2s ease-out infinite;
@@ -266,8 +266,8 @@ export default {
 .sr-tip {
   position: absolute;
   transform: translate(-50%, calc(-100% - 14px));
-  background: #f4f7f6;
-  color: #1f2d2a;
+  background: #f6f2ea;
+  color: #003d5b;
   border-radius: 10px;
   padding: 6px 10px;
   font-size: 12px;
@@ -281,7 +281,7 @@ export default {
 .sr-caption {
   text-align: center;
   font-size: 12px;
-  color: rgba(232, 241, 238, 0.55);
+  color: rgba(241, 234, 222, 0.55);
   margin: 6px 0 0;
 }
 @keyframes sr-spin {

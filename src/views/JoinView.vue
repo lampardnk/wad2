@@ -11,7 +11,7 @@
         <div class="jv-big-icon" aria-hidden="true">🔗</div>
         <h1 class="jv-title">Invite not found</h1>
         <p class="jv-muted">{{ error }}</p>
-        <router-link to="/" class="jv-btn">Go to my trips</router-link>
+        <router-link to="/home" class="jv-btn">Go to my trips</router-link>
       </div>
     </div>
 
@@ -168,16 +168,16 @@ export default {
 }
 .jv-card {
   width: min(480px, 100%);
-  background: #fff;
+  background: #fbf5ea;
   border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(16, 40, 34, 0.15);
+  box-shadow: 0 24px 60px rgba(0, 40, 62, 0.15);
   animation: jv-in 0.35s ease;
 }
 .jv-photo {
   position: relative;
   height: 200px;
-  background: linear-gradient(135deg, #0b7f5f, #0b1210) center / cover no-repeat;
+  background: linear-gradient(135deg, #00798c, #002233) center / cover no-repeat;
 }
 .jv-photo::after {
   content: '';
@@ -213,11 +213,11 @@ export default {
 }
 .jv-arrow {
   margin: 0 6px;
-  color: #0b7f5f;
+  color: #00798c;
 }
 .jv-meta,
 .jv-muted {
-  color: #5f6f6b;
+  color: #5a6b78;
 }
 .jv-going {
   display: flex;
@@ -234,7 +234,7 @@ export default {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #0b7f5f;
+  background: #00798c;
   color: #fff;
   font-weight: 700;
   font-size: 13px;
@@ -257,8 +257,8 @@ export default {
   font-size: 12px;
 }
 .jv-av.new {
-  background: #eef4f2;
-  color: #0b7f5f;
+  background: #f5eee2;
+  color: #00798c;
 }
 .jv-who {
   margin-bottom: 16px;
@@ -279,7 +279,7 @@ export default {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border: 1.5px solid #e3e9e7;
+  border: 1.5px solid #e6dfd2;
   border-radius: 14px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
@@ -289,11 +289,11 @@ export default {
   opacity: 0;
 }
 .jv-option.on {
-  border-color: #0b7f5f;
+  border-color: #00798c;
   background: #eef8f4;
 }
 .jv-option:focus-within {
-  outline: 3px solid rgba(11, 127, 95, 0.35);
+  outline: 3px solid rgba(0, 121, 140, 0.35);
   outline-offset: 2px;
 }
 .jv-btn {
@@ -302,8 +302,8 @@ export default {
   text-align: center;
   border: 0;
   border-radius: 999px;
-  background: #1f2d2a;
-  color: #dcf5a6;
+  background: #003d5b;
+  color: #edae49;
   font-weight: 700;
   font-size: 1.05rem;
   padding: 13px;
@@ -311,7 +311,7 @@ export default {
   transition: background 0.15s, transform 0.15s;
 }
 .jv-btn:hover:not(:disabled) {
-  background: #0b7f5f;
+  background: #00798c;
   color: #fff;
   transform: translateY(-1px);
 }
@@ -319,21 +319,21 @@ export default {
   opacity: 0.6;
 }
 .jv-btn:focus-visible {
-  outline: 3px solid rgba(11, 127, 95, 0.45);
+  outline: 3px solid rgba(0, 121, 140, 0.45);
   outline-offset: 3px;
 }
 .jv-note {
   font-weight: 600;
-  color: #0b7f5f;
+  color: #00798c;
 }
 .jv-error {
-  color: #c0392b;
+  color: #d1495b;
   font-size: 14px;
 }
 .jv-small {
   text-align: center;
   font-size: 13px;
-  color: #5f6f6b;
+  color: #5a6b78;
   margin: 12px 0 0;
 }
 .jv-big-icon {
