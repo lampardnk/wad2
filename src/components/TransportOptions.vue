@@ -1,42 +1,4 @@
 <script setup>
-<<<<<<< Updated upstream
-    import {computed, ref} from 'vue'
-    import { savedOption } from '../savedRoutes.js';
-    import CustomDropdown from './CustomDropdown.vue'
-
-
-    const data = {
-        'Gyeongbokgung Palace': [
-            {type: 'Bus', route: 'Bus [18 mins] (10 stops) - Walk 2 mins (100m)', walking: 2, duration: 20, cost: 2800},
-            {type: 'Subway', route: 'Walk 3 mins (150m) - Subway [10 mins] (6 stops) - Walk 2 mins (100m)', walking: 5, duration: 15, cost: 3800},
-            {type: 'Taxi', route: 'Direct', walking: 0, duration: 10, cost: 5000},
-            {type: 'Walk', route: '2 km', walking: 30, duration: 30, cost: 0}
-        ],
-        'Namsan Park (Outdoor)': [
-            {type: 'Bus', route: 'Walk 3 mins (150m) - Bus [27 mins] (15 stops)', walking: 3, duration: 30, cost: 3500},
-            {type: 'Subway', route: 'Walk 4 mins (200m) - Subway [11 mins] (8 stops) - Walk 5 mins (250m)', walking: 9, duration: 20, cost: 4500},
-            {type: 'Taxi', route: 'Direct', walking: 0, duration: 15, cost: 8000},
-            {type: 'Walk', route: '3 km', walking: 40, duration: 40, cost: 0}
-        ],
-        'Dinner Reservation (Myeongdong Kyoja)': [
-            {type: 'Bus', route: 'Walk 3 mins (150m) - Bus [27 mins] (16 stops) - Walk 5 mins (250m)', walking: 8, duration: 35, cost: 4000},
-            {type: 'Subway', route: 'Walk 7 mins (350m) - Subway [21 mins] (13 stops)', walking: 7, duration: 28, cost: 4800},
-            {type: 'Taxi', route: 'Direct', walking: 0, duration: 20, cost: 10000},
-            {type: 'Walk', route: '4 km', walking: 50, duration: 50, cost: 0}
-        ],
-        'Itaewon Street': [
-            {type: 'Bus', route: 'Walk 4 mins (200m) - Bus [14 mins] (8 stops) - Walk 2 mins (100m)', walking: 6, duration: 20, cost: 3100},
-            {type: 'Subway', route: 'Subway [9 mins] (6 stops) - Walk 5 mins (250m)', walking: 5, duration: 14, cost: 4000},
-            {type: 'Taxi', route: 'Direct', walking: 0, duration: 15, cost: 9000},
-            {type: 'Walk', route: '3 km', walking: 40, duration: 40, cost: 0}
-        ]
-    }
-
-    const startPoint = ref('Korean Street Food Breakfast');
-    const endPoint = ref('');
-    const destinations = Object.keys(data);
-    const startPoints = ['Korean Street Food Breakfast', 'Gyeongbokgung Palace', 'Namsan Park (Outdoor)', 'Dinner Reservation (Myeongdong Kyoja)'];
-=======
     import {computed, ref, watch, onMounted} from 'vue'
     import { savedRoutesFromDb, fetchSavedRoutes, timeZones, cityZones } from '../savedRoutes.js';
     import CustomDropdown from './CustomDropdown.vue'
@@ -80,7 +42,6 @@
         // remove duplicate names 
         const seen = new Set();
         return list.filter(p => !seen.has(p.name) && seen.add(p.name));
->>>>>>> Stashed changes
 
     });
 

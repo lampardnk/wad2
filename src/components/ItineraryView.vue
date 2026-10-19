@@ -28,7 +28,7 @@ import { getForecast } from '../crowd.js'
 import { fetchTravelTime } from '../services/maps.js'
 import { fetchWeatherForecast } from '../services/weatherService.js'
 import { trip, loadDemo, loadFromServer, savedShape, runtimeStop, newId } from '../itineraryStore.js'
-import { savedOption } from '../savedRoutes.js'
+import { savedRoutesFromDb } from '../savedRoutes.js' // or '@/savedRoutes.js'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -189,7 +189,7 @@ export default {
     },
     // Routes saved in "Getting around", shown in a stop's Time & details
     savedRoutes() {
-      return savedOption.value
+      return savedRoutesFromDb.value
     },
 
     // For the day strip and All days grid: how full each day is, and how many things need a look
