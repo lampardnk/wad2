@@ -16,6 +16,8 @@ import weatherRoutes from './routes/weather.js'
 import distanceRoutes from './routes/distance.js'
 import flightRoutes from './routes/flights.js'
 import directionsRouter from './routes/directions.js'
+import placeRoutes from './routes/places.js'
+
 
 // Additional Routes (Add these files if they exist in server/routes/)
 import photoRoutes from './routes/photos.js'
@@ -45,6 +47,7 @@ app.use('/api/groups', groupRoutes)
 app.use('/api/weather', weatherRoutes)
 app.use('/api/distance-matrix', distanceRoutes)
 app.use('/api/directions', directionsRouter)
+app.use('/api/places', placeRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
