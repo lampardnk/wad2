@@ -171,8 +171,8 @@
               <li v-else class="ip-stop" :class="{ moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
-                <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null }"
-                  :draggable="!it.stop.locked && !previewing" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag">
+                <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }"
+                :draggable="!it.stop.locked && !previewing" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag">
                   <button type="button" class="ip-handle" :disabled="it.stop.locked || previewing"
                     :aria-label="'Move ' + it.stop.name + ' (arrow keys)'" title="Drag to reorder" @keydown="onHandleKey($event, numberOf(it))">⋮⋮</button>
 
@@ -1170,6 +1170,13 @@ function blockAt(h) {
   }
   return null
 }
+
+function isRainAffected(it) {
+  if (previewing.value) return false
+  const w = weatherOf(it)
+  return w.tone === 'bad' && w.icon === '🌧️'
+}
+
 function weatherOf(it) {
   const b = blockAt(it.start)
   if (!b) return { icon: '🌤️', text: '–', tone: 'none', title: 'No forecast yet (forecasts reach about 5 days ahead)' }
@@ -2914,6 +2921,19 @@ function hoursText(stop) {
 .ip-fade-leave-to {
   opacity: 0;
 }
+/* Red highlight border for rain-affected outdoor stops */
+.ip-card.rain-warning-card {
+  border: 2px solid #ef4444 !important;
+  background-color: #fef2f2 !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.ip-card.rain-warning-card:hover {
+  border-color: #dc2626 !important;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3) !important;
+}
+
 @keyframes ip-rise {
   from { transform: translateY(10px) scale(0.97); opacity: 0; }
 }
