@@ -192,22 +192,17 @@
       </div>
 
       <div v-show="activeTab === 'travelOptions'" :id="'pane-travelOptions'" role="tabpanel">
-<<<<<<< Updated upstream
-        <TransportOptions />
-      </div>
-      </main>
-=======
         <TransportOptions 
           :destination="itineraryInfo?.destination"
           :stops="transportPlaces"
           :stay="isDemo ? null : trip?.stay"
           :tripId="trip?._id || trip?.id || trip?.tripId || $route.params.id" 
           :start-date="itineraryInfo.startDate"
-          :end-date="itineraryInfo.endDate" />
+          :end-date="itineraryInfo.endDate">
+        </TransportOptions>  
       </div>
 
-
->>>>>>> Stashed changes
+    </main>
     </template>
   </div>
 </template>
