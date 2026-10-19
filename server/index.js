@@ -10,6 +10,7 @@ import tripRoutes from './routes/trips.js'
 import weatherRoutes from './routes/weather.js'
 import distanceRoutes from './routes/distance.js'
 import flightRoutes from './routes/flights.js'
+<<<<<<< Updated upstream
 import placeRoutes from './routes/places.js'
 import rateRoutes from './routes/rates.js'
 import photoRoutes from './routes/photos.js'
@@ -23,6 +24,10 @@ import mapRoutes from './routes/maps.js'
 import eatRoutes from './routes/eat.js'
 import discoverRoutes from './routes/discover.js'
 import User from './models/User.js'
+=======
+import directionsRouter from './routes/directions.js'
+
+>>>>>>> Stashed changes
 
 const app = express()
 app.use(cors())
@@ -41,6 +46,7 @@ app.use('/api/trips', tripRoutes)
 app.use('/api/groups', groupRoutes)
 app.use('/api/weather', weatherRoutes)
 app.use('/api/distance-matrix', distanceRoutes)
+<<<<<<< Updated upstream
 app.use('/api/flights', flightRoutes)
 app.use('/api/places', placeRoutes)
 app.use('/api/rates', rateRoutes)
@@ -48,6 +54,10 @@ app.use('/api/safety', safetyRoutes)
 app.use('/api/maps', mapRoutes)
 app.use('/api/eat', eatRoutes)
 app.use('/api/discover', discoverRoutes)
+=======
+app.use('/api/directions', directionsRouter)
+
+>>>>>>> Stashed changes
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
