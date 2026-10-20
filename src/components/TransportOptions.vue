@@ -1,6 +1,6 @@
 <script setup>
     import {computed, ref, watch, onMounted} from 'vue'
-    import { savedRoutesFromDb, fetchSavedRoutes, timeZones, cityZones } from '../savedRoutes.js';
+    import { savedRoutesFromDb, fetchSavedRoutes, timeZones, cityZones, transportPrefill } from '../savedRoutes.js';
     import CustomDropdown from './CustomDropdown.vue'
     
     const props = defineProps({
@@ -197,6 +197,17 @@
         }
     }, { immediate: true });
 
+    // get selected fields from the saved option if user decide to change option
+    watch(transportPrefill, (p) => {
+        if (!p) return;
+        startPoint.value = p.start;
+        endPoint.value = p.end;
+        if (p.day) selectedDay.value = p.day;
+        if (p.time) selectedTime.value = p.time;
+        timeType.value = p.timeType || 'depart';
+        transportPrefill.value = null;   // use it once, so it doesn't override later choices
+    }, { immediate: true });
+
     // format duration
     function formatDuration(min) {
         const hour = Math.floor(min / 60);
@@ -345,8 +356,6 @@
         <div class="col-12 col-md-5 p-2">
             <h4>Destination</h4>
             <CustomDropdown v-model="endPoint" :options="destinations" block placeholder="Select destination" header-text="Destination" aria-label="Destination" />
-<<<<<<< Updated upstream
-=======
         </div>
         
         <!-- day selection -->
@@ -368,7 +377,6 @@
             <select v-model="timeZone" class="form-select" aria-label="Time zone">
                 <option v-for="tz in timeZones" :key="tz.value" :value="tz.value">{{ tz.label }}</option>
             </select>
->>>>>>> Stashed changes
         </div>
     </div>
     <hr>

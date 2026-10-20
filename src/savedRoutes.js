@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 
 export const savedRoutesFromDb = ref([]);
+export const transportPrefill = ref(null);   // { start, end, day, time, timeType }
 
 export async function fetchSavedRoutes(tripId) {
   if (!tripId) return;

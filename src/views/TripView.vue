@@ -131,7 +131,8 @@
           :end-date="itineraryInfo.endDate"
           :initial-stops="itineraryInfo.stops"
           :initial-wishlist="itineraryInfo.wishlist" :initial-version="isDemo ? 0 : trip.version || 0"
-          @itinerary-change="updatePackingActivities" @set-end-date="setEndDate" @go-places="addFromItinerary" />
+          @itinerary-change="updatePackingActivities" @set-end-date="setEndDate" @go-places="addFromItinerary"
+          @open-transport="activeTab = 'travelOptions'" />
       </div>
       <!-- Places = Wishlist + Group decisions. Both use the same wishlist, which the itinerary saves. -->
       <div v-show="activeTab === 'places'" :id="'pane-places'" role="tabpanel" :class="{ 'has-return': returnTo }">
@@ -311,6 +312,9 @@ export default {
     },
     // Itinerary stops for the safety radar
     safetyStops() {
+      return store.stops
+    },
+    transportPlaces() {
       return store.stops
     },
     wishlistPlaces() {

@@ -41,25 +41,24 @@ savedRouteSchema.statics.toggleOption = async function ({tripId, start, end, opt
         return {action: 'saved', route};
     }
 
-    const index = route.options.findIndex(o => o.type === option.type && lineKey(o.route) === lineKey(option.route)
-    && o.day === option.day && o.time === option.time);
+    const existing = route.options[0];
+    const isSame = existing &&
+        existing.type === option.type &&
+        lineKey(existing.route) === lineKey(option.route) &&
+        existing.day === option.day &&
+        existing.time === option.time;
 
-    if (index > -1) {
-        // unsave option
-        route.options.splice(index, 1);
-    } else {
-        // save option
-        route.options.push(option);
-    }
-
-    // remove route document if no options remain
-    if (route.options.length === 0) {
+    if (isSame) {
+        // same option clicked again: unsave it
         await this.deleteOne({ _id: route._id });
-        return {action: 'deleted'};
+        return { action: 'deleted' };
     }
 
+    // a different option: replace the saved one
+    route.options = [option];
     await route.save();
-    return {action: index > -1 ? 'removed' : 'saved', route};
+    return { action: existing ? 'replaced' : 'saved', route };
+
 };
 
 export default mongoose.model('SavedRoute', savedRouteSchema);

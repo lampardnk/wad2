@@ -15,7 +15,7 @@
       :can-add-day="!isDemo && !!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :saved-routes="savedRoutes"
       @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @undo-day="undoDay" @add-place="openAddPlace"
       @apply="applyOptimized" @lock="setLocked" @schedule="scheduleWish" @unschedule="unscheduleStop" @status="plannerStatus = $event"
-      @duration="setDuration" @move-day="moveToDay" @swap="swapWithWish" @edit="editStop" />
+      @duration="setDuration" @move-day="moveToDay" @swap="swapWithWish" @edit="editStop" @open-transport="$emit('open-transport')"/>
   </div>
 </template>
 
@@ -28,13 +28,13 @@ import { getForecast } from '../crowd.js'
 import { fetchTravelTime } from '../services/maps.js'
 import { fetchWeatherForecast } from '../services/weatherService.js'
 import { trip, loadDemo, loadFromServer, savedShape, runtimeStop, newId } from '../itineraryStore.js'
-import { savedRoutesFromDb } from '../savedRoutes.js' // or '@/savedRoutes.js'
+import { savedRoutesFromDb, fetchSavedRoutes } from '../savedRoutes.js' // or '@/savedRoutes.js'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export default {
   components: { SchedulePanel, ItineraryPlanner },
-  emits: ['itinerary-change', 'set-end-date', 'go-places'],
+  emits: ['itinerary-change', 'set-end-date', 'go-places', 'open-transport'],
   props: {
     tripId: { type: String, default: 'seoul' }, // 'seoul' = the demo trip (not saved)
     destination: { type: String, default: '' },
@@ -99,6 +99,10 @@ export default {
 
     // Re-check the weather every 15 minutes while this page is open
     this.weatherTimer = setInterval(this.refreshWeather, 15 * 60 * 1000)
+
+    // get trip id for transport options feature
+    fetchSavedRoutes(this.tripId);
+
   },
 
   beforeUnmount() {
@@ -119,7 +123,14 @@ export default {
       this.saveStatus = 'Saving…'
       clearTimeout(this.saveTimer)
       this.saveTimer = setTimeout(this.saveNow, 800)
+    },
+    // transport
+    tripId(newId) {
+      if (newId) {
+        fetchSavedRoutes(newId);
+      }
     }
+
   },
 
   computed: {
@@ -217,6 +228,10 @@ export default {
         result[d] = { issues, load: planned / hours }
       }
       return result
+    },
+    // transport
+    savedRoutes() {
+      return savedRoutesFromDb.value;
     }
   },
   methods: {
