@@ -70,18 +70,16 @@ export default {
     const firstStopDay = trip.stops.map((s) => s.date).sort()[0]
     this.selectedDate = firstStopDay || this.dayList[0] || ''
 
+    // Load simulated weather for every day of the trip
+    this.weather = await fetchWeatherForecast({
+      dates: this.dayList
+    })
+
     // The user's saved preferences (keeps the defaults if this fails)
     try {
       await loadPreferences()
     } catch (err) {
       console.warn('Could not load preferences, using defaults')
-    }
-
-    // Weather first, so the alert can show while crowd data loads
-    try {
-      this.weather = await fetchWeatherForecast(this.weatherParams)
-    } catch (err) {
-      this.weatherError = true
     }
 
     // Load each tracked stop's forecast from our server (in parallel)
@@ -97,9 +95,6 @@ export default {
     // Shared trips: check every 30 seconds whether someone else changed it
     if (!this.isDemo) this.pollTimer = setInterval(this.pollTrip, 30000)
 
-    // Re-check the weather every 15 minutes while this page is open
-    this.weatherTimer = setInterval(this.refreshWeather, 15 * 60 * 1000)
-
     // get trip id for transport options feature
     fetchSavedRoutes(this.tripId);
 
@@ -107,7 +102,6 @@ export default {
 
   beforeUnmount() {
     clearInterval(this.pollTimer)
-    clearInterval(this.weatherTimer)
     clearTimeout(this.noticeTimer)
     // Don't lose a change made just before leaving the page
     if (this.saveTimer) {
@@ -153,11 +147,6 @@ export default {
     },
     isDemo() {
       return this.tripId === 'seoul'
-    },
-    weatherParams() {
-      return this.isDemo
-        ? { lat: 37.5665, lon: 126.978, fallbackDate: '2026-10-13', simulateOnFail: true }
-        : { q: this.destination }
     },
     persistKey() {
       return JSON.stringify(savedShape())
@@ -472,15 +461,6 @@ export default {
         item.error = this.errorText(err)
       }
       item.loading = false
-    },
-
-    async refreshWeather() {
-      try {
-        this.weather = await fetchWeatherForecast(this.weatherParams)
-        this.weatherError = false
-      } catch (err) {
-        // keep showing the last forecast if a refresh fails
-      }
     },
 
     // ---------- weather ----------
