@@ -22,7 +22,7 @@
 
 body {
   background-color: var(--app-bg);
-  font-family: 'Inter', Arial, sans-serif;
+  font-family: var(--font-body);
   color: var(--app-ink);
   transition: background-color 0.25s ease;
 }
@@ -39,7 +39,7 @@ h2, h4, h5 {
   font-weight: 600;
 }
 h2 {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
 }
 
 .container {
@@ -59,7 +59,7 @@ h2 {
   background: linear-gradient(90deg, #002a40, #003d5b) !important;
 }
 .navbar-brand {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.4rem;
 }
 .trip-hero {
@@ -162,7 +162,7 @@ h2 {
   gap: 24px;
   padding: 40px 16px;
   overflow: hidden;
-  font-family: 'Inter', Arial, sans-serif;
+  font-family: var(--font-body);
   color: var(--auth-text);
   background:
     /* darken the photo a little so the card and text stay readable */
@@ -239,7 +239,7 @@ h2 {
   box-shadow: 0 0 24px rgba(237, 174, 73, 0.45);
 }
 .auth-brand-name {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 26px;
   font-weight: 600;
   color: #fff;
@@ -385,4 +385,50 @@ h2 {
 }
 .bg-light {
   background-color: #f3ead9 !important;
+}
+
+/* ---------- Loading placeholders (shared) ----------
+   A grey shape that gently shimmers while data loads. Add class "skel" to any block;
+   "skel dark" on dark pages. Used by <LoadingSkeleton>. */
+.skel {
+  display: block;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #efe9df 25%, #f9f6f0 50%, #efe9df 75%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.3s ease-in-out infinite;
+}
+.skel.dark {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06) 25%, rgba(255, 255, 255, 0.14) 50%, rgba(255, 255, 255, 0.06) 75%);
+  background-size: 200% 100%;
+}
+@keyframes skel-shimmer {
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel { animation: none; }
+}
+
+/* ============ Polarsteps-style base: one friendly font, lighter pages, bold headings ============ */
+:root {
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --app-bg: #f6f2eb;            /* lighter, warmer page background */
+  --bs-body-bg: #fffdf9;
+  --bs-body-font-family: var(--font-body);
+  --photo-shade: linear-gradient(180deg, rgba(0, 29, 44, 0) 35%, rgba(0, 29, 44, 0.85) 100%);
+}
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+h1, h2, h3, .h1, .h2, .h3 {
+  font-weight: 800;
+}
+.btn {
+  border-radius: 999px;
+  font-weight: 700;
 }

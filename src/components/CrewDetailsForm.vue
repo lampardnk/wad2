@@ -2,7 +2,7 @@
   <form class="cd" @submit.prevent="submit" @keydown.esc="onEsc">
     <header class="cd-head">
       <strong>{{ title }}</strong>
-      <span>🔒 Only the crew sees this</span>
+      <span><AppIcon name="lock" :size="13" /> Only the crew sees this</span>
     </header>
 
     <!-- Crew title: one input, four quick picks -->
@@ -25,7 +25,7 @@
     </div>
 
     <p v-if="buddy" class="cd-buddy">
-      ✈️ {{ buddy.flight || 'Same arrival' }}<template v-if="buddy.arrival"> · lands {{ landText(buddy.arrival) }}</template>
+      <AppIcon name="plane" :size="14" /> {{ buddy.flight || 'Same arrival' }}<template v-if="buddy.arrival"> · lands {{ landText(buddy.arrival) }}</template>
       <span>Updates when {{ buddy.name }} changes it</span>
     </p>
     <div v-else class="cd-grid">
@@ -48,7 +48,7 @@
       <PhoneInput :id="uid + '-phone'" v-model="form.phone" />
     </template>
     <p v-else-if="settingsNote" class="cd-note">
-      🍽 Food needs and 💬 WhatsApp come from your <router-link to="/settings">Settings</router-link>, so you only fill them in once.
+      <AppIcon name="utensils" :size="14" /> Food needs and <AppIcon name="message" :size="14" /> WhatsApp come from your <router-link to="/settings">Settings</router-link>, so you only fill them in once.
     </p>
 
     <p v-if="error" class="cd-err" role="alert">{{ error }}</p>
@@ -64,6 +64,7 @@ import { ref, reactive, computed } from 'vue'
 import { PERSONAS } from '../crewOptions.js'
 import DietTagsInput from './DietTagsInput.vue'
 import PhoneInput from './PhoneInput.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   title: { type: String, default: 'Your details' },

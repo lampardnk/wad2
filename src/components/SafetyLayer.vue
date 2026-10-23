@@ -143,7 +143,7 @@ const optionsByKind = computed(() => {
   if (!position.value) return result
   for (const g of KIND_GROUPS) {
     const list = []
-    for (const p of places.value) {
+    for (const p of places.value || []) {
       if (p.kind !== g.kind) continue
       const status = openStatus(p.openingHours)
       list.push({ ...p, dist: haversineKm(position.value.lat, position.value.lon, p.lat, p.lon), status })
@@ -523,12 +523,16 @@ onUnmounted(() => {
         <span class="sf-state-dot" aria-hidden="true"></span>
         <div class="flex-grow-1">
           <p class="sf-kicker">{{ risk.state === 'clear' ? 'Normal' : risk.label + ' risk' }} · {{ placeName }}{{ locationInfo && locationInfo.countryName ? ', ' + locationInfo.countryName : '' }}</p>
-          <h3 class="sf-banner-title">{{ loading && !lastUpdated ? 'Checking…' : bannerTitle }}</h3>
-          <p v-if="risk.state === 'clear'" class="sf-banner-text">
+          <h3 class="sf-banner-title">{{ loading && !lastUpdated ? 'Checking…' : !lastUpdated ? "Couldn't check yet" : bannerTitle }}</h3>
+          <!-- Nothing loaded (e.g. offline): don't claim "All clear" -->
+          <p v-if="!lastUpdated && !loading" class="sf-banner-text">
+            We couldn't reach the safety services, so there's no check for this place yet. Press Refresh to try again.
+          </p>
+          <p v-else-if="risk.state === 'clear'" class="sf-banner-text">
             No M4+ earthquakes within 300 km in the last 3 days, and no serious disaster alerts for {{ (locationInfo && locationInfo.countryName) || 'this country' }}.
           </p>
         </div>
-        <div class="sf-score" :aria-label="'Risk score ' + risk.score + ' out of 100'">
+        <div v-if="lastUpdated" class="sf-score" :aria-label="'Risk score ' + risk.score + ' out of 100'">
           <span class="sf-score-n">{{ risk.score }}</span><span class="sf-score-of">/100</span>
         </div>
       </div>
@@ -769,12 +773,12 @@ onUnmounted(() => {
   color: var(--muted);
 }
 .sf-h {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   margin-bottom: 10px;
 }
 .sf-sub {
-  font-family: Inter, sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 400;
   color: var(--muted);
@@ -857,7 +861,7 @@ onUnmounted(() => {
   color: var(--tone);
 }
 .sf-banner-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(1.5rem, 3.5vw, 2rem);
   margin: 2px 0 4px;
   color: #fff;

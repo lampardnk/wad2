@@ -29,7 +29,7 @@ watch(shortlist, (list) => {
 // Right after signing in: account's list + this browser's list, no repeats
 export async function syncShortlist() {
   try {
-    const res = await axios.get('/api/auth/me')
+    const res = await axios.get('/api/auth/me', { keep: true })
     const merged = (res.data.shortlist || []).slice()
     for (const id of shortlist.value) if (!merged.includes(id)) merged.push(id)
     shortlist.value = merged.slice(0, 50) // the watcher above saves it

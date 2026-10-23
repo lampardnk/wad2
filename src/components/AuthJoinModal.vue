@@ -5,7 +5,7 @@
     <transition name="am-fade">
       <div v-if="open" class="am-overlay" @click.self="close" @keydown.esc="close">
         <div ref="dialog" class="am" role="dialog" aria-modal="true" aria-labelledby="am-title" tabindex="-1">
-          <button type="button" class="am-x" aria-label="Close" @click="close">✕</button>
+          <button type="button" class="am-x" aria-label="Close" @click="close"><AppIcon name="x" :size="18" /></button>
           <h2 id="am-title" class="am-title">{{ tab === 'join' ? 'Join your crew' : mode === 'signin' ? 'Welcome back' : 'Create your account' }}</h2>
           <p v-if="reason" class="am-reason">{{ reason }}</p>
 
@@ -28,7 +28,7 @@
             <template v-else>
               <!-- The trip they're about to join -->
               <div class="am-trip">
-                <span class="am-trip-icon" aria-hidden="true">🧳</span>
+                <span class="am-trip-icon" aria-hidden="true"><AppIcon name="luggage" :size="22" /></span>
                 <div>
                   <strong>{{ preview.name }}</strong>
                   <small>{{ preview.destinations.map((d) => d.split(', ')[0]).join(' → ') }}<template v-if="preview.startDate"> · {{ dateText(preview.startDate) }}</template></small>
@@ -36,7 +36,7 @@
                 </div>
               </div>
 
-              <button v-if="signedIn" type="button" class="am-cta" @click="goJoin">Join workspace ➔</button>
+              <button v-if="signedIn" type="button" class="am-cta" @click="goJoin">Join workspace →</button>
               <form v-else class="am-form" @submit.prevent="quickJoin">
                 <p class="am-sub">One quick step so your crew knows it's you.</p>
                 <label for="am-qname" class="am-label">Your name</label>
@@ -46,7 +46,7 @@
                 <label for="am-qpass" class="am-label">Password <span class="am-opt">8+ characters</span></label>
                 <input id="am-qpass" v-model="quick.password" type="password" class="am-input" autocomplete="new-password">
                 <p v-if="error" class="am-error" role="alert">{{ error }}</p>
-                <button type="submit" class="am-cta" :disabled="busy">{{ busy ? 'Joining…' : 'Join workspace ➔' }}</button>
+                <button type="submit" class="am-cta" :disabled="busy">{{ busy ? 'Joining…' : 'Join workspace →' }}</button>
                 <p class="am-switch">Already have an account? <button type="button" class="am-link" @click="setTab('signin')">Sign in</button> and we'll take you straight in.</p>
               </form>
               <button type="button" class="am-link am-back" @click="preview = null; error = ''">‹ Use a different code</button>
@@ -61,7 +61,7 @@
               <label for="am-pass" class="am-label">Password</label>
               <input id="am-pass" v-model="login.password" type="password" class="am-input" autocomplete="current-password">
               <p v-if="error" class="am-error" role="alert">{{ error }}</p>
-              <button type="submit" class="am-cta" :disabled="busy">{{ busy ? 'Signing in…' : preview ? 'Sign in and join ➔' : 'Sign in ➔' }}</button>
+              <button type="submit" class="am-cta" :disabled="busy">{{ busy ? 'Signing in…' : preview ? 'Sign in and join →' : 'Sign in →' }}</button>
               <p class="am-switch">New here? <button type="button" class="am-link" @click="mode = 'register'; error = ''">Create an account</button></p>
             </form>
 
@@ -75,7 +75,7 @@
               <label for="am-rpass" class="am-label">Password <span class="am-opt">8+ characters</span></label>
               <input id="am-rpass" v-model="reg.password" type="password" class="am-input" autocomplete="new-password">
               <p v-if="error" class="am-error" role="alert">{{ error }}</p>
-              <button type="submit" class="am-cta" :disabled="busy">{{ busy ? 'Creating…' : 'Create account ➔' }}</button>
+              <button type="submit" class="am-cta" :disabled="busy">{{ busy ? 'Creating…' : 'Create account →' }}</button>
               <p class="am-switch">Have an account? <button type="button" class="am-link" @click="mode = 'signin'; error = ''">Sign in</button></p>
             </form>
           </div>
@@ -91,6 +91,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { auth, saveLogin } from '../auth.js'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },

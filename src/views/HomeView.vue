@@ -1,17 +1,52 @@
 <template>
   <div class="home">
-    <!-- ===== Hero ===== -->
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-panel">
-        <p class="hero-hello">Hi{{ firstName ? ', ' + firstName : '' }} 👋</p>
-        <h1 id="hero-title" class="hero-title">
-          Explore the world,<br><span class="hero-accent">skip the crowds</span>
-        </h1>
-        <p class="hero-text">Group Planning Made Easy!</p>
-        <div class="hero-btns">
-          <button class="btn hero-btn" @click="openForm" data-testid="new-trip-btn">+ Plan a new trip</button>
-          <router-link to="/discover" class="btn hero-btn ghost">✨ Help me choose</router-link>
+    <!-- ===== New account: point them to Settings to add their travel needs ===== -->
+    <transition name="slide">
+      <section v-if="showSetup" class="setup" aria-labelledby="setup-title" data-testid="setup-prompt">
+        <span class="setup-icon" aria-hidden="true"><AppIcon name="sliders" :size="24" /></span>
+        <div class="setup-text">
+          <p class="setup-kicker">Welcome aboard{{ firstName ? ', ' + firstName : '' }}</p>
+          <h2 id="setup-title" class="setup-title">First, tell us what you need on a trip</h2>
+          <p class="setup-sub">Add these once in Settings. Your crew sees your food needs and WhatsApp on every trip you join, and the planner uses your pacing.</p>
+          <ul class="setup-list">
+            <li><AppIcon name="utensils" :size="14" /> Food needs &amp; allergies</li>
+            <li><AppIcon name="message" :size="14" /> WhatsApp number</li>
+            <li><AppIcon name="receipt" :size="14" /> Base currency</li>
+            <li><AppIcon name="clock" :size="14" /> Trip pacing</li>
+          </ul>
         </div>
+        <div class="setup-btns">
+          <button type="button" class="setup-go" @click="goSetup">Set up my needs <span aria-hidden="true">→</span></button>
+          <button type="button" class="setup-later" @click="skipSetup">Later</button>
+          <small class="setup-hint">You can always find it under your profile → Settings.</small>
+        </div>
+      </section>
+    </transition>
+
+    <!-- ===== Hero: you, your travel map (dotted routes for every trip) and your numbers ===== -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-top">
+        <div class="hero-me">
+          <span class="hero-avatar" aria-hidden="true">{{ (firstName || '?').charAt(0).toUpperCase() }}</span>
+          <div>
+            <p class="hero-hello">Hi{{ firstName ? ', ' + firstName : '' }} 👋</p>
+            <h1 id="hero-title" class="hero-title">Your travels</h1>
+          </div>
+        </div>
+        <!-- Hidden while there are no trips: the "No trips yet" box below has the same two buttons -->
+        <div v-if="!noTrips" class="hero-btns">
+          <button class="btn hero-btn" @click="openForm" data-testid="new-trip-btn">+ Plan a new trip</button>
+          <router-link to="/discover" class="btn hero-btn ghost"><AppIcon name="sparkles" :size="17" /> Help me choose</router-link>
+        </div>
+      </div>
+      <div class="hero-grid">
+        <TravelMap class="hero-map" :trips="mapTrips" :active-id="mapActive" :hover-id="hoverTrip"
+          @hover="hoverTrip = $event" @open="(id) => $router.push('/trip/' + id)" />
+        <ul class="hero-stats" aria-label="Your travel numbers">
+          <li v-for="st in travelStats" :key="st.label">
+            <b>{{ st.value }}</b><span>{{ st.label }}</span>
+          </li>
+        </ul>
       </div>
     </section>
 
@@ -102,9 +137,9 @@
     </transition>
 
     <!-- ===== Search + destination filter ===== -->
-    <div class="toolbar">
+    <div v-if="!noTrips" class="toolbar">
       <div class="search">
-        <span class="search-icon" aria-hidden="true">🔍</span>
+        <span class="search-icon" aria-hidden="true"><AppIcon name="search" :size="17" /></span>
         <label for="trip-search" class="visually-hidden">Search trips</label>
         <input id="trip-search" v-model="search" type="search" class="form-control" placeholder="Search trips or destinations" data-testid="trip-search">
       </div>
@@ -115,7 +150,7 @@
     <!-- ===== Invites waiting for me ===== -->
     <transition-group v-if="invites.length" name="list" tag="section" class="invites" aria-label="Trip invites">
       <article v-for="inv in invites" :key="inv.tripId" class="invite-card" data-testid="invite-card">
-        <span class="invite-icon" aria-hidden="true">📨</span>
+        <span class="invite-icon" aria-hidden="true"><AppIcon name="mail" :size="20" /></span>
         <div class="invite-text">
           <p class="mb-0"><strong>{{ inv.invitedBy }}</strong> invited you to <strong>{{ inv.name }}</strong></p>
           <p class="invite-meta mb-0">
@@ -135,7 +170,7 @@
     <div class="trips-head">
       <h2 class="section-title">My Trips</h2>
       <!-- Planning / Upcoming / Archive (finished trips) -->
-      <div class="stage-tabs" role="tablist" aria-label="Show trips">
+      <div v-if="!noTrips" class="stage-tabs" role="tablist" aria-label="Show trips">
         <button v-for="st in STAGES" :key="st.key" type="button" role="tab" class="stage-tab"
           :class="{ on: stage === st.key }" :aria-selected="stage === st.key" :data-testid="'stage-' + st.key"
           @click="stage = st.key">
@@ -147,7 +182,7 @@
     <!-- Passport: a stamp for every city you've finished a trip to -->
     <section v-if="stage === 'archive' && stamps.length" class="passport" aria-label="Your passport">
       <div class="passport-head">
-        <strong>🛂 Your passport</strong>
+        <strong><AppIcon name="book" :size="17" /> Your passport</strong>
         <span>{{ stamps.length }} cit{{ stamps.length === 1 ? 'y' : 'ies' }} · {{ countryCount }} countr{{ countryCount === 1 ? 'y' : 'ies' }}</span>
       </div>
       <ul class="stamps">
@@ -175,13 +210,29 @@
       <button class="btn btn-sm btn-outline-primary" @click="clearFilters">Clear filters</button>
     </div>
 
+    <!-- No trips at all yet (new account) -->
+    <div v-else-if="!trips.length" class="empty" data-testid="no-trips">
+      <p v-if="showCreateForm" class="mb-0"><strong>No trips yet.</strong> Fill in the form above to plan your first one.</p>
+      <p v-else class="mb-2"><strong>No trips yet.</strong> Plan your first one, or let us suggest a place.</p>
+      <div v-if="!showCreateForm" class="d-flex gap-2 justify-content-center flex-wrap">
+        <button type="button" class="btn hero-btn" @click="openForm">+ Plan your first trip</button>
+        <router-link to="/discover" class="btn hero-btn ghost"><AppIcon name="sparkles" :size="17" /> Help me choose</router-link>
+      </div>
+    </div>
+
     <!-- Archive is empty -->
     <div v-else-if="!visibleTrips.length && stage === 'archive'" class="empty">
-      <p class="mb-0">🗂 Trips you've finished end up here.</p>
+      <p class="mb-0"><AppIcon name="archive" :size="17" /> Trips you've finished end up here.</p>
+    </div>
+
+    <!-- This tab is empty, but there are trips in the others -->
+    <div v-else-if="!visibleTrips.length" class="empty">
+      <p class="mb-0">No {{ stageName.toLowerCase() }} trips right now.</p>
     </div>
 
     <transition-group v-else name="list" tag="div" class="trip-grid">
-      <article v-for="t in visibleTrips" :key="t.id" class="trip-card" :class="{ archived: stage === 'archive' }" data-testid="trip-card" @click="openCard($event, t)">
+      <article v-for="t in visibleTrips" :key="t.id" class="trip-card" :class="{ archived: stage === 'archive', lit: hoverTrip === t.id }" data-testid="trip-card"
+        @click="openCard($event, t)" @mouseenter="hoverTrip = t.id" @mouseleave="hoverTrip = ''" @focusin="hoverTrip = t.id" @focusout="hoverTrip = ''">
         <!-- Illustrated header (colour picked from the destination) -->
         <router-link :to="'/trip/' + t.id" class="trip-art" :class="'theme-' + themeFor(t.destinations[0])" :aria-label="'Open ' + t.name" tabindex="-1">
           <svg viewBox="0 0 300 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -192,18 +243,19 @@
           <!-- Photo of the destination (Wikipedia) fades in over the drawing once loaded -->
           <img v-if="photos[t.destinations[0]]" :src="photos[t.destinations[0]]" class="trip-photo" alt="" loading="lazy">
           <span class="trip-status" :class="'status-' + statusFor(t).kind">{{ statusFor(t).label }}</span>
-          <span v-if="t.demo" class="trip-demo">Demo</span>
-          <span v-else-if="t.members && t.members.length > 1" class="trip-demo">👥 {{ t.members.length }}</span>
+          <span class="trip-over">
+            <span class="trip-over-name">{{ t.name }}</span>
+            <span class="trip-over-dates">{{ dateRange(t) }}<template v-if="tripLength(t)"> · {{ tripLength(t) }}</template></span>
+          </span>
+          <span v-if="t.members && t.members.length > 1" class="trip-demo"><AppIcon name="users" :size="13" /> {{ t.members.length }}</span>
         </router-link>
 
         <div class="trip-body">
-          <h3 class="trip-name">{{ t.name }}</h3>
-          <p class="trip-dest">
-            <template v-for="(d, k) in t.destinations" :key="d">
-              <span v-if="k > 0" class="text-muted"> → </span><span class="nowrap">{{ flagFor(d) }} {{ shortPlace(d) }}</span>
-            </template>
-          </p>
-          <p class="trip-dates">🗓 {{ dateRange(t) }}<span v-if="tripLength(t)" class="text-muted"> ({{ tripLength(t) }})</span></p>
+          <h3 class="visually-hidden">{{ t.name }}</h3>
+          <!-- The route: each place joined by a dotted line, like a travel journal -->
+          <ol class="trip-route" :aria-label="'Route: ' + t.destinations.map(shortPlace).join(', then ')">
+            <li v-for="d in t.destinations" :key="d" class="trip-stop"><span class="trip-stop-dot" aria-hidden="true"></span><span class="nowrap">{{ flagFor(d) }} {{ shortPlace(d) }}</span></li>
+          </ol>
 
           <div class="d-flex align-items-center justify-content-between mt-auto pt-2">
             <!-- Travellers as initials -->
@@ -220,8 +272,8 @@
               <button class="btn btn-sm btn-danger py-0" @click="removeTrip(t)">Yes</button>
               <button class="btn btn-sm btn-outline-secondary py-0" @click="confirmingId = null">No</button>
             </div>
-            <button v-else-if="!t.demo && t.role === 'owner'" class="icon-btn" :aria-label="'Delete ' + t.name" title="Delete trip" @click="confirmingId = t.id">🗑</button>
-            <span v-else-if="t.role === 'member'" class="shared-tag" title="You joined this trip">👥 Shared with you</span>
+            <button v-else-if="t.role === 'owner'" class="icon-btn" :aria-label="'Delete ' + t.name" title="Delete trip" @click="confirmingId = t.id"><AppIcon name="trash" :size="18" /></button>
+            <span v-else-if="t.role === 'member'" class="shared-tag" title="You joined this trip"><AppIcon name="users" :size="14" /> Shared with you</span>
           </div>
 
           <router-link :to="'/trip/' + t.id" class="btn open-btn mt-3" data-testid="open-trip">Open trip →</router-link>
@@ -242,20 +294,18 @@ import axios from 'axios'
 import { auth } from '../auth.js'
 import CustomDropdown from '../components/CustomDropdown.vue'
 import { POPULAR_DESTINATIONS, codeForDestination, flagEmoji } from '../destinations.js'
-
-// The built-in demo trip (all features are built around this one)
-const DEMO_TRIP = {
-  id: 'seoul',
-  name: 'Seoul Trip',
-  destination: 'Seoul, South Korea',
-  destinations: ['Seoul, South Korea'],
-  startDate: '2026-10-12',
-  endDate: '2026-10-17',
-  travellers: ['Sarah', 'John', 'Amy'],
-  demo: true
-}
+import AppIcon from '../components/AppIcon.vue'
+import TravelMap from '../components/TravelMap.vue'
+import { needsSetup, setupDone } from '../onboarding.js'
 
 const DAY_MS = 86400000
+
+// Straight-line distance between two { lat, lon } points, in km
+function kmBetween(a, b) {
+  const r = Math.PI / 180
+  const h = Math.sin((b.lat - a.lat) * r / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin((b.lon - a.lon) * r / 2) ** 2
+  return 12742 * Math.asin(Math.sqrt(h))
+}
 
 const STAGES = [
   { key: 'planning', label: 'Planning' },
@@ -264,9 +314,10 @@ const STAGES = [
 ]
 
 export default {
-  components: { CustomDropdown },
+  components: { AppIcon, CustomDropdown, TravelMap },
   data() {
     return {
+      showSetup: needsSetup(auth.user && auth.user.id), // just signed up: "set up your needs" card
       trips: [],
       loading: true,
       loadError: '',
@@ -289,6 +340,8 @@ export default {
       stage: null, // 'planning' | 'upcoming' | 'archive' (picked once the trips load, see shownStage)
       // destination = what's being typed; destinations = the ones already added
       photos: {}, // destination -> photo url
+      places: {}, // destination -> { lat, lon } for the travel map
+      hoverTrip: '', // the trip being pointed at (its card and its route on the map light up together)
       invites: [], // trips I've been invited to by username
       newTrip: { name: '', destination: '', destinations: [], startDate: '', endDate: '',  }
     }
@@ -315,13 +368,59 @@ export default {
     stamps() {
       const list = []
       for (const t of this.allTrips) {
-        if (t.demo || this.stageOf(t) !== 'archive') continue
+        if (this.stageOf(t) !== 'archive') continue
         for (const d of t.destinations) {
           if (!list.some((st) => st.place === d)) list.push({ place: d, year: (t.endDate || t.startDate || '').slice(0, 4) })
         }
       }
       list.sort((a, b) => a.year.localeCompare(b.year))
       return list
+    },
+    // ---------- travel map + numbers ----------
+    // Your trips as routes for the map. No trips yet: the whole world with a "plan a trip" note
+    mapTrips() {
+      const list = []
+      for (const t of this.allTrips) {
+        const points = []
+        for (const d of t.destinations) {
+          if (this.places[d]) points.push({ label: d, lat: this.places[d].lat, lon: this.places[d].lon })
+        }
+        list.push({ id: t.id, name: t.name, done: this.stageOf(t) === 'archive', points })
+      }
+      return list
+    },
+    // The trip that's highlighted: the next one coming up, else the newest
+    mapActive() {
+      const next = this.allTrips.find((t) => this.stageOf(t) !== 'archive')
+      return next ? next.id : (this.allTrips[0] ? this.allTrips[0].id : '')
+    },
+    travelStats() {
+      const real = this.allTrips
+      const cities = []
+      const countries = []
+      let days = 0
+      let km = 0
+      for (const t of real) {
+        for (const d of t.destinations) {
+          if (!cities.includes(d)) cities.push(d)
+          const c = codeForDestination(d) || d.split(', ').pop()
+          if (!countries.includes(c)) countries.push(c)
+        }
+        if (t.startDate && t.endDate) days += Math.round((new Date(t.endDate) - new Date(t.startDate)) / DAY_MS) + 1
+        // Distance along the route, place to place
+        for (let i = 1; i < t.destinations.length; i++) {
+          const a = this.places[t.destinations[i - 1]]
+          const b = this.places[t.destinations[i]]
+          if (a && b) km += kmBetween(a, b)
+        }
+      }
+      return [
+        { value: real.length, label: real.length === 1 ? 'Trip' : 'Trips' },
+        { value: countries.length, label: countries.length === 1 ? 'Country' : 'Countries' },
+        { value: cities.length, label: cities.length === 1 ? 'Place' : 'Places' },
+        { value: days, label: 'Days away' },
+        { value: Math.round(km).toLocaleString(), label: 'km between places' }
+      ]
     },
     countryCount() {
       const countries = []
@@ -335,12 +434,13 @@ export default {
       return auth.user ? auth.user.name.split(' ')[0] : ''
     },
 
-    // Saved trips plus the demo trip
+    // New account: nothing to search, filter or sort yet
+    noTrips() {
+      return !this.loading && !this.loadError && !this.trips.length
+    },
+    // Every trip you're on (yours and ones you joined)
     allTrips() {
-      const list = []
-      for (const t of this.trips) list.push(t)
-      list.push(DEMO_TRIP)
-      return list
+      return this.trips
     },
 
     // "All" plus one city per trip (the first one, for multi-city trips), for the filter dropdown
@@ -437,7 +537,7 @@ export default {
       const msg = { name: '', destination: '', startDate: '', endDate: '' }
       if (this.states.name === 'error') msg.name = 'Please give your trip a name'
       if (this.states.destination === 'error') msg.destination = 'Where are you going? Add at least one destination'
-      else if (this.newTrip.destinations.length === 0) msg.destination = 'Pick a suggestion or press Enter to add it'
+      else if (this.newTrip.destinations.length === 0) msg.destination = ''
       else if (this.newTrip.destinations.length === 1) msg.destination = 'Going to more places? Add another'
       else msg.destination = this.newTrip.destinations.length + ' destinations, in this order'
       if (this.states.startDate === 'error') msg.startDate = "Can't start in the past"
@@ -574,6 +674,7 @@ export default {
       this.loading = false
       this.pickStartStage()
       this.loadPhotos()
+      this.loadPlaces()
       this.loadInvites()
     },
 
@@ -595,6 +696,25 @@ export default {
       }
     },
 
+    // Where each destination is, for the travel map (looked up 20 at a time)
+    async loadPlaces() {
+      const names = []
+      for (const t of this.allTrips) {
+        for (const d of t.destinations) if (!this.places[d] && !names.includes(d)) names.push(d)
+      }
+      for (let i = 0; i < names.length; i += 20) {
+        const batch = names.slice(i, i + 20)
+        const codes = []
+        for (const n of batch) codes.push(codeForDestination(n) || '')
+        try {
+          const res = await axios.get('/api/discover/cities', { params: { names: batch.join('|'), codes: codes.join('|') } })
+          for (const c of res.data) this.places[c.label] = { lat: c.lat, lon: c.lon }
+        } catch (err) {
+          // the map just shows fewer places
+        }
+      }
+    },
+
     // One photo per destination (trips going to the same place share it)
     async loadPhotos() {
       for (const t of this.allTrips) {
@@ -611,6 +731,16 @@ export default {
           })
           .catch(() => {}) // keep the drawing
       }
+    },
+
+    // "Set up my needs": go to Settings (it shows a short welcome there too)
+    goSetup() {
+      setupDone(auth.user && auth.user.id)
+      this.$router.push({ path: '/settings', query: { welcome: '1' } })
+    },
+    skipSetup() {
+      setupDone(auth.user && auth.user.id)
+      this.showSetup = false
     },
 
     openForm() {
@@ -710,7 +840,7 @@ export default {
       const status = this.statusFor(t).kind
       if (status === 'past') return 'archive'
       if (status === 'ongoing') return 'upcoming'
-      if (status === 'upcoming' && (t.demo || (t.stops && t.stops.length))) return 'upcoming'
+      if (status === 'upcoming' && (t.stopCount || (t.stops && t.stops.length))) return 'upcoming'
       return 'planning'
     },
 
@@ -744,78 +874,245 @@ export default {
   --accent: #f08c3a; /* warm highlight, used sparingly */
 }
 
-/* ---------- Hero ---------- */
-.hero {
-  border-radius: 24px;
-  overflow: hidden;
-  min-height: 320px;
-  display: flex;
-  align-items: stretch;
+/* ---------- Hero: you, your map, your numbers (Polarsteps-style profile) ---------- */
+/* New-account prompt */
+.setup {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
   margin-bottom: 24px;
-  background:
-    linear-gradient(90deg, rgba(0, 20, 32, 0.15), rgba(0, 20, 32, 0)),
-    url('/giza.jpg') center 30% / cover no-repeat,
-    linear-gradient(135deg, #002a40, #30638e);
-  box-shadow: 0 16px 40px rgba(7, 18, 36, 0.18);
+  padding: 22px 24px;
+  border-radius: 24px;
+  background: #fbf5ea;
+  border: 1px solid #ece4d6;
+  box-shadow: 0 12px 32px rgba(0, 29, 44, 0.08);
 }
-.hero-panel {
-  background: rgba(10, 22, 26, 0.72);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: #fff;
-  padding: 40px 36px;
-  max-width: 480px;
+.setup-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: #fbefd9;
+  color: #c98a1e;
+}
+.setup-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c98a1e;
+}
+.setup-title {
+  margin: 2px 0 4px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #001d2c;
+}
+.setup-sub {
+  margin: 0;
+  font-size: 14px;
+  color: #5a6b78;
+  max-width: 560px;
+}
+.setup-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.setup-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #f6f2eb;
+  color: #003d5b;
+  font-size: 13px;
+  font-weight: 600;
+}
+.setup-btns {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 190px;
 }
-.hero-hello {
-  color: rgba(255, 255, 255, 0.75);
-  margin-bottom: 8px;
-}
-.hero-title {
-  font-family: 'Fredoka', sans-serif;
-  font-size: clamp(2rem, 4vw, 2.75rem);
-  line-height: 1.1;
-  margin-bottom: 12px;
-}
-.hero-accent {
-  color: #f3c26f;
-}
-.hero-text {
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 20px;
-}
-.hero-btn {
-  align-self: flex-start;
-  background: #edae49;
-  color: #00283c;
-  font-weight: 700;
+.setup-go {
+  border: 0;
   border-radius: 999px;
-  padding: 10px 22px;
-  transition: transform 0.15s, background 0.15s;
+  background: #edae49;
+  color: #001d2c;
+  font-weight: 700;
+  padding: 11px 20px;
+  box-shadow: 0 6px 18px rgba(237, 174, 73, 0.35);
+  transition: transform 0.15s;
 }
-.hero-btn:hover,
-.hero-btn:focus-visible {
-  background: #f3c26f;
-  color: #00283c;
+.setup-go:hover {
   transform: translateY(-1px);
 }
-
+.setup-later {
+  border: 1.5px solid #e6dfd2;
+  border-radius: 999px;
+  background: #fbf5ea;
+  color: #003d5b;
+  font-weight: 700;
+  padding: 9px 20px;
+}
+.setup-later:hover {
+  background: #f6f2eb;
+}
+.setup-go:focus-visible,
+.setup-later:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.7);
+  outline-offset: 2px;
+}
+.setup-hint {
+  font-size: 12px;
+  color: #5a6b78;
+  text-align: center;
+}
+@media (max-width: 760px) {
+  .setup {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 18px;
+  }
+  .setup-btns {
+    min-width: 0;
+  }
+}
+.hero {
+  margin-bottom: 28px;
+}
+.hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.hero-me {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.hero-avatar {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #edae49;
+  color: #001d2c;
+  font-size: 24px;
+  font-weight: 800;
+  box-shadow: 0 0 0 4px #fff, 0 6px 16px rgba(0, 29, 44, 0.15);
+}
+.hero-hello {
+  margin: 0;
+  color: var(--app-muted);
+  font-weight: 600;
+}
+.hero-title {
+  margin: 0;
+  font-size: clamp(1.9rem, 3.6vw, 2.6rem);
+  font-weight: 800;
+  color: #001d2c;
+}
 .hero-btns {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
-.hero-btn.ghost {
-  background: transparent;
+.hero-btn {
+  background: #001d2c;
   color: #fff;
-  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  padding: 10px 22px;
+  transition: transform 0.15s, background 0.15s;
+}
+.hero-btn:hover,
+.hero-btn:focus-visible {
+  background: #003d5b;
+  color: #fff;
+  transform: translateY(-1px);
+}
+.hero-btn.ghost {
+  background: #fbf5ea;
+  color: #001d2c;
+  border: 1.5px solid #e2dacb;
 }
 .hero-btn.ghost:hover,
 .hero-btn.ghost:focus-visible {
-  background: rgba(255, 255, 255, 0.15);
+  background: #fbf5ea;
+  border-color: #edae49;
+  color: #001d2c;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 14px;
+}
+.hero-map {
+  height: 300px;
+  box-shadow: 0 16px 36px rgba(0, 29, 44, 0.18);
+}
+/* Big friendly numbers */
+.hero-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hero-stats li {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fbf5ea;
+  border: 1px solid #ece4d6;
+}
+.hero-stats li:last-child {
+  grid-column: 1 / -1;
+  background: #001d2c;
+  border-color: #001d2c;
   color: #fff;
+}
+.hero-stats b {
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.hero-stats li:last-child b {
+  color: #edae49;
+}
+.hero-stats span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--app-muted);
+}
+.hero-stats li:last-child span {
+  color: rgba(255, 255, 255, 0.75);
+}
+@media (max-width: 760px) {
+  .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .hero-map { height: 220px; }
+  .hero-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .hero-stats li { padding: 10px; }
+  .hero-stats li:last-child { grid-column: 1 / -1; }
+  .hero-stats b { font-size: 1.3rem; }
+  .hero-stats span { font-size: 11px; }
 }
 
 /* ---------- Passport (Archive tab) ---------- */
@@ -1303,6 +1600,11 @@ export default {
 .trip-card[data-testid="trip-card"] {
   cursor: pointer;
 }
+/* Pointed at on the map: the matching card lifts and gets a gold ring */
+.trip-card.lit {
+  transform: translateY(-4px);
+  box-shadow: 0 0 0 3px #edae49, 0 14px 30px rgba(0, 29, 44, 0.14);
+}
 .trip-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 14px 30px rgba(0, 40, 62, 0.12);
@@ -1312,11 +1614,76 @@ export default {
 .trip-art {
   position: relative;
   display: block;
-  height: 120px;
+  height: 200px; /* photo first: the picture is the card */
   background: var(--sky);
+  overflow: hidden;
+}
+.trip-photo {
+  transition: transform 0.6s cubic-bezier(.2, .8, .2, 1);
+}
+.trip-card:hover .trip-photo {
+  transform: scale(1.06);
+}
+/* Name and dates sit on the photo */
+.trip-over {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  z-index: 1;
+  display: grid;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+.trip-over-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.trip-over-dates {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+/* The route under the photo: places joined by a dotted line */
+.trip-route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+.trip-stop {
+  display: inline-flex;
+  align-items: center;
+}
+.trip-stop + .trip-stop::before {
+  content: '';
+  width: 22px;
+  height: 2px;
+  margin: 0 6px;
+  background-image: radial-gradient(circle, #edae49 1.2px, transparent 1.4px);
+  background-size: 5px 2px;
+}
+.trip-stop-dot {
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #edae49;
+  box-shadow: 0 0 0 2px rgba(237, 174, 73, 0.25);
 }
 .trip-status,
 .trip-demo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
   z-index: 1;
 }
 .avatar.guest {
@@ -1340,12 +1707,12 @@ export default {
   object-fit: cover;
   animation: photo-in 0.4s ease;
 }
-/* Darken the top a little so the status badge stays readable */
+/* Darken the top (status badge) and the bottom (name over the photo) */
 .trip-art::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 45%);
+  background: linear-gradient(180deg, rgba(0, 29, 44, 0.25), rgba(0, 29, 44, 0) 35%, rgba(0, 29, 44, 0) 45%, rgba(0, 29, 44, 0.8));
   pointer-events: none;
 }
 @keyframes photo-in {
@@ -1380,6 +1747,7 @@ export default {
   color: var(--app-ink);
 }
 .trip-status { left: 10px; }
+.trip-demo { padding-right: 12px; }
 .trip-demo { right: 10px; }
 .status-upcoming { color: #004e5a; }
 .status-ongoing { background: #00798c; color: #fff; }
@@ -1392,7 +1760,7 @@ export default {
   flex: 1;
 }
 .trip-name {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 6px;
@@ -1441,16 +1809,17 @@ export default {
 }
 
 .open-btn {
-  background: var(--accent);
-  color: #3a1d06; /* dark text: readable on orange */
+  background: #001d2c;
+  color: #fff;
   border-radius: 999px;
-  font-weight: 600;
-  transition: filter 0.15s;
+  font-weight: 700;
+  transition: background 0.15s, transform 0.15s;
 }
 .open-btn:hover,
 .open-btn:focus-visible {
-  color: #3a1d06;
-  filter: brightness(0.93);
+  background: #003d5b;
+  color: #edae49;
+  transform: translateY(-1px);
 }
 
 /* "New trip" tile */

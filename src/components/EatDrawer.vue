@@ -13,12 +13,12 @@
                   · open around <strong>{{ formatHour(context.start) }}</strong>
                 </p>
               </div>
-              <button type="button" class="ed-close" aria-label="Close" @click="emit('close')">✕</button>
+              <button type="button" class="ed-close" aria-label="Close" @click="emit('close')"><AppIcon name="x" :size="18" /></button>
             </header>
 
             <div class="ed-tools">
               <label class="ed-search">
-                <span aria-hidden="true">🔍</span>
+                <AppIcon name="search" :size="16" />
                 <span class="visually-hidden">Search places to eat</span>
                 <input ref="searchEl" v-model="query" type="search" placeholder="Search by name or cuisine" autocomplete="off">
               </label>
@@ -44,11 +44,11 @@
                   <div class="ed-badges">
                     <span class="ed-badge" :class="p.open === true ? 'ok' : p.open === false ? 'bad' : ''">{{ p.openText }}</span>
                     <span class="ed-badge">{{ p.walkText }}</span>
-                    <span v-if="p.diet.vegan" class="ed-badge diet">🌱 Vegan</span>
-                    <span v-else-if="p.diet.vegetarian" class="ed-badge diet">🥦 Vegetarian</span>
-                    <span v-if="p.diet.halal" class="ed-badge diet">☪️ Halal</span>
-                    <span v-if="p.diet.glutenFree" class="ed-badge diet">🌾 Gluten-free</span>
-                    <span v-if="p.fitsYou" class="ed-badge you">✓ Fits your food needs</span>
+                    <span v-if="p.diet.vegan" class="ed-badge diet"><AppIcon name="leaf" :size="12" /> Vegan</span>
+                    <span v-else-if="p.diet.vegetarian" class="ed-badge diet"><AppIcon name="leaf" :size="12" /> Vegetarian</span>
+                    <span v-if="p.diet.halal" class="ed-badge diet"><AppIcon name="utensils" :size="12" /> Halal</span>
+                    <span v-if="p.diet.glutenFree" class="ed-badge diet"><AppIcon name="utensils" :size="12" /> Gluten-free</span>
+                    <span v-if="p.fitsYou" class="ed-badge you"><AppIcon name="check" :size="12" /> Fits your food needs</span>
                   </div>
                   <div class="ed-actions">
                     <button type="button" class="ed-add" @click="emit('add', p)">+ Add to itinerary</button>
@@ -73,6 +73,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import axios from 'axios'
 import { travelBetween } from '../dayOptimizer.js'
 import { openStatus } from '../services/safetyService.js'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -241,7 +242,7 @@ function formatHour(h) {
   padding: 18px 18px 10px;
 }
 .ed-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.25rem;
   margin: 0;
   color: #fff;

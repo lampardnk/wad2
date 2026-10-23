@@ -2,7 +2,11 @@
   <!-- Shared look for Log in and Sign up: a top bar, the form on the left, the aurora photo on the right -->
   <div class="as">
     <header class="as-bar">
-      <router-link to="/" class="as-logo" aria-label="Chui-se Your Trip home">
+      <!-- Back to the landing page: the arrow and hover state show it can be clicked -->
+      <router-link to="/" class="as-logo" title="Back to the home page" aria-label="Back to the Chui-se Your Trip home page">
+        <svg class="as-back" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
         <svg viewBox="0 0 40 40" aria-hidden="true">
           <circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="2.5" />
           <path d="M27 13 L22 22 L13 27 L18 18 Z" fill="currentColor" />
@@ -41,7 +45,7 @@ onMounted(() => {
   const link = document.createElement('link')
   link.id = 'as-fonts'
   link.rel = 'stylesheet'
-  link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap'
+  link.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap'
   document.head.appendChild(link)
 })
 </script>
@@ -80,9 +84,27 @@ onMounted(() => {
   text-transform: uppercase;
   font-size: 15px;
 }
+.as-logo {
+  transition: background 0.15s, border-color 0.15s;
+}
 .as-logo svg {
   width: 26px;
   height: 26px;
+}
+.as-logo .as-back {
+  width: 18px;
+  height: 18px;
+  margin-right: -2px;
+  opacity: 0.75;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.as-logo:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(237, 174, 73, 0.5);
+}
+.as-logo:hover .as-back {
+  opacity: 1;
+  transform: translateX(-3px);
 }
 .as-switch {
   padding: 8px 20px;
@@ -114,7 +136,7 @@ onMounted(() => {
 }
 .as-title {
   margin: 0 0 10px;
-  font-family: 'Poppins', 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(30px, 3.4vw, 46px);
   line-height: 1.15;
@@ -134,7 +156,7 @@ onMounted(() => {
 }
 .as-logo:focus-visible,
 .as-switch:focus-visible {
-  outline: 3px solid rgba(47, 224, 161, 0.6);
+  outline: 3px solid rgba(237, 174, 73, 0.7);
   outline-offset: 2px;
 }
 
@@ -207,7 +229,7 @@ onMounted(() => {
   opacity: 0.6;
 }
 .as-btn:focus-visible {
-  outline: 3px solid rgba(47, 224, 161, 0.6);
+  outline: 3px solid rgba(237, 174, 73, 0.7);
   outline-offset: 2px;
 }
 .as-error {

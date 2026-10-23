@@ -76,7 +76,7 @@ function toClient(t, userId, contacts) {
     me: userId ? memberName(t, userId) : null, // my traveller name on this trip
     members: (t.members || []).map((m) => {
       const c = contacts ? contacts[String(m.user)] : null
-      return { id: m.user, name: m.name, role: m.role, joinedAt: m.joinedAt, lastSeenAt: m.lastSeenAt || null, viewing: m.viewing || '', diet: c ? c.diet : null, phone: c ? c.phone : null, contactSaved: c ? c.saved : false }
+      return { id: m.user, name: m.name, role: m.role, joinedAt: m.joinedAt, lastSeenAt: m.lastSeenAt || null, diet: c ? c.diet : null, phone: c ? c.phone : null, contactSaved: c ? c.saved : false }
     }),
     crew: t.crew || {},
     // Only filled in when the users were looked up (populate), e.g. on GET /api/trips/:id
@@ -164,12 +164,26 @@ function cleanWishlist(list) {
 // GET /api/trips -> the logged-in user's trips, newest first
 router.get('/', requireAuth, async (req, res) => {
   // My trips, trips I joined, and trips shared with my family groups
-  const trips = await Trip.find(await accessQuery(req.userId)).sort({ createdAt: -1 })
+  // The list only needs what the trip cards show, so the big parts (expenses, packing, photos...) stay on the server
+  const trips = await Trip.find(await accessQuery(req.userId))
+    .select('-expenses -packing -crew -stay -photoAlbums -wishlist -comments')
+    .sort({ createdAt: -1 })
+  const fixes = []
   for (const t of trips) {
-    await ensureMembers(t)
-    await addGroupMember(t, req.userId)
+    // Only older trips (no members yet) or a first visit from a family group need a save
+    if (!t.members || !t.members.length || (t.group && !memberName(t, req.userId))) {
+      fixes.push(ensureMembers(t).then(() => addGroupMember(t, req.userId)))
+    }
   }
-  res.json(trips.map((t) => toClient(t, req.userId)))
+  await Promise.all(fixes)
+  const list = []
+  for (const t of trips) {
+    const c = toClient(t, req.userId)
+    c.stopCount = (t.stops || []).length
+    delete c.stops // the card only needs how many
+    list.push(c)
+  }
+  res.json(list)
 })
 
 // POST /api/trips  { name, destinations: ['Kyoto, Japan', 'Osaka, Japan'], startDate?, endDate?, travellers? }
@@ -242,22 +256,26 @@ router.get('/:id', requireAuth, async (req, res) => {
   res.json(toClient(trip, req.userId, await memberContacts(trip)))
 })
 
-// POST /api/trips/:id/presence  { viewing: 'Day 2' }  -> the crew list (with who is online)
-// The open trip page sends this every 30 seconds, so the crew drawer can show "Active now · Viewing Day 2".
-router.post('/:id/presence', requireAuth, async (req, res) => {
+// POST /api/trips/:id/votes  { wishIds: [...], person, yes }  -> vote yes (or take it back) on one or more places
+// Saved straight into each place's vote list, so votes from different people never overwrite each other.
+router.post('/:id/votes', requireAuth, async (req, res) => {
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  const viewing = String(req.body.viewing || '').replace(/[<>]/g, '').trim().slice(0, 40)
-  const now = new Date()
-  await Trip.updateOne({ _id: trip._id, 'members.user': req.userId }, { $set: { 'members.$.lastSeenAt': now, 'members.$.viewing': viewing } })
-  for (const m of trip.members) {
-    if (String(m.user) === String(req.userId)) {
-      m.lastSeenAt = now
-      m.viewing = viewing
-    }
+  const wishIds = Array.isArray(req.body.wishIds) ? req.body.wishIds.slice(0, 200).map((x) => String(x)) : []
+  const person = String(req.body.person || '')
+  // You can vote for yourself; the organiser also for people without an account
+  const me = memberName(trip, req.userId)
+  let allowed = person === me
+  if (!allowed && roleOf(trip, req.userId) === 'owner') {
+    allowed = trip.travellers.includes(person) && !trip.members.some((m) => m.name === person)
   }
-  const t = toClient(trip, req.userId, await memberContacts(trip))
-  res.json({ members: t.members, travellers: t.travellers, me: t.me, role: t.role })
+  if (!allowed || !wishIds.length) return res.status(403).json({ message: 'You can only change your own votes.' })
+  const change = req.body.yes ? { $addToSet: { 'wishlist.$[w].votes': person } } : { $pull: { 'wishlist.$[w].votes': person } }
+  await Trip.updateOne({ _id: trip._id }, change, { arrayFilters: [{ 'w.id': { $in: wishIds } }] })
+  const fresh = await Trip.findById(trip._id).select('wishlist')
+  const votes = {}
+  for (const w of fresh.wishlist || []) votes[w.id] = Array.isArray(w.votes) ? w.votes : []
+  res.json({ votes })
 })
 
 // PUT /api/trips/:id/itinerary  { stops: [...], wishlist: [...], version? }
@@ -302,6 +320,9 @@ router.put('/:id/itinerary', requireAuth, async (req, res) => {
     const latest = await Trip.findById(trip._id)
     return res.status(409).json({ message: 'Someone else changed this trip. Showing their latest version.', trip: toClient(latest, req.userId) })
   }
+  // Notes on stops that were just removed go too
+  const stopIds = stops.map((st) => st.id)
+  await Trip.updateOne({ _id: trip._id }, { $pull: { comments: { stopId: { $nin: stopIds } } } })
   res.json({ ok: true, version: updated.version })
 })
 
@@ -324,16 +345,53 @@ router.put('/:id/packing', requireAuth, async (req, res) => {
   const packing = cleanPacking(req.body.packing)
   if (!packing) return res.status(400).json({ message: 'Some packing details are invalid.' })
 
+  // "base" = the list as this person last saw it. Only what THEY changed since then is applied,
+  // on top of the latest saved list, so two people ticking items at the same time don't undo each other.
+  const base = req.body.base ? cleanPacking(req.body.base) : null
+
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  trip.activities = pickKeys(req.body.activities, ACTIVITY_KEYS)
-  trip.weather = pickKeys(req.body.weather, WEATHER_KEYS)
-  trip.extras = pickKeys(req.body.extras, EXTRA_KEYS)
-  trip.packing = packing
-  trip.markModified('packing')
-  await trip.save()
-  res.json({ ok: true })
+  const set = {
+    activities: pickKeys(req.body.activities, ACTIVITY_KEYS),
+    weather: pickKeys(req.body.weather, WEATHER_KEYS),
+    extras: pickKeys(req.body.extras, EXTRA_KEYS)
+  }
+  // Try a few times in case someone else saves in between (the "packing" value must still be what we read)
+  let latest = trip.packing
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const merged = base ? mergePacking(cleanPacking(latest || {}) || { checked: {}, qty: {}, removed: [], custom: [] }, base, packing) : packing
+    const filter = { _id: trip._id, packing: latest === undefined ? null : latest }
+    const updated = await Trip.findOneAndUpdate(filter, { $set: { ...set, packing: merged } }, { new: true })
+    if (updated) return res.json({ ok: true, packing: merged })
+    latest = (await Trip.findById(trip._id).select('packing')).packing
+  }
+  res.status(409).json({ message: 'Lots of people are editing the list. Please try again.' })
 })
+
+// Apply the changes between "base" and "mine" to "latest" (the list someone else may have changed meanwhile)
+function mergePacking(latest, base, mine) {
+  const out = { checked: { ...latest.checked }, qty: { ...latest.qty }, removed: latest.removed.slice(), custom: latest.custom.slice() }
+  for (const field of ['checked', 'qty']) {
+    const keys = new Set(Object.keys(base[field]).concat(Object.keys(mine[field])))
+    for (const k of keys) {
+      if (base[field][k] === mine[field][k]) continue // I didn't touch it
+      if (mine[field][k] === undefined) delete out[field][k]
+      else out[field][k] = mine[field][k]
+    }
+  }
+  for (const id of mine.removed) if (!base.removed.includes(id) && !out.removed.includes(id)) out.removed.push(id)
+  for (const id of base.removed) if (!mine.removed.includes(id)) out.removed = out.removed.filter((x) => x !== id)
+  for (const c of mine.custom) {
+    const before = base.custom.find((x) => x.id === c.id)
+    const i = out.custom.findIndex((x) => x.id === c.id)
+    if (!before && i < 0) out.custom.push(c) // I added it
+    else if (before && i >= 0 && (before.name !== c.name || before.qty !== c.qty)) out.custom[i] = c // I edited it
+  }
+  for (const c of base.custom) {
+    if (!mine.custom.some((x) => x.id === c.id)) out.custom = out.custom.filter((x) => x.id !== c.id) // I deleted it
+  }
+  return out
+}
 
 // PUT /api/trips/:id/albums  [{ id, name, icon }]  -> the trip's photo albums
 router.put('/:id/albums', requireAuth, async (req, res) => {
@@ -528,6 +586,153 @@ router.delete('/:id/members/:userId', requireAuth, async (req, res) => {
   if (!leaving && roleOf(trip, req.userId) !== 'owner') return res.status(403).json({ message: 'Only the organiser can remove people.' })
   if (String(req.params.userId) === String(trip.owner)) return res.status(400).json({ message: 'The organiser cannot leave their own trip.' })
   trip.members = trip.members.filter((m) => String(m.user) !== String(req.params.userId))
+  await trip.save()
+  res.json({ ok: true })
+})
+
+// PUT /api/trips/:id  { name, destinations: [...], startDate, endDate }  -> Edit trip (organiser only)
+// Moving the whole trip (both dates shifted by the same number of days) moves every stop with it.
+// Otherwise, stops that would end up outside the new dates have to be moved first.
+router.put('/:id', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id, true)
+  if (!trip) return res.status(404).json({ message: 'Only the organiser can edit this trip.' })
+
+  const name = String(req.body.name || '').trim()
+  if (!name) return res.status(400).json({ message: 'Please give the trip a name.' })
+  if (name.length > 80) return res.status(400).json({ message: 'The trip name must be 80 characters or fewer.' })
+
+  const raw = Array.isArray(req.body.destinations) ? req.body.destinations : []
+  const destinations = []
+  for (const d of raw) {
+    const clean = String(d || '').trim()
+    const already = destinations.some((x) => x.toLowerCase() === clean.toLowerCase())
+    if (clean && !already) destinations.push(clean)
+  }
+  if (!destinations.length) return res.status(400).json({ message: 'A trip needs at least one destination.' })
+  if (destinations.length > 10) return res.status(400).json({ message: 'A trip can have up to 10 destinations.' })
+  for (const d of destinations) {
+    if (d.length > 80) return res.status(400).json({ message: 'Each destination must be 80 characters or fewer.' })
+  }
+
+  const startDate = String(req.body.startDate || '')
+  const endDate = String(req.body.endDate || '')
+  if ((startDate && !DATE_PATTERN.test(startDate)) || (endDate && !DATE_PATTERN.test(endDate))) {
+    return res.status(400).json({ message: 'Dates must look like 2026-10-12.' })
+  }
+  if (endDate && !startDate) return res.status(400).json({ message: 'Please add a start date too.' })
+  if (startDate && endDate && endDate < startDate) {
+    return res.status(400).json({ message: 'The end date must be on or after the start date.' })
+  }
+
+  // Did the whole trip move? (e.g. 14-19 Oct -> 21-26 Oct)
+  const DAY = 86400000
+  const dayNumber = (s) => Math.round(new Date(s + 'T00:00:00Z').getTime() / DAY)
+  let shift = 0
+  if (trip.startDate && trip.endDate && startDate && endDate) {
+    const startMove = dayNumber(startDate) - dayNumber(trip.startDate)
+    const endMove = dayNumber(endDate) - dayNumber(trip.endDate)
+    if (startMove === endMove) shift = startMove
+  }
+  const stops = []
+  let outside = 0
+  for (const st of trip.stops || []) {
+    const copy = { ...st }
+    if (shift) copy.date = new Date((dayNumber(st.date) + shift) * DAY).toISOString().slice(0, 10)
+    if ((startDate && copy.date < startDate) || (endDate && copy.date > endDate)) outside++
+    stops.push(copy)
+  }
+  if (outside) {
+    return res.status(400).json({
+      message: outside + (outside === 1 ? ' stop is' : ' stops are') + ' planned outside these dates. Move ' +
+        (outside === 1 ? 'it' : 'them') + ' in the itinerary first, or move the whole trip (both dates by the same number of days).'
+    })
+  }
+
+  trip.name = name
+  trip.destinations = destinations
+  trip.destination = destinations[0]
+  trip.startDate = startDate
+  trip.endDate = endDate
+  if (shift) {
+    trip.stops = stops
+    trip.markModified('stops')
+    trip.version = (trip.version || 0) + 1 // open itineraries reload instead of saving old dates
+  }
+  await trip.save()
+  res.json({ ...toClient(trip, req.userId), movedStops: shift ? stops.length : 0, shiftDays: shift })
+})
+
+// ---------- Notes on stops ----------
+// GET    /api/trips/:id/comments?stop=<stopId>  -> notes on that stop, oldest first
+// POST   /api/trips/:id/comments  { stopId, text }
+// PUT    /api/trips/:id/comments/:commentId  { text }   (your own notes only)
+// DELETE /api/trips/:id/comments/:commentId             (your own, or any if you're the organiser)
+function commentJson(c, trip, userId) {
+  const mine = String(c.user) === String(userId)
+  return {
+    id: c._id, stopId: c.stopId, name: c.name, text: c.text,
+    at: c.createdAt, editedAt: c.editedAt || null,
+    mine, canDelete: mine || roleOf(trip, userId) === 'owner'
+  }
+}
+function cleanCommentText(v) {
+  const text = typeof v === 'string' ? v.trim() : ''
+  if (!text) return { error: 'Write something first.' }
+  if (text.length > 500) return { error: 'Notes can be up to 500 characters.' }
+  return { text }
+}
+
+router.get('/:id/comments', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const stopId = String(req.query.stop || '')
+  const list = []
+  for (const c of trip.comments || []) {
+    if (!stopId || c.stopId === stopId) list.push(commentJson(c, trip, req.userId))
+  }
+  res.json(list)
+})
+
+router.post('/:id/comments', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const stopId = String(req.body.stopId || '')
+  if (!(trip.stops || []).some((st) => st.id === stopId)) {
+    return res.status(404).json({ message: 'That stop is no longer on the itinerary.' })
+  }
+  const { text, error } = cleanCommentText(req.body.text)
+  if (error) return res.status(400).json({ message: error })
+  if ((trip.comments || []).filter((c) => c.stopId === stopId).length >= 50) {
+    return res.status(400).json({ message: 'This stop already has 50 notes. Delete some first.' })
+  }
+  trip.comments.push({ stopId, user: req.userId, name: memberName(trip, req.userId) || 'Someone', text })
+  await trip.save()
+  res.status(201).json(commentJson(trip.comments[trip.comments.length - 1], trip, req.userId))
+})
+
+router.put('/:id/comments/:commentId', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const comment = mongoose.isValidObjectId(req.params.commentId) ? trip.comments.id(req.params.commentId) : null
+  if (!comment) return res.status(404).json({ message: 'That note was deleted.' })
+  if (String(comment.user) !== String(req.userId)) return res.status(403).json({ message: 'You can only edit your own notes.' })
+  const { text, error } = cleanCommentText(req.body.text)
+  if (error) return res.status(400).json({ message: error })
+  comment.text = text
+  comment.editedAt = new Date()
+  await trip.save()
+  res.json(commentJson(comment, trip, req.userId))
+})
+
+router.delete('/:id/comments/:commentId', requireAuth, async (req, res) => {
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const comment = mongoose.isValidObjectId(req.params.commentId) ? trip.comments.id(req.params.commentId) : null
+  if (!comment) return res.json({ ok: true }) // already gone
+  if (String(comment.user) !== String(req.userId) && roleOf(trip, req.userId) !== 'owner') {
+    return res.status(403).json({ message: 'You can only delete your own notes.' })
+  }
+  comment.deleteOne()
   await trip.save()
   res.json({ ok: true })
 })

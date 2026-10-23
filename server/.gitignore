@@ -1,2 +1,5 @@
 node_modules
 .env
+
+# Downloaded 3D icons (fetched again automatically)
+data/icons/

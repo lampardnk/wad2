@@ -1,17 +1,25 @@
 <template>
-  <div class="dx" :class="{ 'has-tray': shortlist.length }">
+  <div class="dx" :class="{ 'has-tray': shortlist.length }" :style="{ '--dx-top-h': topHeight + 'px' }">
     <!-- Discover: filter by dates, budget and vibe; countries on the left, a 3D pillar map on the right,
          and a shortlist tray docked at the bottom -->
     <!-- ===== Filters ===== -->
-    <header class="dx-top glass">
+    <header ref="topEl" class="dx-top glass">
       <div class="dx-brand">
-        <router-link :to="auth.token ? '/home' : '/'" class="dx-back" :aria-label="auth.token ? 'Back to my trips' : 'Back to the start'">‹</router-link>
+        <!-- Inside a country, the always-visible back button returns to all countries -->
+        <button v-if="openName" type="button" class="dx-back" aria-label="Back to all countries" title="Back to all countries (Esc)" @click="unfocus">‹</button>
+        <router-link v-else :to="auth.token ? '/home' : '/'" class="dx-back" :aria-label="auth.token ? 'Back to my trips' : 'Back to the start'">‹</router-link>
         <div>
-          <h1 class="dx-title">Where to next?</h1>
-          <p class="dx-sub">{{ visibleCities.length }} places across {{ groups.length }} countries, ranked for you</p>
+          <nav v-if="openName" class="dx-crumbs" aria-label="You are here">
+            <button type="button" class="dx-crumb" @click="unfocus">All countries</button>
+            <span aria-hidden="true">›</span>
+            <h1 class="dx-title">{{ openName }}</h1>
+          </nav>
+          <h1 v-else class="dx-title">Where to next?</h1>
+          <p v-if="openName" class="dx-sub">Tap ‹ or press Esc to see all countries</p>
+          <p v-else class="dx-sub">{{ visibleCities.length }} places across {{ groups.length }} countries, ranked for you</p>
         </div>
       </div>
-      <div class="dx-filters">
+      <div class="dx-filters" data-tour="vibe-filters">
         <div class="dx-dates" role="group" aria-label="Travel dates">
           <input v-model="start" type="date" :min="today" aria-label="From" class="dx-input">
           <span aria-hidden="true">→</span>
@@ -39,14 +47,40 @@
         </div>
       </div>
       <button v-if="!auth.token" type="button" class="dx-signin" @click="askToSignIn('')">Sign in</button>
+
+      <!-- Search: a big pill like on travel sites, with suggestions as you type -->
+      <div class="dx-search" :class="{ open: suggestOpen && suggestions.length }">
+        <svg class="dx-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+        <input ref="searchEl" v-model="search" type="text" class="dx-search-input" placeholder="Search a city or country, e.g. Kyoto or Japan"
+          role="combobox" aria-autocomplete="list" aria-controls="dx-suggest" :aria-expanded="suggestOpen && suggestions.length > 0"
+          :aria-activedescendant="activeSuggest >= 0 ? 'dx-sg-' + activeSuggest : null" aria-label="Search a city or country"
+          autocomplete="off" spellcheck="false" @input="suggestOpen = true; activeSuggest = -1" @focus="suggestOpen = true"
+          @blur="closeSuggest" @keydown="onSearchKey">
+        <button v-if="search" type="button" class="dx-search-clear" aria-label="Clear search" @mousedown.prevent @click="clearSearch">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+        <kbd v-else class="dx-search-kbd" aria-hidden="true" title="Press / to search">/</kbd>
+
+        <ul v-if="suggestOpen && suggestions.length" id="dx-suggest" class="dx-suggest" role="listbox" aria-label="Suggestions">
+          <li v-for="(sg, i) in suggestions" :id="'dx-sg-' + i" :key="sg.key" role="option" :aria-selected="i === activeSuggest"
+            class="dx-sg" :class="{ active: i === activeSuggest }" @mousedown.prevent="pickSuggest(sg)" @mouseenter="activeSuggest = i">
+            <span class="dx-sg-flag" aria-hidden="true">{{ sg.flag }}</span>
+            <span class="dx-sg-text">
+              <strong>{{ sg.label }}</strong>
+              <small>{{ sg.sub }}</small>
+            </span>
+            <span class="dx-sg-kind">{{ sg.kind === 'country' ? 'Country' : 'City' }}</span>
+          </li>
+        </ul>
+      </div>
       <p v-if="dateError" class="dx-error" role="alert">{{ dateError }}</p>
     </header>
 
     <div class="dx-split">
       <!-- ===== Feed: one card per country, its cities in a swipeable row ===== -->
       <section ref="feedEl" class="dx-feed" aria-label="Destinations">
-        <article v-for="g in groups" :key="g.country" class="dx-country glass" :class="{ lit: hoverCountry === g.country, focused: focusCountry === g.country }"
-          @mouseenter="hoverCountry = g.country" @mouseleave="hoverCountry = null">
+        <article v-for="g in groups" :key="g.country" :data-country="g.country" class="dx-country glass" :class="{ lit: hoverCountry === g.country, focused: focusCountry === g.country }"
+          @mouseenter="hoverCountry = g.country" @mouseleave="hoverCountry = null" @click="openCountryCard($event, g.country)">
           <!-- Opened country: a photo header -->
           <div v-if="focusCountry === g.country" class="dx-hero" :class="{ nophoto: !countryPhotos[g.country] }" :style="countryPhotos[g.country] ? { backgroundImage: 'linear-gradient(180deg, rgba(0, 38, 58,0) 40%, rgba(0, 38, 58,0.9)), url(' + countryPhotos[g.country] + ')' } : null">
             <button type="button" class="dx-hero-back" @click="unfocus">‹ All countries</button>
@@ -73,7 +107,7 @@
               <span v-if="c.tier === 'extended'" class="dx-gem-tag">Hidden gem</span>
               <button type="button" class="dx-heart" :class="{ on: liked(c.id) }" :aria-pressed="liked(c.id)"
                 :aria-label="(liked(c.id) ? 'Remove ' : 'Add ') + c.cityName + (liked(c.id) ? ' from' : ' to') + ' your shortlist'"
-                @click.stop="toggleLike(c, $event)">{{ liked(c.id) ? '💚' : '🤍' }}</button>
+                @click.stop="toggleLike(c, $event)"><AppIcon name="heart" :size="19" :filled="liked(c.id)" /></button>
               <div class="dx-city-body">
                 <span class="dx-match">{{ c.score }}<small>/100</small></span>
                 <h3 class="dx-city-name">{{ c.cityName }}</h3>
@@ -97,7 +131,7 @@
                   <span class="dx-sight-rank" aria-hidden="true">{{ i + 1 }}</span>
                   <span class="dx-sight-text">
                     <strong>{{ sightName(a) }}</strong>
-                    <small>📍 {{ a.city }}</small>
+                    <small><AppIcon name="map-pin" :size="12" /> {{ a.city }}</small>
                   </span>
                 </button>
               </li>
@@ -111,16 +145,18 @@
             <h2 class="dx-hero-name">{{ otherCountry }}</h2>
           </div>
           <p class="dx-tagline big">Not in Discover yet: we haven't hand-picked its cities. You can still plan a trip here and choose the places yourself.</p>
-          <button type="button" class="dx-cta dx-other-cta" :disabled="!!dateError" @click="planOther">Plan a trip to {{ otherCountry }} ➔</button>
+          <button type="button" class="dx-cta dx-other-cta" :disabled="!!dateError" @click="planOther">Plan a trip to {{ otherCountry }} →</button>
         </article>
+        <p v-else-if="!groups.length && search.trim()" class="dx-empty glass">
+          No city or country matches "{{ search.trim() }}". <button type="button" class="dx-link" @click="search = ''">Clear search</button>
+        </p>
         <p v-else-if="!groups.length" class="dx-empty glass">No places match those vibes yet. Try another vibe.</p>
       </section>
 
       <!-- ===== 3D map ===== -->
-      <section class="dx-mapwrap" aria-label="Map of destinations">
+      <section class="dx-mapwrap" aria-label="Map of destinations" data-tour="map-layer">
         <div ref="mapEl" class="dx-map"></div>
         <p v-if="mapError" class="dx-maperr glass">{{ mapError }}</p>
-        <button v-if="focusCountry || otherCountry" type="button" class="dx-mapback glass" @click="unfocus">‹ All countries</button>
         <!-- Rotation slider (also follows right-click / two-finger rotating) -->
         <div class="dx-rotate glass">
           <label for="dx-rot" class="dx-rot-label">Rotate</label>
@@ -137,7 +173,7 @@
               <strong>{{ flag(tip.city.cc) }} {{ tip.city.cityName }}</strong>
               <small>{{ tip.city.score }}/100 · ~${{ tip.city.estDailyBudget }}/day</small>
             </div>
-            <p v-if="liked(tip.city.id)" class="dx-tip-hint">💚 In your shortlist</p>
+            <p v-if="liked(tip.city.id)" class="dx-tip-hint"><AppIcon name="heart" :size="13" filled /> In your shortlist</p>
           </div>
         </transition>
       </section>
@@ -147,7 +183,7 @@
     <transition name="dx-pop">
       <div v-if="plan" class="dx-sheet-overlay" @click.self="plan = null" @keydown.esc="plan = null">
         <form class="dx-sheet glass" role="dialog" aria-modal="true" aria-labelledby="dx-sheet-title" @submit.prevent="createTrip">
-          <button type="button" class="dx-sheet-x" aria-label="Close" @click="plan = null">✕</button>
+          <button type="button" class="dx-sheet-x" aria-label="Close" @click="plan = null"><AppIcon name="x" :size="16" /></button>
           <h2 id="dx-sheet-title" class="dx-sheet-title">Confirm your trip</h2>
 
           <label for="dx-plan-name" class="dx-sheet-label">Trip name</label>
@@ -167,12 +203,12 @@
               <span class="dx-route-name">{{ flag(c.cc) }} {{ c.cityName }}</span>
               <button type="button" :disabled="i === 0" :aria-label="'Move ' + c.cityName + ' earlier'" @click="moveCity(i, -1)">↑</button>
               <button type="button" :disabled="i === plan.cities.length - 1" :aria-label="'Move ' + c.cityName + ' later'" @click="moveCity(i, 1)">↓</button>
-              <button type="button" :aria-label="'Remove ' + c.cityName" @click="dropCity(i)">✕</button>
+              <button type="button" :aria-label="'Remove ' + c.cityName" @click="dropCity(i)"><AppIcon name="x" :size="14" /></button>
             </li>
           </ol>
 
           <p v-if="planError" class="dx-error" role="alert">{{ planError }}</p>
-          <button type="submit" class="dx-cta dx-sheet-cta" :disabled="creating">{{ creating ? 'Creating your trip…' : 'Create trip ➔' }}</button>
+          <button type="submit" class="dx-cta dx-sheet-cta" :disabled="creating">{{ creating ? 'Creating your trip…' : 'Create trip →' }}</button>
         </form>
       </div>
     </transition>
@@ -181,19 +217,22 @@
 
     <!-- ===== Shortlist tray ===== -->
     <transition name="dx-tray">
-      <aside v-if="shortlist.length" ref="trayEl" class="dx-tray glass" aria-label="Your shortlist">
+      <aside v-if="shortlist.length" ref="trayEl" class="dx-tray glass" aria-label="Your shortlist" data-tour="shortlist-tray">
         <span class="dx-tray-count" aria-live="polite">{{ shortlist.length }}</span>
         <ul class="dx-tray-chips">
           <li v-for="c in shortlistCities" :key="c.id" class="dx-chip">
             {{ flag(c.cc) }} {{ c.cityName }}
-            <button type="button" :aria-label="'Remove ' + c.cityName" @click="unlike(c.id)">✕</button>
+            <button type="button" :aria-label="'Remove ' + c.cityName" @click="unlike(c.id)"><AppIcon name="x" :size="13" /></button>
           </li>
         </ul>
         <button type="button" class="dx-cta" :disabled="!!dateError" @click="startPlanning">
-          Start planning with selected ({{ shortlist.length }}) ➔
+          Start planning with selected ({{ shortlist.length }}) →
         </button>
       </aside>
     </transition>
+
+    <!-- First visit: three tip bubbles (filters, map, shortlist). Seen once per browser. -->
+    <FeatureTour storage-key="chuise-tour-discover-v1" :steps="TOUR_STEPS" />
   </div>
 </template>
 
@@ -203,12 +242,27 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import DATA from '../data/discoverCities.json'
 import SIGHTS from '../data/countryAttractions.json'
+import { PHOTO_CACHE } from '../photoCache.js'
 import { flagEmoji } from '../destinations.js'
 import { loadMapLibre } from '../services/maplibre.js'
 import { topoFeatures, unwrapLongitudes } from '../topo.js'
 import { shortlist, syncShortlist } from '../shortlist.js'
 import { auth } from '../auth.js'
 import AuthJoinModal from '../components/AuthJoinModal.vue'
+import AppIcon from '../components/AppIcon.vue'
+import FeatureTour from '../components/FeatureTour.vue'
+
+// The first-visit tour (FeatureTour). Step 3 points at the first heart until the shortlist tray exists.
+const TOUCH = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches // phones: "tap", not "hover"
+const TOUR_STEPS = [
+  { target: '[data-tour="vibe-filters"]', icon: 'sliders', title: 'Dial in your vibe',
+    body: 'Filter destinations by travel style, season and budget.', cta: 'Next (1/3) →' },
+  { target: '[data-tour="map-layer"]', icon: 'map', title: 'Interactive 3D map',
+    body: (TOUCH ? 'Tap' : 'Hover over') + ' a pillar to preview the city. Taller, brighter pillars match you better. Tap a country to explore it.', cta: 'Next (2/3) →' },
+  { target: '[data-tour="shortlist-tray"]', fallback: '.dx-heart', icon: 'heart', title: 'Stage your itinerary',
+    body: 'Like cities to collect them in your shortlist. Once ready, hit Start planning to turn them into a trip.', cta: "Got it, let's explore! (3/3)" }
+]
+import { notify } from '../notify.js'
 
 const router = useRouter()
 const VIBES = [
@@ -238,6 +292,10 @@ const start = ref(inDays(30))
 const end = ref(inDays(37))
 const budget = ref(2)
 const vibes = ref([])
+const search = ref('') // city or country name
+const searchEl = ref(null)
+const suggestOpen = ref(false)
+const activeSuggest = ref(-1) // highlighted suggestion (arrow keys)
 const dateError = computed(() => {
   if (!start.value || !end.value) return 'Pick both dates.'
   if (start.value < today) return 'Pick a start date from today onwards.'
@@ -277,6 +335,10 @@ const otherCountry = ref(null) // a country with no cities in our data yet
 const hoverAny = ref(null)     // any country under the mouse on the map
 const countryPhotos = ref({})
 const feedEl = ref(null)
+// The sticky header's height, so the map and "scroll to" stop just below it instead of under it
+const topEl = ref(null)
+const topHeight = ref(112)
+let topWatcher = null
 // ---------- top sights of an opened country ----------
 const sightPhotos = ref({})
 function sightsOf(country) {
@@ -338,32 +400,82 @@ function openOther(name, geometry) {
 function planOther() {
   router.push({ path: '/home', query: { dest: otherCountry.value, name: 'Trip to ' + otherCountry.value, start: start.value, end: end.value } })
 }
+// Clicking anywhere on a country card opens it (city cards, hearts and buttons keep their own action)
+function openCountryCard(e, name) {
+  if (focusCountry.value === name) return
+  if (e.target.closest('.dx-city, .dx-sights, button, a')) return
+  focus(name)
+}
 function unfocus() {
+  const was = focusCountry.value
   otherCountry.value = null
   focusCountry.value = null
   if (map) map.flyTo({ center: [128, 8], zoom: 2, pitch: 52, bearing: rotation.value, duration: 900 })
+  // Back in the list where you left off: at the country you just closed
+  nextTick(() => {
+    const card = was && feedEl.value ? feedEl.value.querySelector('[data-country="' + was + '"]') : null
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
 }
+// The country (or other place) that's open, for the header's "All countries › China"
+const openName = computed(() => focusCountry.value || otherCountry.value)
 
 // ---------- data: which cities show, and their match score ----------
 function countryOf(name) {
   return DATA.countries.find((c) => c.country === name)
 }
-// Base cities always show; hidden gems show for very popular countries, or when they match a vibe you picked
+// How well a month fits a city's best months: in season 1, a month either side 0.6, two months away 0.25
+function seasonOf(month, bestMonths) {
+  let best = 0
+  for (const b of bestMonths) {
+    let gap = Math.abs(month - b)
+    if (gap > 6) gap = 12 - gap // December is next to January
+    const fit = gap === 0 ? 1 : gap === 1 ? 0.6 : gap === 2 ? 0.25 : 0
+    if (fit > best) best = fit
+  }
+  return best
+}
+// Match score out of 100. Each part is between 0 and 1:
+//   vibe   = share of your picked vibes the city has (only counts when you picked some)
+//   season = how close your travel months are to its best months
+//   budget = fits your daily budget (a little higher the more room it leaves; drops off when over)
+//   love   = how popular the country is, and how high the city ranks inside it
+// Base cities always show; hidden gems show for very popular countries, or when they match a vibe or your search.
 const visibleCities = computed(() => {
   const list = []
   const cap = BUDGETS.find((b) => b.value === budget.value).cap
+  const q = search.value.trim().toLowerCase()
   for (const c of DATA.cities) {
     const country = countryOf(c.country)
+    const nameHit = !!q && (c.cityName.toLowerCase().includes(q) || c.country.toLowerCase().includes(q))
+    if (q && !nameHit) continue
     const vibeHit = c.vibeTags.filter((t) => vibes.value.includes(t)).length
-    // (an opened country shows all of its cities)
-    if (c.tier === 'extended' && country.popularity < 85 && !vibeHit && c.country !== focusCountry.value) continue
+    // (an opened country, or a searched one, shows all of its cities)
+    if (c.tier === 'extended' && country.popularity < 85 && !vibeHit && !nameHit && c.country !== focusCountry.value) continue
+
+    let season = 0
     let inSeason = 0
-    for (const m of tripMonths.value) if (c.bestMonths.includes(m)) inSeason++
+    for (const m of tripMonths.value) {
+      season += seasonOf(m, c.bestMonths)
+      if (c.bestMonths.includes(m)) inSeason++
+    }
+    season = season / tripMonths.value.length
     const monthFit = inSeason / tripMonths.value.length
-    const vibeFit = vibes.value.length ? vibeHit / vibes.value.length : 0.6
-    const budgetFit = c.estDailyBudget <= cap ? 1 : Math.max(0, 1 - (c.estDailyBudget - cap) / cap)
-    const score = Math.round(100 * (0.45 * vibeFit + 0.35 * monthFit + 0.2 * budgetFit))
-    list.push({ ...c, id: (c.cityName + '-' + c.country).toLowerCase().replace(/[^a-z]+/g, '-'), cc: country.cc, score, monthFit })
+
+    let budgetFit = 1
+    if (cap < 9999) {
+      budgetFit = c.estDailyBudget <= cap ? 0.8 + 0.2 * (1 - c.estDailyBudget / cap) : Math.max(0, 1 - (c.estDailyBudget - cap) / cap)
+    }
+    const love = 0.6 * country.popularity / 100 + 0.4 / (1 + 0.35 * (c.popularityRank - 1))
+
+    let score
+    if (vibes.value.length) {
+      const vibeFit = vibeHit / vibes.value.length
+      score = 0.4 * vibeFit + 0.3 * season + 0.15 * budgetFit + 0.15 * love
+    } else {
+      score = 0.45 * season + 0.25 * budgetFit + 0.3 * love
+    }
+    list.push({ ...c, id: (c.cityName + '-' + c.country).toLowerCase().replace(/[^a-z]+/g, '-'), cc: country.cc, score: Math.round(100 * score), monthFit })
   }
   return list
 })
@@ -396,15 +508,34 @@ function monthsText(list) {
 
 // ---------- photos (heroImage, or Wikipedia when empty) ----------
 const photos = ref({})
+// City photos: asked for 40 at a time (not one request per city), and kept for the rest of the visit
 async function loadPhotos() {
+  const found = { ...PHOTO_CACHE }
+  const titles = []
+  const idOf = {}
   for (const c of allCities) {
-    if (c.heroImage) {
-      photos.value = { ...photos.value, [c.id]: c.heroImage }
-      continue
+    if (c.heroImage) found[c.id] = c.heroImage
+    else if (!found[c.id]) {
+      const t = c.cityName + ', ' + c.country
+      titles.push(t)
+      idOf[t] = c.id
     }
-    axios.get('/api/discover/about', { params: { title: c.cityName + ', ' + c.country } })
-      .then((res) => { if (res.data.photo) photos.value = { ...photos.value, [c.id]: res.data.photo } })
-      .catch(() => {})
+  }
+  photos.value = found
+  for (let i = 0; i < titles.length; i += 40) {
+    try {
+      const res = await axios.get('/api/discover/photos', { params: { titles: titles.slice(i, i + 40).join('|') } })
+      const more = {}
+      for (const t in res.data) {
+        if (res.data[t]) {
+          more[idOf[t]] = res.data[t]
+          PHOTO_CACHE[idOf[t]] = res.data[t]
+        }
+      }
+      photos.value = { ...photos.value, ...more }
+    } catch (err) {
+      // no photo: the card keeps its plain colour
+    }
   }
 }
 function photoStyle(c) {
@@ -527,6 +658,7 @@ async function createTrip() {
         await axios.put('/api/trips/' + id + '/itinerary', { stops: [], wishlist, version: 0 })
       } catch (err) {
         // the trip exists; the wishlist can still be filled in on the next page
+        notify('Your trip is ready, but its top sights could not be added. You can save places on the next step.')
       }
     }
     // The planned cities leave the shortlist
@@ -781,6 +913,72 @@ function goToCard(id) {
 
 function onKey(e) {
   if (e.key === 'Escape' && (focusCountry.value || otherCountry.value)) unfocus()
+  // "/" jumps to the search box (unless you're already typing somewhere)
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)
+  if (e.key === '/' && !typing && searchEl.value) {
+    e.preventDefault()
+    searchEl.value.focus()
+  }
+}
+
+// ---------- search suggestions ----------
+// Countries and cities whose name contains what's typed; names that start with it come first
+const suggestions = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return []
+  const starts = []
+  const contains = []
+  for (const co of DATA.countries) {
+    if (!co.country.toLowerCase().includes(q)) continue
+    let n = 0
+    for (const c of DATA.cities) if (c.country === co.country) n++
+    const sg = { kind: 'country', key: 'country-' + co.country, label: co.country, flag: flag(co.cc), sub: n + ' place' + (n === 1 ? '' : 's') + ' to explore' }
+    if (co.country.toLowerCase().startsWith(q)) starts.push(sg)
+    else contains.push(sg)
+  }
+  for (const c of allCities) {
+    if (!c.cityName.toLowerCase().includes(q)) continue
+    const sg = { kind: 'city', key: c.id, label: c.cityName, flag: flag(c.cc), sub: c.country, city: c }
+    if (c.cityName.toLowerCase().startsWith(q)) starts.push(sg)
+    else contains.push(sg)
+  }
+  return starts.concat(contains).slice(0, 6)
+})
+function pickSuggest(sg) {
+  suggestOpen.value = false
+  activeSuggest.value = -1
+  search.value = ''
+  if (searchEl.value) searchEl.value.blur()
+  focus(sg.kind === 'country' ? sg.label : sg.city.country)
+  // A city: once the country is open, fly to the city too
+  if (sg.kind === 'city') setTimeout(() => showOnMap(cityById(sg.city.id)), 950)
+}
+function onSearchKey(e) {
+  const n = suggestions.value.length
+  if (e.key === 'ArrowDown' && n) {
+    e.preventDefault()
+    suggestOpen.value = true
+    activeSuggest.value = (activeSuggest.value + 1) % n
+  } else if (e.key === 'ArrowUp' && n) {
+    e.preventDefault()
+    activeSuggest.value = activeSuggest.value <= 0 ? n - 1 : activeSuggest.value - 1
+  } else if (e.key === 'Enter') {
+    if (activeSuggest.value >= 0 && activeSuggest.value < n) pickSuggest(suggestions.value[activeSuggest.value])
+    else if (n === 1) pickSuggest(suggestions.value[0])
+    else suggestOpen.value = false // keep the filtered list
+  } else if (e.key === 'Escape') {
+    e.stopPropagation()
+    if (suggestOpen.value && n) suggestOpen.value = false
+    else clearSearch()
+  }
+}
+function clearSearch() {
+  search.value = ''
+  activeSuggest.value = -1
+  if (searchEl.value) searchEl.value.focus()
+}
+function closeSuggest() {
+  setTimeout(() => { suggestOpen.value = false }, 120)
 }
 onMounted(() => {
   document.addEventListener('keydown', onKey)
@@ -789,11 +987,16 @@ onMounted(() => {
   if (auth.token) syncShortlist() // picks saved on another device show up here too
   loadPhotos()
   buildMap()
+  if (topEl.value && window.ResizeObserver) {
+    topWatcher = new ResizeObserver(() => { topHeight.value = topEl.value ? topEl.value.offsetHeight : 112 })
+    topWatcher.observe(topEl.value)
+  }
 })
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKey)
   document.removeEventListener('click', closeVibes)
   document.body.classList.remove('dx-body')
+  if (topWatcher) topWatcher.disconnect()
   clearTimeout(tipTimer)
   // Forget the map first, so nothing touches it while it is being taken down
   const old = map
@@ -849,6 +1052,7 @@ onBeforeUnmount(() => {
 .dx-back {
   width: 38px;
   height: 38px;
+  border: 0;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -862,8 +1066,31 @@ onBeforeUnmount(() => {
   background: rgba(237, 174, 73, 0.18);
   color: var(--emerald);
 }
+.dx-crumbs {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+}
+.dx-crumb {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--emerald);
+  font-size: 15px;
+  font-weight: 700;
+}
+.dx-crumb:hover {
+  text-decoration: underline;
+}
+.dx-crumb:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .dx-title {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1.6rem;
   margin: 0;
   letter-spacing: -0.01em;
@@ -893,6 +1120,168 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   color-scheme: dark;
+}
+.dx-search {
+  position: relative;
+  flex: 1 1 100%; /* its own row under the title and filters */
+  order: 10;
+}
+.dx-search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--emerald);
+  pointer-events: none;
+}
+.dx-search-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 50px;
+  padding: 0 52px 0 48px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  font-size: 15.5px;
+  font-weight: 500;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 18px rgba(0, 0, 0, 0.18);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.dx-search-input::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+}
+.dx-search-input:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+.dx-search-input:focus {
+  outline: none;
+  border-color: var(--emerald);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 4px rgba(237, 174, 73, 0.18), 0 10px 26px rgba(0, 0, 0, 0.25);
+}
+.dx-search.open .dx-search-input {
+  border-radius: 25px 25px 0 0;
+  border-bottom-color: transparent;
+}
+.dx-search-clear,
+.dx-search-kbd {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.dx-search-clear {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text);
+}
+.dx-search-clear:hover,
+.dx-search-clear:focus-visible {
+  background: var(--emerald);
+  color: #001d2c;
+  outline: none;
+}
+.dx-search-kbd {
+  right: 16px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font: 700 12px/22px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+}
+/* Suggestions drop down from the pill */
+.dx-suggest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 40;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--emerald);
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 22px 22px;
+  background: rgba(10, 53, 80, 0.97);
+  box-shadow: 0 0 0 4px rgba(237, 174, 73, 0.18), 0 22px 44px rgba(0, 0, 0, 0.45);
+}
+.dx-sg {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.dx-sg.active {
+  background: rgba(237, 174, 73, 0.12);
+}
+.dx-sg-flag {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.dx-sg-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.dx-sg-text strong {
+  font-size: 15px;
+  color: var(--text);
+}
+.dx-sg-text small {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.dx-sg-kind {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.dx-sg.active .dx-sg-kind {
+  border-color: var(--emerald);
+  color: var(--emerald);
+}
+@media (max-width: 560px) {
+  .dx-search-kbd,
+  .dx-sg-kind {
+    display: none;
+  }
+  .dx-search-input {
+    font-size: 15px;
+  }
+}
+.dx-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--emerald);
+  font-weight: 700;
+  text-decoration: underline;
 }
 .dx-seg {
   display: inline-flex;
@@ -1060,11 +1449,13 @@ onBeforeUnmount(() => {
   align-items: start;
 }
 .dx-feed {
+  scroll-margin-top: calc(var(--dx-top-h, 112px) + 20px);
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 .dx-country {
+  scroll-margin-top: calc(var(--dx-top-h, 112px) + 20px);
   padding: 16px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -1109,8 +1500,7 @@ onBeforeUnmount(() => {
 .dx-hero.nophoto {
   height: 120px;
 }
-.dx-hero-back,
-.dx-mapback {
+.dx-hero-back {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -1125,21 +1515,22 @@ onBeforeUnmount(() => {
   font-size: 13px;
   transition: color 0.15s, border-color 0.15s;
 }
-.dx-hero-back:hover,
-.dx-mapback:hover {
+.dx-hero-back:hover {
   color: var(--emerald);
   border-color: var(--emerald);
 }
-.dx-hero-back:focus-visible,
-.dx-mapback:focus-visible {
+.dx-hero-back:focus-visible {
   outline: 3px solid rgba(237, 174, 73, 0.6);
   outline-offset: 2px;
 }
 .dx-hero-name {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 2.2rem;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+.dx-country:not(.focused) {
+  cursor: pointer;
 }
 .dx-country-btn {
   border: 0;
@@ -1149,7 +1540,7 @@ onBeforeUnmount(() => {
   text-align: left;
 }
 .dx-explore {
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 700;
   color: var(--emerald);
@@ -1180,7 +1571,7 @@ onBeforeUnmount(() => {
   border-top: 1px solid var(--line);
 }
 .dx-sights-title {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   margin: 0 0 10px;
 }
@@ -1236,7 +1627,7 @@ onBeforeUnmount(() => {
 }
 .dx-sight-text strong {
   display: block;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1rem;
   line-height: 1.15;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
@@ -1252,7 +1643,7 @@ onBeforeUnmount(() => {
   outline-offset: 2px;
 }
 .dx-country-name {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1.35rem;
   margin: 0;
 }
@@ -1354,6 +1745,16 @@ onBeforeUnmount(() => {
 .dx-heart.on {
   animation: dx-pop 0.35s ease;
 }
+/* Heart icon: white outline, filled red once it's in your shortlist */
+.dx-heart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.dx-heart.on {
+  color: #d1495b;
+}
 @keyframes dx-pop {
   50% { transform: scale(1.35); }
 }
@@ -1371,7 +1772,7 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 .dx-city-name {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1.55rem;
   line-height: 1.05;
   margin: 2px 0 8px;
@@ -1451,7 +1852,7 @@ onBeforeUnmount(() => {
   color: var(--muted);
 }
 .dx-sheet-title {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 1.5rem;
   margin: 0 0 8px;
 }
@@ -1522,8 +1923,8 @@ onBeforeUnmount(() => {
 /* Map */
 .dx-mapwrap {
   position: sticky;
-  top: 120px;
-  height: calc(100vh - 160px);
+  top: calc(var(--dx-top-h, 112px) + 20px);
+  height: calc(100vh - var(--dx-top-h, 112px) - 40px);
   min-height: 420px;
   border-radius: 18px;
   overflow: hidden;
@@ -1724,7 +2125,8 @@ onBeforeUnmount(() => {
 @media (max-width: 960px) {
   .dx-split { grid-template-columns: minmax(0, 1fr); } /* minmax: the swipe rows mustn't stretch the page sideways */
   .dx-mapwrap { position: relative; top: 0; height: 340px; min-height: 0; order: -1; }
-  .dx-top { position: static; }
+  .dx-top { position: relative; z-index: 25; } /* not sticky, but search suggestions still sit above the map */
+  .dx-feed, .dx-country { scroll-margin-top: 16px; } /* the header scrolls away here */
   .dx-tray { flex-wrap: wrap; }
   .dx-cta { width: 100%; }
   .dx.has-tray { padding-bottom: 170px; } /* the tray is taller once its button wraps */

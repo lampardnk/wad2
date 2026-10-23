@@ -11,9 +11,9 @@
 
     <!-- The itinerary: day navigator, timeline with weather + crowd icons, saved places drawer -->
     <ItineraryPlanner :days="dayList" :selected-date="selectedDate" :stops="itinerary"
-      :wishlist="allWishlist" :scheduled-names="scheduledNames" :day-name="tripDay" :weather-blocks="dayWeather" :prefs="dayPrefs"
-      :can-add-day="!isDemo && !!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :saved-routes="savedRoutes"
-      @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @undo-day="undoDay" @add-place="openAddPlace"
+      :wishlist="allWishlist" :scheduled-names="scheduledNames" :day-name="tripDay" :weather-blocks="dayWeather" :typical="typicalWeather" :prefs="dayPrefs"
+      :can-add-day="!isDemo && !!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :saved-routes="savedRoutes" :travellers="travellers"
+      @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
       @apply="applyOptimized" @lock="setLocked" @schedule="scheduleWish" @unschedule="unscheduleStop" @status="plannerStatus = $event"
       @duration="setDuration" @move-day="moveToDay" @swap="swapWithWish" @edit="editStop" @open-transport="$emit('open-transport')"/>
   </div>
@@ -28,9 +28,20 @@ import { getForecast } from '../crowd.js'
 import { fetchTravelTime } from '../services/maps.js'
 import { fetchWeatherForecast } from '../services/weatherService.js'
 import { trip, loadDemo, loadFromServer, savedShape, runtimeStop, newId } from '../itineraryStore.js'
-import { savedRoutesFromDb, fetchSavedRoutes } from '../savedRoutes.js' // or '@/savedRoutes.js'
+import { savedRoutesFromDb, fetchSavedRoutes } from '../savedRoutes.js'
+import { codeForDestination, COUNTRY_CODES } from '../destinations.js'
+import DISCOVER from '../data/discoverCities.json'
+
+// Everyone's votes, as text (to notice new votes from the group)
+function votesKey(list) {
+  const out = []
+  for (const w of list || []) out.push(w.id + ':' + (w.votes || []).slice().sort().join(','))
+  return out.join('|')
+}
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 export default {
   components: { SchedulePanel, ItineraryPlanner },
@@ -43,7 +54,8 @@ export default {
     endDate: { type: String, default: '' },
     initialStops: { type: Array, default: () => [] },
     initialWishlist: { type: Array, default: () => [] },
-    initialVersion: { type: Number, default: 0 }
+    initialVersion: { type: Number, default: 0 },
+    travellers: { type: Array, default: () => [] } // names, for the "majority of the group" rule on saved places
   },
   data() {
     return {
@@ -51,6 +63,9 @@ export default {
       plannerStatus: { kind: 'idle', text: 'Add places to this day and the schedule balances itself.' },
       weather: [], // every forecast entry: { date, time, span, condition, rain }
       weatherError: false,
+      climate: [], // typical weather by month for each destination (for days beyond the 5-day forecast)
+      climateRetried: false,
+      mapsOff: false, // true once the server says Google Maps isn't set up
       saveStatus: '',
       notice: '',           // text of the pop-up (empty = hidden)
       noticeType: 'warning', // 'warning' (yellow) or 'info' (blue)
@@ -71,9 +86,11 @@ export default {
     this.selectedDate = firstStopDay || this.dayList[0] || ''
 
     // Load simulated weather for every day of the trip
-    this.weather = await fetchWeatherForecast({
-      dates: this.dayList
-    })
+    try {
+      this.weather = await fetchWeatherForecast({ dates: this.dayList })
+    } catch (err) {
+      this.weatherError = true
+    }
 
     // The user's saved preferences (keeps the defaults if this fails)
     try {
@@ -81,6 +98,8 @@ export default {
     } catch (err) {
       console.warn('Could not load preferences, using defaults')
     }
+
+    this.loadClimate() // in the background: typical weather for days with no forecast
 
     // Load each tracked stop's forecast from our server (in parallel)
     await Promise.all(trip.stops.map((item) => this.loadForecast(item)))
@@ -111,6 +130,10 @@ export default {
   },
 
   watch: {
+    // If typical weather couldn't load (e.g. the server was restarting), try again when the day changes
+    selectedDate() {
+      if (!this.climate.length) this.loadClimate()
+    },
     // Fires whenever anything worth saving changes
     persistKey(key) {
       if (!this.loaded || this.isDemo || key === this.lastSavedKey) return
@@ -148,8 +171,34 @@ export default {
     isDemo() {
       return this.tripId === 'seoul'
     },
+    // The selected day is too far ahead for a forecast: what's the weather usually like that month?
+    typicalWeather() {
+      if (!this.selectedDate || !this.climate.length) return null
+      const m = Number(this.selectedDate.slice(5, 7)) - 1
+      // Words that say which city this day is in: the stops' names and addresses, and the city they were saved under
+      let text = ''
+      for (const s of this.itinerary) {
+        text += ' ' + (s.name || '') + ' ' + (s.address || '')
+        const saved = trip.wishlist.find((w) => w.name === s.name)
+        if (saved && saved.city) text += ' ' + saved.city
+      }
+      text = text.toLowerCase()
+      // The city this day's stops mention ("Time Out Market Lisboa" -> Lisbon), else the first city with data
+      let pick = null
+      for (const c of this.climate) {
+        if (!c.temp || c.temp[m] == null) continue
+        const city = c.label.split(', ')[0].toLowerCase()
+        if (text.includes(city) || text.includes(city.slice(0, 4))) { pick = c; break }
+        if (!pick) pick = c
+      }
+      if (!pick) return null
+      return { month: MONTH_NAMES[m], place: pick.label.split(', ')[0], temp: pick.temp[m], rainyDays: pick.rain ? pick.rain[m] : null }
+    },
+    // What's worth saving, as text. Votes are left out: each vote is saved on its own (PlacesVoting).
     persistKey() {
-      return JSON.stringify(savedShape())
+      const shape = savedShape()
+      for (const w of shape.wishlist) delete w.votes
+      return JSON.stringify(shape)
     },
 
     // The days of the trip: the date range if set, otherwise the days that have stops
@@ -187,9 +236,9 @@ export default {
     anyLoading() {
       return trip.stops.some((item) => item.loading)
     },
-    // Routes saved in "Getting around", shown in a stop's Time & details
+    // Routes saved in "Getting around" (from the database), shown in a stop's Details
     savedRoutes() {
-      return savedRoutesFromDb.value
+      return Array.isArray(savedRoutesFromDb.value) ? savedRoutesFromDb.value : [] // an error answer is not a list
     },
 
     // For the day strip and All days grid: how full each day is, and how many things need a look
@@ -217,10 +266,6 @@ export default {
         result[d] = { issues, load: planned / hours }
       }
       return result
-    },
-    // transport
-    savedRoutes() {
-      return savedRoutesFromDb.value;
     }
   },
   methods: {
@@ -365,6 +410,11 @@ export default {
       const i = this.dayList.indexOf(this.selectedDate)
       this.$emit('go-places', { date: this.selectedDate, day: i >= 0 ? 'Day ' + (i + 1) : 'your itinerary' })
     },
+    // "Vote" on a place that's waiting for votes: open Group decisions, with a way back
+    openVote() {
+      const i = this.dayList.indexOf(this.selectedDate)
+      this.$emit('go-places', { date: this.selectedDate, day: i >= 0 ? 'Day ' + (i + 1) : 'your itinerary', tab: 'vote' })
+    },
     // "Dinner Reservation (Myeongdong Kyoja)" -> "Dinner Reservation"
     shortName(name) {
       return name.split(' (')[0]
@@ -393,7 +443,7 @@ export default {
       }
       this.saving = true
       const key = this.persistKey
-      const body = JSON.parse(key)
+      const body = savedShape() // (with votes: the server keeps everyone else's as they are)
       body.version = this.tripVersion
       try {
         const res = await axios.put('/api/trips/' + this.tripId + '/itinerary', body)
@@ -430,7 +480,7 @@ export default {
       if (this.persistKey !== this.lastSavedKey) return // we have unsaved changes of our own
       try {
         const res = await axios.get('/api/trips/' + this.tripId)
-        if (res.data.version !== this.tripVersion) {
+        if (res.data.version !== this.tripVersion || votesKey(res.data.wishlist) !== votesKey(trip.wishlist)) {
           await this.applyServerTrip(res.data)
           this.saveStatus = 'Updated with changes from your group'
           this.showNotice('Your group made changes, so this itinerary was updated.', 'info')
@@ -450,11 +500,13 @@ export default {
     // ---------- crowd data ----------
     // Load one stop's crowd forecast (stops without an address aren't tracked)
     async loadForecast(item) {
-      if (!item.address) return
+      // No address: look it up by name in the trip's city (breaks like "Lunch" are skipped)
+      const where = item.address || (/^(breakfast|brunch|lunch|dinner|supper)( break)?$/i.test((item.name || '').trim()) ? '' : this.destination)
+      if (!where) return
       item.loading = true
       item.error = ''
       try {
-        item.forecast = await getForecast(item.name, item.address)
+        item.forecast = await getForecast(item.name, where)
         item.bestTime = item.forecast.bestTimeDefault
         if (item.duration === null) item.duration = item.forecast.durationDefault
       } catch (err) {
@@ -463,11 +515,55 @@ export default {
       item.loading = false
     },
 
+    // Last year's weather by month for the trip's destinations (Open-Meteo, free, cached on the server)
+    // A country on its own ("china") has no single weather, so use one of its cities:
+    // the one the stops mention (e.g. "Statue of Mao Zedong, Chengdu"), else its best-known city
+    cityForClimate(name) {
+      if (name.includes(', ')) return name
+      let country = ''
+      for (const c in COUNTRY_CODES) {
+        if (c.toLowerCase() === name.trim().toLowerCase()) country = c
+      }
+      if (!country) return name
+      let text = ''
+      for (const s of trip.stops) text += ' ' + (s.name || '') + ' ' + (s.address || '')
+      text = text.toLowerCase()
+      let best = null
+      for (const city of DISCOVER.cities) {
+        if (city.country !== country) continue
+        if (text.includes(city.cityName.toLowerCase())) return city.cityName + ', ' + country
+        if (!best || city.popularityRank < best.popularityRank) best = city
+      }
+      return best ? best.cityName + ', ' + country : name
+    },
+    async loadClimate() {
+      if (this.isDemo) return
+      const picked = (this.destinations.length ? this.destinations : [this.destination]).filter(Boolean).slice(0, 10)
+      const names = []
+      for (const n of picked) names.push(this.cityForClimate(n))
+      if (!names.length) return
+      const codes = []
+      for (const n of names) codes.push(codeForDestination(n) || '')
+      try {
+        const res = await axios.get('/api/discover/cities', { params: { names: names.join('|'), codes: codes.join('|') } })
+        this.climate = Array.isArray(res.data) ? res.data : []
+      } catch (err) {
+        this.climate = [] // days beyond the forecast show "–" for now
+      }
+      // Nothing came back: try once more in 15 seconds (the server may have been restarting)
+      if (!this.climate.length && !this.climateRetried) {
+        this.climateRetried = true
+        setTimeout(() => this.loadClimate(), 15000)
+      }
+    },
     // ---------- weather ----------
 
     // ---------- transit ----------
     // Travel time from every stop to the next (all requests run at once)
     async updateTransitTimes() {
+      // Travel times come from Google Maps; without a Google key on the server, stop asking
+      // (the planner works out walking/transit times itself from the distance between stops)
+      if (this.mapsOff) return
       const list = this.itinerary
       const place = (s) => s.address || this.shortName(s.name) + (this.destination ? ', ' + this.destination : '')
       await Promise.all(list.map(async (stop, i) => {
@@ -482,6 +578,7 @@ export default {
           stop.transitToNext = t.durationText
           stop.transitSecs = t.durationValue
         } catch (err) {
+          if (err.response && err.response.status === 503) this.mapsOff = true
           stop.transitToNext = '30 mins (est)'
           stop.transitSecs = 1800
         }

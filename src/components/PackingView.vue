@@ -10,7 +10,7 @@
         <div class="pk-tiles">
           <button v-for="o in ACTIVITIES" :key="o.key" type="button" class="pk-tile" :class="{ on: profile.activities.includes(o.key) }"
             :aria-pressed="profile.activities.includes(o.key)" :title="o.label" @click="toggleOption(profile.activities, o.key)">
-            <span class="pk-tile-icon" aria-hidden="true">{{ o.icon }}</span>
+            <Icon3D class="pk-tile-icon" :emoji="o.icon" :size="44" />
             <span class="pk-tile-label">{{ o.short || o.label }}</span>
           </button>
         </div>
@@ -24,7 +24,7 @@
         <div class="pk-seg">
           <button v-for="o in WEATHER" :key="o.key" type="button" :class="{ on: profile.weather.includes(o.key) }"
             :aria-pressed="profile.weather.includes(o.key)" @click="toggleOption(profile.weather, o.key)">
-            <span aria-hidden="true">{{ o.icon }}</span> {{ o.label }}
+            <Icon3D :emoji="o.icon" :size="22" /> {{ o.label }}
           </button>
         </div>
       </fieldset>
@@ -35,7 +35,7 @@
         <div class="pk-switches">
           <button v-for="o in EXTRAS" :key="o.key" type="button" role="switch" class="pk-switch-row"
             :aria-checked="profile.extras.includes(o.key)" @click="toggleOption(profile.extras, o.key)">
-            <span class="pk-switch-text"><span aria-hidden="true">{{ o.icon }}</span> {{ o.label }}</span>
+            <span class="pk-switch-text pk-switch-icon"><Icon3D :emoji="o.icon" :size="26" /> {{ o.label }}</span>
             <span class="pk-switch" aria-hidden="true"><span class="pk-knob"></span></span>
           </button>
         </div>
@@ -57,7 +57,7 @@
             <strong class="pk-progress-text" aria-live="polite" data-testid="packing-progress">
               {{ packedCount }} of {{ items.length }} packed
             </strong>
-            <span v-if="packedCount === items.length && items.length" class="pk-done">🎉 All packed!</span>
+            <span v-if="packedCount === items.length && items.length" class="pk-done"><AppIcon name="check-circle" :size="15" /> All packed!</span>
           </div>
           <div class="pk-bar" role="progressbar" :aria-valuenow="packedCount" aria-valuemin="0" :aria-valuemax="items.length" aria-label="Packing progress">
             <div class="pk-bar-fill" :style="{ width: percent + '%' }"></div>
@@ -68,8 +68,8 @@
       <!-- Built from: tap Edit to change -->
       <div class="pk-profile">
         <span class="pk-muted small">Built for {{ days }} day{{ days === 1 ? '' : 's' }}<span v-if="profileTags.length">:</span></span>
-        <span v-for="t in profileTags" :key="t.key" class="pk-tag">{{ t.icon }} {{ t.label }}</span>
-        <button type="button" class="pk-link" @click="editing = true">✎ Edit trip details</button>
+        <span v-for="t in profileTags" :key="t.key" class="pk-tag"><Icon3D :emoji="t.icon" :size="18" /> {{ t.label }}</span>
+        <button type="button" class="pk-link" @click="editing = true"><AppIcon name="pencil" :size="14" /> Edit trip details</button>
         <label class="pk-hide ms-auto">
           <input v-model="hidePacked" type="checkbox"> Hide packed
         </label>
@@ -78,7 +78,7 @@
       <!-- ===== Categories ===== -->
       <section v-for="cat in groups" :key="cat.key" class="pk-cat" :aria-labelledby="'pk-cat-' + cat.key">
         <button type="button" class="pk-cat-head" :aria-expanded="!collapsed[cat.key]" @click="collapsed[cat.key] = !collapsed[cat.key]">
-          <span class="pk-cat-icon" aria-hidden="true">{{ cat.icon }}</span>
+          <span class="pk-cat-icon"><Icon3D :emoji="cat.icon" :size="30" /></span>
           <h3 :id="'pk-cat-' + cat.key" class="pk-cat-title">{{ cat.label }}</h3>
           <span class="pk-cat-count" :class="{ full: cat.packed === cat.items.length }">{{ cat.packed }}/{{ cat.items.length }}</span>
           <span class="pk-chevron" aria-hidden="true">{{ collapsed[cat.key] ? '›' : '⌄' }}</span>
@@ -100,7 +100,7 @@
                 <span aria-live="polite">{{ it.qty }}</span>
                 <button type="button" :aria-label="'More ' + it.name" :disabled="it.qty >= 99" @click="changeQty(it, 1)">+</button>
               </div>
-              <button type="button" class="pk-remove" :aria-label="'Remove ' + it.name" title="Remove" @click="removeItem(it)">✕</button>
+              <button type="button" class="pk-remove" :aria-label="'Remove ' + it.name" title="Remove" @click="removeItem(it)"><AppIcon name="x" :size="15" /></button>
             </li>
           </ul>
           <p v-if="!cat.shown.length" class="pk-muted small px-3 mb-2">Everything here is packed ✓</p>
@@ -129,8 +129,11 @@
 import axios from 'axios'
 import { ACTIVITIES, WEATHER, EXTRAS } from '../tripOptions.js'
 import { CATEGORIES, buildPackingList } from '../packingList.js'
+import AppIcon from './AppIcon.vue'
+import Icon3D from './Icon3D.vue'
 
 export default {
+  components: { AppIcon, Icon3D },
   props: {
     tripId: { type: String, default: '' },
     days: { type: Number, default: 3 },
@@ -173,7 +176,8 @@ export default {
       ],
       saveTimer: null,
       saveStatus: '',
-      lastSaved: ''
+      lastSaved: '',
+      basePacking: null // the list as it was last saved: the server only applies what changed since then
     }
   },
 
@@ -255,6 +259,7 @@ export default {
 
   created() {
     this.lastSaved = this.saveKey
+    this.basePacking = JSON.parse(JSON.stringify(this.packing))
   },
 
   methods: {
@@ -289,14 +294,26 @@ export default {
       this.newItem[category] = ''
     },
 
+    // Sends my changes; the server adds them to the latest list (so other people's ticks are kept)
+    // and sends the combined list back
     async save() {
       const key = this.saveKey
+      const sent = JSON.parse(JSON.stringify(this.packing))
       try {
-        await axios.put('/api/trips/' + this.tripId + '/packing', { ...this.profile, packing: this.packing })
-        this.lastSaved = key
+        const res = await axios.put('/api/trips/' + this.tripId + '/packing', { ...this.profile, packing: sent, base: this.basePacking })
+        if (this.saveKey === key && res.data.packing) {
+          // Nothing changed while saving: show the combined list, including the group's changes
+          this.packing = res.data.packing
+          this.basePacking = JSON.parse(JSON.stringify(res.data.packing))
+          this.lastSaved = this.saveKey
+        } else {
+          // I kept editing meanwhile: those edits get sent next, measured from what I just sent
+          this.basePacking = sent
+          this.lastSaved = key
+        }
         this.saveStatus = 'Saved ✓'
       } catch (err) {
-        this.saveStatus = 'Could not save. Check your connection.'
+        this.saveStatus = (err.response && err.response.data && err.response.data.message) || 'Could not save. Check your connection.'
       }
     }
   }
@@ -321,7 +338,7 @@ export default {
   gap: 0 24px;
 }
 .pk-setup-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.3rem;
   margin-bottom: 14px;
 }
@@ -356,8 +373,8 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 74px;
+  gap: 6px;
+  min-height: 104px;
   padding: 10px 6px;
   border: 1.5px solid #e6dfd2;
   border-radius: 16px;
@@ -386,8 +403,12 @@ export default {
   color: #00798c;
 }
 .pk-tile-icon {
-  font-size: 22px;
-  line-height: 1;
+  transition: transform 0.25s cubic-bezier(.2, .8, .2, 1);
+}
+/* The 3D icon bounces up a little on hover and when picked */
+.pk-tile:hover .pk-tile-icon,
+.pk-tile.on .pk-tile-icon {
+  transform: translateY(-3px) scale(1.06);
 }
 .pk-tile-label {
   font-size: 13px;
@@ -409,6 +430,10 @@ export default {
   overflow: hidden;
 }
 .pk-seg button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 0;
   border-radius: 0;
   background: #f6f2eb;
@@ -437,6 +462,11 @@ export default {
   border: 1px solid #e6dfd2;
   border-radius: 16px;
   overflow: hidden;
+}
+.pk-switch-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 .pk-switch-row {
   display: flex;
@@ -574,6 +604,9 @@ export default {
   margin-bottom: 18px;
 }
 .pk-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: #f5eee2;
   border-radius: 999px;
   padding: 3px 10px;
@@ -616,7 +649,13 @@ export default {
   text-align: left;
 }
 .pk-cat-icon {
-  font-size: 20px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 12px;
+  background: #f3ece0;
 }
 .pk-cat-title {
   font-size: 1rem;
@@ -784,5 +823,17 @@ export default {
 }
 .pk-seg button:focus-visible {
   outline-offset: -3px; /* inside, so the rounded box doesn't cut it off */
+}
+
+/* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
+@media (pointer: coarse), (max-width: 560px) {
+  .pk-qty button,
+  .pk-remove {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .pk-link {
+    min-height: 40px;
+  }
 }
 </style>

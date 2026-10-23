@@ -3068,6 +3068,48 @@
     "name": "Saharna Monastery",
     "city": "Old Orhei"
    }
+  ],
+  "Singapore": [
+   {
+    "name": "Gardens by the Bay",
+    "city": "Singapore"
+   },
+   {
+    "name": "Marina Bay Sands",
+    "city": "Singapore"
+   },
+   {
+    "name": "Universal Studios Singapore",
+    "city": "Singapore"
+   },
+   {
+    "name": "Singapore Zoo",
+    "city": "Singapore"
+   },
+   {
+    "name": "Sentosa",
+    "city": "Singapore"
+   },
+   {
+    "name": "Singapore Botanic Gardens",
+    "city": "Singapore"
+   },
+   {
+    "name": "Merlion",
+    "city": "Singapore"
+   },
+   {
+    "name": "Night Safari, Singapore",
+    "city": "Singapore"
+   },
+   {
+    "name": "Jewel Changi Airport",
+    "city": "Singapore"
+   },
+   {
+    "name": "S.E.A. Aquarium",
+    "city": "Singapore"
+   }
   ]
  }
 }

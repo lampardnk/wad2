@@ -20,13 +20,22 @@
 
     <!-- ===== Empty state ===== -->
     <div v-if="!state.items.length" class="xp-empty">
-      <div class="xp-empty-art" aria-hidden="true">🧾</div>
+      <div class="xp-empty-art" aria-hidden="true"><AppIcon name="receipt" :size="40" /></div>
       <h1 class="xp-h">No expenses yet</h1>
       <button type="button" class="btn xp-add" @click="openForm(null)">+ Add the first expense</button>
     </div>
 
     <template v-else>
       <!-- ===== Summary tiles ===== -->
+      <!-- No exchange rate for some currencies: say so, instead of showing wrong totals -->
+      <div v-if="unconverted.count" class="xp-warn" role="status">
+        <AppIcon name="alert" :size="16" />
+        <span>
+          {{ unconverted.count }} expense{{ unconverted.count === 1 ? '' : 's' }} in {{ unconverted.codes.join(', ') }}
+          {{ unconverted.count === 1 ? 'is' : 'are' }} left out of the totals and balances: there's no exchange rate yet.
+          Set one in <strong>Live rates</strong> above, or try again later.
+        </span>
+      </div>
       <div class="xp-tiles">
         <div class="xp-tile xp-tile-dark">
           <span class="xp-tile-label">Group spent</span>
@@ -51,7 +60,7 @@
         <div class="xp-tile">
           <span class="xp-tile-label">Your balance</span>
           <span class="xp-big" :class="myBalance > 0.009 ? 'pos' : myBalance < -0.009 ? 'neg' : ''">
-            <span aria-hidden="true">{{ myBalance > 0.009 ? '↑' : myBalance < -0.009 ? '↓' : '✓' }}</span>
+            <AppIcon :name="myBalance > 0.009 ? 'arrow-up' : myBalance < -0.009 ? 'arrow-down' : 'check'" :size="22" :stroke="2.6" />
             {{ money(Math.abs(myBalance), home) }}
           </span>
           <span class="xp-tile-sub">{{ myBalance > 0.009 ? 'The group owes you' : myBalance < -0.009 ? 'You owe the group' : "You're all settled" }}</span>
@@ -76,7 +85,7 @@
           <div class="xp-card-head">
             <h3 id="xp-feed-title" class="xp-h">Expenses <span class="xp-count">{{ state.items.length }}</span></h3>
             <div class="xp-search">
-              <span aria-hidden="true">🔍</span>
+              <AppIcon name="search" :size="16" />
               <label for="xp-search" class="visually-hidden">Search expenses</label>
               <input id="xp-search" v-model="search" type="search" placeholder="Search">
             </div>
@@ -105,8 +114,9 @@
                   </span>
                   <span class="xp-row-right">
                     <span class="xp-num xp-row-amount">{{ money(e.amount, e.currency) }}</span>
-                    <span v-if="e.currency !== home" class="xp-row-conv xp-num">≈ {{ money(e.home, home) }}</span>
-                    <span class="xp-effect" :class="e.effect > 0.009 ? 'pos' : e.effect < -0.009 ? 'neg' : ''">
+                    <span v-if="e.unconverted" class="xp-row-conv xp-unconv">not in totals yet (no {{ e.currency }} rate)</span>
+                    <span v-else-if="e.currency !== home" class="xp-row-conv xp-num">≈ {{ money(e.home, home) }}</span>
+                    <span v-if="!e.unconverted" class="xp-effect" :class="e.effect > 0.009 ? 'pos' : e.effect < -0.009 ? 'neg' : ''">
                       {{ e.effect > 0.009 ? 'you lent ' + money(e.effect, home) : e.effect < -0.009 ? 'you owe ' + money(-e.effect, home) : 'not involved' }}
                     </span>
                   </span>
@@ -137,7 +147,7 @@
             </ul>
 
             <h4 class="xp-sub-h">Settle up</h4>
-            <p v-if="!payments.length" class="xp-muted small mb-0">🎉 Everyone is square.</p>
+            <p v-if="!payments.length" class="xp-muted small mb-0"><AppIcon name="check-circle" :size="15" /> Everyone is square.</p>
             <ul class="xp-pay">
               <li v-for="p in payments" :key="p.from + p.to" class="xp-pay-row">
                 <span class="xp-pay-text">
@@ -228,9 +238,10 @@ import ExpenseForm from './ExpenseForm.vue'
 import ExchangeRates from './ExchangeRates.vue'
 import CustomDropdown from './CustomDropdown.vue'
 import { CATEGORIES, CURRENCIES, currencyOptions, categoryOf, money, toHome, sharesOf, balances, settleUp, demoExpenses } from '../expenses.js'
+import AppIcon from './AppIcon.vue'
 
 export default {
-  components: { ExpenseForm, CustomDropdown, ExchangeRates },
+  components: { AppIcon, ExpenseForm, CustomDropdown, ExchangeRates },
   props: {
     tripId: { type: String, default: '' },
     travellers: { type: Array, default: () => [] },
@@ -297,14 +308,31 @@ export default {
     items() {
       const list = []
       for (const e of this.state.items) {
-        const home = toHome(e.amount, e.currency, this.rates)
+        const converted = toHome(e.amount, e.currency, this.rates, this.home)
+        if (converted === null) {
+          // No rate for this currency yet: leave it out of the totals instead of guessing
+          list.push({ ...e, home: 0, mine: 0, effect: 0, unconverted: true })
+          continue
+        }
         const shares = sharesOf(e)
-        const mine = shares[this.me] ? toHome(shares[this.me], e.currency, this.rates) : 0
+        const mine = shares[this.me] ? toHome(shares[this.me], e.currency, this.rates, this.home) : 0
         // + = I lent money on this one, - = I owe for it
-        const effect = (e.paidBy === this.me ? home : 0) - mine
-        list.push({ ...e, home, mine, effect })
+        const effect = (e.paidBy === this.me ? converted : 0) - mine
+        list.push({ ...e, home: converted, mine, effect, unconverted: false })
       }
       return list
+    },
+
+    // Expenses in a currency we have no rate for (left out of the totals)
+    unconverted() {
+      const codes = []
+      let count = 0
+      for (const e of this.items) {
+        if (!e.unconverted) continue
+        count++
+        if (!codes.includes(e.currency)) codes.push(e.currency)
+      }
+      return { count, codes }
     },
 
     total() {
@@ -324,7 +352,7 @@ export default {
     },
 
     balanceMap() {
-      return balances(this.travellers, this.state.items, this.state.settlements, this.rates)
+      return balances(this.travellers, this.state.items, this.state.settlements, this.rates, this.home)
     },
 
     myBalance() {
@@ -651,7 +679,7 @@ export default {
   font-variant-numeric: tabular-nums;
 }
 .xp-h {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   margin: 0;
 }
@@ -771,6 +799,26 @@ export default {
 }
 
 /* Tiles */
+.xp-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #edae49;
+  background: #fbefd9;
+  color: #6b4a0e;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.xp-warn .app-icon {
+  margin-top: 2px;
+}
+.xp-unconv {
+  color: #6b4a0e;
+  font-style: italic;
+}
 .xp-tiles {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr 1fr;
@@ -890,7 +938,7 @@ export default {
   margin-bottom: 10px;
 }
 .xp-count {
-  font-family: Inter, sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   background: var(--soft);
   border-radius: 999px;
@@ -1214,5 +1262,16 @@ export default {
 @media (prefers-reduced-motion: reduce) {
   .xp-row { transition: none; }
   .xp-live-dot { animation: none; }
+}
+
+/* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
+@media (pointer: coarse), (max-width: 560px) {
+  .xp-link-light {
+    min-height: 40px;
+    padding: 0 10px;
+  }
+  .xp-mini {
+    min-height: 40px;
+  }
 }
 </style>

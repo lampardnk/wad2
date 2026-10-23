@@ -56,7 +56,7 @@
               </button>
             </div>
 
-            <p v-if="loading && !loaded" class="fd-hint">Loading…</p>
+            <LoadingSkeleton v-if="loading && !loaded" variant="list" :count="4" dark label="Loading your friends…" />
             <p v-else-if="loadError" class="fd-msg bad" role="alert">{{ loadError }}</p>
 
             <!-- ===== Friends ===== -->
@@ -96,7 +96,7 @@
 
                   <!-- Quick invite: pick one of your upcoming trips -->
                   <div v-if="invitingFor === f.id" class="fd-trips">
-                    <p v-if="trips === null" class="fd-hint">Loading your trips…</p>
+                    <LoadingSkeleton v-if="trips === null" variant="list" :count="2" dark label="Loading your trips…" />
                     <p v-else-if="!upcomingTrips.length" class="fd-hint">No upcoming trips to invite {{ f.name }} to.</p>
                     <ul v-else class="fd-trip-list">
                       <li v-for="t in upcomingTrips" :key="t.id" class="fd-trip">
@@ -170,6 +170,7 @@ import axios from 'axios'
 import { auth } from '../auth.js'
 import { friends, lastActiveText, copyText } from '../friends.js'
 import AppIcon from './AppIcon.vue'
+import LoadingSkeleton from './LoadingSkeleton.vue'
 
 const panelEl = ref(null)
 const searchEl = ref(null)
@@ -227,7 +228,7 @@ const upcomingTrips = computed(() => {
 async function load() {
   loading.value = true
   try {
-    const res = await axios.get('/api/friends')
+    const res = await axios.get('/api/friends', { keep: true })
     list.value = res.data.friends
     incoming.value = res.data.incoming
     outgoing.value = res.data.outgoing

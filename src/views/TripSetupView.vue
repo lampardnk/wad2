@@ -1,7 +1,7 @@
 <template>
   <div class="setup">
     <!-- New-trip setup: /trip/:id/setup/invite, then /wishlist, then /vote -->
-    <p v-if="loading" class="text-muted">Loading trip…</p>
+    <LoadingSkeleton v-if="loading" variant="list" :count="4" label="Loading trip…" />
     <div v-else-if="loadError" class="alert alert-warning">
       {{ loadError }} <router-link to="/home">Back to your trips</router-link>
     </div>
@@ -31,7 +31,7 @@
         :travellers="tripInfo.travellers" :role="tripInfo.role" :me="tripInfo.me" :pending-invites="tripInfo.pendingInvites"
         @changed="reloadInfo" />
       <WishlistView v-else-if="step === 'wishlist'" :destinations="tripInfo.destinations" />
-      <PlacesVoting v-else :travellers="tripInfo.travellers" :me="tripInfo.me" :can-vote-for="canVoteFor" @go-wishlist="goTo('wishlist')" />
+      <PlacesVoting v-else :trip-id="id" :travellers="tripInfo.travellers" :me="tripInfo.me" :can-vote-for="canVoteFor" @go-wishlist="goTo('wishlist')" />
 
       <!-- Bottom bar -->
       <div class="setup-bar">
@@ -64,9 +64,10 @@ import WishlistView from '../components/WishlistView.vue'
 import PlacesVoting from '../components/PlacesVoting.vue'
 import TripShare from '../components/TripShare.vue'
 import { trip, loadFromServer, savedShape, saveTrip } from '../itineraryStore.js'
+import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 
 export default {
-  components: { WishlistView, PlacesVoting, TripShare },
+  components: { LoadingSkeleton, WishlistView, PlacesVoting, TripShare },
   props: {
     id: { type: String, required: true },
     step: { type: String, default: 'invite' } // 'invite' | 'wishlist' | 'vote'
@@ -105,9 +106,11 @@ export default {
     stepIndex() {
       return this.steps.findIndex((s) => s.key === this.step)
     },
-    // Changes whenever the wishlist or its votes change
+    // Votes are left out: each vote is saved on its own (PlacesVoting)
     saveKey() {
-      return JSON.stringify(savedShape().wishlist)
+      const list = savedShape().wishlist
+      for (const w of list) delete w.votes
+      return JSON.stringify(list)
     }
   },
 
@@ -229,7 +232,7 @@ export default {
   font-size: 14px;
 }
 .setup-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 2rem;
   margin: 0;
 }

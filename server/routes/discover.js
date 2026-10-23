@@ -139,10 +139,9 @@ async function wikiSummary(title) {
 
 // GET /api/discover/about?title=Queenstown, New Zealand
 // Public: Discover works for guests too
-router.get('/about', async (req, res) => {
-  const title = String(req.query.title || '').trim().slice(0, 100)
-  if (!title) return res.status(400).json({ message: 'Which city?' })
-  if (about[title]) return res.json(about[title])
+// Wikipedia summary + photo for a title ("Kyoto, Japan" also tries "Kyoto"). Good answers are cached.
+async function lookupAbout(title) {
+  if (about[title]) return about[title]
   const tries = [title]
   if (title.includes(', ')) tries.push(title.split(', ')[0])
   for (const t of tries) {
@@ -150,13 +149,37 @@ router.get('/about', async (req, res) => {
       const found = await wikiSummary(t)
       if (found) {
         about[title] = found // only good answers are kept, so a hiccup is retried next time
-        return res.json(found)
+        return found
       }
     } catch (err) {
       // try the next name
     }
   }
-  res.json({ text: '', photo: null, page: null })
+  return { text: '', photo: null, page: null }
+}
+
+router.get('/about', async (req, res) => {
+  const title = String(req.query.title || '').trim().slice(0, 100)
+  if (!title) return res.status(400).json({ message: 'Which city?' })
+  res.json(await lookupAbout(title))
+})
+
+// GET /api/discover/photos?titles=Kyoto, Japan|Osaka, Japan  -> { "Kyoto, Japan": "https://...jpg", ... }
+// Many photos in one request (Discover needs ~200), looked up a few at a time to be kind to Wikipedia.
+router.get('/photos', async (req, res) => {
+  const titles = String(req.query.titles || '').split('|').map((t) => t.trim().slice(0, 100)).filter(Boolean).slice(0, 50)
+  const out = {}
+  let next = 0
+  async function worker() {
+    while (next < titles.length) {
+      const t = titles[next++]
+      out[t] = (await lookupAbout(t)).photo || null
+    }
+  }
+  const workers = []
+  for (let i = 0; i < 6; i++) workers.push(worker())
+  await Promise.all(workers)
+  res.json(out)
 })
 
 export default router

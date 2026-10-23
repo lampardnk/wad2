@@ -1,7 +1,7 @@
 <template>
   <div v-if="!dismissed" class="card p-3 mb-3 bg-light" :class="applied ? 'border-success' : delayMinutes > 0 ? 'border-danger' : ''" data-testid="flight-delay-widget">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <h5 class="mb-1" :class="applied ? 'text-success' : delayMinutes > 0 ? 'text-danger' : ''">✈️ Flight delay check</h5>
+      <h5 class="mb-1" :class="applied ? 'text-success' : delayMinutes > 0 ? 'text-danger' : ''"><AppIcon name="plane" :size="18" /> Flight delay check</h5>
       <div class="d-flex align-items-center gap-2">
         <span v-if="flight" class="badge" :class="delayMinutes > 0 ? 'bg-danger' : 'bg-success'">
           {{ flight.flight }}: {{ delayMinutes > 0 ? '+' + delayMinutes + ' min delay' : 'on time' }}
@@ -22,13 +22,13 @@
       </p>
       <ul class="list-unstyled small mb-3">
         <li v-for="s in cascade.items" :key="s.id" class="py-1" :class="s.missed ? 'text-danger' : s.shifted ? 'text-warning-emphasis' : 'text-muted'" data-testid="cascade-row">
-          <template v-if="s.missed">❌ <strong>{{ s.name }}</strong> ({{ formatTime(s.start) }}): can't be reached in time, {{ s.latestNote }}. Needs rebooking.</template>
-          <template v-else-if="s.shifted">⚠️ <strong>{{ s.name }}</strong>: {{ formatTime(s.start) }} → {{ formatTime(s.newStart) }}</template>
-          <template v-else>✅ <strong>{{ s.name }}</strong>: not affected ({{ formatTime(s.start) }})</template>
+          <template v-if="s.missed"><AppIcon name="x-circle" :size="15" /> <strong>{{ s.name }}</strong> ({{ formatTime(s.start) }}): can't be reached in time, {{ s.latestNote }}. Needs rebooking.</template>
+          <template v-else-if="s.shifted"><AppIcon name="alert" :size="15" /> <strong>{{ s.name }}</strong>: {{ formatTime(s.start) }} → {{ formatTime(s.newStart) }}</template>
+          <template v-else><AppIcon name="check-circle" :size="15" /> <strong>{{ s.name }}</strong>: not affected ({{ formatTime(s.start) }})</template>
         </li>
       </ul>
       <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-primary" @click="applyFixes" data-testid="cascade-apply">✨ Re-time affected stops</button>
+        <button class="btn btn-sm btn-primary" @click="applyFixes" data-testid="cascade-apply"><AppIcon name="sparkles" :size="15" /> Re-time affected stops</button>
         <button class="btn btn-sm btn-outline-secondary" @click="dismissed = true">Dismiss</button>
       </div>
     </template>
@@ -52,9 +52,10 @@ import { trip, resetDay1 } from '../itineraryStore.js'
 import { computeCascade, formatTime } from '../utils/delayCascade.js'
 import { checkFlightStatus } from '../services/api.js'
 import CustomDropdown from './CustomDropdown.vue'
+import AppIcon from './AppIcon.vue'
 
 export default {
-  components: { CustomDropdown },
+  components: { AppIcon, CustomDropdown },
   emits: ['cascade-resolved'],
   data() {
     return {
