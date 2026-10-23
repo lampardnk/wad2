@@ -174,7 +174,7 @@
               <li v-else class="ip-stop" :class="{ moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
-                <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null }"
+                <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }"
                   :draggable="!it.stop.locked && !previewing" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag"
                   @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(slotOf(dropAt == null ? i : dropAt))">
                   <!-- Move: drag the dots, or tap the arrows (works on phones and keyboards too) -->
@@ -244,6 +244,35 @@
                       </template>
                       <span v-for="(p, k) in cardPills(it)" :key="k" class="ip-pill" :class="p.kind"><AppIcon v-if="lineIcon(p.icon)" :name="lineIcon(p.icon)" :size="13" /><template v-else>{{ p.icon }}</template> {{ p.text }}</span>
                     </div>
+
+                    <!-- Display saved transport option -->
+                    <div v-for="route in savedFor(it.stop)" :key="route._id || route.start">
+                      <div v-for="opt in route.options" :key="opt._id || opt.type + opt.route + opt.day + opt.time"
+                      class="small mt-2 p-2 border rounded bg-white">
+
+                        <div class="fw-semibold d-flex align-items-center gap-2">
+                          🚌 How to get here
+                          <span v-if="whenText(opt)" class="fw-normal text-muted">· {{ whenText(opt) }}</span>
+                          <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none flex-shrink-0 ms-auto"
+                          title="Open in Getting there" aria-label="Open in Getting there" @click="openInGettingthere(route, opt)">
+                            ✏️
+                          </button>
+                        </div>
+                        <div class="text-muted">From {{ route.start }}</div>
+
+                        <div class="d-flex justify-content-between align-items-center gap-2 mt-1">
+                          <div>{{ summarizeRoute(opt.route) }}</div>
+                            <span class="badge bg-primary-subtle text-primary-emphasis flex-shrink-0">
+                              {{ formatDuration(opt.duration) }}
+                            </span>
+                        </div>
+
+                        <div v-if="hasValidCost(opt.cost)" class="mt-1">
+                          <span class="badge bg-success-subtle text-success-emphasis">{{ formatCost(opt) }}</span>
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- On the day: finish early or stay longer, and the rest of the day follows -->
                     <div v-if="live && live.id === it.stop.id && live.state === 'now' && !previewing" class="ip-live">
                       <button type="button" class="ip-live-btn done" @click="finishNow(it)"><AppIcon name="check" :size="15" /> I'm done</button>
@@ -395,6 +424,7 @@ import EatDrawer from './EatDrawer.vue'
 import StopSheet from './StopSheet.vue'
 import { codeForDestination, flagEmoji } from '../destinations.js'
 import AppIcon from './AppIcon.vue'
+import { transportPrefill } from '../savedRoutes.js'
 
 const props = defineProps({
   days: { type: Array, default: () => [] },
@@ -413,7 +443,7 @@ const props = defineProps({
   savedRoutes: { type: Array, default: () => [] },      // routes saved in Getting around
   travellers: { type: Array, default: () => [] }        // everyone on the trip (for the majority vote rule)
 })
-const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote'])
+const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote', 'open-transport'])
 
 // ---------- sample Kyoto day (local only) ----------
 const sampleMode = ref(false)
@@ -1264,6 +1294,13 @@ function blockAt(h) {
   }
   return null
 }
+
+function isRainAffected(it) {
+  if (previewing.value) return false
+  const w = weatherOf(it)
+  return w.tone === 'bad' && w.icon === '🌧️'
+}
+
 function weatherOf(it) {
   const b = blockAt(it.start)
   if (!b) {
@@ -1541,6 +1578,94 @@ function hoursText(stop) {
   if (stop.open == null || stop.close == null) return ''
   return 'Open ' + formatHour(stop.open) + ' – ' + formatHour(stop.close)
 }
+
+// transport feature 
+
+// to display the searched day and timing ["Mon 19 Oct, 9:00 AM (departing)"]
+function whenText(opt) {
+  if (!opt.day || !opt.time) return '';
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const [y, m, d] = opt.day.split('-').map(Number);
+  const [h, min] = opt.time.split(':').map(Number);
+  const weekday = days[new Date(y, m - 1, d).getDay()];
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const time = `${h % 12 || 12}:${String(min).padStart(2, '0')} ${ampm}`;
+  return `${weekday} ${d} ${months[m - 1]}, ${time} (${opt.timeType === 'arrive' ? 'arriving' : 'departing'})`;
+}
+
+// to diplay a short summary ["Bus N51 → N37 (6 stops) · Walk 21 mins"]
+function summarizeRoute(route = '') {
+  const chain = [];
+  let stops = 0, walk = 0, lastLabel = '';
+
+  for (const part of route.split('→').map(s => s.trim())) {
+    const w = part.match(/^Walk \((\d+) mins?\)$/);
+    if (w) { 
+      walk += Number(w[1]); 
+      continue; 
+    }
+
+    const t = part.match(/^(Bus|Train)\s+(.+?)(?:\s*\((\d+) stops?\))?$/);
+    if (t) {
+      chain.push(t[1] === lastLabel ? t[2] : `${t[1]} ${t[2]}`);   // repeat "Bus" only when the vehicle changes
+      lastLabel = t[1];
+      stops += Number(t[3] || 0);
+    }
+  }
+
+  if (!chain.length) { 
+    return route;   // Taxi ("Via ...") and Walk ("On foot") stay as they are
+  }
+
+  return chain.join(' → ')
+    + (stops ? ` (${stops} stop${stops > 1 ? 's' : ''})` : '')
+    + (walk ? ` · Walk ${walk} mins` : '');
+}
+
+// display the saved option as at the destination card
+function savedFor(item) {
+  if (!item || !item.name) return [];
+    return props.savedRoutes.filter(route => route.end === item.name);
+}
+
+// format to show cost
+function formatCost(opt) {
+  if (opt.cost === 0) return 'Free';
+  if (!opt.currency) return opt.cost.toLocaleString();
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: opt.currency }).format(opt.cost);
+  } catch {
+    return `${opt.currency} ${opt.cost}`;
+  }
+}
+
+// format to show duration
+function formatDuration(min) {
+  if (!min) return '0 mins';
+  if (min < 60) return `${min} mins`;
+  const hour = Math.floor(min / 60);
+  const mins = min % 60;
+  return mins ? `${hour} hr ${mins} mins` : `${hour} hr`; 
+}
+
+// only display cost if available 
+function hasValidCost(cost) {
+  return typeof cost === 'number' && !isNaN(cost);
+}  
+
+// go to Getting there with selected details previously saved
+function openInGettingthere(route, opt) {
+  transportPrefill.value = {
+    start: route.start,
+    end: route.end,
+    day: opt.day,
+    time: opt.time,
+    timeType: opt.timeType || 'depart'
+  };
+  emit('open-transport');   // lets the parent switch to the Go Options page
+}
+
 </script>
 <style scoped>
 .ip {
@@ -3111,6 +3236,19 @@ function hoursText(stop) {
 .ip-fade-leave-to {
   opacity: 0;
 }
+/* Red highlight border for rain-affected outdoor stops */
+.ip-card.rain-warning-card {
+  border: 2px solid #ef4444 !important;
+  background-color: #fef2f2 !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.ip-card.rain-warning-card:hover {
+  border-color: #dc2626 !important;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3) !important;
+}
+
 @keyframes ip-rise {
   from { transform: translateY(10px) scale(0.97); opacity: 0; }
 }

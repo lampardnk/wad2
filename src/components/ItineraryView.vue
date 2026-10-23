@@ -15,7 +15,7 @@
       :can-add-day="!isDemo && !!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :saved-routes="savedRoutes" :travellers="travellers"
       @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
       @apply="applyOptimized" @lock="setLocked" @schedule="scheduleWish" @unschedule="unscheduleStop" @status="plannerStatus = $event"
-      @duration="setDuration" @move-day="moveToDay" @swap="swapWithWish" @edit="editStop" />
+      @duration="setDuration" @move-day="moveToDay" @swap="swapWithWish" @edit="editStop" @open-transport="$emit('open-transport')"/>
   </div>
 </template>
 
@@ -28,7 +28,7 @@ import { getForecast } from '../crowd.js'
 import { fetchTravelTime } from '../services/maps.js'
 import { fetchWeatherForecast } from '../services/weatherService.js'
 import { trip, loadDemo, loadFromServer, savedShape, runtimeStop, newId } from '../itineraryStore.js'
-import { savedOption } from '../savedRoutes.js'
+import { savedRoutesFromDb, fetchSavedRoutes } from '../savedRoutes.js'
 import { codeForDestination, COUNTRY_CODES } from '../destinations.js'
 import DISCOVER from '../data/discoverCities.json'
 
@@ -45,7 +45,7 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 
 export default {
   components: { SchedulePanel, ItineraryPlanner },
-  emits: ['itinerary-change', 'set-end-date', 'go-places'],
+  emits: ['itinerary-change', 'set-end-date', 'go-places', 'open-transport'],
   props: {
     tripId: { type: String, default: 'seoul' }, // 'seoul' = the demo trip (not saved)
     destination: { type: String, default: '' },
@@ -85,6 +85,13 @@ export default {
     const firstStopDay = trip.stops.map((s) => s.date).sort()[0]
     this.selectedDate = firstStopDay || this.dayList[0] || ''
 
+    // Load simulated weather for every day of the trip
+    try {
+      this.weather = await fetchWeatherForecast({ dates: this.dayList })
+    } catch (err) {
+      this.weatherError = true
+    }
+
     // The user's saved preferences (keeps the defaults if this fails)
     try {
       await loadPreferences()
@@ -92,14 +99,7 @@ export default {
       console.warn('Could not load preferences, using defaults')
     }
 
-    // Weather first, so the alert can show while crowd data loads
-    try {
-      this.weather = await fetchWeatherForecast(this.weatherParams)
-    } catch (err) {
-      this.weatherError = true
-    }
-
-    this.loadClimate() // in the background: only needed for days beyond the forecast
+    this.loadClimate() // in the background: typical weather for days with no forecast
 
     // Load each tracked stop's forecast from our server (in parallel)
     await Promise.all(trip.stops.map((item) => this.loadForecast(item)))
@@ -114,13 +114,13 @@ export default {
     // Shared trips: check every 30 seconds whether someone else changed it
     if (!this.isDemo) this.pollTimer = setInterval(this.pollTrip, 30000)
 
-    // Re-check the weather every 15 minutes while this page is open
-    this.weatherTimer = setInterval(this.refreshWeather, 15 * 60 * 1000)
+    // get trip id for transport options feature
+    fetchSavedRoutes(this.tripId);
+
   },
 
   beforeUnmount() {
     clearInterval(this.pollTimer)
-    clearInterval(this.weatherTimer)
     clearTimeout(this.noticeTimer)
     // Don't lose a change made just before leaving the page
     if (this.saveTimer) {
@@ -140,7 +140,14 @@ export default {
       this.saveStatus = 'Saving…'
       clearTimeout(this.saveTimer)
       this.saveTimer = setTimeout(this.saveNow, 800)
+    },
+    // transport
+    tripId(newId) {
+      if (newId) {
+        fetchSavedRoutes(newId);
+      }
     }
+
   },
 
   computed: {
@@ -187,11 +194,6 @@ export default {
       if (!pick) return null
       return { month: MONTH_NAMES[m], place: pick.label.split(', ')[0], temp: pick.temp[m], rainyDays: pick.rain ? pick.rain[m] : null }
     },
-    weatherParams() {
-      return this.isDemo
-        ? { lat: 37.5665, lon: 126.978, fallbackDate: '2026-10-13', simulateOnFail: true }
-        : { q: this.destination }
-    },
     // What's worth saving, as text. Votes are left out: each vote is saved on its own (PlacesVoting).
     persistKey() {
       const shape = savedShape()
@@ -234,9 +236,9 @@ export default {
     anyLoading() {
       return trip.stops.some((item) => item.loading)
     },
-    // Routes saved in "Getting around", shown in a stop's Time & details
+    // Routes saved in "Getting around" (from the database), shown in a stop's Details
     savedRoutes() {
-      return savedOption.value
+      return Array.isArray(savedRoutesFromDb.value) ? savedRoutesFromDb.value : [] // an error answer is not a list
     },
 
     // For the day strip and All days grid: how full each day is, and how many things need a look
@@ -554,15 +556,6 @@ export default {
         setTimeout(() => this.loadClimate(), 15000)
       }
     },
-    async refreshWeather() {
-      try {
-        this.weather = await fetchWeatherForecast(this.weatherParams)
-        this.weatherError = false
-      } catch (err) {
-        // keep showing the last forecast if a refresh fails
-      }
-    },
-
     // ---------- weather ----------
 
     // ---------- transit ----------

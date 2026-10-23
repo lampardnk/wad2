@@ -1,33 +1,277 @@
-// Weather for a destination. The API key lives on the server (/api/weather),
-// never in the browser. axios is used so the login token is sent too.
-import axios from 'axios'
+// Simulated weather for the itinerary.
+// No external weather API is used.
 
-const RAIN = ['Rain', 'Drizzle', 'Thunderstorm']
+export async function fetchWeatherForecast({ dates = [] }) {
+  const weather = []
 
-// Give either { q: 'Kyoto, Japan' } or { lat, lon }.
-// Returns [{ date, time, span, condition, temp, rain, simulated? }] for every forecast day (about 5 days ahead),
-// in the destination's local time. Each OpenWeatherMap entry covers a 3-hour block (span: 3).
-// If the request fails: throws, unless simulateOnFail is true (demo trip only), which returns fake rain.
-export async function fetchWeatherForecast({ q, lat, lon, fallbackDate, simulateOnFail = false }) {
-  try {
-    const params = q ? { q } : { lat, lon }
-    const { data } = await axios.get('/api/weather', { params })
-    const offsetSec = data.city.timezone // Seoul = +32400
-    return data.list.map((item) => {
-      const local = new Date((item.dt + offsetSec) * 1000) // read with getUTC* = destination time
-      const condition = item.weather[0].main
-      return {
-        date: local.toISOString().slice(0, 10),
-        time: local.getUTCHours(),
-        span: 3,
-        condition,
-        temp: item.main ? Math.round(item.main.temp) : null, // °C
-        rain: RAIN.includes(condition) || item.pop >= 0.6
-      }
-    })
-  } catch (err) {
-    if (!simulateOnFail) throw err
-    console.warn('Using SIMULATED weather (server route or API key unavailable):', err.message)
-    return [{ date: fallbackDate, time: 14, span: 3, condition: 'Rain', rain: true, simulated: true }]
-  }
+  dates.forEach((date, index) => {
+
+    // =========================
+    // DAY 1 — CLEAR
+    // =========================
+    if (index === 0) {
+      weather.push(
+        {
+          date,
+          time: 6,
+          span: 3,
+          condition: 'Clear',
+          temp: 24,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 9,
+          span: 3,
+          condition: 'Clear',
+          temp: 26,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 12,
+          span: 3,
+          condition: 'Clear',
+          temp: 28,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 15,
+          span: 3,
+          condition: 'Clear',
+          temp: 27,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 18,
+          span: 3,
+          condition: 'Clear',
+          temp: 25,
+          rain: false,
+          simulated: true
+        }
+      )
+    }
+
+    // =========================
+    // DAY 2 — AFTERNOON RAIN
+    // =========================
+    else if (index === 1) {
+      weather.push(
+        {
+          date,
+          time: 6,
+          span: 3,
+          condition: 'Clouds',
+          temp: 23,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 9,
+          span: 3,
+          condition: 'Clouds',
+          temp: 25,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 12,
+          span: 3,
+          condition: 'Clouds',
+          temp: 24,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 15,
+          span: 3,
+          condition: 'Rain',
+          temp: 22,
+          rain: true,
+          simulated: true
+        },
+        {
+          date,
+          time: 18,
+          span: 3,
+          condition: 'Clouds',
+          temp: 23,
+          rain: false,
+          simulated: true
+        }
+      )
+    }
+
+    // =========================
+    // DAY 3 — CLOUDY
+    // =========================
+    else if (index === 2) {
+      weather.push(
+        {
+          date,
+          time: 6,
+          span: 3,
+          condition: 'Clouds',
+          temp: 22,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 9,
+          span: 3,
+          condition: 'Clouds',
+          temp: 24,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 12,
+          span: 3,
+          condition: 'Clouds',
+          temp: 25,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 15,
+          span: 3,
+          condition: 'Clouds',
+          temp: 24,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 18,
+          span: 3,
+          condition: 'Clouds',
+          temp: 22,
+          rain: false,
+          simulated: true
+        }
+      )
+    }
+
+    // =========================
+    // DAY 4 — CLEAR
+    // =========================
+    else if (index === 3) {
+      weather.push(
+        {
+          date,
+          time: 6,
+          span: 3,
+          condition: 'Clear',
+          temp: 23,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 9,
+          span: 3,
+          condition: 'Clear',
+          temp: 25,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 12,
+          span: 3,
+          condition: 'Clear',
+          temp: 27,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 15,
+          span: 3,
+          condition: 'Clear',
+          temp: 26,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 18,
+          span: 3,
+          condition: 'Clear',
+          temp: 24,
+          rain: false,
+          simulated: true
+        }
+      )
+    }
+
+    // =========================
+    // DAY 5 — MIDDAY RAIN
+    // =========================
+    else if (index === 4) {
+      weather.push(
+        {
+          date,
+          time: 6,
+          span: 3,
+          condition: 'Clear',
+          temp: 23,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 9,
+          span: 3,
+          condition: 'Clouds',
+          temp: 25,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 12,
+          span: 3,
+          condition: 'Rain',
+          temp: 22,
+          rain: true,
+          simulated: true
+        },
+        {
+          date,
+          time: 15,
+          span: 3,
+          condition: 'Clouds',
+          temp: 23,
+          rain: false,
+          simulated: true
+        },
+        {
+          date,
+          time: 18,
+          span: 3,
+          condition: 'Clear',
+          temp: 22,
+          rain: false,
+          simulated: true
+        }
+      )
+    }
+
+  })
+
+  return weather
 }

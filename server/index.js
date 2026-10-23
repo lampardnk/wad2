@@ -3,6 +3,11 @@ dotenv.config()
 import express from 'express'
 import cors from 'cors'
 import mongoose from 'mongoose'
+
+// Models
+import User from './models/User.js'
+
+// Routes
 import authRoutes from './routes/auth.js'
 import crowdRoutes from './routes/crowd.js'
 import preferenceRoutes from './routes/preferences.js'
@@ -10,6 +15,7 @@ import tripRoutes from './routes/trips.js'
 import weatherRoutes from './routes/weather.js'
 import distanceRoutes from './routes/distance.js'
 import flightRoutes from './routes/flights.js'
+import directionsRouter from './routes/directions.js'
 import placeRoutes from './routes/places.js'
 import rateRoutes from './routes/rates.js'
 import photoRoutes from './routes/photos.js'
@@ -23,7 +29,6 @@ import mapRoutes from './routes/maps.js'
 import eatRoutes from './routes/eat.js'
 import discoverRoutes from './routes/discover.js'
 import iconRoutes from './routes/icons.js'
-import User from './models/User.js'
 import { rateLimit } from './rateLimit.js'
 
 const app = express()
@@ -42,11 +47,10 @@ app.use('/api/invites/users', searchLimit)
 app.use('/api/friends/search', searchLimit)
 // Routes that call outside services (weather, maps, crowds...) which have their own quotas
 const outsideLimit = rateLimit({ max: 120, message: 'Too many lookups. Please wait a moment and try again.' })
-for (const path of ['/api/crowd', '/api/weather', '/api/distance-matrix', '/api/flights', '/api/places', '/api/rates', '/api/safety', '/api/maps', '/api/eat', '/api/discover']) {
+for (const path of ['/api/crowd', '/api/weather', '/api/distance-matrix', '/api/directions', '/api/flights', '/api/places', '/api/rates', '/api/safety', '/api/maps', '/api/eat', '/api/discover']) {
   app.use(path, outsideLimit)
 }
 
-// Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/crowd', crowdRoutes)
 app.use('/api/preferences', preferenceRoutes)
@@ -59,6 +63,7 @@ app.use('/api/trips', tripRoutes)
 app.use('/api/groups', groupRoutes)
 app.use('/api/weather', weatherRoutes)
 app.use('/api/distance-matrix', distanceRoutes)
+app.use('/api/directions', directionsRouter)
 app.use('/api/flights', flightRoutes)
 app.use('/api/places', placeRoutes)
 app.use('/api/icons', iconRoutes) // 3D icons (Fluent Emoji), cached on disk

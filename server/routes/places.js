@@ -726,6 +726,7 @@ async function wikiGalleryPhoto(title, width) {
     prop: 'imageinfo', iiprop: 'url|size|mime', iiurlwidth: String(width), format: 'json'
   })
   const response = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(8000) })
+  if (!response.ok) return null
   const data = await response.json()
   const pages = (data.query && data.query.pages) || {}
   const skip = ['map', 'flag', 'logo', 'seal', 'icon', 'coat', 'locator', 'symbol', 'diagram', 'chart', 'signature']
