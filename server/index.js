@@ -22,11 +22,29 @@ import groupRoutes from './routes/groups.js'
 import mapRoutes from './routes/maps.js'
 import eatRoutes from './routes/eat.js'
 import discoverRoutes from './routes/discover.js'
+import iconRoutes from './routes/icons.js'
 import User from './models/User.js'
+import { rateLimit } from './rateLimit.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
+
+// Request limits per IP address, per minute (see rateLimit.js)
+app.use('/api', rateLimit({ max: 600 })) // everything together: far above normal use
+const loginLimit = rateLimit({ max: 10, message: 'Too many sign-in attempts. Please wait a minute and try again.' })
+app.post('/api/auth/login', loginLimit)
+app.post('/api/auth/register', loginLimit)
+app.post('/api/auth/forgot', loginLimit)
+app.post('/api/auth/reset', loginLimit)
+const searchLimit = rateLimit({ max: 60, message: 'Searching too fast. Please wait a moment.' })
+app.use('/api/invites/users', searchLimit)
+app.use('/api/friends/search', searchLimit)
+// Routes that call outside services (weather, maps, crowds...) which have their own quotas
+const outsideLimit = rateLimit({ max: 120, message: 'Too many lookups. Please wait a moment and try again.' })
+for (const path of ['/api/crowd', '/api/weather', '/api/distance-matrix', '/api/flights', '/api/places', '/api/rates', '/api/safety', '/api/maps', '/api/eat', '/api/discover']) {
+  app.use(path, outsideLimit)
+}
 
 // Routes
 app.use('/api/auth', authRoutes)
@@ -43,6 +61,7 @@ app.use('/api/weather', weatherRoutes)
 app.use('/api/distance-matrix', distanceRoutes)
 app.use('/api/flights', flightRoutes)
 app.use('/api/places', placeRoutes)
+app.use('/api/icons', iconRoutes) // 3D icons (Fluent Emoji), cached on disk
 app.use('/api/rates', rateRoutes)
 app.use('/api/safety', safetyRoutes)
 app.use('/api/maps', mapRoutes)

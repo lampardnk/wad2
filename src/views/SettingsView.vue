@@ -18,13 +18,23 @@
         </span>
       </header>
 
-      <p v-if="loading" class="st-sub">Loading…</p>
+      <!-- Came from the new-account prompt on Home: say where to start -->
+      <div v-if="welcome" class="st-welcome" role="status">
+        <span class="st-welcome-icon" aria-hidden="true">👋</span>
+        <div>
+          <strong>Welcome! Start with My Information.</strong>
+          <p>Add your food needs and WhatsApp: your crew sees them on every trip you join. Then check your base currency and trip pacing.</p>
+        </div>
+        <button type="button" class="st-primary" @click="router.push('/home')">Done, show my trips</button>
+      </div>
+
+      <LoadingSkeleton v-if="loading" variant="list" :count="3" dark label="Loading your settings…" />
       <div v-else class="st-cols">
         <!-- Left column on wide screens -->
         <div class="st-col">
         <!-- ===== My information ===== -->
         <h2 class="st-group-title">My Information</h2>
-        <div class="st-group">
+        <div class="st-group" :class="{ 'st-spot': welcome }">
           <div class="st-row">
             <label class="st-row-label" for="st-email">Email</label>
             <input id="st-email" v-model="email" type="email" class="st-input" maxlength="120" autocomplete="email"
@@ -54,6 +64,59 @@
             </span>
             <button type="button" class="st-logout" @click="handleLogout">Log out</button>
           </div>
+          <!-- Change password: opens a small form right here -->
+          <div class="st-row">
+            <span class="st-row-text">
+              <span class="st-row-label">Password</span>
+              <span class="st-row-hint">{{ pwDone ? '✓ Changed' : 'At least 8 characters' }}</span>
+            </span>
+            <button type="button" class="st-logout" :aria-expanded="pwOpen" aria-controls="st-pw-form" @click="togglePassword">
+              {{ pwOpen ? 'Cancel' : 'Change' }}
+            </button>
+          </div>
+          <form v-if="pwOpen" id="st-pw-form" class="st-row stack st-form" @submit.prevent="changePassword">
+            <label class="st-field">
+              <span>Current password</span>
+              <input v-model="pw.current" type="password" class="st-input full" autocomplete="current-password" required>
+            </label>
+            <label class="st-field">
+              <span>New password</span>
+              <input v-model="pw.next" type="password" class="st-input full" autocomplete="new-password" minlength="8" required>
+            </label>
+            <label class="st-field">
+              <span>New password again</span>
+              <input v-model="pw.again" type="password" class="st-input full" autocomplete="new-password" required>
+            </label>
+            <p v-if="pwError" class="st-err left" role="alert">{{ pwError }}</p>
+            <button type="submit" class="st-primary" :disabled="pwSaving">{{ pwSaving ? 'Saving…' : 'Change password' }}</button>
+          </form>
+        </div>
+
+        <!-- ===== Delete account (asks for the password first) ===== -->
+        <h2 class="st-group-title">Delete Account</h2>
+        <div class="st-group">
+          <div class="st-row">
+            <span class="st-row-text">
+              <span class="st-row-label">Delete my account</span>
+              <span class="st-row-hint">This can't be undone</span>
+            </span>
+            <button type="button" class="st-danger" :aria-expanded="delOpen" aria-controls="st-del-form" @click="toggleDelete">
+              {{ delOpen ? 'Cancel' : 'Delete…' }}
+            </button>
+          </div>
+          <form v-if="delOpen" id="st-del-form" class="st-row stack st-form" @submit.prevent="deleteAccount">
+            <ul class="st-warn">
+              <li>Trips you organise go to the next person who joined. Trips only you are on are deleted.</li>
+              <li>On trips you joined, your name stays as a traveller, so the expenses still add up.</li>
+              <li>Your friends list and family groups you own are removed.</li>
+            </ul>
+            <label class="st-field">
+              <span>Type your password to confirm</span>
+              <input v-model="delPassword" type="password" class="st-input full" autocomplete="current-password" required>
+            </label>
+            <p v-if="delError" class="st-err left" role="alert">{{ delError }}</p>
+            <button type="submit" class="st-danger solid" :disabled="!delPassword || deleting">{{ deleting ? 'Deleting…' : 'Delete my account' }}</button>
+          </form>
         </div>
         </div>
 
@@ -155,9 +218,11 @@ import { formatHour } from '../crowd.js'
 import CustomDropdown from '../components/CustomDropdown.vue'
 import DietTagsInput from '../components/DietTagsInput.vue'
 import PhoneInput from '../components/PhoneInput.vue'
+import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 
 const router = useRouter()
 const route = useRoute()
+const welcome = computed(() => route.query.welcome === '1') // opened from the new-account prompt
 
 const UNITS = [
   { value: 'metric', label: 'km · °C' },
@@ -336,6 +401,63 @@ function handleLogout() {
   logout()
   router.push('/login')
 }
+
+// ----- Change password -----
+const pwOpen = ref(false)
+const pw = reactive({ current: '', next: '', again: '' })
+const pwError = ref('')
+const pwSaving = ref(false)
+const pwDone = ref(false)
+function togglePassword() {
+  pwOpen.value = !pwOpen.value
+  pwError.value = ''
+  pw.current = ''
+  pw.next = ''
+  pw.again = ''
+}
+async function changePassword() {
+  pwError.value = ''
+  if (pw.next.length < 8) {
+    pwError.value = 'The new password must be at least 8 characters.'
+    return
+  }
+  if (pw.next !== pw.again) {
+    pwError.value = 'The two new passwords don\'t match.'
+    return
+  }
+  pwSaving.value = true
+  try {
+    await axios.put('/api/auth/password', { currentPassword: pw.current, newPassword: pw.next })
+    togglePassword() // close and clear the form
+    pwDone.value = true
+  } catch (err) {
+    pwError.value = (err.response && err.response.data && err.response.data.message) || 'Could not change the password.'
+  }
+  pwSaving.value = false
+}
+
+// ----- Delete account -----
+const delOpen = ref(false)
+const delPassword = ref('')
+const delError = ref('')
+const deleting = ref(false)
+function toggleDelete() {
+  delOpen.value = !delOpen.value
+  delPassword.value = ''
+  delError.value = ''
+}
+async function deleteAccount() {
+  delError.value = ''
+  deleting.value = true
+  try {
+    await axios.delete('/api/auth/me', { data: { password: delPassword.value } })
+    logout()
+    router.push('/')
+  } catch (err) {
+    delError.value = (err.response && err.response.data && err.response.data.message) || 'Could not delete the account.'
+    deleting.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -414,7 +536,7 @@ function handleLogout() {
   margin-bottom: 6px;
 }
 .st-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.6rem;
   margin: 0;
 }
@@ -672,11 +794,127 @@ function handleLogout() {
   background: rgba(209, 73, 91, 0.08);
 }
 
+/* Welcome note for new accounts */
+.st-welcome {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(237, 174, 73, 0.1);
+  border: 1px solid rgba(237, 174, 73, 0.35);
+  font-size: 14px;
+}
+.st-welcome-icon {
+  font-size: 26px;
+}
+.st-welcome p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.st-welcome .st-primary {
+  flex: none;
+  align-self: center;
+  margin-left: auto;
+}
+.st-spot {
+  border-color: rgba(237, 174, 73, 0.6);
+  box-shadow: 0 0 0 4px rgba(237, 174, 73, 0.12);
+}
+@media (max-width: 640px) {
+  .st-welcome {
+    flex-wrap: wrap;
+  }
+  .st-welcome .st-primary {
+    margin-left: 0;
+  }
+}
+
+/* Password and delete-account forms */
+.st-form {
+  gap: 12px;
+  padding-top: 4px;
+  padding-bottom: 16px;
+}
+.st-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.st-input.full {
+  max-width: none;
+  text-align: left;
+  padding: 10px 12px;
+}
+.st-err.left {
+  text-align: left;
+  padding: 0;
+}
+.st-primary,
+.st-danger.solid {
+  align-self: flex-start;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 700;
+  font-size: 14px;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.st-primary {
+  background: #edae49;
+  color: #001d2c;
+}
+.st-primary:hover:not(:disabled),
+.st-danger.solid:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.st-primary:disabled,
+.st-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.st-danger {
+  flex: none;
+  border: 1px solid rgba(209, 73, 91, 0.45);
+  background: transparent;
+  color: #ec8a97;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+.st-danger:hover:not(:disabled) {
+  background: rgba(209, 73, 91, 0.12);
+}
+.st-danger.solid {
+  background: #d1495b;
+  border: 0;
+  color: #fff;
+}
+.st-warn {
+  margin: 0;
+  padding: 12px 14px 12px 30px;
+  border-radius: 12px;
+  background: rgba(209, 73, 91, 0.1);
+  border: 1px solid rgba(209, 73, 91, 0.25);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* Focus rings */
 .st-back:focus-visible,
 .st-seg button:focus-visible,
 .st-switch:focus-visible,
-.st-logout:focus-visible {
+.st-logout:focus-visible,
+.st-primary:focus-visible,
+.st-danger:focus-visible {
   outline: 2px solid var(--mint);
   outline-offset: 2px;
 }
@@ -715,6 +953,22 @@ function handleLogout() {
   .st-back svg {
     animation: none;
     transition: none;
+  }
+}
+
+/* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
+@media (pointer: coarse), (max-width: 560px) {
+  .st-seg button {
+    min-height: 40px;
+  }
+  /* the switch stays small to look at, but its tap area is 44px */
+  .st-switch {
+    position: relative;
+  }
+  .st-switch::after {
+    content: '';
+    position: absolute;
+    inset: -9px -4px;
   }
 }
 </style>

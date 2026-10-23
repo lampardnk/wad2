@@ -26,7 +26,7 @@
         All <span class="ph-n">{{ photos.length }}</span>
       </button>
       <button type="button" role="tab" class="ph-pill" :class="{ on: album === '' }" :aria-selected="album === ''" @click="album = ''">
-        ✨ Highlights <span class="ph-n">{{ countIn('') }}</span>
+        <AppIcon name="sparkles" :size="15" /> Highlights <span class="ph-n">{{ countIn('') }}</span>
       </button>
       <button v-for="a in albums" :key="a.id" type="button" role="tab" class="ph-pill" :class="{ on: album === a.id }"
         :aria-selected="album === a.id" @click="album = a.id">
@@ -90,7 +90,7 @@
 
     <!-- ===== Empty state ===== -->
     <button v-if="!loading && !shown.length" type="button" class="ph-empty" @click="$refs.picker.click()">
-      <span class="ph-empty-stack" aria-hidden="true"><span>🏞</span><span>📸</span><span>🍜</span></span>
+      <span class="ph-empty-stack" aria-hidden="true"><span><AppIcon name="image" :size="24" /></span><span><AppIcon name="camera" :size="24" /></span><span><AppIcon name="map-pin" :size="24" /></span></span>
       <strong class="ph-empty-title">{{ photos.length ? 'No photos here yet' : 'Start the shared roll' }}</strong>
       <span class="ph-empty-text">Drop photos anywhere on this page, or click to browse.</span>
       <span class="ph-primary mt-2">+ Add the first memories</span>
@@ -128,7 +128,7 @@
       <transition name="ph-fade">
         <div v-if="dragging" class="ph-dropzone" @dragover.prevent @dragleave.self="dragging = false" @drop.prevent="onDrop">
           <div class="ph-dropzone-card">
-            <span class="ph-dropzone-icon" aria-hidden="true">📥</span>
+            <span class="ph-dropzone-icon" aria-hidden="true"><AppIcon name="upload" :size="34" /></span>
             <strong>Drop to add to {{ targetLabel }}</strong>
           </div>
         </div>
@@ -140,7 +140,7 @@
       <transition name="ph-fade">
         <div v-if="open" class="ph-lb" role="dialog" aria-modal="true" aria-label="Photo viewer" tabindex="-1" ref="lightbox"
           @keydown.esc="open = null" @keydown.left="step(-1)" @keydown.right="step(1)" @click.self="open = null">
-          <button type="button" class="ph-lb-close" aria-label="Close" @click="open = null">✕</button>
+          <button type="button" class="ph-lb-close" aria-label="Close" @click="open = null"><AppIcon name="x" :size="20" /></button>
           <button v-if="shown.length > 1" type="button" class="ph-lb-nav prev" aria-label="Previous photo" @click="step(-1)">‹</button>
           <img :src="fullUrl || thumbs[open.id]" class="ph-lb-img" :alt="'Photo by ' + open.uploadedBy">
           <button v-if="shown.length > 1" type="button" class="ph-lb-nav next" aria-label="Next photo" @click="step(1)">›</button>
@@ -183,13 +183,15 @@ import axios from 'axios'
 import { placeStyle } from '../placeStyle.js'
 import { makeZip } from '../zip.js'
 import CustomDropdown from './CustomDropdown.vue'
+import AppIcon from './AppIcon.vue'
+import { notify, errorText } from '../notify.js'
 
 const REACTIONS = ['❤️', '🔥', '😂', '😍', '👏']
 const TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const AVATAR_COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
 export default {
-  components: { CustomDropdown },
+  components: { AppIcon, CustomDropdown },
   props: {
     tripId: { type: String, default: '' },
     travellers: { type: Array, default: () => [] },
@@ -401,7 +403,11 @@ export default {
     // ---------- albums ----------
     async saveAlbums() {
       if (this.demo) return
-      await axios.put('/api/trips/' + this.tripId + '/albums', this.albums)
+      try {
+        await axios.put('/api/trips/' + this.tripId + '/albums', this.albums)
+      } catch (err) {
+        notify(errorText(err, 'Could not save your albums.'), () => this.saveAlbums())
+      }
     },
 
     async createAlbum(name, icon) {
@@ -536,6 +542,7 @@ export default {
     // ---------- photo actions ----------
     async react(photo, emoji) {
       // Update straight away, then save
+      const before = photo.reactions
       const people = photo.reactions[emoji] || []
       photo.reactions = { ...photo.reactions, [emoji]: people.includes(this.me) ? people.filter((p) => p !== this.me) : people.concat(this.me) }
       if (!photo.reactions[emoji].length) delete photo.reactions[emoji]
@@ -544,18 +551,33 @@ export default {
         const res = await axios.post('/api/trips/' + this.tripId + '/photos/' + photo.id + '/react', { emoji })
         photo.reactions = res.data.reactions || {}
       } catch (err) {
-        // keep the local change; it will correct on the next load
+        photo.reactions = before // put it back so what you see is what's saved
+        notify(errorText(err, 'Could not save your reaction.'), () => this.react(photo, emoji))
       }
     },
 
     async move(photo, albumId) {
+      const before = photo.album
       photo.album = albumId
-      if (!this.demo) await axios.patch('/api/trips/' + this.tripId + '/photos/' + photo.id, { album: albumId })
+      if (this.demo) return
+      try {
+        await axios.patch('/api/trips/' + this.tripId + '/photos/' + photo.id, { album: albumId })
+      } catch (err) {
+        photo.album = before
+        notify(errorText(err, 'Could not move the photo.'), () => this.move(photo, albumId))
+      }
     },
 
     async remove(photo) {
       const i = this.openIndex
-      if (!this.demo) await axios.delete('/api/trips/' + this.tripId + '/photos/' + photo.id)
+      if (!this.demo) {
+        try {
+          await axios.delete('/api/trips/' + this.tripId + '/photos/' + photo.id)
+        } catch (err) {
+          notify(errorText(err, 'Could not delete the photo.'), () => this.remove(photo))
+          return // keep it showing: it wasn't deleted
+        }
+      }
       this.photos = this.photos.filter((p) => p.id !== photo.id)
       if (this.thumbs[photo.id]) URL.revokeObjectURL(this.thumbs[photo.id])
       delete this.thumbs[photo.id]
@@ -638,7 +660,7 @@ export default {
   margin-bottom: 16px;
 }
 .ph-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.5rem;
   margin: 0;
 }
@@ -916,7 +938,7 @@ export default {
 .ph-empty-stack span:nth-child(2) { transform: translateY(-6px); z-index: 1; }
 .ph-empty-stack span:nth-child(3) { transform: rotate(10deg) translateX(-10px); }
 .ph-empty-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.3rem;
 }
 .ph-empty-text {

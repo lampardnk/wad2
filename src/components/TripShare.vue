@@ -78,7 +78,7 @@
 
       <!-- Link -->
       <div class="ts-link" :class="{ copied }">
-        <span class="ts-link-icon" aria-hidden="true">🔗</span>
+        <span class="ts-link-icon" aria-hidden="true"><AppIcon name="link" :size="17" /></span>
         <label for="ts-url" class="visually-hidden">Invite link</label>
         <input id="ts-url" :value="link || 'Making a link…'" readonly @focus="$event.target.select()">
         <button type="button" class="ts-copy" :disabled="!link" @click="copy" data-testid="invite-copy">
@@ -176,10 +176,12 @@
 <script>
 import axios from 'axios'
 import { auth } from '../auth.js'
+import AppIcon from './AppIcon.vue'
 
 const AVATAR_COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
 export default {
+  components: { AppIcon },
   props: {
     tripId: { type: String, required: true },
     tripName: { type: String, default: '' },
@@ -475,7 +477,7 @@ export default {
   margin-bottom: 18px;
 }
 .ts-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.4rem;
   margin: 0 0 2px;
 }

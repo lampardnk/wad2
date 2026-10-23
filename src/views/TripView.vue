@@ -1,10 +1,7 @@
 <template>
   <div class="trip-page">
     <!-- Loading: a placeholder in the shape of the page -->
-    <div v-if="loading" class="trip-stage" aria-busy="true">
-      <div class="trip-nav skeleton-bar"></div>
-      <p class="trip-loading">Loading trip…</p>
-    </div>
+    <LoadingSkeleton v-if="loading" variant="page" :count="3" label="Loading your trip…" />
 
     <div v-else-if="loadError" class="alert alert-warning">
       {{ loadError }} <router-link to="/home">Back to your trips</router-link>
@@ -21,21 +18,21 @@
         </router-link>
         <span class="trip-nav-name" :title="headerTitle">{{ headerTitle }}</span>
 
-        <TripTabs :model-value="activeTab" @update:model-value="goToTab" :tabs="tabs" :alert-key="safetyWarning ? 'safety' : ''" class="trip-tabs" />
+        <TripTabs :model-value="activeTab" @update:model-value="goToTab" :tabs="shownTabs" :alert-key="safetyWarning ? 'safety' : ''" class="trip-tabs" />
       </nav>
 
       <!-- Trip title -->
       <header class="trip-head">
         <h1 class="trip-title">{{ headerTitle }}</h1>
-        <p class="trip-route">
-          <span v-for="(d, i) in itineraryInfo.destinations" :key="d">
-            <span v-if="i > 0" class="trip-arrow" aria-hidden="true">→</span>
-            {{ flagFor(d) }} {{ d.split(', ')[0] }}
-          </span>
-        </p>
+        <!-- The route, place to place with dotted lines (like a travel journal) -->
+        <ol class="trip-route" :aria-label="'Route: ' + itineraryInfo.destinations.map((d) => d.split(', ')[0]).join(', then ')">
+          <li v-for="d in itineraryInfo.destinations" :key="d" class="trip-route-stop">
+            <span class="trip-route-dot" aria-hidden="true"></span>{{ flagFor(d) }} {{ d.split(', ')[0] }}
+          </li>
+        </ol>
         <div class="trip-toggle" aria-label="Trip details">
-          <span class="trip-toggle-item">🗓 {{ dateText }}</span>
-          <span class="trip-toggle-item on">👥 {{ itineraryInfo.travellers.length }} traveller{{ itineraryInfo.travellers.length === 1 ? '' : 's' }}</span>
+          <span class="trip-toggle-item"><AppIcon name="calendar" :size="15" /> {{ dateText }}</span>
+          <span class="trip-toggle-item on"><AppIcon name="users" :size="15" /> {{ itineraryInfo.travellers.length }} traveller{{ itineraryInfo.travellers.length === 1 ? '' : 's' }}</span>
         </div>
 
         <!-- Who's going: joined people (solid) and not-yet-joined travellers (dashed) + invite -->
@@ -48,12 +45,17 @@
             <span v-if="itineraryInfo.travellers.length > 6" class="trip-face more">+{{ itineraryInfo.travellers.length - 6 }}</span>
           </span>
           <button v-if="!isDemo" type="button" class="trip-invite" @click="showShare = true" data-testid="invite-btn">+ Invite</button>
+          <!-- Organiser: change the name, route and dates (or delete the trip) -->
+          <button v-if="!isDemo && trip.role === 'owner'" type="button" class="trip-edit" @click="showEdit = true" data-testid="edit-trip-btn">
+            <AppIcon name="pencil" :size="14" /> Edit trip
+          </button>
         </div>
       </header>
 
       <TripShare v-if="showShare" :trip-id="id" :trip-name="trip.name" :members="trip.members || []"
         :travellers="trip.travellers" :role="trip.role || 'member'" :me="myName" :pending-invites="trip.pendingInvites || []"
         @close="showShare = false" @changed="reloadTrip" @left="$router.push('/home')" />
+      <TripEditModal v-if="showEdit" :trip="trip" @close="showEdit = false" @saved="tripEdited" />
 
       <!-- Summary cards: tap one to jump to that section -->
       <div class="trip-cards">
@@ -93,7 +95,7 @@
 
         <!-- Safety banner: shown on every tab when SafetyLayer reports High/Critical risk -->
         <div v-if="safetyWarning" class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
-          <span>⚠️ {{ safetyWarning }}</span>
+          <span><AppIcon name="alert" :size="16" /> {{ safetyWarning }}</span>
           <button class="btn btn-sm btn-outline-danger" @click="activeTab = 'safety'">View safety</button>
         </div>
 
@@ -101,18 +103,18 @@
         <transition name="guide">
           <section v-if="showGuide" class="guide mb-4" aria-labelledby="guide-title" data-testid="trip-guide">
             <div class="d-flex justify-content-between align-items-start gap-2">
-              <h2 id="guide-title" class="h5 mb-2">🎉 Your trip is ready! Here's how it works</h2>
+              <h2 id="guide-title" class="h5 mb-2"><AppIcon name="sparkles" :size="18" /> Your trip is ready! Here's how it works</h2>
               <button type="button" class="btn-close" aria-label="Close guide" @click="showGuide = false"></button>
             </div>
             <ol class="guide-steps">
               <li>
-                <strong>📍 Places</strong> holds your <em>Wishlist</em> and <em>Group decisions</em>.
+                <strong><AppIcon name="map-pin" :size="15" /> Places</strong> holds your <em>Wishlist</em> and <em>Group decisions</em>.
                 Keep saving places and voting there any time.
                 <button type="button" class="btn btn-link btn-sm p-0 align-baseline" @click="openPlaces('wishlist')">Open Places</button>
               </li>
               <li>
                 <strong>Itinerary</strong>: pick a day and drag your saved places onto it.
-                Each stop shows its weather and crowds (tap them for options), and <em>✨ Optimize Route</em> re-orders the whole day.
+                Each stop shows its weather and crowds (tap them for options), and <em><AppIcon name="sparkles" :size="14" /> Optimize Route</em> re-orders the whole day.
               </li>
               <li>The other sections in the top bar cover packing, expenses, photos, safety and getting around.</li>
             </ol>
@@ -123,28 +125,30 @@
       <!-- Group decisions and expenses are still built around the Seoul demo data -->
       <div v-show="activeTab === 'itinerary'" :id="'pane-itinerary'" role="tabpanel">
         <FlightDelayWidget v-if="isDemo" />
+        <!-- editRev: after "Edit trip" the planner starts again from the saved trip (new dates, moved stops) -->
         <ItineraryView
+          :key="'itin-' + editRev"
           :trip-id="id"
           :destination="itineraryInfo.destination"
           :destinations="itineraryInfo.destinations"
           :start-date="itineraryInfo.startDate"
           :end-date="itineraryInfo.endDate"
           :initial-stops="itineraryInfo.stops"
-          :initial-wishlist="itineraryInfo.wishlist" :initial-version="isDemo ? 0 : trip.version || 0"
+          :initial-wishlist="itineraryInfo.wishlist" :initial-version="isDemo ? 0 : trip.version || 0" :travellers="itineraryInfo.travellers"
           @itinerary-change="updatePackingActivities" @set-end-date="setEndDate" @go-places="addFromItinerary" />
       </div>
       <!-- Places = Wishlist + Group decisions. Both use the same wishlist, which the itinerary saves. -->
       <div v-show="activeTab === 'places'" :id="'pane-places'" role="tabpanel" :class="{ 'has-return': returnTo }">
         <div class="places-switch mb-4" role="tablist" aria-label="Places">
           <button type="button" role="tab" :aria-selected="placesTab === 'wishlist'" :class="{ active: placesTab === 'wishlist' }"
-            @click="placesTab = 'wishlist'" data-testid="places-wishlist">♥ Wishlist</button>
+            @click="placesTab = 'wishlist'" data-testid="places-wishlist"><AppIcon name="heart" :size="15" /> Wishlist</button>
           <button type="button" role="tab" :aria-selected="placesTab === 'vote'" :class="{ active: placesTab === 'vote' }"
-            @click="placesTab = 'vote'" data-testid="places-vote">👍 Group decisions</button>
+            @click="placesTab = 'vote'" data-testid="places-vote"><AppIcon name="thumbs-up" :size="15" /> Group decisions</button>
         </div>
         <!-- Came here from the itinerary's "Add stop": a clear way back, always in view -->
         <transition name="return-bar">
           <div v-if="returnTo && activeTab === 'places'" class="places-return" role="region" aria-label="Adding stops to your itinerary">
-            <p class="places-return-text" aria-live="polite">Save more places for your wishlist.</p>
+            <p class="places-return-text" aria-live="polite">{{ placesTab === 'vote' ? 'Vote yes on places so they become group picks.' : 'Save more places for your wishlist.' }}</p>
             <button type="button" class="places-return-btn" :class="{ ready: newSaved }" @click="backToItinerary">
               <span aria-hidden="true">‹</span> {{ newSaved ? 'Done, back to ' + returnTo.day : 'Back to ' + returnTo.day }}
             </button>
@@ -153,7 +157,7 @@
         <transition name="guide" mode="out-in">
           <WishlistView v-if="placesTab === 'wishlist'" key="w" :destinations="itineraryInfo.destinations"
             :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate" />
-          <PlacesVoting v-else key="v" :travellers="itineraryInfo.travellers" :me="myName" :can-vote-for="canVoteFor" @go-wishlist="placesTab = 'wishlist'" />
+          <PlacesVoting v-else key="v" :trip-id="id" :travellers="itineraryInfo.travellers" :me="myName" :can-vote-for="canVoteFor" @go-wishlist="placesTab = 'wishlist'" />
         </transition>
       </div>
       <div v-show="activeTab === 'packing'" :id="'pane-packing'" role="tabpanel">
@@ -180,6 +184,12 @@
           :pending-invites="isDemo ? [] : trip.pendingInvites || []" :crew="isDemo ? {} : trip.crew || {}"
           :expenses="isDemo ? null : trip.expenses" :role="isDemo ? 'owner' : trip.role" :me="myName"
           :my-id="authUserId" @invite="showShare = true" @go="goFromCrew" @changed="reloadTrip" />
+      </div>
+      <!-- Recap (after the trip): the trip in numbers with its route on a map -->
+      <div v-if="!isDemo && tripPhase === 'after'" v-show="activeTab === 'recap'" id="pane-recap" role="tabpanel">
+        <TripRecap :key="'recap-' + id" :trip-id="id" :name="trip.name"
+          :destinations="itineraryInfo.destinations" :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate"
+          :travellers="itineraryInfo.travellers" :stop-count="stopCount" :phase="tripPhase" />
       </div>
       <!--
         v-show (not v-if) keeps SafetyLayer mounted when you switch tabs. It only starts checking once
@@ -218,10 +228,15 @@ import TabIcon from '../components/TabIcon.vue'
 import { auth } from '../auth.js'
 import { trip as store } from '../itineraryStore.js'
 import { codeForDestination, flagEmoji } from '../destinations.js'
+import AppIcon from '../components/AppIcon.vue'
+import LoadingSkeleton from '../components/LoadingSkeleton.vue'
+import TripRecap from '../components/TripRecap.vue'
+import TripEditModal from '../components/TripEditModal.vue'
+import { notify } from '../notify.js'
 
 
 export default {
-  components: { ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, TransportOptions, TripShare, CrewView, TripTabs, TabIcon },
+  components: { LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, TransportOptions, TripShare, CrewView, TripTabs, TabIcon },
   props: { id: { type: String, default: 'seoul' } }, // from the route /trip/:id
   data() {
     return {
@@ -238,6 +253,7 @@ export default {
         { key: 'photos', icon: '📷', label: 'Photos', title: 'Photos', desc: "The group's trip photos in one place." },
         { key: 'safety', icon: '🛡', label: 'Safety', title: 'Safety', desc: 'Live alerts and risk levels near you.', testid: 'safety-tab' },
         { key: 'crew', icon: '👥', label: 'Crew', title: 'Trip crew', desc: '' },
+        { key: 'recap', icon: '🗺', label: 'Recap', title: 'Trip recap', desc: 'Your finished trip in numbers, with the route on a map.' },
         { key: 'travelOptions', icon: '🚆', label: 'Getting around', short: 'Transport', title: 'Getting around', desc: 'Ways to travel between your stops.' }
       ],
       // Shown once, after setting up the user's first trip
@@ -248,6 +264,8 @@ export default {
       loading: true,
       loadError: '',
       showShare: false,
+      showEdit: false, // Edit trip dialog
+      editRev: 0,      // goes up after each edit, to reload the itinerary
       photoWho: { name: '', at: 0 }, // set when "Photos" is clicked on a crew card
       stagePhoto: '', // photo of the first destination (Wikipedia); plain dark header until it loads
       photoPage: '',
@@ -261,6 +279,15 @@ export default {
       const t = this.trip
       return { destination: t.destination, destinations: t.destinations && t.destinations.length ? t.destinations : [t.destination], travellers: t.travellers || [], startDate: t.startDate, endDate: t.endDate, stops: t.stops || [], wishlist: t.wishlist || [] }
     },
+    // The Recap tab only appears once the trip is over
+    shownTabs() {
+      const list = []
+      for (const t of this.tabs) {
+        if (t.key === 'recap' && (this.isDemo || this.tripPhase !== 'after')) continue
+        list.push(t)
+      }
+      return list
+    },
     currentTab() {
       for (const t of this.tabs) {
         if (t.key === this.activeTab) return t
@@ -272,6 +299,15 @@ export default {
       if (!t.startDate) return 'Dates not set'
       const fmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
       return t.endDate ? fmt(t.startDate) + ' – ' + fmt(t.endDate) : 'From ' + fmt(t.startDate)
+    },
+    // 'before' the trip, 'during' it, or 'after' it ended (no dates = before)
+    tripPhase() {
+      const t = this.itineraryInfo
+      if (!t.startDate) return 'before'
+      const today = new Date().toISOString().slice(0, 10)
+      if (today < t.startDate) return 'before'
+      if (t.endDate && today > t.endDate) return 'after'
+      return 'during'
     },
     dayCount() {
       const t = this.itineraryInfo
@@ -418,6 +454,19 @@ export default {
       })
     },
     // After someone is removed: fetch the trip again
+    // Saved in "Edit trip": load the trip again, restart the planner, and say what happened
+    async tripEdited(saved) {
+      this.showEdit = false
+      await this.reloadTrip()
+      this.editRev++
+      this.loadPhoto() // the first destination may have changed
+      let text = 'Trip updated.'
+      if (saved && saved.movedStops) {
+        const days = Math.abs(saved.shiftDays) + (Math.abs(saved.shiftDays) === 1 ? ' day' : ' days')
+        text = 'Trip updated. ' + saved.movedStops + (saved.movedStops === 1 ? ' stop' : ' stops') + ' moved ' + days + (saved.shiftDays > 0 ? ' later.' : ' earlier.')
+      }
+      notify(text, null, 'ok')
+    },
     async reloadTrip() {
       try {
         const res = await axios.get('/api/trips/' + this.id)
@@ -453,7 +502,7 @@ export default {
     },
     // Itinerary's "Add stop": open Places, remembering which day to come back to
     addFromItinerary(info) {
-      this.placesTab = 'wishlist'
+      this.placesTab = info && info.tab === 'vote' ? 'vote' : 'wishlist'
       this.goToTab('places')
       this.returnTo = info && info.day ? info : { day: 'your itinerary' }
       this.savedAtStart = store.wishlist.length
@@ -512,12 +561,11 @@ export default {
   border-radius: 28px;
   z-index: 0;
   overflow: hidden;
+  /* Photo first: the cover photo shows clearly at the top, then fades into navy behind the cards */
   background:
-    linear-gradient(180deg, rgba(0, 24, 38, 0.55) 0%, rgba(0, 24, 38, 0.88) 50%, #002233 85%),
-    linear-gradient(118deg, transparent 38%, rgba(243, 194, 111, 0.22) 48%, transparent 58%),
-    linear-gradient(118deg, transparent 55%, rgba(0, 121, 140, 0.35) 63%, transparent 72%),
-    var(--trip-photo, none) center 40% / cover no-repeat,
-    #002233;
+    linear-gradient(180deg, rgba(0, 29, 44, 0.25) 0%, rgba(0, 29, 44, 0.1) 22%, rgba(0, 29, 44, 0.55) 42%, #001d2c 62%),
+    var(--trip-photo, none) center 35% / cover no-repeat,
+    #003d5b;
 }
 .trip-credit {
   position: relative;
@@ -583,7 +631,7 @@ export default {
 }
 .trip-nav-name {
   color: #fff;
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   max-width: 200px;
   white-space: nowrap;
@@ -598,23 +646,51 @@ export default {
 .trip-head {
   position: relative;
   z-index: 1;
-  text-align: center;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: left;
   color: #fff;
-  padding: 56px 16px 0;
+  padding: 150px 32px 0;
 }
 .trip-title {
-  font-family: 'Fredoka', sans-serif;
-  font-size: clamp(2rem, 5vw, 3.2rem);
-  margin-bottom: 6px;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5.4vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
 }
+/* Places joined by dotted lines */
 .trip-route {
-  color: rgba(255, 255, 255, 0.78);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 0;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
   font-size: 1.05rem;
-  margin-bottom: 20px;
+  font-weight: 700;
 }
-.trip-arrow {
-  margin: 0 8px;
-  color: #f3c26f;
+.trip-route-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.trip-route-stop + .trip-route-stop::before {
+  content: '';
+  width: 34px;
+  height: 3px;
+  margin: 0 10px;
+  background-image: radial-gradient(circle, #edae49 1.5px, transparent 1.8px);
+  background-size: 7px 3px;
+}
+.trip-route-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #edae49;
+  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.3);
 }
 /* Pill like a Monthly / Yearly switch */
 .trip-toggle {
@@ -637,9 +713,13 @@ export default {
 }
 
 /* Summary cards */
+@media (max-width: 700px) {
+  .trip-head { padding: 96px 18px 0; }
+  .trip-route-stop + .trip-route-stop::before { width: 20px; margin: 0 6px; }
+}
 .trip-crew {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 12px;
   margin-top: 16px;
@@ -688,6 +768,27 @@ export default {
   transform: translateY(-1px);
 }
 .trip-invite:focus-visible {
+  outline: 3px solid #f3c26f;
+  outline-offset: 2px;
+}
+.trip-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-weight: 700;
+  padding: 6px 14px;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.trip-edit:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(237, 174, 73, 0.7);
+  transform: translateY(-1px);
+}
+.trip-edit:focus-visible {
   outline: 3px solid #f3c26f;
   outline-offset: 2px;
 }
@@ -795,7 +896,7 @@ export default {
   margin-bottom: 20px;
 }
 .trip-panel-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.6rem;
   margin-bottom: 2px;
   display: flex;

@@ -8,16 +8,16 @@
             <header class="ss-head">
               <div class="ss-titles">
                 <h3 id="ss-title" class="ss-title">{{ stop.name }}</h3>
-                <p class="ss-sub">{{ dayLabel }} · {{ formatHour(start) }} – {{ formatHour(end) }}<span v-if="stop.locked"> · 🔒 Locked</span></p>
+                <p class="ss-sub">{{ dayLabel }} · {{ formatHour(start) }} – {{ formatHour(end) }}<span v-if="stop.locked"> · <AppIcon name="lock" :size="13" /> Locked</span></p>
               </div>
-              <button type="button" class="ss-x" aria-label="Close" @click="emit('close')">✕</button>
+              <button type="button" class="ss-x" aria-label="Close" @click="emit('close')"><AppIcon name="x" :size="18" /></button>
             </header>
 
             <!-- Three tabs keep it short: only one topic on screen at a time -->
             <div class="ss-tabs" role="tablist" aria-label="About this stop">
-              <button v-for="t in TABS" :key="t.key" type="button" role="tab" :aria-selected="tab === t.key"
+              <button v-for="t in tabs" :key="t.key" type="button" role="tab" :aria-selected="tab === t.key"
                 :class="{ on: tab === t.key }" @click="tab = t.key">
-                <span aria-hidden="true">{{ t.icon }}</span> {{ t.label }}
+                <span aria-hidden="true">{{ t.icon }}</span> {{ t.label }}<span v-if="t.key === 'notes' && noteCount" class="ss-count">{{ noteCount }}</span>
                 <i v-if="t.key === 'crowd' && crowd.tone === 'bad' || t.key === 'weather' && wet" class="ss-dot" aria-label="needs a look"></i>
               </button>
             </div>
@@ -26,7 +26,7 @@
               <!-- ===== Crowds ===== -->
               <section v-if="tab === 'crowd'" aria-label="Crowds">
                 <p class="ss-lead">
-                  <template v-if="crowd.value == null">No crowd data for this place.<template v-if="!stop.address"> Add its address under <button type="button" class="ss-link" @click="tab = 'time'">Time &amp; details</button> to get it.</template></template>
+                  <template v-if="crowd.value == null">No crowd data for this place.<template v-if="!stop.address"> Add its address under <button type="button" class="ss-link" @click="tab = 'time'">Details</button> to get it.</template></template>
                   <template v-else><span class="ss-badge" :class="crowd.tone">{{ crowd.text }}</span> at {{ formatHour(start) }} · about {{ crowd.value }}% of its busiest</template>
                 </p>
                 <CrowdChart v-if="hasChart" :forecast="stop.forecast" :day-name="dayName"
@@ -47,7 +47,14 @@
 
               <!-- ===== Weather ===== -->
               <section v-else-if="tab === 'weather'" aria-label="Weather">
-                <p v-if="!blocks.length" class="ss-lead">No forecast for this day yet. Forecasts reach about 5 days ahead.</p>
+                <template v-if="!blocks.length">
+                  <p v-if="typical" class="ss-lead">
+                    Usually about <strong>{{ typical.temp }}°C</strong> in {{ typical.place }} in {{ typical.month }}<template v-if="typical.rainyDays === 0">, and it's usually dry</template><template v-else-if="typical.rainyDays === 1">,
+                    with rain on about 1 day of the month</template><template v-else-if="typical.rainyDays != null">,
+                    with rain on about {{ typical.rainyDays }} days of the month</template>.
+                  </p>
+                  <p class="ss-lead" :class="{ 'ss-muted': typical }">The live forecast for this day appears about 5 days before.</p>
+                </template>
                 <template v-else>
                   <ol class="ss-hours" aria-label="Forecast for the day">
                     <li v-for="b in blocks" :key="b.time" :class="{ here: b.here, wet: b.rain }"
@@ -79,13 +86,16 @@
                       <p class="ss-note">{{ stop.name }} goes back to Saved places, so nothing is lost.</p>
                     </template>
                     <p v-if="!dry.length && !(canChangeDay && indoorPicks.length)" class="ss-note">
-                      No dry time fits this day. Try moving it to another day under <button type="button" class="ss-link" @click="tab = 'time'">Time &amp; details</button>.
+                      No dry time fits this day. Try moving it to another day under <button type="button" class="ss-link" @click="tab = 'time'">Details</button>.
                     </p>
                   </div>
                   <p v-else-if="rainWhileHere" class="ss-good">✓ Rain is possible, but this one is indoors.</p>
                   <p v-else class="ss-good">✓ Dry while you're here.</p>
                 </template>
               </section>
+
+              <!-- ===== Notes from the crew ===== -->
+              <StopNotes v-else-if="tab === 'notes'" :stop-id="stop.id || ''" @count="noteCount = $event" />
 
               <!-- ===== Time & details ===== -->
               <section v-else aria-label="Time and details">
@@ -101,14 +111,14 @@
                   <CustomDropdown v-model="dayPick" :options="dayOptions" class="ss-grow" aria-labelledby="ss-day-label" header-text="Move to" />
                   <button type="button" class="ss-btn" :disabled="dayPick === selectedDate" @click="emit('move-day', dayPick)">Move</button>
                 </div>
-                <p class="ss-note">{{ stop.locked ? '🔒 Locked: Optimize Route won\'t move it.' : 'Tip: lock a stop (🔓 on its card) to keep a booked time.' }}</p>
+                <p class="ss-note"><AppIcon :name="stop.locked ? 'lock' : 'unlock'" :size="13" /> {{ stop.locked ? 'Locked: Optimize Route won\'t move it.' : 'Tip: lock a stop (the padlock on its card) to keep a booked time.' }}</p>
 
                 <!-- Routes saved in Getting around that end here -->
                 <div v-for="route in routes" :key="route.start" class="ss-route">
-                  <p class="ss-route-from">📍 From <strong>{{ route.start }}</strong></p>
+                  <p class="ss-route-from"><AppIcon name="map-pin" :size="14" /> From <strong>{{ route.start }}</strong></p>
                   <div v-for="opt in route.options" :key="opt.type" class="ss-route-opt">
                     <span>{{ opt.route }}</span>
-                    <small>⏱ ~{{ minutesText(opt.duration) }} · {{ opt.cost === 0 ? 'Free' : '~ ₩' + opt.cost.toLocaleString() }}</small>
+                    <small><AppIcon name="clock" :size="12" /> ~{{ minutesText(opt.duration) }} · {{ opt.cost === 0 ? 'Free' : '~ ₩' + opt.cost.toLocaleString() }}</small>
                   </div>
                 </div>
 
@@ -119,8 +129,8 @@
                   <label for="ss-address" class="ss-label">Address <span class="ss-opt">turns on crowds and the map</span></label>
                   <input id="ss-address" v-model="form.address" class="ss-input" maxlength="200">
                   <div class="ss-seg" role="group" aria-label="Indoor or outdoor">
-                    <button type="button" :class="{ on: form.outdoor }" :aria-pressed="form.outdoor" @click="form.outdoor = true">🌳 Outdoor</button>
-                    <button type="button" :class="{ on: !form.outdoor }" :aria-pressed="!form.outdoor" @click="form.outdoor = false">🏛 Indoor</button>
+                    <button type="button" :class="{ on: form.outdoor }" :aria-pressed="form.outdoor" @click="form.outdoor = true"><AppIcon name="trees" :size="15" /> Outdoor</button>
+                    <button type="button" :class="{ on: !form.outdoor }" :aria-pressed="!form.outdoor" @click="form.outdoor = false"><AppIcon name="landmark" :size="15" /> Indoor</button>
                   </div>
                   <button type="submit" class="ss-btn primary" :disabled="!detailsChanged || !form.name.trim()">Save details</button>
                 </form>
@@ -138,18 +148,21 @@ import { ref, computed, watch, nextTick } from 'vue'
 import CrowdChart from './CrowdChart.vue'
 import CustomDropdown from './CustomDropdown.vue'
 import { formatHour } from '../crowd.js'
+import AppIcon from './AppIcon.vue'
+import StopNotes from './StopNotes.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
   stop: { type: Object, default: () => ({}) },          // the stop (with its crowd forecast)
   start: { type: Number, default: 0 },                  // planned start, e.g. 13.5
   duration: { type: Number, default: 1 },
-  section: { type: String, default: 'crowd' },          // which tab to open: crowd | weather | time
+  section: { type: String, default: 'crowd' },          // which tab to open: crowd | weather | time | notes
   dayName: { type: String, default: '' },
   dayLabel: { type: String, default: '' },
   selectedDate: { type: String, default: '' },
   dayOptions: { type: Array, default: () => [] },
-  weather: { type: Array, default: () => [] },          // [{ time, span, condition, rain, temp, icon }]
+  weather: { type: Array, default: () => [] },
+  typical: { type: Object, default: null },               // { month, place, temp, rainyDays } when there's no forecast yet          // [{ time, span, condition, rain, temp, icon }]
   crowd: { type: Object, default: () => ({}) },         // { value, text, tone }
   wet: { type: Boolean, default: false },               // outdoors in the rain
   quieter: { type: Array, default: () => [] },          // [{ hour, crowd }]
@@ -163,9 +176,13 @@ const emit = defineEmits(['close', 'move-time', 'move-day', 'swap', 'edit'])
 const TABS = [
   { key: 'crowd', icon: '👥', label: 'Crowds' },
   { key: 'weather', icon: '⛅', label: 'Weather' },
-  { key: 'time', icon: '🕒', label: 'Time & details' }
+  { key: 'time', icon: '🕒', label: 'Details' }, // start time, day, name and address
+  { key: 'notes', icon: '💬', label: 'Notes' }
 ]
+// Notes need a real trip, so the sample itinerary doesn't get them
+const tabs = computed(() => (props.canChangeDay ? TABS : TABS.slice(0, 3)))
 const tab = ref('crowd')
+const noteCount = ref(0)
 const panel = ref(null)
 const end = computed(() => props.start + (props.duration || 1))
 const hasChart = computed(() => !!(props.stop.forecast && props.stop.forecast.days && props.stop.forecast.days[props.dayName]))
@@ -234,6 +251,7 @@ function reset() {
 watch(() => props.open, (open) => {
   if (!open) return
   tab.value = props.section
+  noteCount.value = 0
   reset()
   nextTick(() => panel.value && panel.value.focus())
 }, { immediate: true })
@@ -269,7 +287,7 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
   padding: 20px 20px 12px;
 }
 .ss-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.3rem;
   margin: 0;
 }
@@ -314,6 +332,32 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
 .ss-tabs button.on {
   background: #003d5b;
   color: #fff;
+}
+/* Four tabs: they share the row, and scroll sideways on narrow phones */
+.ss-tabs {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ss-tabs button {
+  flex: 1 0 auto;
+  padding: 8px 10px;
+}
+/* Narrow phones: drop the tab icons so all four labels fit */
+@media (max-width: 420px) {
+  .ss-tabs button > span[aria-hidden='true'] {
+    display: none;
+  }
+}
+.ss-count {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #edae49;
+  color: #001d2c;
+  font-size: 11px;
+  line-height: 18px;
 }
 .ss-dot {
   position: absolute;
@@ -593,5 +637,9 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
   .ss-fade-leave-active,
   .ss-slide-enter-active,
   .ss-pick { transition: none; }
+}
+.ss-muted {
+  font-size: 13px;
+  opacity: 0.75;
 }
 </style>

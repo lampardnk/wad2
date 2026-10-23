@@ -12,7 +12,7 @@
       </div>
       <div class="cw-actions">
         <button type="button" class="cw-primary" :class="{ done: copied }" @click="copyLink" data-testid="crew-copy">
-          {{ copied ? '✓ Link copied' : '🔗 Copy invite link' }}
+          <AppIcon :name="copied ? 'check' : 'link'" :size="15" /> {{ copied ? 'Link copied' : 'Copy invite link' }}
         </button>
         <button v-if="!demo" type="button" class="cw-ghost" @click="$emit('invite')">+ Add member</button>
       </div>
@@ -34,20 +34,20 @@
             <span class="cw-role" :class="'r-' + p.kind" :title="roleHelp[p.kind]">{{ roleNames[p.kind] }}</span>
           </div>
 
-          <p v-if="p.profile.persona" class="cw-persona">🏷️ "{{ p.profile.persona }}"</p>
-          <button v-else-if="p.canEdit" type="button" class="cw-persona add" @click="startEdit(p)">🏷️ + Add a crew title</button>
+          <p v-if="p.profile.persona" class="cw-persona"><AppIcon name="tag" :size="13" /> "{{ p.profile.persona }}"</p>
+          <button v-else-if="p.canEdit" type="button" class="cw-persona add" @click="startEdit(p)"><AppIcon name="tag" :size="13" /> Add a crew title</button>
 
           <div class="cw-pills">
             <span class="cw-pill" :class="{ empty: !p.flight.flight && !p.flight.arrival }">
-              ✈️ <template v-if="p.flight.flight || p.flight.arrival">{{ p.flight.flight || 'Arrives' }}<template v-if="p.flight.arrival"> · Lands {{ arrivalText(p.flight.arrival) }}</template></template>
+              <AppIcon name="plane" :size="14" /> <template v-if="p.flight.flight || p.flight.arrival">{{ p.flight.flight || 'Arrives' }}<template v-if="p.flight.arrival"> · Lands {{ arrivalText(p.flight.arrival) }}</template></template>
               <template v-else>No flight added</template>
             </span>
-            <span v-if="p.flightWith.length" class="cw-pill">🤝 Same flight as {{ p.flightWith.join(', ') }}</span>
+            <span v-if="p.flightWith.length" class="cw-pill"><AppIcon name="users" :size="13" /> Same flight as {{ p.flightWith.join(', ') }}</span>
             <template v-if="p.diets.length">
               <span v-for="d in p.diets" :key="d.key" class="cw-pill" :class="d.allergy ? 'allergy' : 'diet'">{{ d.icon }} {{ d.label }}</span>
             </template>
-            <span v-else-if="p.hasProfile" class="cw-pill">✓ No restrictions</span>
-            <span v-else class="cw-pill empty">🍽 Food needs not added</span>
+            <span v-else-if="p.hasProfile" class="cw-pill"><AppIcon name="check" :size="13" /> No restrictions</span>
+            <span v-else class="cw-pill empty"><AppIcon name="utensils" :size="13" /> Food needs not added</span>
           </div>
 
           <div class="cw-foot">
@@ -84,7 +84,7 @@
           <span class="cw-role r-pending">Pending</span>
         </div>
         <div v-if="canManage(inv)" class="cw-form-btns mt-3">
-          <button type="button" class="cw-ghost" :disabled="busy === inv.id" @click="resend(inv)">{{ resent === inv.id ? '✓ Sent again' : '↻ Resend invite' }}</button>
+          <button type="button" class="cw-ghost" :disabled="busy === inv.id" @click="resend(inv)"><AppIcon :name="resent === inv.id ? 'check' : 'refresh'" :size="14" /> {{ resent === inv.id ? 'Sent again' : 'Resend invite' }}</button>
           <button type="button" class="cw-ghost danger" :disabled="busy === inv.id" @click="revoke(inv)">Revoke</button>
         </div>
       </article>
@@ -93,11 +93,11 @@
     <!-- ===== Group snapshot ===== -->
     <section class="cw-summary" aria-label="Group snapshot">
       <div class="cw-sum-item">
-        <span class="cw-sum-label">🍽 Food needs</span>
+        <span class="cw-sum-label"><AppIcon name="utensils" :size="14" /> Food needs</span>
         <span class="cw-sum-value">{{ dietSummary || 'No restrictions shared' }}</span>
       </div>
       <div class="cw-sum-item">
-        <span class="cw-sum-label">✈️ Arrivals</span>
+        <span class="cw-sum-label"><AppIcon name="plane" :size="14" /> Arrivals</span>
         <span class="cw-sum-value">
           <template v-if="arrivals.length">Earliest {{ arrivalText(arrivals[0]) }}<template v-if="arrivals.length > 1"> · Latest {{ arrivalText(arrivals[arrivals.length - 1]) }}</template></template>
           <template v-else>No flights added yet</template>
@@ -114,6 +114,7 @@ import axios from 'axios'
 import { balances, money } from '../expenses.js'
 import { dietTag } from '../crewOptions.js'
 import CrewDetailsForm from './CrewDetailsForm.vue'
+import AppIcon from './AppIcon.vue'
 
 const COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
@@ -133,7 +134,7 @@ const DEMO = {
 }
 
 export default {
-  components: { CrewDetailsForm },
+  components: { AppIcon, CrewDetailsForm },
   props: {
     tripId: { type: String, required: true },
     city: { type: String, default: 'Trip' },
@@ -181,7 +182,7 @@ export default {
     balanceMap() {
       const e = this.demo ? null : this.expenses
       if (!e || !e.items || !e.items.length) return null
-      return balances(this.travellers, e.items, e.settlements || [], this.rates)
+      return balances(this.travellers, e.items, e.settlements || [], this.rates, this.home)
     },
     // One entry per traveller, with everything the card shows
     people() {
@@ -417,7 +418,7 @@ export default {
   margin-bottom: 18px;
 }
 .cw-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.6rem;
   margin: 0;
 }
@@ -755,5 +756,15 @@ export default {
 @media (prefers-reduced-motion: reduce) {
   .cw-card, .cw-primary { transition: none; }
   .cw-card:hover { transform: none; }
+}
+
+/* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
+@media (pointer: coarse), (max-width: 560px) {
+  .cw-balance,
+  .cw-link {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
 }
 </style>

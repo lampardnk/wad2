@@ -7,4 +7,6 @@ const groupSchema = new mongoose.Schema({
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true })
 
+groupSchema.index({ members: 1 }) // "groups I'm in" (checked when opening a shared trip)
+
 export default mongoose.model('Group', groupSchema)

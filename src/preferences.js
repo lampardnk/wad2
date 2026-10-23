@@ -8,7 +8,7 @@ export const prefs = reactive({ ...DEFAULT_PREFS })
 
 // Load from the server (call this when a page opens)
 export async function loadPreferences() {
-  const res = await axios.get('/api/preferences')
+  const res = await axios.get('/api/preferences', { keep: true })
   Object.assign(prefs, res.data)
 }
 

@@ -35,12 +35,22 @@ export async function ensureMembers(trip) {
 // ownerOnly: only the owner may (delete the trip, remove people, reset the link).
 export async function findTripFor(userId, tripId, ownerOnly = false) {
   if (!mongoose.isValidObjectId(tripId)) return null
-  const query = ownerOnly ? { _id: tripId, owner: userId } : { _id: tripId, ...(await accessQuery(userId)) }
-  const trip = await Trip.findOne(query)
+  let trip
+  if (ownerOnly) {
+    trip = await Trip.findOne({ _id: tripId, owner: userId })
+  } else {
+    // Most requests come from the owner or a member: one query. Only otherwise look at family groups.
+    trip = await Trip.findOne({ _id: tripId, $or: [{ owner: userId }, { 'members.user': userId }] })
+    if (!trip) {
+      const groups = await myGroupIds(userId)
+      if (groups.length) trip = await Trip.findOne({ _id: tripId, group: { $in: groups } })
+    }
+  }
   if (!trip) return null
+  // These two only touch the database the first time (older trip / first visit from the group)
   await ensureMembers(trip)
   await addGroupMember(trip, userId)
-  await markSeen(trip, userId)
+  markSeen(trip, userId).catch(() => {}) // "last seen" can be saved in the background
   return trip
 }
 

@@ -17,8 +17,8 @@
             placeholder="0.00" data-testid="expense-amount">
         </div>
         <p v-if="form.currency !== homeCurrency && form.amount > 0" class="ef-hint">
-          ≈ {{ money(toHome(form.amount, form.currency, rates), homeCurrency) }}
-          <span v-if="!rates[form.currency]">(rate unavailable)</span>
+          <template v-if="rates[form.currency]">≈ {{ money(toHome(form.amount, form.currency, rates), homeCurrency) }}</template>
+          <template v-else>No {{ form.currency }} rate yet, so this won't count in the totals until one is set.</template>
         </p>
         <p v-if="tried && !(form.amount > 0)" class="ef-error" role="alert">Enter an amount above 0</p>
 
@@ -218,7 +218,7 @@ export default {
   padding: 20px 24px 12px;
 }
 .ef-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.4rem;
   margin: 0;
 }

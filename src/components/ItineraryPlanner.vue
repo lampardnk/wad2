@@ -58,7 +58,7 @@
     <transition name="ip-fade">
       <div v-if="confirm" class="ip-overlay" @click.self="confirm = null" @keydown.esc="confirm = null">
         <div ref="dialogEl" class="ip-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ip-dialog-title" :aria-describedby="confirm.lines.length ? 'ip-dialog-body' : null" tabindex="-1">
-          <span class="ip-dialog-icon" :class="{ danger: confirm.danger }" aria-hidden="true">{{ confirm.danger ? '🗑' : confirm.kind === 'city' ? '🧭' : '📅' }}</span>
+          <span class="ip-dialog-icon" :class="{ danger: confirm.danger }" aria-hidden="true"><AppIcon :name="confirm.danger ? 'trash' : confirm.kind === 'city' ? 'compass' : 'calendar'" :size="22" /></span>
           <h3 id="ip-dialog-title" class="ip-dialog-title">{{ confirm.title }}</h3>
           <ul v-if="confirm.lines.length" id="ip-dialog-body" class="ip-dialog-list">
             <li v-for="(line, k) in confirm.lines" :key="k">{{ line }}</li>
@@ -76,30 +76,30 @@
       <div v-if="toast" class="ip-toast" role="status">
         <span>{{ toast.text }}</span>
         <button v-if="toast.undo" type="button" class="ip-toast-undo" @click="runUndo">Undo</button>
-        <button type="button" class="ip-toast-x" aria-label="Close" @click="toast = null">✕</button>
+        <button type="button" class="ip-toast-x" aria-label="Close" @click="toast = null"><AppIcon name="x" :size="16" /></button>
       </div>
     </transition>
 
     <!-- ===== Actions ===== -->
     <div class="ip-bar">
       <button type="button" class="ip-cta" :class="{ busy: phase }" :disabled="!!phase || stopRows.length < 2" @click="optimize" data-testid="optimize-route">
-        <span v-if="phase" class="ip-spin" aria-hidden="true"></span><span v-else aria-hidden="true">✨</span>
+        <span v-if="phase" class="ip-spin" aria-hidden="true"></span><AppIcon v-else name="sparkles" :size="16" />
         {{ phaseText }}
       </button>
       <span class="ip-totals" title="Getting between today's stops">
-        <span>🚶 {{ totals.walkKm }} km</span>
-        <span>🚇 {{ totals.transitMin }} min</span>
+        <span><AppIcon name="footprints" :size="15" /> {{ totals.walkKm }} km</span>
+        <span><AppIcon name="train" :size="15" /> {{ totals.transitMin }} min</span>
       </span>
       <!-- Only shows up when something on this day needs a look -->
       <div v-if="issues.length" class="ip-issues-wrap">
         <button type="button" class="ip-issues-btn" :aria-expanded="issuesOpen" aria-haspopup="dialog" @click.stop="issuesOpen = !issuesOpen">
-          <span aria-hidden="true">⚠</span> {{ issues.length }} to check
+          <AppIcon name="alert" :size="15" /> {{ issues.length }} to check
         </button>
         <div v-if="issuesOpen" class="ip-issues" role="dialog" aria-label="Things to check" @click.stop @keydown.esc="issuesOpen = false">
           <p class="ip-issues-title">Things to check on Day {{ dayIndex + 1 }}</p>
           <ul>
             <li v-for="x in issues" :key="x.key">
-              <span class="ip-issue-icon" aria-hidden="true">{{ x.icon }}</span>
+              <span class="ip-issue-icon" aria-hidden="true"><AppIcon v-if="lineIcon(x.icon)" :name="lineIcon(x.icon)" :size="15" /><template v-else>{{ x.icon }}</template></span>
               <button type="button" class="ip-issue-text" :title="'Open ' + x.it.stop.name" @click="openSheet(x.it, x.section)">
                 <strong>{{ x.it.stop.name }}</strong>
                 <small>{{ x.text }}</small>
@@ -107,7 +107,7 @@
               <button type="button" class="ip-issue-fix" @click="x.fix">{{ x.fixLabel }}</button>
             </li>
           </ul>
-          <button v-if="stopRows.length > 1" type="button" class="ip-outline small ip-issues-all" @click="issuesOpen = false; optimize()">✨ Let Optimize Route sort these out</button>
+          <button v-if="stopRows.length > 1" type="button" class="ip-outline small ip-issues-all" @click="issuesOpen = false; optimize()"><AppIcon name="sparkles" :size="15" /> Let Optimize Route sort these out</button>
         </div>
       </div>
       <!-- List or map of this day's stops (the sliding highlight shows which one you're on) -->
@@ -149,13 +149,16 @@
             Nothing planned for this day. Drag a saved place here, or tap its <strong>+</strong>.
           </p>
 
+          <p v-if="stopRows.length > 1 && !previewing" class="ip-reorder-hint">
+            <AppIcon name="swap" :size="14" /> Drag a stop by its dots, or use the arrows, to change the order. Times update by themselves.
+          </p>
           <ol class="ip-list" :class="{ dragging: !!drag }">
             <template v-for="(it, i) in timeline" :key="it.stop.id">
               <!-- Between stops: how to get there, or a drop slot while dragging -->
               <li class="ip-gap" :class="{ active: dropAt === i, first: i === 0 }"
                 @dragover.prevent="dropAt = i" @dragleave="dropAt = null" @drop.prevent="dropInto(slotOf(i))">
                 <span v-if="drag" class="ip-drop">Drop here</span>
-                <span v-else-if="i > 0 && legText(it)" class="ip-leg">{{ legText(it) }}</span>
+                <span v-else-if="i > 0 && legText(it)" class="ip-leg"><AppIcon :name="it.mode === 'walk' ? 'footprints' : it.mode === 'transit' ? 'train' : 'map-pin'" :size="13" /> {{ legText(it) }}</span>
               </li>
 
               <!-- Lunch / dinner break (kept free when no meal is planned) -->
@@ -172,9 +175,25 @@
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
                 <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null }"
-                  :draggable="!it.stop.locked && !previewing" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag">
-                  <button type="button" class="ip-handle" :disabled="it.stop.locked || previewing"
-                    :aria-label="'Move ' + it.stop.name + ' (arrow keys)'" title="Drag to reorder" @keydown="onHandleKey($event, numberOf(it))">⋮⋮</button>
+                  :draggable="!it.stop.locked && !previewing" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag"
+                  @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(slotOf(dropAt == null ? i : dropAt))">
+                  <!-- Move: drag the dots, or tap the arrows (works on phones and keyboards too) -->
+                  <div v-if="!it.stop.locked && !previewing" class="ip-move">
+                    <button type="button" class="ip-move-btn" :disabled="numberOf(it) === 0"
+                      :aria-label="'Move ' + it.stop.name + ' earlier'" title="Move earlier" @click="moveStop(numberOf(it), numberOf(it) - 1)">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
+                    </button>
+                    <span class="ip-handle" title="Drag to move" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" /></svg>
+                    </span>
+                    <button type="button" class="ip-move-btn" :disabled="numberOf(it) === stopRows.length - 1"
+                      :aria-label="'Move ' + it.stop.name + ' later'" title="Move later" @click="moveStop(numberOf(it), numberOf(it) + 1)">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
+                  </div>
+                  <span v-else-if="it.stop.locked" class="ip-move ip-move-locked" title="Locked to its time: unlock to move it" aria-hidden="true">
+                    <AppIcon name="lock" :size="14" />
+                  </span>
 
                   <div class="ip-thumb" :class="'cat-' + categoryOf(it.stop).key" :style="thumbStyle(it.stop)" aria-hidden="true">
                     <span v-if="!photos[photoKey(it.stop)]">{{ categoryOf(it.stop).icon }}</span>
@@ -188,7 +207,7 @@
                         <button type="button" class="ip-dur" :disabled="previewing" :aria-expanded="durFor === it.stop.id"
                           :aria-label="'How long at ' + it.stop.name + ': ' + durationText(it.stop.duration) + '. Change'"
                           title="Change how long you stay" @click.stop="toggleDur(it.stop.id)">
-                          ⏱ {{ durationText(it.stop.duration) }} <span aria-hidden="true">▾</span>
+                          <AppIcon name="clock" :size="13" /> {{ durationText(it.stop.duration) }} <span aria-hidden="true">▾</span>
                         </button>
                         <span v-if="durFor === it.stop.id" class="ip-dur-menu" role="dialog" :aria-label="'Time at ' + it.stop.name" @click.stop @keydown.esc="durFor = null">
                           <span class="ip-dur-step">
@@ -216,14 +235,18 @@
                         </button>
                         <button type="button" class="ip-sig" :class="crowdOf(it).tone" :title="crowdOf(it).title"
                           :aria-label="'Crowds at ' + it.stop.name + ': ' + crowdOf(it).title" @click="openSheet(it, 'crowd')">
-                          <span aria-hidden="true">👥</span> {{ crowdOf(it).text }}
+                          <AppIcon name="users" :size="14" /> {{ crowdOf(it).text }}
+                        </button>
+                        <!-- Notes the crew left on this stop -->
+                        <button v-if="!sampleMode" type="button" class="ip-sig" :aria-label="'Notes on ' + it.stop.name" @click="openSheet(it, 'notes')">
+                          <AppIcon name="message" :size="14" /> Notes
                         </button>
                       </template>
-                      <span v-for="(p, k) in cardPills(it)" :key="k" class="ip-pill" :class="p.kind">{{ p.icon }} {{ p.text }}</span>
+                      <span v-for="(p, k) in cardPills(it)" :key="k" class="ip-pill" :class="p.kind"><AppIcon v-if="lineIcon(p.icon)" :name="lineIcon(p.icon)" :size="13" /><template v-else>{{ p.icon }}</template> {{ p.text }}</span>
                     </div>
                     <!-- On the day: finish early or stay longer, and the rest of the day follows -->
                     <div v-if="live && live.id === it.stop.id && live.state === 'now' && !previewing" class="ip-live">
-                      <button type="button" class="ip-live-btn done" @click="finishNow(it)">✓ I'm done</button>
+                      <button type="button" class="ip-live-btn done" @click="finishNow(it)"><AppIcon name="check" :size="15" /> I'm done</button>
                       <button type="button" class="ip-live-btn" @click="stayLonger(it)">+15 min</button>
                     </div>
                   </div>
@@ -238,7 +261,7 @@
                     </button>
                     <button type="button" class="ip-lock" :class="{ on: it.stop.locked }" :aria-pressed="it.stop.locked" :disabled="previewing"
                       :aria-label="(it.stop.locked ? 'Unlock ' : 'Lock ') + it.stop.name" :title="it.stop.locked ? 'Fixed time (reservation)' : 'Lock this time'"
-                      @click="toggleLock(it.stop)">{{ it.stop.locked ? '🔒' : '🔓' }}</button>
+                      @click="toggleLock(it.stop)"><AppIcon :name="it.stop.locked ? 'lock' : 'unlock'" :size="17" /></button>
                     <button type="button" class="ip-go" :aria-label="'Show ' + it.stop.name + ' on the map'" title="Show on map" @click="openOnMap(it.stop)">
                       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -274,12 +297,12 @@
             </div>
             <div class="ip-detail-info">
               <h4 class="ip-detail-name">{{ selected.stop.name }}</h4>
-              <p class="ip-detail-line">🕒 {{ formatHour(selected.start) }} – {{ formatHour(selected.start + (selected.stop.duration || 1)) }}</p>
-              <p v-if="hoursText(selected.stop)" class="ip-detail-line">🚪 {{ hoursText(selected.stop) }}</p>
+              <p class="ip-detail-line"><AppIcon name="clock" :size="15" /> {{ formatHour(selected.start) }} – {{ formatHour(selected.start + (selected.stop.duration || 1)) }}</p>
+              <p v-if="hoursText(selected.stop)" class="ip-detail-line"><AppIcon name="door" :size="15" /> {{ hoursText(selected.stop) }}</p>
               <span class="ip-chip">{{ categoryOf(selected.stop).label }}</span>
               <div class="ip-detail-btns">
                 <button type="button" class="ip-step" :disabled="selectedIndex <= 0" aria-label="Previous stop" @click="stepSelected(-1)">‹</button>
-                <a class="ip-directions" :href="directionsUrl(selected.stop)" target="_blank" rel="noopener">🧭 Get directions</a>
+                <a class="ip-directions" :href="directionsUrl(selected.stop)" target="_blank" rel="noopener"><AppIcon name="compass" :size="16" /> Get directions</a>
                 <button type="button" class="ip-step" :disabled="selectedIndex >= stopRows.length - 1" aria-label="Next stop" @click="stepSelected(1)">›</button>
               </div>
             </div>
@@ -290,17 +313,26 @@
       <!-- ===== Saved places (unscheduled) ===== -->
       <aside class="ip-drawer" :class="{ target: drag && drag.kind === 'stop' }" @dragover.prevent @drop.prevent="dropOnDrawer">
         <button type="button" class="ip-drawer-head" :aria-expanded="drawerOpen" @click="drawerOpen = !drawerOpen">
-          <span class="ip-drawer-icon" aria-hidden="true">📍</span>
+          <span class="ip-drawer-icon" aria-hidden="true"><AppIcon name="map-pin" :size="20" /></span>
           <span class="ip-drawer-title">
             <strong>{{ unscheduled.length }} saved place{{ unscheduled.length === 1 ? '' : 's' }}</strong>
-            <small>Not on a day yet</small>
+            <small v-if="votingOn && unscheduled.length">{{ picks.length }} ready to add · {{ waiting.length }} waiting for votes</small>
+            <small v-else>Not on a day yet</small>
           </span>
           <span class="ip-chev" aria-hidden="true">{{ drawerOpen ? '−' : '+' }}</span>
         </button>
         <div v-show="drawerOpen" class="ip-drawer-body">
           <p v-if="drag && drag.kind === 'stop'" class="ip-unschedule">Drop here to unschedule</p>
           <p v-else-if="!unscheduled.length" class="ip-muted">Places you save in Places → Wishlist wait here.</p>
+          <!-- Group trips: only places most of the group voted for can go on a day -->
+          <p v-else-if="votingOn" class="ip-vote-rule">
+            <AppIcon name="thumbs-up" :size="15" />
+            <span>Only <strong>group picks</strong> can go on a day: places {{ needed }} of {{ travellers.length }} travellers voted for.</span>
+          </p>
           <!-- One group per destination -->
+          <p v-if="votingOn && unscheduled.length && !picks.length && !(drag && drag.kind === 'stop')" class="ip-muted">
+            No group picks yet. Vote on the places below, and they can be added once {{ needed }} people say yes.
+          </p>
           <section v-for="g in savedGroups" :key="g.city" class="ip-group" :aria-label="'Saved in ' + g.label">
             <h5 class="ip-group-head">
               <span aria-hidden="true">{{ g.flag }}</span> {{ g.label }} <span class="ip-group-count">{{ g.items.length }}</span>
@@ -317,6 +349,22 @@
                 @click="scheduleWish(w, stopRows.length)">+</button>
             </div>
           </section>
+          <!-- Not enough votes yet: shown, but can't be added (no drag, no +) -->
+          <section v-if="waiting.length && !(drag && drag.kind === 'stop')" class="ip-group ip-waiting" aria-label="Waiting for votes">
+            <h5 class="ip-group-head">
+              <AppIcon name="clock" :size="13" /> Waiting for votes <span class="ip-group-count">{{ waiting.length }}</span>
+            </h5>
+            <div v-for="w in waiting" :key="w.id" class="ip-wish waiting">
+              <div class="ip-thumb sm" :class="'cat-' + categoryOf(w).key" :style="thumbStyle(w)" aria-hidden="true">
+                <span v-if="!photos[photoKey(w)]">{{ categoryOf(w).icon }}</span>
+              </div>
+              <div class="ip-wish-text">
+                <span class="ip-wish-name">{{ w.name }}</span>
+                <small>{{ (w.votes || []).length }} of {{ needed }} votes needed</small>
+              </div>
+              <button type="button" class="ip-vote" :aria-label="'Vote on ' + w.name + ' in Group decisions'" @click="emit('go-vote')">Vote</button>
+            </div>
+          </section>
         </div>
       </aside>
     </div>
@@ -325,7 +373,7 @@
     <StopSheet :open="!!sheetItem" :stop="sheetStop || {}" :start="sheetItem ? sheetItem.start : 0"
       :duration="sheetItem ? sheetItem.stop.duration || 1 : 1" :section="sheet ? sheet.section : 'crowd'"
       :day-name="dayNameShown" :day-label="'Day ' + (dayIndex + 1) + ' · ' + longDate(dayShown)" :selected-date="dayShown"
-      :day-options="dayOptions" :weather="dayBlocks" :crowd="sheetItem ? crowdOf(sheetItem) : {}"
+      :day-options="dayOptions" :weather="dayBlocks" :typical="typical" :crowd="sheetItem ? crowdOf(sheetItem) : {}"
       :wet="sheetItem ? weatherOf(sheetItem).tone === 'bad' : false"
       :quieter="sheetItem ? quieterTimes(sheetItem) : []" :dry="sheetItem ? dryTimes(sheetItem) : []"
       :indoor-picks="indoorPicks" :can-change-day="!sampleMode" :routes="sheetItem ? savedRoutes.filter((r) => r.end === sheetItem.stop.name) : []"
@@ -346,6 +394,7 @@ import { loadLeaflet } from '../services/leaflet.js'
 import EatDrawer from './EatDrawer.vue'
 import StopSheet from './StopSheet.vue'
 import { codeForDestination, flagEmoji } from '../destinations.js'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   days: { type: Array, default: () => [] },
@@ -355,14 +404,16 @@ const props = defineProps({
   scheduledNames: { type: Array, default: () => [] },   // names already on any day (hidden from the drawer)
   dayName: { type: String, default: '' },
   weatherBlocks: { type: Array, default: () => [] },
+  typical: { type: Object, default: null }, // { month, place, temp, rainyDays }: usual weather when there's no forecast yet
   prefs: { type: Object, default: () => ({ dayStart: 8, dayEnd: 23 }) },
   canAddDay: { type: Boolean, default: false },
   destinations: { type: Array, default: () => [] },     // the trip's cities (helps place stops on the map)
   dayCounts: { type: Object, default: () => ({}) },      // { '2026-10-22': 3 } stops per day
   dayIssues: { type: Object, default: () => ({}) },     // { '2026-10-22': { issues: 2, load: 0.8 } } for the day strip
-  savedRoutes: { type: Array, default: () => [] }       // routes saved in Getting around
+  savedRoutes: { type: Array, default: () => [] },      // routes saved in Getting around
+  travellers: { type: Array, default: () => [] }        // everyone on the trip (for the majority vote rule)
 })
-const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit'])
+const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote'])
 
 // ---------- sample Kyoto day (local only) ----------
 const sampleMode = ref(false)
@@ -594,18 +645,27 @@ function nearFor(s) {
   if (match && match.city) return match.city
   return props.destinations.length === 1 ? props.destinations[0] : ''
 }
-const coordKey = (s) => (s.address || '') + '|' + nearFor(s)
+// What to look a stop up by: its address, or (no address) its name in the trip's city.
+// Breaks like "Lunch" are not real places, so they're skipped.
+const MEAL_ONLY = /^(breakfast|brunch|lunch|dinner|supper)( break)?$/i
+function placeText(s) {
+  if (s.address) return s.address
+  if (!s.name || MEAL_ONLY.test(s.name.trim())) return ''
+  const near = nearFor(s)
+  return s.name + (near ? ', ' + near : '')
+}
+const coordKey = (s) => placeText(s) + '|' + nearFor(s)
 function coordsFor(s) {
-  return s.address ? coords.value[coordKey(s)] : null
+  return placeText(s) ? coords.value[coordKey(s)] : null
 }
 
 function locate(list) {
   for (const s of list) {
-    if (!s.address || s.lat != null) continue
+    if (!placeText(s) || s.lat != null) continue
     const key = coordKey(s)
     if (coords.value[key] !== undefined) continue
     coords.value = { ...coords.value, [key]: null }
-    axios.get('/api/safety/locate', { params: { place: s.address, near: nearFor(s) || undefined }, timeout: 15000 })
+    axios.get('/api/safety/locate', { params: { place: placeText(s), near: nearFor(s) || undefined }, timeout: 15000 })
       .then((res) => { coords.value = { ...coords.value, [key]: { lat: res.data.lat, lon: res.data.lon } } })
       .catch(() => {})
   }
@@ -638,7 +698,7 @@ function toWork(s) {
     // Your own time if you set one, else the place's typical visit time, else a guess from what it is
     duration: s.duration || (s.forecast && s.forecast.durationDefault) || defaultDuration(s),
     lat: c ? c.lat : null, lon: c ? c.lon : null,
-    crowd: crowdCurve(s.forecast), popular: !!s.address,
+    crowd: crowdCurve(s.forecast), popular: !!c || !!s.address, // a place we found on the map gets the typical crowd curve
     open: day && !day.closed ? day.open : null, close: day && !day.closed ? day.close : null
   }
 }
@@ -653,9 +713,28 @@ const unscheduled = computed(() => {
 })
 // Saved places grouped by destination (e.g. Tokyo, Kyoto), in the order they first appear.
 // Places saved before multi-city trips have no city and go under "Other places".
+// ---------- majority vote rule ----------
+// On a group trip (2+ travellers), a saved place can only go on a day once more than half voted for it.
+// Solo trips skip voting: everything saved can be added.
+const votingOn = computed(() => !sampleMode.value && props.travellers.length >= 2)
+const needed = computed(() => Math.floor(props.travellers.length / 2) + 1) // 3 travellers -> 2, 4 -> 3
+function isPick(w) {
+  return !votingOn.value || (w.votes || []).length >= needed.value
+}
+const picks = computed(() => {
+  const list = []
+  for (const w of unscheduled.value) if (isPick(w)) list.push(w)
+  return list
+})
+const waiting = computed(() => {
+  const list = []
+  for (const w of unscheduled.value) if (!isPick(w)) list.push(w)
+  return list
+})
+
 const savedGroups = computed(() => {
   const groups = []
-  for (const w of unscheduled.value) {
+  for (const w of picks.value) {
     const city = w.city || ''
     let g = groups.find((x) => x.city === city)
     if (!g) {
@@ -988,7 +1067,10 @@ function dropInto(slot) {
   const d = drag.value
   endDrag()
   if (!d || previewing.value) return
-  if (d.kind === 'wish') return scheduleWish(d.item, slot)
+  if (d.kind === 'wish') {
+    if (!isPick(d.item)) return showToast(d.item.name + ' needs ' + needed.value + ' votes before it can go on a day', false)
+    return scheduleWish(d.item, slot)
+  }
   const list = stopRows.value.map((it) => it.stop)
   const from = list.findIndex((s) => s.id === d.item.id)
   if (from < 0) return
@@ -1075,15 +1157,22 @@ function unschedule(stop) {
   showToast(stop.name + ' moved back to Saved places')
 }
 
-function onHandleKey(e, i) {
-  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
-  e.preventDefault()
-  const to = e.key === 'ArrowUp' ? i - 1 : i + 1
-  if (to < 0 || to >= stopRows.value.length) return
+// Arrow buttons: swap with the stop before/after, re-time the day, and offer Undo
+function moveStop(i, to) {
+  if (previewing.value || to < 0 || to >= stopRows.value.length) return
+  const before = []
+  for (const it of stopRows.value) before.push({ id: it.stop.id, hour: it.start })
   const list = stopRows.value.map((it) => it.stop)
   const [moved] = list.splice(i, 1)
   list.splice(to, 0, moved)
   save(retime(list).map((it) => ({ id: it.stop.id, hour: it.start })))
+  showToast(moved.name + ' moved ' + (to < i ? 'earlier' : 'later'), () => save(before))
+}
+// Dragging over a card: drop above it (top half) or below it (bottom half)
+function overCard(e, i) {
+  if (!drag.value) return
+  const box = e.currentTarget.getBoundingClientRect()
+  dropAt.value = e.clientY < box.top + box.height / 2 ? i : i + 1
 }
 
 // ---------- display helpers ----------
@@ -1135,11 +1224,16 @@ function durationText(h) {
   if (min === 30) return (whole + 0.5) + ' hrs'
   return whole + (whole === 1 ? ' hr' : ' hrs') + (min ? ' ' + min + 'm' : '')
 }
+// Status emoji from the optimizer -> the matching line icon (weather and place types stay as pictures)
+const LINE_ICONS = { '⏰': 'clock', '⏳': 'clock', '⚠️': 'alert', '⚠': 'alert', '🍽': 'utensils', '👥': 'users', '🔒': 'lock', '🚇': 'train', '🚶': 'footprints', '🚪': 'door', '📍': 'map-pin' }
+function lineIcon(emoji) {
+  return LINE_ICONS[emoji] || ''
+}
 function legText(it) {
   if (it.mode === 'break') return ''
-  if (it.mode === 'walk') return '🚶 ' + it.travelMin + 'm walk (' + (it.km < 1 ? Math.round(it.km * 1000 / 50) * 50 + ' m' : it.km.toFixed(1) + ' km') + ')'
-  if (it.mode === 'transit') return '🚇 ' + it.travelMin + 'm by transit'
-  return '⋯ ~' + it.travelMin + 'm (no address)'
+  if (it.mode === 'walk') return it.travelMin + 'm walk (' + (it.km < 1 ? Math.round(it.km * 1000 / 50) * 50 + ' m' : it.km.toFixed(1) + ' km') + ')'
+  if (it.mode === 'transit') return '~' + it.travelMin + 'm by transit (est.)'
+  return '~' + it.travelMin + 'm (place not found on the map)'
 }
 function wasAt(it) {
   if (!previewing.value) return null
@@ -1172,7 +1266,19 @@ function blockAt(h) {
 }
 function weatherOf(it) {
   const b = blockAt(it.start)
-  if (!b) return { icon: '🌤️', text: '–', tone: 'none', title: 'No forecast yet (forecasts reach about 5 days ahead)' }
+  if (!b) {
+    // Too far ahead for a forecast: show what that month is usually like (marked with ~)
+    const t = props.typical
+    if (t) {
+      const wetMonth = t.rainyDays != null && t.rainyDays >= 12
+      return {
+        icon: wetMonth ? '🌦️' : t.temp >= 24 ? '☀️' : '⛅', text: '~' + t.temp + '°', tone: 'none',
+        title: 'Typical for ' + t.month + ' in ' + t.place + ': about ' + t.temp + '°C' +
+          (t.rainyDays != null ? ', rain on about ' + t.rainyDays + ' days of the month' : '') + '. The live forecast shows about 5 days before.'
+      }
+    }
+    return { icon: '🌤️', text: '–', tone: 'none', title: 'No forecast yet (forecasts reach about 5 days ahead)' }
+  }
   const wet = it.stop.outdoor && rainDuring(rain.value, it.start, it.stop.duration) >= 0.5
   const temp = b.temp != null ? b.temp + '°' : ''
   return {
@@ -1284,7 +1390,7 @@ const dayOptions = computed(() => {
   }
   return list
 })
-const indoorPicks = computed(() => unscheduled.value.filter((w) => !w.outdoor).slice(0, 5))
+const indoorPicks = computed(() => picks.value.filter((w) => !w.outdoor).slice(0, 5)) // group picks only
 
 function openSheet(it, section) {
   issuesOpen.value = false
@@ -2046,14 +2152,17 @@ function hoursText(stop) {
   margin: 0;
   padding: 0;
 }
+/* The day's route: a dotted gold line from stop to stop (like a travel journal) */
 .ip-list::before {
   content: '';
   position: absolute;
   top: 30px;
   bottom: 40px;
-  left: 15px;
-  width: 2px;
-  background: #e2dacb;
+  left: 14px;
+  width: 4px;
+  background-image: radial-gradient(circle, #edae49 1.6px, transparent 2px);
+  background-size: 4px 9px;
+  background-repeat: repeat-y;
 }
 .ip-stop {
   position: relative;
@@ -2100,10 +2209,26 @@ function hoursText(stop) {
 .ip-list.dragging .ip-gap {
   min-height: 40px;
 }
+/* How you get to the next stop: a small pill with the transport icon in a gold circle */
 .ip-leg {
-  padding: 8px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 6px 0;
+  padding: 3px 12px 3px 3px;
+  border-radius: 999px;
+  background: #fbf5ea;
+  border: 1px solid #ece4d6;
   font-size: 12px;
+  font-weight: 600;
   color: var(--muted);
+}
+.ip-leg :deep(svg) {
+  box-sizing: content-box;
+  padding: 4px;
+  border-radius: 50%;
+  background: #fdf3e0;
+  color: #c98a1e;
 }
 .ip-drop {
   flex: 1;
@@ -2146,35 +2271,66 @@ function hoursText(stop) {
   box-shadow: 0 0 0 2px rgba(0, 121, 140, 0.35);
   animation: ip-slide 0.35s ease-out;
 }
-.ip-handle {
-  position: absolute;
-  left: -2px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 40px;
+.ip-move {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: -4px -4px -4px -2px;
+}
+.ip-move-locked {
+  justify-content: center;
+  width: 28px;
+  color: #9aa7b1;
+}
+.ip-move-btn {
+  width: 28px;
+  height: 24px;
+  display: grid;
+  place-items: center;
   border: 0;
   border-radius: 8px;
   background: transparent;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+.ip-move-btn:hover:not(:disabled),
+.ip-move-btn:focus-visible {
+  background: rgba(0, 61, 91, 0.1);
+  color: var(--text);
+}
+.ip-move-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.ip-handle {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 22px;
   color: #9aa7b1;
-  font-size: 12px;
-  letter-spacing: -2px;
   cursor: grab;
-  opacity: 0;
-  transition: opacity 0.15s;
 }
-.ip-card:hover .ip-handle,
-.ip-handle:focus-visible {
-  opacity: 1;
+.ip-card:hover .ip-handle {
+  color: var(--text);
 }
-.ip-handle:disabled {
-  display: none;
+.ip-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+.ip-reorder-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px 44px;
+  font-size: 13px;
+  color: var(--muted);
 }
 .ip-thumb {
   flex: none;
-  width: 104px;
-  height: 80px;
-  border-radius: 14px;
+  width: 124px; /* photo first: a bigger picture of each stop */
+  height: 92px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
   font-size: 30px;
@@ -2531,6 +2687,50 @@ function hoursText(stop) {
   font-size: 11px;
   color: var(--muted);
 }
+.ip-vote-rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(237, 174, 73, 0.14);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ip-vote-rule svg {
+  flex: none;
+  margin-top: 1px;
+  color: #c98a1e;
+}
+.ip-waiting {
+  margin-top: 6px;
+}
+.ip-wish.waiting {
+  cursor: default;
+  border-style: dashed;
+}
+.ip-wish.waiting .ip-thumb,
+.ip-wish.waiting .ip-wish-name {
+  opacity: 0.65;
+}
+.ip-vote {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1.5px solid #edae49;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+.ip-vote:hover,
+.ip-vote:focus-visible {
+  background: #edae49;
+  color: #001d2c;
+}
 .ip-add {
   flex: none;
   width: 30px;
@@ -2590,9 +2790,6 @@ function hoursText(stop) {
   .ip-thumb {
     width: 76px;
     height: 68px;
-  }
-  .ip-handle {
-    opacity: 1;
   }
   .ip-map {
     height: 320px;
@@ -2844,7 +3041,7 @@ function hoursText(stop) {
   background: #fbe7ea;
 }
 .ip-dialog-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.3rem;
   margin: 12px 0 8px;
 }
@@ -2920,6 +3117,14 @@ function hoursText(stop) {
 @media (prefers-reduced-motion: reduce) {
   .ip-dialog {
     animation: none;
+  }
+}
+
+/* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
+@media (pointer: coarse), (max-width: 560px) {
+  .ip-arrow {
+    min-width: 40px;
+    min-height: 40px;
   }
 }
 </style>

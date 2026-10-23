@@ -3,7 +3,7 @@
   <div class="er" @keydown.esc="close">
     <button ref="triggerEl" type="button" class="er-trigger" :class="{ group: groupCount, warn: liveError && !groupCount }"
       :aria-expanded="open" aria-haspopup="dialog" @click="open ? close() : (open = true)">
-      <span aria-hidden="true">💱</span>
+      <AppIcon name="swap" :size="16" />
       <template v-if="liveError && !groupCount">Rates unavailable · set your own</template>
       <template v-else-if="groupCount">{{ groupCount }} group rate{{ groupCount === 1 ? '' : 's' }}<span v-if="liveDate" class="er-dim"> · live {{ shortDate(liveDate) }}</span></template>
       <template v-else>Live rates<span v-if="liveDate" class="er-dim"> · {{ shortDate(liveDate) }}</span></template>
@@ -17,7 +17,7 @@
             <h4 id="er-title" class="er-title">Exchange rates</h4>
             <p class="er-sub">Used for every total and for who owes whom. A group rate is used instead of the live rate.</p>
           </div>
-          <button type="button" class="er-x" aria-label="Close" @click="close">✕</button>
+          <button type="button" class="er-x" aria-label="Close" @click="close"><AppIcon name="x" :size="16" /></button>
         </header>
 
         <p v-if="!rows.length" class="er-empty">Add an expense in another currency, or pick one below to set its rate.</p>
@@ -84,6 +84,7 @@
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { currencyOptions, money } from '../expenses.js'
 import CustomDropdown from './CustomDropdown.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   home: { type: String, default: 'SGD' },
@@ -273,7 +274,7 @@ function shortDate(d) {
   gap: 10px;
 }
 .er-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.1rem;
   margin: 0;
 }
@@ -461,6 +462,13 @@ function shortDate(d) {
   .er-pop-enter-active,
   .er-pop-leave-active {
     transition: none;
+  }
+}
+
+/* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
+@media (pointer: coarse), (max-width: 560px) {
+  .er-trigger {
+    min-height: 40px;
   }
 }
 </style>

@@ -1,7 +1,12 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import User from '../models/User.js'
+import Trip from '../models/trip.js'
+import Group from '../models/Group.js'
+import Photo from '../models/Photo.js'
+import { mailReady, sendEmail } from '../mailer.js'
 
 const router = express.Router()
 
@@ -86,6 +91,91 @@ router.post('/login', async (req, res) => {
   })
 })
 
+// ---------- Forgot password ----------
+// 1. POST /api/auth/forgot { email }  -> emails a 6-digit code (valid 15 min)
+// 2. POST /api/auth/reset  { email, code, password } -> sets the new password
+// The answer to step 1 is the same whether or not the email has an account, so nobody can use it to check emails.
+const RESET_MINUTES = 15
+const SAME_ANSWER = { message: 'If an account uses that email, we\'ve sent it a 6-digit code. It works for ' + RESET_MINUTES + ' minutes.' }
+
+router.post('/forgot', async (req, res) => {
+  const email = (req.body.email || '').trim().toLowerCase()
+  if (!EMAIL_PATTERN.test(email)) {
+    return res.status(400).json({ message: 'Please enter the email you signed up with.' })
+  }
+  if (!mailReady()) {
+    return res.status(503).json({ message: 'Password reset by email isn\'t set up on this server yet. Ask the app owner to add the email settings.' })
+  }
+
+  const user = await User.findOne({ email })
+  if (!user) return res.json(SAME_ANSWER)
+
+  // One email a minute per account, so the button can't be used to spam someone
+  if (user.reset && user.reset.sentAt && Date.now() - user.reset.sentAt.getTime() < 60 * 1000) {
+    return res.json(SAME_ANSWER)
+  }
+
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0') // "042917"
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Your Chui-se Your Trip reset code: ' + code,
+      text: 'Hi ' + user.name + ',\n\nYour code to reset your password is ' + code + '. It works for ' + RESET_MINUTES +
+        ' minutes.\n\nIf you didn\'t ask for this, you can ignore this email: your password stays the same.',
+      html: '<div style="font-family:Arial,sans-serif;color:#001d2c;max-width:440px">' +
+        '<p>Hi ' + escapeHtml(user.name) + ',</p><p>Your code to reset your password is:</p>' +
+        '<p style="font-size:32px;font-weight:700;letter-spacing:6px;margin:16px 0;color:#003d5b">' + code + '</p>' +
+        '<p>It works for ' + RESET_MINUTES + ' minutes.</p>' +
+        '<p style="color:#5b6b75;font-size:13px">If you didn\'t ask for this, you can ignore this email: your password stays the same.</p></div>'
+    })
+  } catch (err) {
+    console.error('Could not send the reset email:', err.message)
+    return res.status(502).json({ message: 'We couldn\'t send the email just now. Please try again in a minute.' })
+  }
+
+  user.reset = {
+    codeHash: await bcrypt.hash(code, 10),
+    expiresAt: new Date(Date.now() + RESET_MINUTES * 60 * 1000),
+    sentAt: new Date(),
+    attempts: 0
+  }
+  await user.save()
+  res.json(SAME_ANSWER)
+})
+
+router.post('/reset', async (req, res) => {
+  const email = (req.body.email || '').trim().toLowerCase()
+  const code = String(req.body.code || '').replace(/\D/g, '')
+  const password = req.body.password || ''
+
+  if (code.length !== 6) return res.status(400).json({ message: 'The code is the 6 digits in the email.' })
+  if (password.length < 8) return res.status(400).json({ message: 'Password must be at least 8 characters.' })
+
+  const user = await User.findOne({ email })
+  const r = user && user.reset
+  if (!r || !r.codeHash || !r.expiresAt || r.expiresAt.getTime() < Date.now()) {
+    return res.status(400).json({ message: 'That code has expired. Tap "Send a new code" to get another.' })
+  }
+  if (r.attempts >= 5) {
+    return res.status(429).json({ message: 'Too many wrong codes. Tap "Send a new code" to get another.' })
+  }
+  if (!(await bcrypt.compare(code, r.codeHash))) {
+    user.reset.attempts = r.attempts + 1
+    await user.save()
+    const left = 5 - user.reset.attempts
+    return res.status(400).json({ message: 'That code isn\'t right. ' + (left > 0 ? left + ' tries left.' : 'Tap "Send a new code" to get another.') })
+  }
+
+  user.passwordHash = await bcrypt.hash(password, 10)
+  user.reset = undefined // the code only works once
+  await user.save()
+  res.json({ message: 'Password updated. You can log in with it now.', username: user.username })
+})
+
+function escapeHtml(text) {
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 // What /me sends back
 const CURRENCY_CODES = ['SGD', 'USD', 'EUR', 'GBP', 'JPY', 'KRW', 'CNY', 'HKD', 'THB', 'MYR', 'IDR', 'PHP', 'INR', 'AUD', 'NZD', 'CAD', 'CHF', 'TRY']
 function meJson(user) {
@@ -162,6 +252,74 @@ router.put('/me', requireAuth, async (req, res) => {
 
   await user.save()
   res.json(meJson(user))
+})
+
+
+// PUT /api/auth/password  { currentPassword, newPassword }  -> change password while logged in
+router.put('/password', requireAuth, async (req, res) => {
+  const current = req.body.currentPassword || ''
+  const next = req.body.newPassword || ''
+  const user = await User.findById(req.userId)
+  if (!user) return res.status(404).json({ message: 'User not found.' })
+  if (!(await bcrypt.compare(current, user.passwordHash))) {
+    return res.status(400).json({ message: 'Your current password isn\'t right.' })
+  }
+  if (next.length < 8) return res.status(400).json({ message: 'The new password must be at least 8 characters.' })
+  if (next === current) return res.status(400).json({ message: 'The new password is the same as the old one.' })
+  user.passwordHash = await bcrypt.hash(next, 10)
+  user.reset = undefined // an old emailed code can't be used any more
+  await user.save()
+  res.json({ message: 'Password changed.' })
+})
+
+// DELETE /api/auth/me  { password }  -> delete my account for good
+//  - Trips I organise: the next person who joined becomes the organiser. Trips nobody else joined are deleted.
+//  - Trips I joined: I'm taken off the members, but my name stays as a traveller (so expenses still add up).
+//  - Family groups: groups I own are deleted, I leave the others. Friends and requests are removed.
+router.delete('/me', requireAuth, async (req, res) => {
+  const user = await User.findById(req.userId)
+  if (!user) return res.status(404).json({ message: 'User not found.' })
+  if (!(await bcrypt.compare(req.body.password || '', user.passwordHash))) {
+    return res.status(400).json({ message: 'That password isn\'t right.' })
+  }
+  const me = String(user._id)
+
+  const trips = await Trip.find({ $or: [{ owner: user._id }, { 'members.user': user._id }, { 'pendingInvites.user': user._id }] })
+  let deletedTrips = 0
+  for (const trip of trips) {
+    const others = []
+    for (const m of trip.members || []) {
+      if (String(m.user) !== me) others.push(m)
+    }
+    if (String(trip.owner) === me && !others.length) {
+      await Photo.deleteMany({ trip: trip._id })
+      await Trip.deleteOne({ _id: trip._id })
+      deletedTrips++
+      continue
+    }
+    if (String(trip.owner) === me) {
+      others.sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt)) // longest on the trip first
+      others[0].role = 'owner'
+      trip.owner = others[0].user
+    }
+    trip.members = others
+    const invites = []
+    for (const p of trip.pendingInvites || []) {
+      if (String(p.user) !== me) invites.push(p)
+    }
+    trip.pendingInvites = invites
+    await trip.save()
+  }
+
+  const owned = await Group.find({ owner: user._id }).select('_id')
+  const ownedIds = owned.map((g) => g._id)
+  await Trip.updateMany({ group: { $in: ownedIds } }, { group: null })
+  await Group.deleteMany({ _id: { $in: ownedIds } })
+  await Group.updateMany({ members: user._id }, { $pull: { members: user._id } })
+
+  await User.updateMany({}, { $pull: { friends: user._id, friendRequests: { from: user._id } } })
+  await User.deleteOne({ _id: user._id })
+  res.json({ ok: true, deletedTrips })
 })
 
 export default router

@@ -41,6 +41,8 @@
 <script>
 import axios from 'axios'
 import AuthShell from '../components/AuthShell.vue'
+import { saveLogin } from '../auth.js'
+import { markNewAccount } from '../onboarding.js'
 
 export default {
   components: { AuthShell },
@@ -84,17 +86,17 @@ export default {
 
       this.loading = true
       try {
-        await axios.post('/api/auth/register', {
+        const res = await axios.post('/api/auth/register', {
           name: this.name,
           username: this.username.trim(),
           email: this.email.trim(),
           password: this.password
         })
-        // Account created: send them to the login page with a success message
-        // (keeps ?redirect so an invite link still works after signing up)
-        const query = { registered: 'true', username: this.username.trim().toLowerCase() }
-        if (this.$route.query.redirect) query.redirect = this.$route.query.redirect
-        this.$router.push({ path: '/login', query })
+        // Account created: the server also logs them in, so go straight in
+        // (to the page they came for, e.g. an invite link, otherwise their trips)
+        saveLogin(res.data.token, res.data.user)
+        markNewAccount(res.data.user.id) // Home will suggest setting up food needs etc. in Settings
+        this.$router.push(this.$route.query.redirect || '/home')
       } catch (err) {
         // Show the server's message if it sent one, otherwise a general one
         if (err.response && err.response.data && err.response.data.message) {

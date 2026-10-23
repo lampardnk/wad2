@@ -24,26 +24,26 @@
 
     <!-- Quick vote: the whole list in one tap. Shows where you're at, and every bulk vote can be undone. -->
     <section v-if="voter" class="pv-quick" :class="{ done: !leftFor(voter) }" aria-labelledby="pv-quick-title">
-      <span class="pv-quick-icon" aria-hidden="true">{{ leftFor(voter) ? '👍' : '✓' }}</span>
+      <span class="pv-quick-icon" aria-hidden="true"><AppIcon :name="leftFor(voter) ? 'thumbs-up' : 'check'" :size="24" /></span>
       <div class="pv-quick-text">
         <h3 id="pv-quick-title" class="pv-quick-title">{{ leftFor(voter) ? 'Like everything on the list?' : "You've voted on every place" }}</h3>
         <p class="pv-quick-sub">
           <template v-if="leftFor(voter)">
             You've said yes to {{ places.length - leftFor(voter) }} of {{ places.length }} places. Vote yes on the rest in one tap, then remove any you don't want.
           </template>
-          <template v-else>Changed your mind? Tap your 👍 on any card below to take it back.</template>
+          <template v-else>Changed your mind? Tap your name on any card below to take that vote back.</template>
         </p>
         <!-- Organiser: the same for people without an account -->
         <div v-if="others.length" class="pv-quick-others">
           <span class="pv-quick-for">Also vote for:</span>
           <button v-for="person in others" :key="person" type="button" class="pv-voter" :class="{ yes: !leftFor(person) }"
             :disabled="!leftFor(person)" @click="voteAll(person)">
-            {{ leftFor(person) ? '👍 Yes to all · ' + person : '✓ ' + person }}
+            <AppIcon :name="leftFor(person) ? 'thumbs-up' : 'check'" :size="14" /> {{ leftFor(person) ? 'Yes to all · ' + person : person }}
           </button>
         </div>
       </div>
       <button v-if="leftFor(voter)" type="button" class="pv-quick-btn" @click="voteAll(voter)" data-testid="vote-all">
-        👍 Yes to {{ leftFor(voter) === places.length ? 'all ' + places.length : 'the other ' + leftFor(voter) }}
+        <AppIcon name="thumbs-up" :size="18" /> Yes to {{ leftFor(voter) === places.length ? 'all ' + places.length : 'the other ' + leftFor(voter) }}
       </button>
       <p v-if="undoInfo" class="pv-quick-undo" role="status">
         ✓ {{ undoInfo.text }}
@@ -66,7 +66,7 @@
           <div class="d-flex flex-wrap align-items-center gap-2">
             <h4 class="pv-name">{{ w.name }}</h4>
           </div>
-          <p v-if="whereOf(w)" class="pv-where">📍 {{ whereOf(w) }}</p>
+          <p v-if="whereOf(w)" class="pv-where"><AppIcon name="map-pin" :size="13" /> {{ whereOf(w) }}</p>
 
           <!-- Progress towards a group pick -->
           <div class="pv-progress" role="progressbar" :aria-valuenow="w.votes.length" aria-valuemin="0" :aria-valuemax="travellers.length"
@@ -80,12 +80,12 @@
               <!-- Your own vote (and, for the organiser, people without an account) -->
               <button v-if="canVoteFor.includes(person)" type="button" class="pv-voter" :class="{ yes: w.votes.includes(person), mine: person === me }"
                 :aria-pressed="w.votes.includes(person)" @click="toggle(w, person)" data-testid="vote-btn">
-                <span aria-hidden="true">{{ w.votes.includes(person) ? '👍' : '＋' }}</span> {{ person === me ? 'You' : person }}
+                <AppIcon :name="w.votes.includes(person) ? 'thumbs-up' : 'plus'" :size="14" /> {{ person === me ? 'You' : person }}
               </button>
               <!-- Everyone else: shown, but only they can change it -->
               <span v-else class="pv-voter readonly" :class="{ yes: w.votes.includes(person) }"
                 :title="person + (w.votes.includes(person) ? ' wants to go' : ' has not voted yet')">
-                <span aria-hidden="true">{{ w.votes.includes(person) ? '👍' : '…' }}</span> {{ person }}
+                <AppIcon v-if="w.votes.includes(person)" name="thumbs-up" :size="14" /><span v-else aria-hidden="true">…</span> {{ person }}
                 <span class="visually-hidden">{{ w.votes.includes(person) ? 'wants to go' : "hasn't voted" }}</span>
               </span>
             </template>
@@ -104,13 +104,17 @@
 import { trip } from '../itineraryStore.js'
 import { placeStyle } from '../placeStyle.js'
 import CustomDropdown from './CustomDropdown.vue'
+import AppIcon from './AppIcon.vue'
+import axios from 'axios'
+import { notify, errorText } from '../notify.js'
 
 export default {
-  components: { CustomDropdown },
+  components: { AppIcon, CustomDropdown },
   props: {
     travellers: { type: Array, default: () => [] },
     me: { type: String, default: '' },                 // my name on this trip
-    canVoteFor: { type: Array, default: () => [] }     // whose votes I may change (me, + guests if organiser)
+    canVoteFor: { type: Array, default: () => [] },    // whose votes I may change (me, + guests if organiser)
+    tripId: { type: String, default: '' }              // where votes are saved ('' or 'seoul' = not saved)
   },
   emits: ['go-wishlist'],
 
@@ -195,31 +199,51 @@ export default {
     },
     // Yes to every place they haven't voted for. Remembers the votes before, so Undo puts them back exactly.
     voteAll(person) {
-      const before = []
-      let added = 0
+      const ids = []
       for (const w of this.places) {
-        if (!w.votes) w.votes = []
-        before.push({ w, votes: w.votes.slice() })
-        if (!w.votes.includes(person)) {
-          w.votes.push(person)
-          added++
-        }
+        if (!(w.votes || []).includes(person)) ids.push(w.id)
       }
+      this.setVotes(ids, person, true)
       const who = person === this.me ? '' : ' for ' + person
-      this.undoInfo = { text: 'Voted yes on ' + added + ' place' + (added === 1 ? '' : 's') + who + '.', before }
+      this.undoInfo = { text: 'Voted yes on ' + ids.length + ' place' + (ids.length === 1 ? '' : 's') + who + '.', ids, person }
       clearTimeout(this.undoTimer)
       this.undoTimer = setTimeout(() => { this.undoInfo = null }, 10000)
     },
+    // Undo "Yes to all": take back exactly the votes it added
     undoAll() {
       if (!this.undoInfo) return
-      for (const b of this.undoInfo.before) b.w.votes = b.votes
+      this.setVotes(this.undoInfo.ids, this.undoInfo.person, false)
       this.undoInfo = null
       clearTimeout(this.undoTimer)
     },
     toggle(w, person) {
-      if (!w.votes) w.votes = []
-      if (w.votes.includes(person)) w.votes = w.votes.filter((p) => p !== person)
-      else w.votes.push(person)
+      this.setVotes([w.id], person, !(w.votes || []).includes(person))
+    },
+
+    // Show the vote straight away, then save it. Each vote is saved on its own,
+    // so two people voting at the same time never undo each other's votes.
+    async setVotes(ids, person, yes) {
+      if (!ids.length) return
+      this.applyVotes(ids, person, yes)
+      if (!this.tripId || this.tripId === 'seoul') return // the demo trip isn't saved
+      try {
+        const res = await axios.post('/api/trips/' + this.tripId + '/votes', { wishIds: ids, person, yes })
+        // Everyone's latest votes come back, so new votes from the group show up too
+        for (const w of this.places) {
+          if (res.data.votes[w.id]) w.votes = res.data.votes[w.id]
+        }
+      } catch (err) {
+        this.applyVotes(ids, person, !yes) // it wasn't saved, so don't pretend it was
+        notify(errorText(err, 'Could not save your vote.'), () => this.setVotes(ids, person, yes))
+      }
+    },
+    applyVotes(ids, person, yes) {
+      for (const w of this.places) {
+        if (!ids.includes(w.id)) continue
+        const votes = (w.votes || []).filter((p) => p !== person)
+        if (yes) votes.push(person)
+        w.votes = votes
+      }
     }
   }
 }
@@ -286,12 +310,12 @@ export default {
   border-top: 1px solid #e2dacb;
 }
 .pv-heading {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.25rem;
   margin-bottom: 12px;
 }
 .pv-count-pill {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   background: #fbefd9;
   color: #004e5a;
@@ -507,7 +531,7 @@ export default {
   outline-offset: 2px;
 }
 .pv-count {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.4rem;
   color: var(--app-muted, #5a6b78);
 }

@@ -122,13 +122,17 @@ export async function getLocationInfo(lat, lon) {
 /* A trip destination like "Kyoto, Japan" -> { lat, lon, city, countryCode, countryName } (via our server) */
 export async function locatePlace(place) {
   const res = await axios.get('/api/safety/locate', { params: { place }, timeout: TIMEOUT_MS })
-  return res.data
+  const d = res.data || {}
+  // A place without coordinates can't be shown: treat it as "not found" instead of breaking the page
+  if (typeof d.lat !== 'number' || typeof d.lon !== 'number') throw new Error('Place not found')
+  return d
 }
 
 /* Hospitals, clinics, police, fire stations, evacuation points (3 km) and your embassy (40 km), via our server */
 export async function getNearbySafety(lat, lon, home = 'SG') {
   const res = await axios.get('/api/safety/nearby', { params: { lat: roundCoord(lat), lon: roundCoord(lon), home }, timeout: 30000 })
-  return res.data.places
+  const places = res.data && res.data.places
+  return Array.isArray(places) ? places.filter((p) => p && typeof p.lat === 'number' && typeof p.lon === 'number') : []
 }
 
 /*
@@ -208,7 +212,7 @@ export async function getNearbyEarthquakes(lat, lon, radiusKm = 300, days = 3) {
     maxradiuskm: radiusKm, minmagnitude: 4, starttime: start.toISOString()
   })
   const data = await getJSON(`${USGS_URL}?${params}`)
-  return data.features.map((f) => {
+  return (data.features || []).filter((f) => f && f.geometry && f.properties && typeof f.properties.mag === 'number').map((f) => {
     const [qLon, qLat] = f.geometry.coordinates
     return {
       id: 'eq-' + f.id,

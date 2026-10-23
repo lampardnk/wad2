@@ -8,7 +8,7 @@
 
     <div v-else-if="error" class="jv-card">
       <div class="jv-body text-center">
-        <div class="jv-big-icon" aria-hidden="true">🔗</div>
+        <div class="jv-big-icon" aria-hidden="true"><AppIcon name="link" :size="34" /></div>
         <h1 class="jv-title">Invite not found</h1>
         <p class="jv-muted">{{ error }}</p>
         <router-link to="/home" class="jv-btn">Go to my trips</router-link>
@@ -31,7 +31,7 @@
             {{ flagFor(d) }} {{ d.split(', ')[0] }}
           </span>
         </p>
-        <p class="jv-meta">🗓 {{ dateText }}</p>
+        <p class="jv-meta"><AppIcon name="calendar" :size="15" /> {{ dateText }}</p>
 
         <div class="jv-going">
           <span class="jv-faces" aria-hidden="true">
@@ -77,8 +77,10 @@
 import axios from 'axios'
 import { auth } from '../auth.js'
 import { codeForDestination, flagEmoji } from '../destinations.js'
+import AppIcon from '../components/AppIcon.vue'
 
 export default {
+  components: { AppIcon },
   props: { code: { type: String, required: true } },
 
   data() {
@@ -203,7 +205,7 @@ export default {
   padding: 22px 26px 26px;
 }
 .jv-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 2rem;
   margin: 0 0 4px;
 }

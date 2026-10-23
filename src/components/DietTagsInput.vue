@@ -3,7 +3,7 @@
   <div class="dt" :class="{ focus: menuOpen }" @click="input.focus()">
     <span v-for="t in tags" :key="t.key" class="dt-tag" :class="{ allergy: t.allergy }">
       {{ t.icon }} {{ t.label }}
-      <button type="button" class="dt-x" :aria-label="'Remove ' + t.label" @click.stop="removeTag(t.key)">✕</button>
+      <button type="button" class="dt-x" :aria-label="'Remove ' + t.label" @click.stop="removeTag(t.key)"><AppIcon name="x" :size="12" /></button>
     </span>
     <input :id="id || null" ref="input" v-model="query" class="dt-input" maxlength="30" autocomplete="off"
       :placeholder="tags.length ? 'Add more…' : '+ Add dietary need or allergy…'"
@@ -25,6 +25,7 @@
 // <DietTagsInput v-model="diet" />  -> ['halal', 'No spicy food']
 import { ref, computed, watch } from 'vue'
 import { DIETS, dietTag } from '../crewOptions.js'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },

@@ -3,7 +3,7 @@
   <section class="sp" aria-labelledby="sp-title">
     <header class="sp-head">
       <div class="sp-titles">
-        <h3 id="sp-title" class="sp-title"><span class="sp-spark" aria-hidden="true">✨</span> Smart Schedule</h3>
+        <h3 id="sp-title" class="sp-title"><span class="sp-spark" aria-hidden="true"><AppIcon name="sparkles" :size="18" /></span> Smart Schedule</h3>
         <p class="sp-sub">Automatically balances travel time, crowd levels and the weather.</p>
       </div>
       <div class="sp-head-right">
@@ -16,7 +16,7 @@
       <div class="sp-control">
         <span class="sp-label" id="sp-hours">Active hours</span>
         <div class="sp-hours" role="group" aria-labelledby="sp-hours">
-          <span aria-hidden="true">⏰</span>
+          <AppIcon name="clock" :size="16" />
           <CustomDropdown v-model="form.dayStart" :options="startChoices" size="sm" class="sp-time" header-text="Day starts" aria-label="Day starts" :searchable="false" />
           <span class="sp-dash" aria-hidden="true">–</span>
           <CustomDropdown v-model="form.dayEnd" :options="endChoices" size="sm" class="sp-time" header-text="Day ends" aria-label="Day ends" :searchable="false" />
@@ -53,6 +53,7 @@
 import { reactive, ref, computed, watch } from 'vue'
 import { prefs, savePreferences } from '../preferences.js'
 import CustomDropdown from './CustomDropdown.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   saveStatus: { type: String, default: '' },                                  // itinerary saving
@@ -135,7 +136,7 @@ const saveText = computed(() => saving.value || props.saveStatus)
   gap: 12px;
 }
 .sp-title {
-  font-family: 'Fredoka', sans-serif;
+  font-family: var(--font-display);
   font-size: 1.2rem;
   margin: 0;
   color: #fff;
@@ -289,6 +290,13 @@ const saveText = computed(() => saving.value || props.saveStatus)
 @media (prefers-reduced-motion: reduce) {
   .sp-seg button {
     transition: none;
+  }
+}
+
+/* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
+@media (pointer: coarse), (max-width: 560px) {
+  .sp-seg button {
+    min-height: 40px;
   }
 }
 </style>

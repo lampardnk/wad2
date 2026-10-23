@@ -2,6 +2,7 @@
   <AuthShell title="Welcome back, explorer" :subtitle="invited ? 'Log in to join the trip you were invited to.' : 'Log in to pick up where you left off.'"
     :switch-to="{ path: '/signup', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }" switch-label="Sign up">
     <p v-if="$route.query.registered" class="as-success" data-testid="login-registered">Account created! Log in to start planning.</p>
+    <p v-if="$route.query.reset" class="as-success" role="status">Password updated! Log in with your new password.</p>
 
     <form class="as-form" @submit.prevent="login" novalidate>
       <label for="username" class="visually-hidden">Username or email</label>
@@ -12,6 +13,7 @@
       <label for="password" class="visually-hidden">Password</label>
       <input id="password" type="password" class="as-input" v-model="password"
         placeholder="Password" autocomplete="current-password" data-testid="login-password" required>
+      <router-link :to="{ path: '/forgot-password', query: username.includes('@') ? { email: username.trim() } : {} }" class="lv-forgot">Forgot password?</router-link>
 
       <p v-if="errorMessage" class="as-error" role="alert" data-testid="login-error">{{ errorMessage }}</p>
 
@@ -78,3 +80,18 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.lv-forgot {
+  align-self: flex-end;
+  margin-top: -4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2fe0a1;
+  text-decoration: none;
+}
+.lv-forgot:hover,
+.lv-forgot:focus-visible {
+  text-decoration: underline;
+}
+</style>

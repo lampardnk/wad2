@@ -35,10 +35,12 @@ export function money(amount, currency) {
   return (amount < 0 ? '−' : '') + currency + ' ' + text
 }
 
-// Amount in the home currency
-export function toHome(amount, currency, rates) {
+// Amount in the home currency, or null when there's no rate for that currency yet
+// (never guess 1:1: 54,000 won is not 54,000 dollars)
+export function toHome(amount, currency, rates, home) {
+  if (home && currency === home) return amount
   const rate = rates && rates[currency]
-  return rate ? amount / rate : amount
+  return rate ? amount / rate : null
 }
 
 // How much each person owes for one expense, in the expense's own currency
@@ -58,16 +60,19 @@ export function sharesOf(expense) {
 }
 
 // Net balance per person in the home currency: + means others owe them, - means they owe
-export function balances(travellers, expenses, settlements, rates) {
+// (expenses in a currency with no rate yet are left out until a rate is known)
+export function balances(travellers, expenses, settlements, rates, home) {
   const result = {}
   for (const name of travellers) result[name] = 0
   for (const e of expenses) {
+    const paid = toHome(e.amount, e.currency, rates, home)
+    if (paid === null) continue
     if (result[e.paidBy] === undefined) result[e.paidBy] = 0
-    result[e.paidBy] += toHome(e.amount, e.currency, rates)
+    result[e.paidBy] += paid
     const shares = sharesOf(e)
     for (const name in shares) {
       if (result[name] === undefined) result[name] = 0
-      result[name] -= toHome(shares[name], e.currency, rates)
+      result[name] -= toHome(shares[name], e.currency, rates, home)
     }
   }
   for (const s of settlements) {

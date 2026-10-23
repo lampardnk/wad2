@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import TripView from '../views/TripView.vue'
 import LoginView from '../views/LoginView.vue'
 import SignupView from '../views/SignupView.vue'
+import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import TripSetupView from '../views/TripSetupView.vue'
 import JoinView from '../views/JoinView.vue'
 import SettingsView from '../views/SettingsView.vue'
@@ -22,7 +23,8 @@ const routes = [
   // Invite links: /join/<code>
   { path: '/join/:code', name: 'Join', component: JoinView, props: true, meta: { requiresAuth: true } },
   { path: '/login', name: 'Login', component: LoginView, meta: { hideNav: true } },
-  { path: '/signup', name: 'Signup', component: SignupView, meta: { hideNav: true } }
+  { path: '/signup', name: 'Signup', component: SignupView, meta: { hideNav: true } },
+  { path: '/forgot-password', name: 'ForgotPassword', component: ForgotPasswordView, meta: { hideNav: true } }
 ]
 
 const router = createRouter({
@@ -36,7 +38,7 @@ router.beforeEach((to) => {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
   // Signed in: the landing, login and signup pages go straight to your trips
-  if ((to.path === '/' || to.path === '/login' || to.path === '/signup') && auth.token) {
+  if ((to.path === '/' || to.path === '/login' || to.path === '/signup' || to.path === '/forgot-password') && auth.token) {
     return '/home'
   }
 })

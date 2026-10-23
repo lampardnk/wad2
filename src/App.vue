@@ -19,6 +19,8 @@
     </div>
     <!-- Friends drawer, opened from the profile menu -->
     <FriendsDrawer v-if="auth.token" />
+    <!-- Errors with "Try again", and the "can't reach the server" bar -->
+    <AppToast />
   </div>
 </template>
 
@@ -26,11 +28,12 @@
 import { auth } from './auth.js'
 import UserProfileMenu from './components/UserProfileMenu.vue'
 import FriendsDrawer from './components/FriendsDrawer.vue'
+import AppToast from './components/AppToast.vue'
 import { startFriends, stopFriends } from './friends.js'
 
 export default {
   name: 'App',
-  components: { UserProfileMenu, FriendsDrawer },
+  components: { UserProfileMenu, FriendsDrawer, AppToast },
   data() {
     return { auth }
   },
