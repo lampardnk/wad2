@@ -106,36 +106,92 @@
     }
 
     async function loadOptions() {
+        console.log('🚆 loadOptions() called', {
+            startPoint: startPoint.value,
+            endPoint: endPoint.value,
+            selectedDay: selectedDay.value,
+            selectedTime: selectedTime.value,
+            timeZone: timeZone.value
+        });
+
+        // Make sure start and destination exist
         if (!startPoint.value || !endPoint.value) {
             options.value = [];
             return;
         }
 
         loading.value = true;
+
         try {
-            // get address
+            // Get addresses
             const origin = addressOf(startPoint.value);
             const destination = addressOf(endPoint.value);
-            // if address could not be resolved
+
+            console.log('📍 Directions addresses:', {
+                origin,
+                destination
+            });
+
+            // If address could not be resolved
             if (!origin || !destination) {
                 options.value = [];
                 return;
             }
 
-            const isoTime = getIsoTime(selectedDay.value, selectedTime.value);
+            // Convert selected date/time into ISO format
+            const isoTime = getIsoTime(
+                selectedDay.value,
+                selectedTime.value
+            );
 
-            const queryParams = new URLSearchParams({ origin, destination });
+            // Build query parameters
+            const queryParams = new URLSearchParams({
+                origin,
+                destination
+            });
+
             if (isoTime) {
                 queryParams.set('time', isoTime);
                 queryParams.set('timeType', timeType.value);
             }
 
-            const res = await fetch(`/api/directions?${queryParams}`);
-            if (!res.ok) throw new Error(`Request failed (${res.status})`);
+            console.log(
+                '🚆 About to fetch:',
+                `/api/directions?${queryParams}`
+            );
+
+            // Call backend ONCE
+            const res = await fetch(
+                `/api/directions?${queryParams}`
+            );
+
+            console.log(
+                '🚆 Directions response status:',
+                res.status
+            );
+
+            if (!res.ok) {
+                throw new Error(
+                    `Request failed (${res.status})`
+                );
+            }
+
+            // Read response ONCE
             options.value = await res.json();
-        } catch(error) {
-            console.error('Could not load directions', error);
+
+            console.log(
+                '🚆 Final options received:',
+                options.value
+            );
+
+        } catch (error) {
+            console.error(
+                'Could not load directions',
+                error
+            );
+
             options.value = [];
+
         } finally {
             loading.value = false;
         }
