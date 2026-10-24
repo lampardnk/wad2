@@ -175,8 +175,14 @@
     <section v-for="sec in sections" :key="sec.dest" class="mt-5" :aria-label="'Popular in ' + sec.city">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h3 class="wl-heading mb-0">{{ sec.flag }} Popular in {{ sec.city }}</h3>
-        <span v-if="sec.list.length" class="small text-muted">{{ sec.list.length }} places · from OpenStreetMap</span>
+        <span v-if="sec.list.length" class="small text-muted">{{ sec.list.length }} {{ sec.list.length === 1 ? 'place' : 'places' }} · {{ sec.partial ? 'top picks' : 'from OpenStreetMap' }}</span>
       </div>
+      <!-- The map service was busy: only the hand-picked (and Wikipedia) places for now; the full list follows by itself -->
+      <p v-if="sec.partial && !sec.loading" class="wl-partial" role="status">
+        <span class="wl-partial-dot" aria-hidden="true"></span>
+        Showing top picks for now: the map service is busy. More places will appear here by themselves in a minute.
+        <button type="button" class="wl-partial-btn" @click="loadPopular(sec.dest)">Try now</button>
+      </p>
 
       <div v-if="sec.loading" aria-busy="true">
         <p class="small text-muted">Finding popular places… the first time for a whole country can take up to a minute.</p>
@@ -295,6 +301,7 @@ export default {
       openChain: null,   // name of the chain whose branches are shown
       active: -1,
       editId: null,
+      refreshTries: {}, // background reloads per city when only part of its list came back
       editForm: { name: '', address: '', link: '', isTour: false },
       tourOpen: false,
       tour: emptyTour(),
@@ -334,9 +341,7 @@ export default {
     destinations: {
       immediate: true,
       handler(list) {
-        for (const d of list) {
-          if (!this.status[d]) this.loadPopular(d)
-        }
+        this.loadAllPopular(list)
         if (!list.includes(this.searchIn)) this.searchIn = list[0] || ''
       }
     }
@@ -398,7 +403,8 @@ export default {
           list,
           loading: st.loading,
           error: st.error,
-          shown: st.shown
+          shown: st.shown,
+          partial: !!st.partial
         })
       }
       return result
@@ -620,7 +626,18 @@ export default {
       return kinds
     },
 
-    async loadPopular(dest) {
+    // One city at a time: the free map services refuse lots of requests arriving together
+    async loadAllPopular(list) {
+      const todo = []
+      for (const d of list) {
+        if (this.status[d]) continue
+        this.status[d] = { loading: true, error: '', shown: 12 } // show the loading cards straight away
+        todo.push(d)
+      }
+      for (const d of todo) await this.loadPopular(d)
+    },
+
+    async loadPopular(dest, firstTry = true) {
       this.status[dest] = { loading: true, error: '', shown: 12 }
       try {
         const res = await axios.get('/api/places/attractions', { params: { destination: dest } })
@@ -629,10 +646,42 @@ export default {
         for (const p of res.data) list.push({ ...p, city: dest })
         this.popularByDest[dest] = list
         this.$nextTick(this.loadPhotos)
+        // Only part of the list (the map service was busy): quietly ask again in a minute
+        this.status[dest].partial = res.headers['x-places-partial'] === '1'
+        if (this.status[dest].partial) this.refreshLater(dest)
       } catch (err) {
+        // A busy map server is often fine a few seconds later: try once more by itself before showing the error
+        if (firstTry && err.response) {
+          await new Promise((resolve) => setTimeout(resolve, 4000))
+          return this.loadPopular(dest, false)
+        }
         this.status[dest].error = (err.response && err.response.data && err.response.data.message) || 'Could not load popular places. Is the server running?'
       }
       this.status[dest].loading = false
+    },
+
+    // Ask for the full list again in the background, keeping the cards on screen meanwhile (3 times at most)
+    refreshLater(dest) {
+      this.refreshTries[dest] = (this.refreshTries[dest] || 0) + 1
+      if (this.refreshTries[dest] > 3) return
+      setTimeout(async () => {
+        if (!this.destinations.includes(dest)) return // the trip changed meanwhile
+        try {
+          const res = await axios.get('/api/places/attractions', { params: { destination: dest } })
+          const partial = res.headers['x-places-partial'] === '1'
+          const old = this.popularByDest[dest] || []
+          if (!partial || res.data.length > old.length) {
+            const list = []
+            for (const p of res.data) list.push({ ...p, city: dest })
+            this.popularByDest[dest] = list
+            this.status[dest].partial = partial
+            this.$nextTick(this.loadPhotos)
+          }
+          if (partial) this.refreshLater(dest)
+        } catch (err) {
+          this.refreshLater(dest)
+        }
+      }, 60000)
     },
 
     togglePopular(p) {
@@ -1129,6 +1178,40 @@ export default {
 .btn-sm.wl-pill-btn {
   height: auto;
   padding: 6px 16px;
+}
+.wl-partial {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #fbefd9;
+  color: #7a4b00;
+  font-size: 13px;
+}
+.wl-partial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #edae49;
+  animation: wl-blink 1.2s ease-in-out infinite alternate;
+}
+@keyframes wl-blink {
+  from { opacity: 0.35; }
+}
+.wl-partial-btn {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #003d5b;
+  font-weight: 700;
+  text-decoration: underline;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wl-partial-dot { animation: none; }
 }
 .wl-card.editing {
   outline: 3px solid #edae49;

@@ -1,5 +1,6 @@
 // Discover: public holidays per country (Nager.Date, free, no key), cached for a day
 import express from 'express'
+import { wikiFetch } from '../politeFetch.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -121,18 +122,49 @@ router.get('/cities', requireAuth, async (req, res) => {
 
 // ---------- a short description + photo (Wikipedia) ----------
 // Tries "Queenstown, New Zealand" first, then "Queenstown", skipping "may refer to" (disambiguation) pages
-const about = {}
-async function wikiSummary(title) {
-  const res = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_')), {
+// Kept on disk too (server/data/discover-about.json), so a server restart doesn't ask Wikipedia for
+// hundreds of photos again (that's what got us "too many requests" before)
+const ABOUT_FILE = path.join(path.dirname(CACHE_FILE), 'discover-about.json')
+let about = {}
+try {
+  about = JSON.parse(fs.readFileSync(ABOUT_FILE, 'utf8'))
+} catch (err) {
+  about = {}
+}
+let aboutTimer = null
+function saveAbout() {
+  clearTimeout(aboutTimer)
+  aboutTimer = setTimeout(() => {
+    try {
+      fs.mkdirSync(path.dirname(ABOUT_FILE), { recursive: true })
+      fs.writeFileSync(ABOUT_FILE, JSON.stringify(about))
+    } catch (err) {
+      console.warn('Could not save the Wikipedia cache:', err.message)
+    }
+  }, 2000)
+}
+
+// The article's photo at a sensible size. The original can be 5-20 MB (that's why cards stayed empty);
+// Wikimedia makes copies in standard widths, and 960 px is plenty for a card or a banner.
+function photoOf(data) {
+  const original = data.originalimage
+  const thumb = data.thumbnail
+  if (!thumb) return original ? original.source : null
+  if (original && original.width > 960 && /\/\d+px-/.test(thumb.source)) return thumb.source.replace(/\/\d+px-/, '/960px-')
+  return original ? original.source : thumb.source
+}
+
+async function wikiSummary(title, priority) {
+  const res = await wikiFetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_')), {
     headers: { 'User-Agent': 'ChuiseYourTrip/1.0 (student project)' },
     signal: AbortSignal.timeout(10000)
-  })
+  }, priority)
   if (!res.ok) return null
   const data = await res.json()
   if (data.type === 'disambiguation' || !data.extract) return null
   return {
     text: data.extract,
-    photo: (data.originalimage && data.originalimage.source) || (data.thumbnail && data.thumbnail.source) || null,
+    photo: photoOf(data),
     page: data.content_urls && data.content_urls.desktop ? data.content_urls.desktop.page : null
   }
 }
@@ -140,15 +172,16 @@ async function wikiSummary(title) {
 // GET /api/discover/about?title=Queenstown, New Zealand
 // Public: Discover works for guests too
 // Wikipedia summary + photo for a title ("Kyoto, Japan" also tries "Kyoto"). Good answers are cached.
-async function lookupAbout(title) {
+async function lookupAbout(title, priority) {
   if (about[title]) return about[title]
   const tries = [title]
   if (title.includes(', ')) tries.push(title.split(', ')[0])
   for (const t of tries) {
     try {
-      const found = await wikiSummary(t)
+      const found = await wikiSummary(t, priority)
       if (found) {
         about[title] = found // only good answers are kept, so a hiccup is retried next time
+        saveAbout()
         return found
       }
     } catch (err) {
@@ -173,7 +206,7 @@ router.get('/photos', async (req, res) => {
   async function worker() {
     while (next < titles.length) {
       const t = titles[next++]
-      out[t] = (await lookupAbout(t)).photo || null
+      out[t] = (await lookupAbout(t, 'later')).photo || null // behind the photos someone is looking at
     }
   }
   const workers = []

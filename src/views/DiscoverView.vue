@@ -127,7 +127,7 @@
             <h3 class="dx-sights-title">Top {{ sightsOf(g.country).length }} things to see</h3>
             <ol class="dx-sights-row">
               <li v-for="(a, i) in sightsOf(g.country)" :key="a.name">
-                <button type="button" class="dx-sight" :style="sightStyle(a)" :aria-label="(i + 1) + '. ' + sightName(a) + ', near ' + a.city + '. Show on the map'" @click="showSight(g.country, a)">
+                <button type="button" class="dx-sight" :class="{ loading: sightPhotos[a.name] === null }" :style="sightStyle(a)" :aria-label="(i + 1) + '. ' + sightName(a) + ', near ' + a.city + '. Show on the map'" @click="showSight(g.country, a)">
                   <span class="dx-sight-rank" aria-hidden="true">{{ i + 1 }}</span>
                   <span class="dx-sight-text">
                     <strong>{{ sightName(a) }}</strong>
@@ -355,10 +355,15 @@ function sightStyle(a) {
 function loadSightPhotos(country) {
   for (const a of sightsOf(country)) {
     if (sightPhotos.value[a.name] !== undefined) continue
-    sightPhotos.value = { ...sightPhotos.value, [a.name]: null }
+    sightPhotos.value = { ...sightPhotos.value, [a.name]: null } // null = loading ('' = no photo)
     axios.get('/api/discover/about', { params: { title: a.name } })
-      .then((res) => { if (res.data.photo) sightPhotos.value = { ...sightPhotos.value, [a.name]: res.data.photo } })
-      .catch(() => {})
+      .then((res) => { sightPhotos.value = { ...sightPhotos.value, [a.name]: res.data.photo || '' } })
+      .catch(() => {
+        // couldn't ask: let it try again the next time this country opens
+        const copy = { ...sightPhotos.value }
+        delete copy[a.name]
+        sightPhotos.value = copy
+      })
   }
 }
 // A sight's card flies the map to the city it's near
@@ -1602,6 +1607,17 @@ onBeforeUnmount(() => {
   color: var(--text);
   text-align: left;
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+/* Photo still on its way: a soft moving shine */
+.dx-sight.loading {
+  background: linear-gradient(110deg, #0f4566 30%, #1b5a80 50%, #0f4566 70%) 0 0 / 220% 100%;
+  animation: dx-shine 1.4s linear infinite;
+}
+@keyframes dx-shine {
+  to { background-position: -220% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dx-sight.loading { animation: none; }
 }
 .dx-sight:hover {
   transform: translateY(-3px);

@@ -297,6 +297,7 @@ import { POPULAR_DESTINATIONS, codeForDestination, flagEmoji } from '../destinat
 import AppIcon from '../components/AppIcon.vue'
 import TravelMap from '../components/TravelMap.vue'
 import { needsSetup, setupDone } from '../onboarding.js'
+import { friends } from '../friends.js'
 
 const DAY_MS = 86400000
 
@@ -343,6 +344,7 @@ export default {
       places: {}, // destination -> { lat, lon } for the travel map
       hoverTrip: '', // the trip being pointed at (its card and its route on the map light up together)
       invites: [], // trips I've been invited to by username
+      friends, // shared numbers (new invites arrive here; see friends.js)
       newTrip: { name: '', destination: '', destinations: [], startDate: '', endDate: '',  }
     }
   },
@@ -361,6 +363,13 @@ export default {
       this.$router.replace({ path: '/home' }) // so a refresh doesn't open it again
     }
     await this.loadTrips()
+  },
+
+  watch: {
+    // The app checks for new trip invites every 20 seconds: when the number changes, show the new cards
+    'friends.invites'(now, before) {
+      if (before >= 0 && now !== before) this.loadInvites()
+    }
   },
 
   computed: {

@@ -183,7 +183,7 @@
         <CrewView :key="'crew-' + id" :trip-id="id" :city="itineraryInfo.destinations[0].split(', ')[0]"
           :travellers="itineraryInfo.travellers" :members="isDemo ? [] : trip.members || []"
           :pending-invites="isDemo ? [] : trip.pendingInvites || []" :crew="isDemo ? {} : trip.crew || {}"
-          :expenses="isDemo ? null : trip.expenses" :role="isDemo ? 'owner' : trip.role" :me="myName"
+          :role="isDemo ? 'owner' : trip.role" :me="myName"
           :my-id="authUserId" @invite="showShare = true" @go="goFromCrew" @changed="reloadTrip" />
       </div>
       <!-- Recap (after the trip): the trip in numbers with its route on a map -->
