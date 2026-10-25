@@ -133,7 +133,15 @@
     <!-- ===== Optimize preview ===== -->
     <transition name="ip-pop">
       <div v-if="preview" class="ip-preview" :class="{ same: !preview.better }">
-        <p class="mb-0 fw-semibold">{{ preview.better ? preview.summary : 'Your day is already in a good order.' }}</p>
+        <p class="mb-0 fw-semibold">
+          {{
+            preview.better
+              ? preview.summary
+              : preview.hasWarnings
+                ? 'No better route found, but this day still has warnings.'
+                : 'Your day is already in a good order.'
+          }}
+        </p>
         <div class="ip-preview-btns">
           <button v-if="preview.better" type="button" class="ip-cta small" @click="applyPreview">Apply</button>
           <button type="button" class="ip-outline small" @click="preview = null">{{ preview.better ? 'Dismiss' : 'OK' }}</button>
@@ -955,6 +963,7 @@ function toWork(s) {
   const day = s.forecast && s.forecast.days && s.forecast.days[props.dayName]
   return {
     id: s.id, name: s.name, address: s.address || null, hour: s.hour, outdoor: !!s.outdoor, locked: !!s.locked,
+  transitSecs: s.transitSecs || 0,
     // Your own time if you set one, else the place's typical visit time, else a guess from what it is
     duration: s.duration || (s.forecast && s.forecast.durationDefault) || defaultDuration(s),
     lat: c ? c.lat : null, lon: c ? c.lon : null,
@@ -1625,10 +1634,68 @@ const LINE_ICONS = { '⏰': 'clock', '⏳': 'clock', '⚠️': 'alert', '⚠': '
 function lineIcon(emoji) {
   return LINE_ICONS[emoji] || ''
 }
+function previousRealStop(it) {
+  const index = stopRows.value.findIndex(
+    (row) => row.stop.id === it.stop.id
+  )
+
+  if (index <= 0) return null
+
+  return stopRows.value[index - 1].stop
+}
+function savedRouteForLeg(it) {
+  const previous = previousRealStop(it)
+  if (!previous) return null
+
+  return props.savedRoutes.find((route) =>
+    route.start === previous.name &&
+    route.end === it.stop.name &&
+    Array.isArray(route.options) &&
+    route.options.length > 0
+  ) || null
+}
 function legText(it) {
   if (it.mode === 'break') return ''
-  if (it.mode === 'walk') return it.travelMin + 'm walk (' + (it.km < 1 ? Math.round(it.km * 1000 / 50) * 50 + ' m' : it.km.toFixed(1) + ' km') + ')'
-  if (it.mode === 'transit') return '~' + it.travelMin + 'm by transit (est.)'
+
+  const previous = previousRealStop(it)
+
+  // 1. Prefer a route the user explicitly saved in Getting Around.
+  const savedRoute = savedRouteForLeg(it)
+  if (savedRoute) {
+    const option = savedRoute.options[0]
+
+    if (option && option.duration != null) {
+      const mins = Math.round(Number(option.duration))
+
+      if (option.type === 'Walk') {
+        return mins + 'm walk · saved route'
+      }
+
+      return mins + 'm by ' +
+        String(option.type || 'transit').toLowerCase() +
+        ' · saved route'
+    }
+  }
+
+  // 2. Otherwise use Google's travel time.
+  if (previous && previous.transitSecs > 0) {
+    const mins = Math.max(1, Math.round(previous.transitSecs / 60))
+    return mins + 'm by transit'
+  }
+
+  // 3. Last resort: planner's straight-line estimate.
+  if (it.mode === 'walk') {
+    return it.travelMin + 'm walk (' +
+      (it.km < 1
+        ? Math.round(it.km * 1000 / 50) * 50 + ' m'
+        : it.km.toFixed(1) + ' km') +
+      ')'
+  }
+
+  if (it.mode === 'transit') {
+    return '~' + it.travelMin + 'm by transit (est.)'
+  }
+
   return '~' + it.travelMin + 'm (place not found on the map)'
 }
 function wasAt(it) {
