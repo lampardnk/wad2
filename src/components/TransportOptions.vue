@@ -4,17 +4,40 @@
     import CustomDropdown from './CustomDropdown.vue'
     
     const props = defineProps({
-        tripId: String, 
-        destination: Object,
+        tripId: String,
+        destination: String,
         stops: Array,
         stay: Object,
         startDate: [String, Object, Date],
         endDate: [String, Object, Date]
     });
+
+    const isJapan = computed(() => {
+        const destination = String(props.destination || '').toLowerCase();
+
+        const japanDestinations = [
+            'kyoto',
+            'tokyo',
+            'osaka',
+            'nara',
+            'sapporo',
+            'fukuoka',
+            'nagoya',
+            'hiroshima'
+        ];
+
+        return destination.includes('japan') ||
+            japanDestinations.some((city) => destination.includes(city));
+        });
     
     const startPoint = ref('');
     const endPoint = ref('');
     const options = ref([]);
+    const hasTransitOption = computed(() =>
+        options.value.some((opt) =>
+            ['Bus & Train', 'Train / MRT', 'Bus'].includes(opt.type)
+        )
+    );
     const loading = ref(false);
     const selectedTime = ref('08:30'); // stores as HH:mm format
     const selectedDay = ref('');
@@ -466,13 +489,27 @@
 
         <!-- Options Content -->
         <template v-else>
+            <!-- Japan train fallback when Google does not return transit routes -->
+            <div
+            v-if="isJapan && !hasTransitOption"
+            class="alert alert-light border mb-3"
+            >
+            <strong>Train routes:</strong>
+            <a
+                :href="googleMapsUrl()"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Open in Google Maps
+            </a>
+            </div>
             <!-- MOBILE VIEW (< md) -->
             <div class="d-block d-md-none">
                 <div v-for="opt in options" :key="opt.type + opt.route" class="p-3 border-bottom">
                     <div class="row align-items-center g-2">
                         <!-- Line 1: Type & Route -->
                         <div class="col-12 fw-semibold">
-                            {{ opt.type }} <span class="fw-normal text-muted">— {{ opt.route }}</span>
+                            {{ isJapan && opt.type === 'Car' ? 'Taxi' : opt.type }} <span class="fw-normal text-muted">— {{ opt.route }}</span>
                         </div>
                         <!-- Line 2: Duration & Cost -->
                         <div class="col-8 d-flex gap-2 align-items-center">
@@ -517,7 +554,7 @@
                     </thead>
                     <tbody>
                         <tr v-for="opt in options" :key="opt.type + opt.route">
-                            <td class="fw-semibold">{{ opt.type }}</td>
+                            <td class="fw-semibold">{{ isJapan && opt.type === 'Car' ? 'Taxi' : opt.type }}</td>
                             <td>{{ opt.route }}</td>
                             <td>
                                 <span class="badge bg-dark text-white border">

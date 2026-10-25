@@ -146,6 +146,11 @@ async function fetchMode(origin, destination, { mode, allowedModes, fallbackType
 
             flushWalk(); // walking at the very end of the trip
 
+            // Ignore "transit" routes that are actually walking only.
+            if (!hasBus && !hasTrain) {
+            return null;
+            }
+
             if (hasBus && hasTrain) {
                 dynamicType = 'Bus & Train';
             } else if (hasTrain) {
