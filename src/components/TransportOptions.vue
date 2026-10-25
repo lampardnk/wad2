@@ -512,27 +512,37 @@
                             {{ isJapan && opt.type === 'Car' ? 'Taxi' : opt.type }} <span class="fw-normal text-muted">— {{ opt.route }}</span>
                         </div>
                         <!-- Line 2: Duration & Cost -->
-                        <div class="col-8 d-flex gap-2 align-items-center">
+                        <!-- Line 2: Duration & Cost -->
+                        <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
                             <span class="badge bg-dark text-white border">
                                 <i class="bi bi-clock me-1"></i>Duration: {{ formatDuration(opt.duration) }}
                             </span>
+
                             <span class="badge" :class="getCostBadge(opt)">
                                 Cost: {{ formatCost(opt) }}
                             </span>
+                        </div>
+
+                        <!-- Line 3: Google Maps & Save -->
+                        <div class="col-12 d-flex justify-content-between align-items-center mt-2">
                             <a
                                 v-if="opt.cost === null || opt.cost === undefined"
                                 :href="googleMapsUrl()"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="small"
-                                >
+                            >
                                 Open in Google Maps
-                                </a>
-                        </div>
-                        <!-- Action Button -->
-                        <div class="col-4 text-end">
-                            <button type="button" class="btn btn-sm" :class="isSaved(opt) ? 'btn-outline-danger' : 'btn-outline-primary'" 
-                            @click="toggleSaved(opt)">
+                            </a>
+
+                            <span v-else></span>
+
+                            <button
+                                type="button"
+                                class="btn btn-sm"
+                                :class="isSaved(opt) ? 'btn-outline-danger' : 'btn-outline-primary'"
+                                @click="toggleSaved(opt)"
+                            >
                                 {{ isSaved(opt) ? 'Unsave' : 'Save' }}
                             </button>
                         </div>
