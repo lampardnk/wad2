@@ -1206,7 +1206,7 @@ watch(() => dayShown.value + '|' + props.stops.map((s) => s.id + s.hour + s.lock
 const phase = ref('')
 const phaseText = computed(() => ({ route: 'Analyzing route…', forecast: 'Checking forecast…', reorder: 'Reordering…' })[phase.value] || 'Optimize Route')
 const pause = (ms) => new Promise((r) => setTimeout(r, ms))
-// Everything the schedule follows comes from Preferences (day start/end, crowds, travel buffer)
+// Preferences are constraints for Optimize; they do not change saved itinerary times by themselves.
 const opts = computed(() => ({
   dayStart: props.prefs.dayStart || 8,
   dayEnd: Math.min(24, props.prefs.dayEnd || 23),
@@ -1217,33 +1217,7 @@ const opts = computed(() => ({
 // ---------- keep the day in line with Preferences ----------
 // When a preference changes, the open day is re-timed straight away (same order, locked stops stay).
 // When you open a day that doesn't fit your hours (e.g. after changing them), it's re-timed too.
-function fitDayToPrefs(note) {
-  if (previewing.value || !current.value.length) return
-  const items = retime(current.value.map((it) => it.stop))
-  const changes = []
-  let moved = false
-  for (const it of items) {
-    changes.push({ id: it.stop.id, hour: it.start })
-    if (Math.abs(it.start - it.stop.hour) > 0.01) moved = true
-  }
-  if (!moved) return
-  // Say what moved (shown in the Smart Schedule status strip)
-  let first = null
-  for (const it of items) {
-    if (!it.stop.virtual && Math.abs(it.start - it.stop.hour) > 0.01) { first = it; break }
-  }
-  save(changes)
-  if (note && first) noteChange(note + ': ' + first.stop.name + ' now starts at ' + formatHour(first.start))
-}
-function outsideDay() {
-  for (const it of current.value) {
-    if (it.stop.locked) continue
-    if (it.start < opts.value.dayStart - 0.01 || it.start + (it.stop.duration || 1) > opts.value.dayEnd + 0.01) return true
-  }
-  return false
-}
-watch(() => JSON.stringify(opts.value), () => fitDayToPrefs('Day re-timed to your preferences'))
-watch(dayShown, () => nextTick(() => { if (outsideDay()) fitDayToPrefs('Day re-timed to fit your hours') }))
+
 
 async function optimize() {
   preview.value = null
