@@ -858,6 +858,18 @@ function askRemoveDay() {
     return
   }
 
+  if (stopsOnDay.length > 0) {
+    emit(
+      'notice',
+      stopsOnDay.length +
+        (stopsOnDay.length === 1 ? ' stop is' : ' stops are') +
+        ' planned outside the shortened trip dates. Move ' +
+        (stopsOnDay.length === 1 ? 'it' : 'them') +
+        ' in the itinerary first.'
+    )
+    return
+  }
+
   const count = stopsOnDay.length
   const lines = []
 
