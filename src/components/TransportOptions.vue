@@ -274,7 +274,7 @@
     // format cost
     function formatCost(opt) {
         if (!opt || opt.cost === null || opt.cost === undefined) {
-            return 'Not available';
+            return 'Fare not provided';
         }
         // only when cost is 0
         if (opt.cost === 0) {
@@ -295,6 +295,22 @@
             return `${opt.cost} ${opt.currency}`;
         }
     }
+
+    function googleMapsUrl() {
+        const origin = addressOf(startPoint.value);
+        const destination = addressOf(endPoint.value);
+
+        if (!origin || !destination) return '#';
+
+        const params = new URLSearchParams({
+            api: '1',
+            origin,
+            destination,
+            travelmode: 'transit'
+        });
+
+        return `https://www.google.com/maps/dir/?${params.toString()}`;
+        }
 
     // auto fetch saved routes when the component loads
     onMounted(() => {
@@ -466,6 +482,15 @@
                             <span class="badge" :class="getCostBadge(opt)">
                                 Cost: {{ formatCost(opt) }}
                             </span>
+                            <a
+                                v-if="opt.cost === null || opt.cost === undefined"
+                                :href="googleMapsUrl()"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="small"
+                                >
+                                Open in Google Maps
+                                </a>
                         </div>
                         <!-- Action Button -->
                         <div class="col-4 text-end">
@@ -503,7 +528,21 @@
                                 <span class="badge" :class="getCostBadge(opt)">
                                     {{ formatCost(opt) }}
                                 </span>
-                            </td>
+
+                                <div
+                                    v-if="opt.cost === null || opt.cost === undefined"
+                                    class="mt-1"
+                                >
+                                    <a
+                                    :href="googleMapsUrl()"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="small"
+                                    >
+                                    Open in Google Maps
+                                    </a>
+                                </div>
+                                </td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-sm" :class="isSaved(opt) ? 'btn-outline-danger' : 'btn-outline-primary'" 
                                 @click="toggleSaved(opt)">
