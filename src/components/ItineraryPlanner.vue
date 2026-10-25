@@ -681,8 +681,25 @@ const props = defineProps({
   savedRoutes: { type: Array, default: () => [] },      // routes saved in Getting around
   travellers: { type: Array, default: () => [] }        // everyone on the trip (for the majority vote rule)
 })
-const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote', 'open-transport'])
-
+const emit = defineEmits([
+  'select-day',
+  'add-day',
+  'remove-day',
+  'undo-day',
+  'add-place',
+  'apply',
+  'lock',
+  'schedule',
+  'unschedule',
+  'status',
+  'duration',
+  'move-day',
+  'swap',
+  'edit',
+  'go-vote',
+  'open-transport',
+  'notice'
+])
 // ---------- sample Kyoto day (local only) ----------
 const sampleMode = ref(false)
 const sample = ref({ days: [], day: '', stops: [], wishlist: [] })
@@ -819,15 +836,48 @@ function askAddDay() {
 function askRemoveDay() {
   const n = dayList.value.length
   const date = dayList.value[n - 1]
-  let count = 0
-  if (sampleMode.value) {
-    for (const s of sample.value.stops) if (s.date === date) count++
-  } else {
-    count = props.dayCounts[date] || 0
+
+  // Get the stops on the day being removed.
+  const stopsOnDay = sampleMode.value
+    ? sample.value.stops.filter((s) => s.date === date)
+    : props.stops.filter((s) => s.date === date)
+
+  // A day containing a locked booking cannot be removed.
+  const lockedStops = stopsOnDay.filter((s) => s.locked)
+
+  if (lockedStops.length > 0) {
+    emit(
+      'notice',
+      'Day ' + n +
+        ' cannot be removed because it contains ' +
+        lockedStops.length +
+        ' locked booking' +
+        (lockedStops.length === 1 ? '' : 's') +
+        '. Unlock or move the booking first.'
+    )
+    return
   }
+
+  const count = stopsOnDay.length
   const lines = []
-  if (count) lines.push(count + ' stop' + (count === 1 ? '' : 's') + ' on this day go back to Saved places (nothing is deleted).')
-  openConfirm({ kind: 'remove', title: 'Remove Day ' + n + ' (' + longDate(date) + ')?', lines, button: 'Remove Day ' + n, danger: true, date })
+
+  if (count) {
+    lines.push(
+      count +
+        ' stop' +
+        (count === 1 ? '' : 's') +
+        ' on this day go back to Saved places (nothing is deleted).'
+    )
+  }
+
+  openConfirm({
+    kind: 'remove',
+    title: 'Remove Day ' + n + ' (' + longDate(date) + ')?',
+    lines,
+    button: 'Remove Day ' + n,
+    danger: true,
+    date
+  })
 }
 
 function doConfirm() {
