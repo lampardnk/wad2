@@ -27,7 +27,11 @@
               <section v-if="tab === 'crowd'" aria-label="Crowds">
                 <p class="ss-lead">
                   <template v-if="crowd.value == null">No crowd data for this place.<template v-if="!stop.address"> Add its address under <button type="button" class="ss-link" @click="tab = 'time'">Details</button> to get it.</template></template>
-                  <template v-else><span class="ss-badge" :class="crowd.tone">{{ crowd.text }}</span> at {{ formatHour(start) }} · about {{ crowd.value }}% of its busiest</template>
+                  <template v-else>
+                    <span class="ss-badge" :class="crowd.tone">{{ crowd.text }}</span> 
+                    at {{ formatHour(start) }} · about {{ crowd.value }}% of its busiest
+                    <span v-if="crowd.isSimulated" class="ss-sim-tag">⚡ Simulated</span>
+                  </template>
                 </p>
                 <CrowdChart v-if="hasChart" :forecast="stop.forecast" :day-name="dayName"
                   :planned-hour="Math.floor(start)" :suggest-hour="quieter.length ? Math.floor(quieter[0].hour) : null" />

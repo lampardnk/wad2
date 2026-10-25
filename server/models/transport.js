@@ -30,7 +30,7 @@ savedRouteSchema.statics.findByTripId = function(tripId) {
     return this.find({tripId});
 };
 
-// unsave/save option
+// unsave/save option --> only one option pre start & destination pair
 savedRouteSchema.statics.toggleOption = async function ({tripId, start, end, option}) {
     let route = await this.findOne({tripId, start, end});
 
@@ -51,14 +51,13 @@ savedRouteSchema.statics.toggleOption = async function ({tripId, start, end, opt
     if (isSame) {
         // same option clicked again: unsave it
         await this.deleteOne({ _id: route._id });
-        return { action: 'deleted' };
+        return { action: 'deleted' }; 
     }
 
     // a different option: replace the saved one
     route.options = [option];
     await route.save();
     return { action: existing ? 'replaced' : 'saved', route };
-
 };
 
 export default mongoose.model('SavedRoute', savedRouteSchema);

@@ -1,10 +1,10 @@
 import express from 'express';
 import SavedRoute from '../models/transport.js';
+import { requireAuth, requireTripMember } from './auth.js';
 const router = express.Router();
 
 // different transport modes
 const MODES = [
-    { mode: 'TRANSIT', allowedModes: ['BUS', 'SUBWAY', 'TRAIN'], fallbackType: 'Bus & Train' },
     { mode: 'TRANSIT', allowedModes: ['BUS'], fallbackType: 'Bus' },
     { mode: 'TRANSIT', allowedModes: ['SUBWAY', 'TRAIN'], fallbackType: 'Train / MRT' },
     { mode: 'DRIVE', fallbackType: 'Car' },
@@ -145,6 +145,7 @@ async function fetchMode(origin, destination, { mode, allowedModes, fallbackType
             }
 
             flushWalk(); // walking at the very end of the trip
+            if (lineSignature.length === 0) return null // if there is only walk type, drop it
 
             if (hasBus && hasTrain) {
                 dynamicType = 'Bus & Train';
@@ -236,7 +237,7 @@ router.get('/', async (req, res) => {
 });
 
 // read the saved routes from the database
-router.get('/saved', async (req, res) => {
+router.get('/saved', requireAuth, requireTripMember, async (req, res) => {
     try {
         const tripId = req.query.tripId;
 
@@ -253,10 +254,7 @@ router.get('/saved', async (req, res) => {
 });
 
 //  save or unsave one route option
-router.post('/toggle', async (req, res) => {
-    console.log('--- BACKEND RECEIVED /toggle REQUEST ---');
-    console.log('req.body:', req.body);
-
+router.post('/toggle', requireAuth, requireTripMember, async (req, res) => {
     const tripId = req.body.tripId;
     const start = req.body.start;
     const end = req.body.end;
@@ -269,10 +267,8 @@ router.post('/toggle', async (req, res) => {
 
     try {
         const result = await SavedRoute.toggleOption({ tripId, start, end, option });
-        console.log('--- BACKEND TOGGLE RESULT:', result);
         res.json(result);
     } catch(error) {
-        console.error('Error unsaving route:', error);
         res.status(500).json({error: 'Failed to unsaved route'});
     }
 });

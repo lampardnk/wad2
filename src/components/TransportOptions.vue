@@ -5,7 +5,7 @@
     
     const props = defineProps({
         tripId: String, 
-        destination: Object,
+        destination: [Object, String],
         stops: Array,
         stay: Object,
         startDate: [String, Object, Date],
@@ -60,28 +60,18 @@
         return places.value.find(p => p.name === name)?.address;
     }
 
-    // pick the first place as the default start
+    // clear the start point if it's no longer in the list (never auto-select)
     watch(places, (list) => {
-        const names = list.map(p => p.name);
-        if (names.length && !names.includes(startPoint.value)) {
-            startPoint.value = names[0];
-        } else if (!names.length) {
-            startPoint.value = '';
-        }
+        if (!list.some(p => p.name === startPoint.value)) startPoint.value = '';
     }, { immediate: true });
 
-    // auto-select the first destination option if available
+    // clear the destination if it's no longer available (never auto-select)
     watch(destinations, (available) => {
-        if (!available.includes(endPoint.value) && available.length) {
-            endPoint.value = available[0];
-        } else if (!available.length) {
-            endPoint.value = '';
-        }
+        if (!available.includes(endPoint.value)) endPoint.value = '';
     }, { immediate: true });
 
     // auto-select the zone from the trip destination 
     watch(() => props.destination, (dest) => {
-        console.log('destination prop:', dest, typeof dest);
         const name = (typeof dest === 'string' ? dest : dest?.name || '').toLowerCase();
         const match = Object.keys(cityZones).find(city => name.includes(city));
         if (match) timeZone.value = cityZones[match];
@@ -106,13 +96,6 @@
     }
 
     async function loadOptions() {
-        console.log('🚆 loadOptions() called', {
-            startPoint: startPoint.value,
-            endPoint: endPoint.value,
-            selectedDay: selectedDay.value,
-            selectedTime: selectedTime.value,
-            timeZone: timeZone.value
-        });
 
         // Make sure start and destination exist
         if (!startPoint.value || !endPoint.value) {
@@ -126,11 +109,6 @@
             // Get addresses
             const origin = addressOf(startPoint.value);
             const destination = addressOf(endPoint.value);
-
-            console.log('📍 Directions addresses:', {
-                origin,
-                destination
-            });
 
             // If address could not be resolved
             if (!origin || !destination) {
@@ -155,19 +133,9 @@
                 queryParams.set('timeType', timeType.value);
             }
 
-            console.log(
-                '🚆 About to fetch:',
-                `/api/directions?${queryParams}`
-            );
-
             // Call backend ONCE
             const res = await fetch(
                 `/api/directions?${queryParams}`
-            );
-
-            console.log(
-                '🚆 Directions response status:',
-                res.status
             );
 
             if (!res.ok) {
@@ -178,11 +146,6 @@
 
             // Read response ONCE
             options.value = await res.json();
-
-            console.log(
-                '🚆 Final options received:',
-                options.value
-            );
 
         } catch (error) {
             console.error(
@@ -274,7 +237,7 @@
     // format cost
     function formatCost(opt) {
         if (!opt || opt.cost === null || opt.cost === undefined) {
-            return 'Not available';
+            return 'Fare not provided';
         }
         // only when cost is 0
         if (opt.cost === 0) {
@@ -295,6 +258,45 @@
             return `${opt.cost} ${opt.currency}`;
         }
     }
+
+// rename mode name (for google map)
+function modeOf(opt) {
+    if (opt.type === 'Taxi') return 'driving';
+    if (opt.type === 'Walk') return 'walking';
+    return 'transit';
+}
+
+// city (and country, when the trip has one) used to make place names specific
+const cityText = computed(() => {
+    const d = props.destination;
+    return typeof d === 'string'
+        ? d
+        : [d?.city || d?.name, d?.country].filter(Boolean).join(', ');
+});
+
+// Google Maps link with the same start/end/time
+function mapsUrl(mode = 'transit') {
+     if (!startPoint.value || !endPoint.value) return '#';
+
+    // name + city reads like a normal Maps search, so it matches more reliably than a long saved address
+    const origin = [startPoint.value, cityText.value].filter(Boolean).join(', ');
+    const dest = [endPoint.value, cityText.value].filter(Boolean).join(', ');
+
+    const base = `https://www.google.com/maps/dir/${encodeURIComponent(origin)}/${encodeURIComponent(dest)}/`;
+    const code = { driving: '3e0', walking: '3e2', transit: '3e3' }[mode];
+    const iso = getIsoTime(selectedDay.value, selectedTime.value);
+
+    if (!iso) return `${base}data=!4m2!4m1!${code}`;
+
+    // clock time as picked, sent as a plain number for Maps to show
+    const epoch = Math.floor(new Date(`${selectedDay.value}T${selectedTime.value}:00Z`).getTime() / 1000);
+    const when = timeType.value === 'arrive' ? 1 : 0;
+    return `${base}data=!4m6!4m5!2m3!6e${when}!7e2!8j${epoch}!${code}`;
+}
+
+const hasTransit = computed(() =>
+    options.value.some(o => o.type !== 'Taxi' && o.type !== 'Walk')
+);
 
     // auto fetch saved routes when the component loads
     onMounted(() => {
@@ -330,19 +332,7 @@
 
 // sends toggle request to backend and refreshes state
     async function toggleSaved(option) {
-        console.log('--- 1. toggleSaved clicked ---');
-        console.log('Current state:', {
-            tripId: props.tripId,
-            start: startPoint.value,
-            end: endPoint.value,
-            option: {
-                ...option,
-                day: selectedDay.value,
-                time: selectedTime.value,
-                timeType: timeType.value
 
-            }
-        });
         if (!startPoint.value || !endPoint.value || !props.tripId) {
                 console.warn('⚠️ Guard triggered! Missing required data:', {
                 start: startPoint.value,
@@ -360,10 +350,12 @@
         };
 
         try {
-            console.log('--- 2. Sending POST to /api/directions/toggle ---');
             const res = await fetch('/api/directions/toggle', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                },
                 body: JSON.stringify({
                     tripId: props.tripId,
                     start: startPoint.value,
@@ -371,11 +363,9 @@
                     option: optionToSave
                 })
             });
-            console.log('--- 3. Response Status:', res.status);
 
             if (res.ok) {
                 const data = await res.json();
-                console.log('--- 4. Toggle success response from backend:', data);
                 await fetchSavedRoutes(props.tripId); // re-fetch from mongoDB to sync state
             } else {
                 const err = await res.json();
@@ -445,7 +435,7 @@
         </div>
         <!-- Empty State -->
         <div v-else-if="!options.length" class="text-center text-muted py-3">
-            {{ endPoint ? 'No travel options found for this route.' : 'Select a destination to see travel options.' }}
+            {{ endPoint && endPoint ? 'No taxi or walking options found' : 'Select a starting point and destination to see travel options.' }}
         </div>
 
         <!-- Options Content -->
@@ -465,7 +455,9 @@
                             </span>
                             <span class="badge" :class="getCostBadge(opt)">
                                 Cost: {{ formatCost(opt) }}
-                            </span>
+                            </span><br>
+                            <a v-if="opt.cost === null || opt.cost === undefined"
+                            :href="mapsUrl(modeOf(opt))" target="_blank" rel="noopener" class="small ms-2">Open in Google Maps</a>
                         </div>
                         <!-- Action Button -->
                         <div class="col-4 text-end">
@@ -502,7 +494,9 @@
                             <td>
                                 <span class="badge" :class="getCostBadge(opt)">
                                     {{ formatCost(opt) }}
-                                </span>
+                                </span><br>
+                                <a v-if="opt.cost === null || opt.cost === undefined"
+                                :href="mapsUrl(modeOf(opt))" target="_blank" rel="noopener" class="small ms-2 text-center">Open in Google Maps</a>
                             </td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-sm" :class="isSaved(opt) ? 'btn-outline-danger' : 'btn-outline-primary'" 
@@ -515,5 +509,9 @@
                 </table>
             </div>
         </template>
+        <div v-if="!loading && endPoint && !hasTransit" class="text-center mt-3 pt-3 border-top">
+            🚆 Train &amp; bus routes:
+            <a :href="mapsUrl('transit')" target="_blank" rel="noopener">Open in Google Maps</a>
+        </div>
     </div>
 </template>

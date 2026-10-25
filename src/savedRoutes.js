@@ -6,7 +6,9 @@ export const transportPrefill = ref(null);   // { start, end, day, time, timeTyp
 export async function fetchSavedRoutes(tripId) {
   if (!tripId) return;
   try {
-    const res = await fetch(`/api/directions/saved?tripId=${encodeURIComponent(tripId)}`);
+    const res = await fetch(`/api/directions/saved?tripId=${tripId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    }); 
     if (res.ok) {
       const data = await res.json();
       // Directly assign the fresh array from MongoDB
