@@ -175,7 +175,13 @@
     <section v-for="sec in sections" :key="sec.dest" class="mt-5" :aria-label="'Popular in ' + sec.city">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h3 class="wl-heading mb-0">{{ sec.flag }} Popular in {{ sec.city }}</h3>
-        <span v-if="sec.list.length" class="small text-muted">{{ sec.list.length }} {{ sec.list.length === 1 ? 'place' : 'places' }} · {{ sec.partial ? 'top picks' : 'from OpenStreetMap' }}</span>
+        <span v-if="sec.list.length" class="small text-muted">
+          {{ sec.list.length }} {{ sec.list.length === 1 ? 'place' : 'places' }} ·
+          <template v-if="sec.partial">top picks</template>
+          <!-- Geoapify's terms: a "Powered by Geoapify" link next to what it found -->
+          <template v-else-if="sec.geoapify"><a href="https://www.geoapify.com/" target="_blank" rel="noopener" class="wl-credit">Powered by Geoapify</a> · © OpenStreetMap</template>
+          <template v-else>from OpenStreetMap</template>
+        </span>
       </div>
       <!-- The map service was busy: only the hand-picked (and Wikipedia) places for now; the full list follows by itself -->
       <p v-if="sec.partial && !sec.loading" class="wl-partial" role="status">
@@ -404,7 +410,8 @@ export default {
           loading: st.loading,
           error: st.error,
           shown: st.shown,
-          partial: !!st.partial
+          partial: !!st.partial,
+          geoapify: (this.popularByDest[d] || []).some((p) => p.src === 'geoapify')
         })
       }
       return result
@@ -583,7 +590,7 @@ export default {
         for (let i = 0; i < names.length; i += 40) {
           const batch = names.slice(i, i + 40)
           try {
-            const res = await axios.get('/api/places/photos', { params: { city, names: batch.join('|') } })
+            const res = await axios.get('/api/places/photos', { params: { city, names: batch.join('|') }, background: true })
             for (const n of batch) this.photos[n + '|' + city] = res.data[n] || null
           } catch (err) {
             for (const n of batch) delete this.photos[n + '|' + city] // try again next time
@@ -640,7 +647,7 @@ export default {
     async loadPopular(dest, firstTry = true) {
       this.status[dest] = { loading: true, error: '', shown: 12 }
       try {
-        const res = await axios.get('/api/places/attractions', { params: { destination: dest } })
+        const res = await axios.get('/api/places/attractions', { params: { destination: dest }, background: true })
         // Remember which city each place is in
         const list = []
         for (const p of res.data) list.push({ ...p, city: dest })
@@ -667,7 +674,7 @@ export default {
       setTimeout(async () => {
         if (!this.destinations.includes(dest)) return // the trip changed meanwhile
         try {
-          const res = await axios.get('/api/places/attractions', { params: { destination: dest } })
+          const res = await axios.get('/api/places/attractions', { params: { destination: dest }, background: true })
           const partial = res.headers['x-places-partial'] === '1'
           const old = this.popularByDest[dest] || []
           if (!partial || res.data.length > old.length) {
@@ -1178,6 +1185,10 @@ export default {
 .btn-sm.wl-pill-btn {
   height: auto;
   padding: 6px 16px;
+}
+.wl-credit {
+  color: inherit;
+  text-decoration: underline;
 }
 .wl-partial {
   display: flex;

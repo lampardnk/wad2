@@ -716,7 +716,7 @@ export default {
         const codes = []
         for (const n of batch) codes.push(codeForDestination(n) || '')
         try {
-          const res = await axios.get('/api/discover/cities', { params: { names: batch.join('|'), codes: codes.join('|') } })
+          const res = await axios.get('/api/discover/cities', { params: { names: batch.join('|'), codes: codes.join('|') }, background: true })
           for (const c of res.data) this.places[c.label] = { lat: c.lat, lon: c.lon }
         } catch (err) {
           // the map just shows fewer places
@@ -730,7 +730,7 @@ export default {
         const d = t.destinations[0]
         if (!d || this.photos[d] !== undefined) continue
         this.photos[d] = '' // looking it up
-        axios.get('/api/places/photo', { params: { destination: d, size: 'small' } })
+        axios.get('/api/places/photo', { params: { destination: d, size: 'small' }, background: true })
           .then((res) => {
             if (!res.data.url) return
             // Show it only once it has downloaded, so the card never flashes empty

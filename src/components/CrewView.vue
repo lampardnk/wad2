@@ -39,8 +39,12 @@
 
           <div class="cw-pills">
             <span class="cw-pill" :class="{ empty: !p.flight.flight && !p.flight.arrival }">
-              <AppIcon name="plane" :size="14" /> <template v-if="p.flight.flight || p.flight.arrival">{{ p.flight.flight || 'Arrives' }}<template v-if="p.flight.arrival"> · Lands {{ arrivalText(p.flight.arrival) }}</template></template>
+              <AppIcon name="plane" :size="14" /> <template v-if="p.flight.flight || p.flight.arrival">{{ p.flight.flight || 'Arrives' }}<template v-if="p.flight.arrival"> · Lands {{ arrivalText(p.flight.arrival) }}</template><template v-if="p.flight.airport"> · {{ p.flight.airport }}</template></template>
               <template v-else>No flight added</template>
+            </span>
+            <!-- Flight home (added from the last day of the itinerary) -->
+            <span v-if="p.profile.departure" class="cw-pill">
+              <AppIcon name="plane" :size="14" /> Flies home {{ arrivalText(p.profile.departure) }}<template v-if="p.profile.departFlight"> · {{ p.profile.departFlight }}</template>
             </span>
             <span v-if="p.flightWith.length" class="cw-pill"><AppIcon name="users" :size="13" /> Same flight as {{ p.flightWith.join(', ') }}</span>
             <template v-if="p.diets.length">
@@ -281,9 +285,10 @@ export default {
       const pr = this.profiles[name] || {}
       if (pr.sameFlightAs) {
         const other = this.profiles[pr.sameFlightAs] || {}
-        if (!other.sameFlightAs) return { flight: other.flight || '', arrival: other.arrival || '' }
+        if (!other.sameFlightAs) return { flight: other.flight || '', arrival: other.arrival || '', airport: other.arriveAt ? other.arriveAt.name : '' }
       }
-      return { flight: pr.flight || '', arrival: pr.arrival || '' }
+      // (the airport is set from the first day of the itinerary)
+      return { flight: pr.flight || '', arrival: pr.arrival || '', airport: pr.arriveAt ? pr.arriveAt.name : '' }
     },
 
     // People you can pick in "Same as …": others with their own flight details

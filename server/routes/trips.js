@@ -15,6 +15,7 @@ const ACTIVITY_KEYS = ['sightseeing', 'food', 'shopping', 'beach', 'hiking', 'sn
 const WEATHER_KEYS = ['hot', 'mild', 'cold', 'rain']
 const EXTRA_KEYS = ['laundry', 'carryon', 'kids', 'flight']
 const PACKING_CATEGORIES = ['docs', 'clothes', 'toiletries', 'health', 'tech', 'gear', 'other']
+const TRAVEL_MODES = ['walk', 'transit', 'taxi', 'bike']
 
 // Keep only known keys, no repeats
 function pickKeys(list, allowed) {
@@ -103,8 +104,20 @@ function toClient(t, userId, contacts) {
     photoAlbums: t.photoAlbums || [],
     stay: t.stay || null,
     stops: t.stops || [],
-    wishlist: t.wishlist || []
+    wishlist: t.wishlist || [],
+    journeys: t.journeys || [],
+    stays: t.stays || []
   }
+}
+
+// A place picked on the map: { name, address, lat, lon } (or null if it isn't one)
+function cleanPlace(p) {
+  if (!p || typeof p !== 'object') return null
+  const name = typeof p.name === 'string' ? p.name.trim().slice(0, 120) : ''
+  const lat = Number(p.lat)
+  const lon = Number(p.lon)
+  if (!name || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null
+  return { name, address: typeof p.address === 'string' ? p.address.trim().slice(0, 200) : '', lat, lon }
 }
 
 // Clean the stops sent by the browser. Returns null if anything is invalid.
@@ -124,10 +137,15 @@ function cleanStops(list) {
       if (!Number.isFinite(duration) || duration <= 0 || duration > 24) return null
     }
     const address = typeof s.address === 'string' && s.address.trim() ? s.address.trim().slice(0, 200) : null
+    // How the group chose to get here from the stop before (from = that stop's id); null = use the suggestion
+    let travel = null
+    if (s.travel && TRAVEL_MODES.includes(s.travel.mode) && typeof s.travel.from === 'string') {
+      travel = { mode: s.travel.mode, from: s.travel.from.slice(0, 40), by: String(s.travel.by || '').slice(0, 40) }
+    }
     out.push({
       id: String(s.id || new mongoose.Types.ObjectId()).slice(0, 40),
       name, address, date: s.date, hour, duration,
-      outdoor: !!s.outdoor, locked: !!s.locked
+      outdoor: !!s.outdoor, locked: !!s.locked, travel
     })
   }
   return out
@@ -393,6 +411,30 @@ function mergePacking(latest, base, mine) {
   return out
 }
 
+// PUT /api/trips/:id/journeys  [{ id, from, to, mode, min, date?, by? }]  -> "Other journeys" saved on the trip
+// (trips that aren't between two itinerary stops, e.g. airport -> hotel). Anyone on the trip can edit.
+router.put('/:id/journeys', requireAuth, async (req, res) => {
+  if (!Array.isArray(req.body) || req.body.length > 50) return res.status(400).json({ message: 'Journeys are invalid.' })
+  const text = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+  const journeys = []
+  for (const j of req.body) {
+    const from = text(j && j.from, 120)
+    const to = text(j && j.to, 120)
+    const min = Number(j && j.min)
+    if (!from || !to || !TRAVEL_MODES.includes(j.mode) || !Number.isFinite(min) || min < 0 || min > 24 * 60) {
+      return res.status(400).json({ message: 'Each journey needs a start, an end, a way to travel and a time.' })
+    }
+    const date = typeof j.date === 'string' && DATE_PATTERN.test(j.date) ? j.date : ''
+    journeys.push({ id: text(j.id, 40) || String(new mongoose.Types.ObjectId()), from, to, mode: j.mode, min: Math.round(min), date, by: text(j.by, 40) })
+  }
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  trip.journeys = journeys
+  trip.markModified('journeys')
+  await trip.save()
+  res.json(journeys)
+})
+
 // PUT /api/trips/:id/albums  [{ id, name, icon }]  -> the trip's photo albums
 router.put('/:id/albums', requireAuth, async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id) || !Array.isArray(req.body) || req.body.length > 50) {
@@ -416,6 +458,31 @@ router.put('/:id/albums', requireAuth, async (req, res) => {
 })
 
 // PUT /api/trips/:id/stay  { name, address, nameLocal, addressLocal, lat, lon } or {} to clear
+// PUT /api/trips/:id/stays  [{ city, name, address, lat, lon }]  -> where the group sleeps, one per city
+// (set from the itinerary: each day starts and ends there). Anyone on the trip can change it.
+// The Safety tab's taxi card follows the first one, unless someone set that card's hotel by hand.
+router.put('/:id/stays', requireAuth, async (req, res) => {
+  if (!Array.isArray(req.body) || req.body.length > 20) return res.status(400).json({ message: 'Hotels are invalid.' })
+  const trip = await findTripFor(req.userId, req.params.id)
+  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
+  const by = memberName(trip, req.userId) || ''
+  const stays = []
+  for (const st of req.body) {
+    const place = cleanPlace(st)
+    const city = typeof (st && st.city) === 'string' ? st.city.trim().slice(0, 80) : ''
+    if (!place || !city) return res.status(400).json({ message: 'Each hotel needs a city and a place on the map.' })
+    if (!stays.some((x) => x.city === city)) stays.push({ city, ...place, by: typeof st.by === 'string' && st.by ? st.by.slice(0, 40) : by })
+  }
+  trip.stays = stays
+  trip.markModified('stays')
+  if (!trip.stay || trip.stay.fromPlan) {
+    trip.stay = stays.length ? { name: stays[0].name, address: stays[0].address, nameLocal: '', addressLocal: '', lat: stays[0].lat, lon: stays[0].lon, fromPlan: true } : null
+    trip.markModified('stay')
+  }
+  await trip.save()
+  res.json({ stays: trip.stays, stay: trip.stay })
+})
+
 router.put('/:id/stay', requireAuth, async (req, res) => {
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
@@ -441,7 +508,8 @@ router.put('/:id/stay', requireAuth, async (req, res) => {
   res.json({ stay: trip.stay })
 })
 
-// PUT /api/trips/:id/crew/:name  { persona, flight, arrival, sameFlightAs, diet, phone }
+// PUT /api/trips/:id/crew/:name  { persona, flight, arrival, sameFlightAs, diet, phone,
+//                                  arriveAt?, departFlight?, departure?, departFrom? }  (airports = { name, address, lat, lon })
 // Your own card, or (organiser only) the card of someone without an account.
 // diet: preset keys (e.g. 'halal', 'nut-allergy') or short custom tags (e.g. 'No spicy food').
 // sameFlightAs: another traveller's name. Their flight is shown instead, so it is only stored once.
@@ -470,11 +538,19 @@ router.put('/:id/crew/:name', requireAuth, async (req, res) => {
   if (sameFlightAs === name || !trip.travellers.includes(sameFlightAs)) sameFlightAs = ''
 
   const arrival = text(b.arrival, 16)
+  const departure = text(b.departure, 16)
+  const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
+  // Airports and the flight home are set from the itinerary; left out = keep what was saved
+  const before = (trip.crew || {})[name] || {}
   const profile = {
     persona: text(b.persona, 40),
     sameFlightAs,
     flight: sameFlightAs ? '' : text(b.flight, 12).toUpperCase(),
-    arrival: !sameFlightAs && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(arrival) ? arrival : '',
+    arrival: !sameFlightAs && DATETIME.test(arrival) ? arrival : '',
+    arriveAt: sameFlightAs ? null : (b.arriveAt === undefined ? before.arriveAt || null : cleanPlace(b.arriveAt)),
+    departFlight: b.departFlight === undefined ? before.departFlight || '' : text(b.departFlight, 12).toUpperCase(),
+    departure: b.departure === undefined ? before.departure || '' : (DATETIME.test(departure) ? departure : ''),
+    departFrom: b.departFrom === undefined ? before.departFrom || null : cleanPlace(b.departFrom),
     diet,
     phone: text(b.phone, 20).replace(/[^\d+ ]/g, '')
   }

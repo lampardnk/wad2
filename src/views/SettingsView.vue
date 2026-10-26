@@ -180,6 +180,44 @@
           <p v-if="paceError" class="st-err" role="alert">{{ paceError }}</p>
         </div>
 
+        <!-- ===== Getting around: how the itinerary suggests travelling between stops ===== -->
+        <h2 id="getting-around" class="st-group-title">Getting Around</h2>
+        <div class="st-group">
+          <div class="st-row stack">
+            <span class="st-row-text">
+              <span class="st-row-label" id="st-modes-label">Ways I'm happy to travel</span>
+              <span class="st-row-hint">Only these are suggested between your stops</span>
+            </span>
+            <div class="st-modes" role="group" aria-labelledby="st-modes-label">
+              <button v-for="m in TRAVEL_CHOICES" :key="m.value" type="button" class="st-mode" role="checkbox"
+                :aria-checked="pace.travelModes.includes(m.value)" :class="{ on: pace.travelModes.includes(m.value) }"
+                :disabled="pace.travelModes.length === 1 && pace.travelModes.includes(m.value)"
+                :title="pace.travelModes.length === 1 && pace.travelModes.includes(m.value) ? 'Keep at least one' : ''"
+                @click="toggleMode(m.value)">
+                <AppIcon :name="m.icon" :size="15" /> {{ m.label }}
+              </button>
+            </div>
+          </div>
+          <div class="st-row">
+            <span class="st-row-text">
+              <span class="st-row-label">Longest walk</span>
+              <span class="st-row-hint">Longer than this: transit or a taxi instead</span>
+            </span>
+            <CustomDropdown id="st-max-walk" v-model="pace.maxWalk" :options="walkChoices" size="sm" header-text="Longest walk" aria-label="Longest walk" />
+          </div>
+          <div class="st-row stack">
+            <span class="st-row-text">
+              <span class="st-row-label" id="st-priority-label">Put first</span>
+              <span class="st-row-hint">{{ priorityHint }}</span>
+            </span>
+            <div class="st-modes" role="radiogroup" aria-labelledby="st-priority-label">
+              <button v-for="c in priorityChoices" :key="c.value" type="button" class="st-mode" role="radio"
+                :aria-checked="pace.travelPriority === c.value" :class="{ on: pace.travelPriority === c.value }"
+                @click="pace.travelPriority = c.value">{{ c.label }}</button>
+            </div>
+          </div>
+        </div>
+
         <!-- ===== Safety & notifications ===== -->
         <h2 class="st-group-title">Safety & Notifications</h2>
         <div class="st-group">
@@ -219,6 +257,7 @@ import CustomDropdown from '../components/CustomDropdown.vue'
 import DietTagsInput from '../components/DietTagsInput.vue'
 import PhoneInput from '../components/PhoneInput.vue'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
+import AppIcon from '../components/AppIcon.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -320,13 +359,43 @@ const bufferChoices = [
   { value: 0.5, label: '30 min' },
   { value: 1, label: '1 hour' }
 ]
-const pace = reactive({ ...prefs })
+const pace = reactive({ ...prefs, travelModes: (prefs.travelModes || []).slice() })
+
+// ----- Getting around -----
+const TRAVEL_CHOICES = [
+  { value: 'walk', label: 'Walking', icon: 'footprints' },
+  { value: 'transit', label: 'Public transport', icon: 'train' },
+  { value: 'taxi', label: 'Taxi / ride-hail', icon: 'car' },
+  { value: 'bike', label: 'Cycling', icon: 'bike' }
+]
+const walkChoices = [10, 15, 20, 30, 45].map((m) => ({ value: m, label: m + ' min' }))
+const priorityChoices = [
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'fastest', label: 'Fastest' },
+  { value: 'cheapest', label: 'Cheapest' }
+]
+const priorityHint = computed(() => ({
+  balanced: 'Walk when it\'s short, else transit; a taxi only when it saves a lot',
+  fastest: 'The quickest way, even if it costs more',
+  cheapest: 'Walk or transit, a taxi only if nothing else is allowed'
+})[pace.travelPriority] || '')
+function toggleMode(mode) {
+  const list = pace.travelModes.slice()
+  const i = list.indexOf(mode)
+  if (i >= 0) {
+    if (list.length === 1) return // keep at least one
+    list.splice(i, 1)
+  } else {
+    list.push(mode)
+  }
+  pace.travelModes = list
+}
 const paceError = ref('')
 let paceTimer = null
 async function loadPace() {
   try {
     await loadPreferences()
-    Object.assign(pace, prefs)
+    Object.assign(pace, prefs, { travelModes: (prefs.travelModes || ['walk', 'transit', 'taxi']).slice() })
   } catch (err) {
     // keep the defaults
   }
@@ -341,9 +410,10 @@ async function loadPace() {
     paceTimer = setTimeout(savePace, 500)
   })
   // Opened from the menu's "Trip pacing": scroll down to it
-  if (route.hash === '#pacing') {
+  // Opened from the menu's "Trip pacing" or a travel panel's "Change": scroll down to that section
+  if (route.hash === '#pacing' || route.hash === '#getting-around') {
     setTimeout(() => {
-      const el = document.getElementById('pacing')
+      const el = document.getElementById(route.hash.slice(1))
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 350) // after the page has faded in
   }
@@ -830,6 +900,38 @@ async function deleteAccount() {
   .st-welcome .st-primary {
     margin-left: 0;
   }
+}
+
+/* Getting around: ways to travel as toggle chips */
+.st-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.st-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.st-mode.on {
+  background: rgba(237, 174, 73, 0.16);
+  border-color: rgba(237, 174, 73, 0.6);
+  color: var(--text);
+}
+.st-mode:disabled {
+  cursor: not-allowed;
+}
+.st-mode:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 2px;
 }
 
 /* Password and delete-account forms */

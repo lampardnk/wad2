@@ -6,3 +6,6 @@ data/icons/
 
 # Wikipedia summaries and photos for Discover (fetched again automatically)
 data/discover-about.json
+
+# Saved lookups (places, photos); rebuilt automatically
+data/cache/

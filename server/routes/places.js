@@ -1,5 +1,7 @@
 import express from 'express'
 import { wikiFetch, overpassInTurn, serverIsResting, restServer } from '../politeFetch.js'
+import { geoapifyReady, geoapifySearch, geoapifyAttractions } from '../geoapify.js'
+import { diskMap } from '../diskCache.js'
 import { requireAuth } from './auth.js'
 import Attraction from '../models/Attraction.js'
 import fs from 'fs'
@@ -308,20 +310,30 @@ function pickedSights(destination) {
 // The full lookup: OpenStreetMap places ranked by fame, hand-picked sights first, Wikipedia as a backup.
 // Returns { items, partial }; partial = OpenStreetMap didn't answer (so nothing is saved, it's tried again next time)
 async function lookupAttractions(destination, key) {
-  // 1. Where is it? (Photon, or Nominatim if Photon is busy)
+  // 1. Where is it? (Geoapify if there's a key, else Photon, or Nominatim if Photon is busy)
   const where = await locatePlace(destination)
   if (!where) return { items: [], partial: false }
   const { lat, lon, isCountry } = where
   const props = { osm_type: where.relationId ? 'R' : '', osm_id: where.relationId }
 
-  // 2. Ask OpenStreetMap (Overpass). Each try can fail (busy servers), so we fall back step by step:
+  // 2. Geoapify first (about a second, with our own allowance). If there's no key or it fails,
+  //    ask OpenStreetMap (Overpass). Each try can fail (busy servers), so we fall back step by step:
   //    a) inside the boundary, famous places only   b) 15 km around the centre, any named tourist place
   //    c) if Overpass is down completely: Wikipedia articles near the centre (see wikiNearby)
+  let osm = { elements: [] }
+  let source = 'osm'
+  if (geoapifyReady()) {
+    try {
+      osm = await geoapifyAttractions({ placeId: where.placeId, lat, lon, radius: 15000, tourismTypes: TYPES.split('|') })
+      if (osm.elements.length) source = 'geoapify'
+    } catch (err) {
+      console.error('Geoapify places failed for "' + destination + '":', err.message, '(trying Overpass)')
+    }
+  }
   const famous = isCountry ? '["wikipedia"]' : '["wikidata"]'
   // Time budget: all Overpass servers are asked at once and the first answer wins
   const waitSeconds = isCountry ? 40 : 20
-  let osm = { elements: [] }
-  try {
+  if (!osm.elements.length) try {
     const prefix = props.osm_type === 'R' ? 'area(' + (3600000000 + Number(props.osm_id)) + ')->.a;' : ''
     const sel = props.osm_type === 'R' ? 'nwr(area.a)' : 'nwr(around:15000,' + lat + ',' + lon + ')'
     // Tourist sights with a Wikipedia/Wikidata entry. For a city, also famous parks/gardens and historic places
@@ -404,7 +416,7 @@ async function lookupAttractions(destination, key) {
   }
   for (let i = 0; i < top.length; i++) {
     const it = top[i]
-    top[i] = { name: it.name, type: it.type, indoor: it.indoor, address: it.address, wiki: it.wiki, wikidata: it.wikidata, rank: it.rank }
+    top[i] = { name: it.name, type: it.type, indoor: it.indoor, address: it.address, wiki: it.wiki, wikidata: it.wikidata, rank: it.rank, src: source }
   }
   // c) OpenStreetMap didn't answer: add famous places from Wikipedia near the centre
   //    (after the hand-picked sights, without repeating them)
@@ -430,6 +442,18 @@ async function lookupAttractions(destination, key) {
 // Where a city or country is: { lat, lon, isCountry, relationId } (relationId = its OpenStreetMap boundary, if any).
 // Photon first; when it's busy or down (it limits how often one server may ask), Nominatim.
 async function locatePlace(destination) {
+  if (geoapifyReady()) {
+    try {
+      const data = await geoapifySearch({ q: destination, limit: 1 })
+      const f = data.features[0]
+      if (f) {
+        const p = f.properties
+        return { lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], isCountry: p.osm_value === 'country', relationId: null, placeId: p.place_id || null }
+      }
+    } catch (err) {
+      console.warn('Geoapify could not find', destination + ':', err.message, '(trying Photon)')
+    }
+  }
   try {
     const data = await getMapJson('https://photon.komoot.io/api/?' + new URLSearchParams({ q: destination, limit: '1', lang: 'en', osm_tag: 'place' }))
     const f = data.features && data.features[0]
@@ -453,7 +477,7 @@ async function locatePlace(destination) {
 //   3. a Wikipedia search for "name city"              4. a Wikimedia Commons photo search
 // Answers are kept in memory (photos for a day, "no photo" for an hour).
 // ---------------------------------------------------------------------
-const placePhotos = new Map() // 'name|city' -> { url, at }
+const placePhotos = diskMap('place-photos') // 'name|city' -> { url, at } (kept on disk, survives restarts)
 
 function plainWords(text) {
   return plain(text).split(/[^a-z0-9]+/).filter((w) => w.length > 2)
@@ -779,7 +803,7 @@ router.get('/search', requireAuth, async (req, res) => {
 // Tries the city's article, then "Tourism in <country>", then the country.
 // Flags and maps (usually .svg) are skipped so we get a real photo.
 // ---------------------------------------------------------------------
-const photos = new Map() // destination -> result
+const photos = diskMap('destination-photos', 1000) // destination -> result (kept on disk)
 
 async function wikiPhoto(title, width) {
   const url = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_'))
@@ -801,12 +825,12 @@ async function wikiPhoto(title, width) {
 }
 
 // Backup: any wide photo from the article (e.g. when its main picture is a tall collage, like New York City)
-async function wikiGalleryPhoto(title, width) {
+export async function wikiGalleryPhoto(title, width, priority = 'first') {
   const url = 'https://en.wikipedia.org/w/api.php?' + new URLSearchParams({
     action: 'query', generator: 'images', titles: title, gimlimit: '40', redirects: '1',
     prop: 'imageinfo', iiprop: 'url|size|mime', iiurlwidth: String(width), format: 'json'
   })
-  const response = await wikiFetch(url, { headers: HEADERS, signal: AbortSignal.timeout(8000) })
+  const response = await wikiFetch(url, { headers: HEADERS, signal: AbortSignal.timeout(8000) }, priority)
   if (!response.ok) return null
   const data = await response.json()
   const pages = (data.query && data.query.pages) || {}
@@ -825,7 +849,8 @@ async function wikiGalleryPhoto(title, width) {
 router.get('/photo', requireAuth, async (req, res) => {
   const destination = (req.query.destination || '').trim()
   if (!destination || destination.length > 80) return res.json({ url: null })
-  const width = req.query.size === 'small' ? 960 : 1920
+  // Wikimedia's standard widths: 330 for little thumbnails (itinerary stops), 960 for cards, 1920 for banners
+  const width = req.query.size === 'thumb' ? 330 : req.query.size === 'small' ? 960 : 1920
   const key = width + '|' + destination.toLowerCase()
   if (photos.has(key)) return res.json(photos.get(key))
 

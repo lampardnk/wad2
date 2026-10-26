@@ -43,7 +43,11 @@ const userSchema = new mongoose.Schema({
     dayStart: { type: Number, default: 8 },                // earliest start (hour)
     dayEnd: { type: Number, default: 23 },                 // finish by (hour)
     crowdSensitivity: { type: String, default: 'medium' }, // 'low' | 'medium' | 'high'
-    travelBuffer: { type: Number, default: 0 }             // hours kept free between stops
+    travelBuffer: { type: Number, default: 0 },            // hours kept free between stops
+    // Getting around: which ways to travel are suggested, the longest walk, and what matters most
+    travelModes: { type: [String], default: ['walk', 'transit', 'taxi'] }, // of walk, transit, taxi, bike
+    maxWalk: { type: Number, default: 20 },                // minutes
+    travelPriority: { type: String, default: 'balanced' }  // 'balanced' | 'fastest' | 'cheapest'
   }
 }, { timestamps: true })
 

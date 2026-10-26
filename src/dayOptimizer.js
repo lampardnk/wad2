@@ -41,21 +41,112 @@ export function haversineKm(a, b) {
   return 2 * 6371 * Math.asin(Math.sqrt(x))
 }
 
-// Short hops are walked; longer ones by public transport (with a few minutes' wait).
-// Unknown places (no address) count as 15 min.
-export function travelBetween(a, b) {
-  if (!a || !b || a.lat == null || b.lat == null) return { min: 15, mode: 'unknown', km: null }
+// ---------- getting from one stop to the next ----------
+// Every way to get there, with its time. Real times come from the server's route lookup (tp.real);
+// until they arrive (or without a map key) we estimate from the straight-line distance.
+// tp ("travel preferences", from Settings → Getting around):
+//   { modes: ['walk', 'transit', 'taxi', 'bike'], maxWalk: 20, priority: 'balanced' | 'fastest' | 'cheapest',
+//     group: 4 (people sharing a taxi), real: { 'lat,lon>lat,lon': { walk: { min, km }, taxi: {...}, ... } } }
+export const TRAVEL_MODES = {
+  walk: { label: 'Walk', icon: 'footprints', cost: 0, costText: 'Free', maps: 'walking' },
+  bike: { label: 'Bike', icon: 'bike', cost: 1, costText: '$ bike share', maps: 'bicycling' },
+  transit: { label: 'Transit', icon: 'train', cost: 1, costText: '$ fare', maps: 'transit' },
+  taxi: { label: 'Taxi', icon: 'car', cost: 3, costText: '$$$', maps: 'driving' }
+}
+export const DEFAULT_TRAVEL = { modes: ['walk', 'transit', 'taxi'], maxWalk: 20, priority: 'balanced', group: 1, real: {} }
+
+// The key a route is saved under: both ends, to about 10 m
+export function legKey(a, b) {
+  return a.lat.toFixed(4) + ',' + a.lon.toFixed(4) + '>' + b.lat.toFixed(4) + ',' + b.lon.toFixed(4)
+}
+
+// Straight-line guesses (minutes). Walking and cycling paths are ~25% longer than a straight line,
+// roads ~30%. Transit adds ~8 min of walking to the stop and waiting; a taxi ~5 min to arrive.
+function estimateMin(mode, km) {
+  if (mode === 'walk') return Math.max(3, Math.round((km * 1.25) / 4.8 * 60))
+  if (mode === 'bike') return Math.round(3 + (km * 1.25) / 14 * 60)
+  if (mode === 'transit') return Math.round(8 + (km * 1.3) / 22 * 60)
+  return Math.round(5 + (km * 1.3) / 24 * 60)
+}
+
+// Every way from a to b: [{ mode, min, km, live (a real route, not a guess), allowed (in your preferences) }]
+export function travelOptions(a, b, tp = DEFAULT_TRAVEL) {
+  if (!a || !b || a.lat == null || b.lat == null) return []
   const km = haversineKm(a, b)
-  if (km <= 1.3) return { min: Math.max(3, Math.round((km * 1.25) / 4.8 * 60)), mode: 'walk', km }
-  return { min: Math.round(8 + (km * 1.3) / 22 * 60), mode: 'transit', km }
+  const real = (tp.real && tp.real[legKey(a, b)]) || {}
+  const list = []
+  for (const mode of ['walk', 'transit', 'taxi', 'bike']) {
+    if (mode === 'transit' && km < 0.6) continue // a bus for a few hundred metres? just walk
+    const r = real[mode]
+    let min = r ? r.min : estimateMin(mode, km)
+    if (r && mode === 'taxi') min += 5 // the route is driving time; add the wait for the car
+    // Transit times from the route lookup are still approximate (no timetables)
+    list.push({ mode, min, km: r && r.km != null ? r.km : km, live: !!r && mode !== 'transit', allowed: tp.modes.includes(mode) })
+  }
+  return list
+}
+
+// Which way we suggest, and why. Balanced (default): walk if it's within your limit, otherwise
+// public transport, and a taxi only when it saves a lot of time. Fastest / cheapest do what they say.
+export function recommendTravel(options, tp = DEFAULT_TRAVEL) {
+  let pool = options.filter((o) => o.allowed)
+  if (!pool.length) pool = options
+  const by = (mode) => pool.find((o) => o.mode === mode)
+  const walk = by('walk')
+  const walkOk = walk && walk.min <= tp.maxWalk
+  const tooFar = walk && !walkOk ? 'walking is ' + walk.min + ' min, over your ' + tp.maxWalk + '-min limit' : ''
+  const fastest = pool.slice().sort((x, y) => x.min - y.min)[0]
+  if (!fastest) return null
+
+  if (tp.priority === 'fastest') {
+    if (walkOk && walk.min <= fastest.min + 3) return { option: walk, reason: 'walking is about as quick' }
+    return { option: fastest, reason: 'fastest' + (tooFar ? '; ' + tooFar : '') }
+  }
+  if (tp.priority === 'cheapest') {
+    if (walkOk) return { option: walk, reason: 'free, and within your walking limit' }
+    const cheap = pool.filter((o) => o.mode !== 'walk').sort((x, y) => TRAVEL_MODES[x.mode].cost - TRAVEL_MODES[y.mode].cost || x.min - y.min)[0]
+    if (cheap) return { option: cheap, reason: 'cheapest' + (tooFar ? '; ' + tooFar : '') }
+    return { option: walk, reason: 'the only way you allowed' }
+  }
+  // balanced
+  if (walkOk) return { option: walk, reason: 'short walk' }
+  const bike = by('bike')
+  const transit = by('transit')
+  const taxi = by('taxi')
+  if (bike && bike.min <= 20 && (!transit || bike.min <= transit.min + 5)) return { option: bike, reason: 'quick ride' + (tooFar ? '; ' + tooFar : '') }
+  if (transit) {
+    // A taxi only when transit is long and the taxi saves at least 20 minutes
+    if (taxi && transit.min > 40 && transit.min - taxi.min >= 20) {
+      return { option: taxi, reason: 'saves ' + (transit.min - taxi.min) + ' min over transit' }
+    }
+    return { option: transit, reason: tooFar || 'good value' }
+  }
+  return { option: fastest, reason: tooFar || 'fastest' }
+}
+
+// How you'll get from a to b: the way the group picked (b.travelMode, if it was picked for coming
+// from a), otherwise the suggestion. Without tp it's the old simple rule (walk up to 1.3 km, else transit).
+// Unknown places (not on the map) count as 15 min.
+export function travelBetween(a, b, tp) {
+  if (!a || !b || a.lat == null || b.lat == null) return { min: 15, mode: 'unknown', km: null }
+  if (!tp) {
+    const km = haversineKm(a, b)
+    if (km <= 1.3) return { min: estimateMin('walk', km), mode: 'walk', km }
+    return { min: estimateMin('transit', km), mode: 'transit', km }
+  }
+  const options = travelOptions(a, b, tp)
+  const rec = recommendTravel(options, tp)
+  const picked = b.travelMode && b.travelFrom === a.id ? options.find((o) => o.mode === b.travelMode) : null
+  const use = picked || rec.option
+  return { min: use.min, mode: use.mode, km: use.km, live: use.live, picked: !!picked, recommended: rec.option.mode, reason: rec.reason }
 }
 
 // Every pair once, so the search doesn't redo the maths
-export function travelMatrix(stops) {
+export function travelMatrix(stops, tp) {
   const matrix = {}
   for (const a of stops) {
     matrix[a.id] = {}
-    for (const b of stops) matrix[a.id][b.id] = a.id === b.id ? { min: 0, mode: 'walk', km: 0 } : travelBetween(a, b)
+    for (const b of stops) matrix[a.id][b.id] = a.id === b.id ? { min: 0, mode: 'walk', km: 0 } : travelBetween(a, b, tp)
   }
   return matrix
 }
@@ -265,7 +356,7 @@ export function scheduleAsIs(stops, matrix) {
 
 // ---------- scoring ----------
 export function measure(items, rainByHour, opts) {
-  const m = { cost: 0, travelMin: 0, waitMin: 0, lateMin: 0, crowd: 0, rainOutdoor: 0, closed: 0, overtimeMin: 0, end: opts.dayStart }
+  const m = { cost: 0, travelMin: 0, waitMin: 0, lateMin: 0, crowd: 0, rainOutdoor: 0, closed: 0, overtimeMin: 0, earlyMin: 0, end: opts.dayStart }
   for (const it of items) {
     const s = it.stop
     if (s.virtual) continue // meal breaks
@@ -290,12 +381,14 @@ export function measure(items, rainByHour, opts) {
     }
     if ((s.open != null && it.start < s.open) || (s.close != null && it.start + dur > s.close)) m.closed++
     m.end = Math.max(m.end, it.start + dur)
+    // Starting before the day does (e.g. before your flight lands) costs like running over
+    if (it.start < opts.dayStart - 0.01) m.earlyMin += Math.round((opts.dayStart - it.start) * 60)
     m.cost += (s.locked ? 0 : busy * WEIGHTS.crowd * (opts.crowdWeight || 1) * (s.outdoor ? 1 : 0.5))
     m.cost += s.outdoor ? rain * WEIGHTS.rain : -rain * WEIGHTS.dryIndoor
   }
   m.overtimeMin = Math.max(0, Math.round((m.end - opts.dayEnd) * 60))
   m.cost += m.travelMin * WEIGHTS.travel + m.waitMin * WEIGHTS.wait + m.lateMin * WEIGHTS.late +
-    m.closed * WEIGHTS.closed + m.overtimeMin * WEIGHTS.overtime
+    m.closed * WEIGHTS.closed + (m.overtimeMin + m.earlyMin) * WEIGHTS.overtime
   return m
 }
 
@@ -368,6 +461,8 @@ export function reasonsFor(it, index, rainByHour, dayHasRain) {
   if (index === 0) reasons.push({ icon: '📍', text: 'First stop of the day', kind: 'travel' })
   else if (it.mode === 'walk') reasons.push({ icon: '🚶', text: it.travelMin + ' min walk from the previous stop', kind: 'travel' })
   else if (it.mode === 'transit') reasons.push({ icon: '🚇', text: it.travelMin + ' min by transit from the previous stop', kind: 'travel' })
+  else if (it.mode === 'taxi') reasons.push({ icon: '🚕', text: it.travelMin + ' min by taxi from the previous stop', kind: 'travel' })
+  else if (it.mode === 'bike') reasons.push({ icon: '🚲', text: it.travelMin + ' min by bike from the previous stop', kind: 'travel' })
   if (it.waitMin >= 20) reasons.push({ icon: '⏳', text: it.waitMin + ' min free before this', kind: 'wait' })
   return reasons
 }
@@ -392,18 +487,36 @@ export function warningsFor(it, rainByHour, opts) {
 // ---------- the main function ----------
 export function optimizeDay(stops, rainByHour, opts = {}) {
   const options = { dayStart: 9, dayEnd: 21, ...opts }
-  const matrix = travelMatrix(stops)
+  // options.from / options.end: where the day starts and ends (your hotel, or the airport), if known
+  const ends = [options.from, options.end].filter(Boolean)
+  const matrix = travelMatrix(stops.concat(ends), options.travel) // uses each person's way of getting around (Settings)
   const locked = stops.filter((s) => s.locked)
   const flex = stops.filter((s) => !s.locked)
+  // The trip back to the hotel (or to the airport) at the end of the day counts too
+  const homeLeg = (items) => {
+    if (!options.end) return 0
+    let last = null
+    for (const it of items) if (!it.stop.virtual && (!last || it.start > last.start)) last = it
+    return last ? matrix[last.stop.id][options.end.id].min : 0
+  }
+  const score = (items, startLeg) => {
+    const m = measure(items, rainByHour, options)
+    const extra = homeLeg(items) + startLeg
+    m.travelMin += extra
+    m.cost += extra * WEIGHTS.travel
+    return m
+  }
 
   const beforeItems = scheduleAsIs(stops, matrix)
-  const before = measure(beforeItems, rainByHour, options)
+  // (the "before" times don't include getting from the hotel to the first stop, so add it for a fair comparison)
+  const firstBefore = beforeItems.find((it) => !it.stop.virtual)
+  const before = score(beforeItems, options.from && firstBefore ? matrix[options.from.id][firstBefore.stop.id].min : 0)
 
   let bestOrder = flex
   if (flex.length <= 7) {
     let bestCost = Infinity
     for (const order of permutations(flex)) {
-      const c = measure(scheduleInOrder(order, locked, matrix, options), rainByHour, options).cost
+      const c = score(scheduleInOrder(order, locked, matrix, options), 0).cost
       if (c < bestCost) {
         bestCost = c
         bestOrder = order
@@ -414,7 +527,7 @@ export function optimizeDay(stops, rainByHour, opts = {}) {
   }
 
   const afterItems = scheduleInOrder(bestOrder, locked, matrix, options)
-  const after = measure(afterItems, rainByHour, options)
+  const after = score(afterItems, 0)
   const dayHasRain = (rainByHour || []).some((p) => p >= 0.5)
   let real = 0
   for (const it of afterItems) {
@@ -426,12 +539,14 @@ export function optimizeDay(stops, rainByHour, opts = {}) {
     before: { items: beforeItems, ...before },
     after: { items: afterItems, ...after },
     better: after.cost < before.cost - 1,
-    summary: summarize(before, after)
+    summary: summarize(before, after, options)
   }
 }
 
-function summarize(before, after) {
+function summarize(before, after, options = {}) {
   const parts = []
+  const flight = (options.from && options.from.kind === 'arrive') || (options.end && options.end.kind === 'depart')
+  if (before.earlyMin + before.overtimeMin > after.earlyMin + after.overtimeMin) parts.push(flight ? 'fits the day around your flight' : 'fits the day into your hours')
   const saved = before.travelMin - after.travelMin
   if (saved >= 5) parts.push('saves ' + saved + ' min of travel')
   if (before.rainOutdoor - after.rainOutdoor >= 0.4) parts.push('keeps outdoor stops out of the rain')

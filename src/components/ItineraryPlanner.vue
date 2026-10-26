@@ -58,13 +58,14 @@
     <transition name="ip-fade">
       <div v-if="confirm" class="ip-overlay" @click.self="confirm = null" @keydown.esc="confirm = null">
         <div ref="dialogEl" class="ip-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ip-dialog-title" :aria-describedby="confirm.lines.length ? 'ip-dialog-body' : null" tabindex="-1">
-          <span class="ip-dialog-icon" :class="{ danger: confirm.danger }" aria-hidden="true"><AppIcon :name="confirm.danger ? 'trash' : confirm.kind === 'city' ? 'compass' : 'calendar'" :size="22" /></span>
+          <span class="ip-dialog-icon" :class="{ danger: confirm.danger }" aria-hidden="true"><AppIcon :name="confirm.danger ? 'trash' : confirm.kind === 'city' ? 'compass' : confirm.kind === 'full' ? 'clock' : 'calendar'" :size="22" /></span>
           <h3 id="ip-dialog-title" class="ip-dialog-title">{{ confirm.title }}</h3>
           <ul v-if="confirm.lines.length" id="ip-dialog-body" class="ip-dialog-list">
             <li v-for="(line, k) in confirm.lines" :key="k">{{ line }}</li>
           </ul>
           <div class="ip-dialog-btns">
             <button type="button" class="ip-outline" @click="confirm = null">Cancel</button>
+            <button v-if="confirm.alt" type="button" class="ip-outline" @click="doConfirmAlt">{{ confirm.alt }}</button>
             <button ref="confirmBtn" type="button" class="ip-cta" :class="{ danger: confirm.danger }" @click="doConfirm">{{ confirm.button }}</button>
           </div>
         </div>
@@ -88,7 +89,7 @@
       </button>
       <span class="ip-totals" title="Getting between today's stops">
         <span><AppIcon name="footprints" :size="15" /> {{ totals.walkKm }} km</span>
-        <span><AppIcon name="train" :size="15" /> {{ totals.transitMin }} min</span>
+        <span title="Minutes on transit, in taxis or on bikes"><AppIcon name="train" :size="15" /> {{ totals.transitMin }} min</span>
       </span>
       <!-- Only shows up when something on this day needs a look -->
       <div v-if="issues.length" class="ip-issues-wrap">
@@ -145,20 +146,70 @@
       <div class="ip-main">
         <!-- ===== List: numbered timeline ===== -->
         <template v-if="view === 'list'">
-          <p v-if="!stopRows.length && unscheduled.length" class="ip-empty">
-            Nothing planned for this day. Drag a saved place here, or tap its <strong>+</strong>.
-          </p>
+          <!-- An empty day: say what to do, and the two ways to do it -->
+          <div v-if="!stopRows.length" class="ip-start">
+            <span class="ip-start-icon" aria-hidden="true"><AppIcon name="map-pin" :size="20" /></span>
+            <div class="ip-start-text">
+              <strong>Nothing planned for Day {{ dayIndex + 1 }} yet</strong>
+              <small v-if="picks.length">Add one of your saved places, or find new ones to visit.</small>
+              <small v-else>Find places to visit and save them. Then add them to this day.</small>
+            </div>
+            <div class="ip-start-btns">
+              <button v-if="picks.length" type="button" class="ip-cta small" @click="showSaved">
+                Choose from {{ picks.length }} saved place{{ picks.length === 1 ? '' : 's' }}
+              </button>
+              <button type="button" :class="picks.length ? 'ip-outline small' : 'ip-cta small'" @click="addPlace">Find new places</button>
+            </div>
+          </div>
 
           <p v-if="stopRows.length > 1 && !previewing" class="ip-reorder-hint">
             <AppIcon name="swap" :size="14" /> Drag a stop by its dots, or use the arrows, to change the order. Times update by themselves.
           </p>
+          <!-- More planned than the day has time for: say so once, with a fix -->
+          <div v-if="overflow" class="ip-overflow" role="status">
+            <span class="ip-overflow-icon" aria-hidden="true"><AppIcon name="clock" :size="18" /></span>
+            <span class="ip-overflow-text">
+              <strong>Day {{ dayIndex + 1 }} is too full</strong>
+              <small>{{ dayEndReason }}. {{ overflow.count }} stop{{ overflow.count === 1 ? '' : 's' }} won't fit.</small>
+            </span>
+            <button type="button" class="ip-cta small" @click="overflowOpen = true">Choose where they go</button>
+          </div>
           <ol class="ip-list" :class="{ dragging: !!drag }">
+            <!-- Where the day starts: your hotel, or the airport on the day you land -->
+            <li v-if="!sampleMode" class="ip-anchor-row start">
+              <!-- Day 1: landing comes first, so the flight goes above the hotel -->
+              <button v-if="dayIndex === 0 && !arrivalToday" type="button" class="ip-flight-card" @click="editAnchor('arrive')">
+                <span class="ip-flight-icon" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
+                <span class="ip-anchor-text">
+                  <strong>Landing today?</strong>
+                  <small>Add your flight and the day starts after you land</small>
+                </span>
+                <span class="ip-flight-btn">Add flight</span>
+              </button>
+              <button type="button" class="ip-anchor" :class="{ empty: !startAnchor }" @click="editAnchor('start')">
+                <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="startAnchor && startAnchor.kind === 'arrive' ? 'plane' : 'door'" :size="16" /></span>
+                <span class="ip-anchor-text">
+                  <small>{{ startCaption }}</small>
+                  <strong>{{ startAnchor ? startAnchor.name : 'Add where you\'re staying' + (cityName ? ' in ' + cityName : '') }}</strong>
+                </span>
+                <span class="ip-anchor-edit">{{ startAnchor ? 'Change' : 'Add' }}</span>
+              </button>
+              <button v-if="startLeg" type="button" class="ip-leg clickable" :aria-label="'Getting to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
+                <AppIcon :name="modeIcon(startLeg.mode)" :size="13" /> {{ anchorLegText(startLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
+              </button>
+            </li>
             <template v-for="(it, i) in timeline" :key="it.stop.id">
               <!-- Between stops: how to get there, or a drop slot while dragging -->
               <li class="ip-gap" :class="{ active: dropAt === i, first: i === 0 }"
                 @dragover.prevent="dropAt = i" @dragleave="dropAt = null" @drop.prevent="dropInto(slotOf(i))">
                 <span v-if="drag" class="ip-drop">Drop here</span>
-                <span v-else-if="i > 0 && legText(it)" class="ip-leg"><AppIcon :name="it.mode === 'walk' ? 'footprints' : it.mode === 'transit' ? 'train' : 'map-pin'" :size="13" /> {{ legText(it) }}</span>
+                <!-- How to get here: the suggested (or the group's chosen) way. Tap to see every way and change it. -->
+                <button v-else-if="i > 0 && legText(it)" type="button" class="ip-leg" :class="{ picked: legEntry(it).picked, clickable: it.mode !== 'unknown' }"
+                  :disabled="it.mode === 'unknown'" :aria-label="'Getting to ' + it.stop.name + ': ' + legText(it) + (it.mode !== 'unknown' ? '. See other ways' : '')"
+                  @click="openLeg(it)">
+                  <AppIcon :name="legIcon(it)" :size="13" /> {{ legText(it) }}<span v-if="legNote(it)" class="ip-leg-why">· {{ legNote(it) }}</span>
+                  <AppIcon v-if="it.mode !== 'unknown'" name="chevron" :size="12" class="ip-leg-go" />
+                </button>
               </li>
 
               <!-- Lunch / dinner break (kept free when no meal is planned) -->
@@ -245,34 +296,6 @@
                       <span v-for="(p, k) in cardPills(it)" :key="k" class="ip-pill" :class="p.kind"><AppIcon v-if="lineIcon(p.icon)" :name="lineIcon(p.icon)" :size="13" /><template v-else>{{ p.icon }}</template> {{ p.text }}</span>
                     </div>
 
-                    <!-- Display saved transport option -->
-                    <div v-for="route in savedFor(it.stop)" :key="route._id || route.start">
-                      <div v-for="opt in route.options" :key="opt._id || opt.type + opt.route + opt.day + opt.time"
-                      class="small mt-2 p-2 border rounded bg-white">
-
-                        <div class="fw-semibold d-flex align-items-center gap-2">
-                          🚌 How to get here
-                          <span v-if="whenText(opt)" class="fw-normal text-muted">· {{ whenText(opt) }}</span>
-                          <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none flex-shrink-0 ms-auto"
-                          title="Open in Getting there" aria-label="Open in Getting there" @click="openInGettingthere(route, opt)">
-                            ✏️
-                          </button>
-                        </div>
-                        <div class="text-muted">From {{ route.start }}</div>
-
-                        <div class="d-flex justify-content-between align-items-center gap-2 mt-1">
-                          <div>{{ summarizeRoute(opt.route) }}</div>
-                            <span class="badge bg-primary-subtle text-primary-emphasis flex-shrink-0">
-                              {{ formatDuration(opt.duration) }}
-                            </span>
-                        </div>
-
-                        <div v-if="hasValidCost(opt.cost)" class="mt-1">
-                          <span class="badge bg-success-subtle text-success-emphasis">{{ formatCost(opt) }}</span>
-                        </div>
-                      </div>
-                    </div>
-
                     <!-- On the day: finish early or stay longer, and the rest of the day follows -->
                     <div v-if="live && live.id === it.stop.id && live.state === 'now' && !previewing" class="ip-live">
                       <button type="button" class="ip-live-btn done" @click="finishNow(it)"><AppIcon name="check" :size="15" /> I'm done</button>
@@ -304,9 +327,31 @@
               @dragover.prevent="dropAt = timeline.length" @dragleave="dropAt = null" @drop.prevent="dropInto(stopRows.length)">
               <span v-if="drag" class="ip-drop">Drop here</span>
             </li>
+            <!-- Where the day ends: back to the hotel, or the airport on the day you fly home -->
+            <li v-if="!sampleMode && stopRows.length" class="ip-anchor-row end">
+              <button v-if="endLeg" type="button" class="ip-leg clickable" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
+                <AppIcon :name="modeIcon(endLeg.mode)" :size="13" /> {{ anchorLegText(endLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
+              </button>
+              <button type="button" class="ip-anchor" :class="{ empty: !endAnchor }" @click="editAnchor('end')">
+                <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="endAnchor && endAnchor.kind === 'depart' ? 'plane' : 'door'" :size="16" /></span>
+                <span class="ip-anchor-text">
+                  <small>{{ endCaption }}</small>
+                  <strong>{{ endAnchor ? endAnchor.name : 'Add where you\'re staying' + (cityName ? ' in ' + cityName : '') }}</strong>
+                </span>
+                <span class="ip-anchor-edit">{{ endAnchor ? 'Change' : 'Add' }}</span>
+              </button>
+<button v-if="dayIndex === dayList.length - 1 && dayList.length > 1 && !departureToday" type="button" class="ip-flight-card" @click="editAnchor('depart')">
+                <span class="ip-flight-icon" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
+                <span class="ip-anchor-text">
+                  <strong>Flying home today?</strong>
+                  <small>Add your flight and the day ends in time to get to the airport</small>
+                </span>
+                <span class="ip-flight-btn">Add flight</span>
+              </button>
+            </li>
           </ol>
 
-          <button type="button" class="ip-add-stop" @click="addPlace">
+          <button v-if="stopRows.length" type="button" class="ip-add-stop" @click="addPlace">
             <span aria-hidden="true">⊕</span> Add stop
           </button>
         </template>
@@ -315,8 +360,8 @@
         <div v-else class="ip-mapview">
           <div ref="mapEl" class="ip-map" role="region" aria-label="Map of the day"></div>
           <p v-if="mapError" class="ip-empty">{{ mapError }}</p>
-          <p v-else-if="stopRows.length > mapRows.length" class="ip-muted">
-            {{ stopRows.length - mapRows.length }} stop{{ stopRows.length - mapRows.length === 1 ? '' : 's' }} without an address {{ stopRows.length - mapRows.length === 1 ? "isn't" : "aren't" }} on the map.
+          <p v-else-if="unmapped.length" class="ip-muted" role="status">
+            Not on the map yet: {{ unmapped.join(', ') }}. We're still looking {{ unmapped.length === 1 ? 'it' : 'them' }} up; adding an address under Details helps.
           </p>
 
           <article v-if="selected" class="ip-detail">
@@ -340,7 +385,7 @@
       </div>
 
       <!-- ===== Saved places (unscheduled) ===== -->
-      <aside class="ip-drawer" :class="{ target: drag && drag.kind === 'stop' }" @dragover.prevent @drop.prevent="dropOnDrawer">
+      <aside ref="drawerEl" class="ip-drawer" :class="{ target: drag && drag.kind === 'stop', flash: drawerFlash }" @dragover.prevent @drop.prevent="dropOnDrawer">
         <button type="button" class="ip-drawer-head" :aria-expanded="drawerOpen" @click="drawerOpen = !drawerOpen">
           <span class="ip-drawer-icon" aria-hidden="true"><AppIcon name="map-pin" :size="20" /></span>
           <span class="ip-drawer-title">
@@ -405,8 +450,14 @@
       :day-options="dayOptions" :weather="dayBlocks" :typical="typical" :crowd="sheetItem ? crowdOf(sheetItem) : {}"
       :wet="sheetItem ? weatherOf(sheetItem).tone === 'bad' : false"
       :quieter="sheetItem ? quieterTimes(sheetItem) : []" :dry="sheetItem ? dryTimes(sheetItem) : []"
-      :indoor-picks="indoorPicks" :can-change-day="!sampleMode" :routes="sheetItem ? savedRoutes.filter((r) => r.end === sheetItem.stop.name) : []"
+      :indoor-picks="indoorPicks" :can-change-day="!sampleMode"
       @close="closeSheet" @move-time="sheetMoveTime" @move-day="sheetMoveDay" @swap="sheetSwap" @edit="sheetEdit" />
+    <!-- Getting from one stop to the next: every way, and choosing one -->
+    <LegSheet :leg="legView" @close="closeLeg" @choose="chooseTravel" />
+    <!-- Your hotel in this city, or your airport -->
+    <AnchorSheet :anchor="anchorEdit" @close="anchorEdit = null" @save="saveAnchor" @remove="removeAnchor" />
+    <OverflowSheet :open="overflowOpen" :rows="overflowRows" :days="otherDays" :day-number="dayIndex + 1" :reason="dayEndReason"
+      :can-add-day="canAddDay" @close="overflowOpen = false" @apply="moveOverflow" @add-day="overflowOpen = false; askAddDay()" />
   </section>
 </template>
 
@@ -417,14 +468,17 @@
 // Times are worked out by dayOptimizer.js: flexible stops follow each other, locked ones keep their time.
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
-import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, addMealBreaks, defaultDuration, crowdAt, rainDuring } from '../dayOptimizer.js'
+import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, addMealBreaks, defaultDuration, crowdAt, rainDuring,
+  travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL } from '../dayOptimizer.js'
 import { PLANNER_SAMPLE } from '../dayOptimizerSample.js'
 import { loadLeaflet } from '../services/leaflet.js'
 import EatDrawer from './EatDrawer.vue'
 import StopSheet from './StopSheet.vue'
 import { codeForDestination, flagEmoji } from '../destinations.js'
 import AppIcon from './AppIcon.vue'
-import { transportPrefill } from '../savedRoutes.js'
+import LegSheet from './LegSheet.vue'
+import AnchorSheet from './AnchorSheet.vue'
+import OverflowSheet from './OverflowSheet.vue'
 
 const props = defineProps({
   days: { type: Array, default: () => [] },
@@ -440,10 +494,14 @@ const props = defineProps({
   destinations: { type: Array, default: () => [] },     // the trip's cities (helps place stops on the map)
   dayCounts: { type: Object, default: () => ({}) },      // { '2026-10-22': 3 } stops per day
   dayIssues: { type: Object, default: () => ({}) },     // { '2026-10-22': { issues: 2, load: 0.8 } } for the day strip
-  savedRoutes: { type: Array, default: () => [] },      // routes saved in Getting around
-  travellers: { type: Array, default: () => [] }        // everyone on the trip (for the majority vote rule)
+  travellers: { type: Array, default: () => [] },       // everyone on the trip (for the majority vote rule)
+  me: { type: String, default: '' },                    // my traveller name (shown on travel choices I make)
+  dayCity: { type: String, default: '' },               // the trip city this day is in (e.g. 'Osaka, Japan')
+  dayCities: { type: Object, default: () => ({}) },     // { '2026-10-22': 'Osaka, Japan' } for every day
+  stays: { type: Array, default: () => [] },            // hotels, one per city: [{ city, name, address, lat, lon }]
+  myFlight: { type: Object, default: () => ({}) }       // { arrival: { date, time, flight, place }, departure: {...} } (mine, from Crew)
 })
-const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote', 'open-transport'])
+const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote', 'travel', 'save-stay', 'save-flight', 'move-stops'])
 
 // ---------- sample Kyoto day (local only) ----------
 const sampleMode = ref(false)
@@ -596,6 +654,12 @@ function doConfirm() {
   const c = confirm.value
   confirm.value = null
   if (c.kind === 'city') return scheduleWish(c.wish, c.slot, true)
+  if (c.kind === 'full') {
+    // The day was full: the place goes on the suggested day instead
+    if (!c.date) return scheduleWish(c.wish, c.slot, true, true)
+    emit('schedule', c.wish, [], c.date)
+    return showToast(c.wish.name + ' added to ' + dayLabel(c.date), false)
+  }
   preview.value = null
   if (c.kind === 'add') {
     const n = dayList.value.length + 1
@@ -616,6 +680,13 @@ function doConfirm() {
     }
     showToast('Day ' + n + ' removed')
   }
+}
+
+// "Add anyway" in the day-is-full question
+function doConfirmAlt() {
+  const c = confirm.value
+  confirm.value = null
+  if (c.kind === 'full') scheduleWish(c.wish, c.slot, true, true)
 }
 
 function removeSampleDay(date) {
@@ -657,6 +728,29 @@ function undoDay() {
   }
   liveText.value = 'Undone'
 }
+// "Choose from saved places" on an empty day: open the panel and bring it into view (it's below the day on phones)
+// It lights up for a few seconds, so it's clear where to look,
+// and only scrolls when it isn't already on screen (on a wide screen it's right beside the day)
+const drawerEl = ref(null)
+const drawerFlash = ref(false)
+let flashTimer = null
+function showSaved() {
+  drawerOpen.value = true
+  drawerFlash.value = false
+  clearTimeout(flashTimer)
+  nextTick(() => {
+    const el = drawerEl.value
+    if (!el) return
+    drawerFlash.value = true
+    flashTimer = setTimeout(() => { drawerFlash.value = false }, 4000)
+    const box = el.getBoundingClientRect()
+    if (box.top < 70 || box.top > window.innerHeight - 160) {
+      el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+    }
+    const first = el.querySelector('.ip-add')
+    if (first) first.focus({ preventScroll: true })
+  })
+}
 function addPlace() {
   if (sampleMode.value) drawerOpen.value = true
   else emit('add-place')
@@ -689,15 +783,29 @@ function coordsFor(s) {
   return placeText(s) ? coords.value[coordKey(s)] : null
 }
 
+const locateTries = {} // how many times each place has been looked up
 function locate(list) {
   for (const s of list) {
     if (!placeText(s) || s.lat != null) continue
     const key = coordKey(s)
     if (coords.value[key] !== undefined) continue
     coords.value = { ...coords.value, [key]: null }
-    axios.get('/api/safety/locate', { params: { place: placeText(s), near: nearFor(s) || undefined }, timeout: 15000 })
-      .then((res) => { coords.value = { ...coords.value, [key]: { lat: res.data.lat, lon: res.data.lon } } })
-      .catch(() => {})
+    locateTries[key] = (locateTries[key] || 0) + 1
+    axios.get('/api/safety/locate', { params: { place: placeText(s), near: nearFor(s) || undefined }, timeout: 20000, background: true })
+      .then((res) => {
+        if (res.data && res.data.lat != null) coords.value = { ...coords.value, [key]: { lat: res.data.lat, lon: res.data.lon } }
+      })
+      .catch((err) => {
+        // "Not found" stays not found. A busy map server: try again in 20 seconds (3 tries at most)
+        if (err.response && err.response.status === 404) return
+        if (locateTries[key] >= 3) return
+        setTimeout(() => {
+          const copy = { ...coords.value }
+          delete copy[key]
+          coords.value = copy
+          locate([s])
+        }, 20000)
+      })
   }
 }
 function loadPhotos(list) {
@@ -706,7 +814,7 @@ function loadPhotos(list) {
     // Only real places (with an address) get a photo search; "Dinner" etc. keep their icon
     if (!s.address || photos.value[key] !== undefined) continue
     photos.value = { ...photos.value, [key]: null }
-    axios.get('/api/places/photo', { params: { destination: s.name.slice(0, 80), size: 'small' } })
+    axios.get('/api/places/photo', { params: { destination: s.name.slice(0, 80), size: 'thumb' }, background: true })
       .then((res) => { if (res.data.url) photos.value = { ...photos.value, [key]: res.data.url } })
       .catch(() => {})
   }
@@ -729,7 +837,9 @@ function toWork(s) {
     duration: s.duration || (s.forecast && s.forecast.durationDefault) || defaultDuration(s),
     lat: c ? c.lat : null, lon: c ? c.lon : null,
     crowd: crowdCurve(s.forecast), popular: !!c || !!s.address, // a place we found on the map gets the typical crowd curve
-    open: day && !day.closed ? day.open : null, close: day && !day.closed ? day.close : null
+    open: day && !day.closed ? day.open : null, close: day && !day.closed ? day.close : null,
+    // How the group chose to get here (only counts when coming from that same stop)
+    travelMode: s.travel ? s.travel.mode : null, travelFrom: s.travel ? s.travel.from : null, travelBy: s.travel ? s.travel.by : ''
   }
 }
 const work = computed(() => {
@@ -790,7 +900,214 @@ watch([work, unscheduled], () => {
 }, { immediate: true })
 
 const rain = computed(() => (props.weatherBlocks.length && !sampleMode.value ? rainFromBlocks(props.weatherBlocks) : null))
-const matrix = computed(() => travelMatrix(work.value))
+// ---------- getting around (Settings → Getting around, plus live routes) ----------
+const realLegs = ref({}) // legKey -> { walk: { min, km }, taxi: {...}, ... } from /api/travel/leg
+const asking = ref({})   // legKey -> true while it's being looked up
+const travelPrefs = computed(() => ({
+  modes: props.prefs.travelModes && props.prefs.travelModes.length ? props.prefs.travelModes : DEFAULT_TRAVEL.modes,
+  maxWalk: props.prefs.maxWalk || DEFAULT_TRAVEL.maxWalk,
+  priority: props.prefs.travelPriority || DEFAULT_TRAVEL.priority,
+  group: Math.max(1, props.travellers.length),
+  real: realLegs.value
+}))
+// Real travel times for one leg (in the background lane; kept by the server, so it's quick next time)
+function fetchLeg(a, b) {
+  if (!a || !b || a.lat == null || b.lat == null || sampleMode.value) return
+  const key = legKey(a, b)
+  if (realLegs.value[key] || asking.value[key]) return
+  asking.value = { ...asking.value, [key]: true }
+  axios.get('/api/travel/leg', { params: { from: a.lat + ',' + a.lon, to: b.lat + ',' + b.lon }, background: true, timeout: 30000 })
+    .then((res) => {
+      if (res.data && Object.keys(res.data).length) realLegs.value = { ...realLegs.value, [key]: res.data }
+    })
+    .catch(() => {})
+    .finally(() => {
+      const copy = { ...asking.value }
+      delete copy[key]
+      asking.value = copy
+    })
+}
+// ---------- where the day starts and ends (hotel or airport) ----------
+const cityName = computed(() => (props.dayCity ? props.dayCity.split(', ')[0] : ''))
+// The hotel for this day's city (a one-city trip with one hotel always uses it)
+const dayStay = computed(() => {
+  if (sampleMode.value) return null
+  const list = props.stays || []
+  return list.find((x) => x.city === props.dayCity) || (list.length === 1 && props.destinations.length <= 1 ? list[0] : null)
+})
+const arrivalToday = computed(() => {
+  const a = props.myFlight && props.myFlight.arrival
+  return !sampleMode.value && a && a.date === dayShown.value ? a : null
+})
+const departureToday = computed(() => {
+  const d = props.myFlight && props.myFlight.departure
+  return !sampleMode.value && d && d.date === dayShown.value ? d : null
+})
+function hourOf(hhmm) {
+  const parts = (hhmm || '0:0').split(':').map(Number)
+  return parts[0] + parts[1] / 60
+}
+// The two ends of the day as map points (the planner travels from / to them)
+const startAnchor = computed(() => {
+  const a = arrivalToday.value
+  if (a && a.place) return { id: '@start', kind: 'arrive', name: a.place.name, lat: a.place.lat, lon: a.place.lon, hour: hourOf(a.time), flight: a.flight }
+  if (dayStay.value) return { id: '@start', kind: 'stay', name: dayStay.value.name, lat: dayStay.value.lat, lon: dayStay.value.lon }
+  return null
+})
+const endAnchor = computed(() => {
+  const d = departureToday.value
+  if (d && d.place) return { id: '@end', kind: 'depart', name: d.place.name, lat: d.place.lat, lon: d.place.lon, hour: hourOf(d.time), flight: d.flight }
+  if (dayStay.value) return { id: '@end', kind: 'stay', name: dayStay.value.name, lat: dayStay.value.lat, lon: dayStay.value.lon }
+  return null
+})
+const anchorList = computed(() => [startAnchor.value, endAnchor.value].filter(Boolean))
+const startCaption = computed(() => {
+  const a = startAnchor.value
+  if (a && a.kind === 'arrive') return 'You land at ' + formatHour(a.hour) + (a.flight ? ' · ' + a.flight : '')
+  return a ? 'Day starts at your hotel' : 'Where does the day start?'
+})
+const endCaption = computed(() => {
+  const a = endAnchor.value
+  if (a && a.kind === 'depart') return 'Flight home at ' + formatHour(a.hour) + (a.flight ? ' · ' + a.flight : '') + ' · be there 2 h before'
+  return a ? 'Back to your hotel' : 'Where does the day end?'
+})
+// The day's hours with the flights: start 45 min after landing (passport and bags),
+// and finish in time to be at the airport 2 hours before take-off (plus getting there)
+const dayOpts = computed(() => {
+  const o = { ...opts.value }
+  const s = startAnchor.value
+  const e = endAnchor.value
+  if (s && s.kind === 'arrive') o.dayStart = Math.max(o.dayStart, Math.ceil((s.hour + 0.75) * 4) / 4)
+  if (e && e.kind === 'depart') o.dayEnd = Math.min(o.dayEnd, Math.max(o.dayStart + 1, e.hour - 2.5))
+  if (s) o.from = s
+  if (e) o.end = e
+  return o
+})
+
+// ---------- a day that's too full ----------
+// Why the day ends when it does (shown in the banner and the question)
+const dayEndReason = computed(() => {
+  const e = endAnchor.value
+  const s = startAnchor.value
+  if (e && e.kind === 'depart') return 'You need to leave for your ' + formatHour(e.hour) + ' flight by ' + formatHour(dayOpts.value.dayEnd)
+  if (s && s.kind === 'arrive') return 'You land at ' + formatHour(s.hour) + ' and your day ends at ' + formatHour(dayOpts.value.dayEnd)
+  return 'Your day ends at ' + formatHour(dayOpts.value.dayEnd)
+})
+function endsLate(items) {
+  for (const it of items) {
+    if (!it.stop.virtual && it.start + (it.stop.duration || 1) > dayOpts.value.dayEnd + 0.01) return true
+  }
+  return false
+}
+function dayLabel(d) {
+  return 'Day ' + (dayList.value.indexOf(d) + 1) + ' (' + longDate(d) + ')'
+}
+// The best other day for a stop: same city, the most free time (nearest day if it's a tie)
+// free = hours already promised to other moves, so two stops don't both take the same last gap
+function bestDayFor(stop, taken) {
+  const here = dayList.value.indexOf(dayShown.value)
+  const city = props.dayCity
+  let best = null
+  let bestFree = 0
+  for (const d of dayList.value) {
+    if (d === dayShown.value) continue
+    const info = props.dayIssues[d]
+    if (!info || info.free == null) continue
+    const other = props.dayCities[d]
+    if (city && other && other !== city) continue
+    const free = info.free - (taken[d] || 0)
+    if (free < (stop.duration || 1)) continue
+    const closer = best && Math.abs(dayList.value.indexOf(d) - here) < Math.abs(dayList.value.indexOf(best) - here)
+    if (!best || free > bestFree + 0.01 || (Math.abs(free - bestFree) <= 0.01 && closer)) {
+      best = d
+      bestFree = free
+    }
+  }
+  return best
+}
+// Which stop to take off first: an outdoor place that would be in the dark (after 6 PM), else the one that ends last
+function stopToMove(items) {
+  let pick = null
+  for (const it of items) {
+    if (it.stop.virtual || it.stop.locked) continue
+    if (it.stop.outdoor && it.start >= 18) return it.stop
+    if (!pick || it.start > pick.start) pick = it
+  }
+  return pick ? pick.stop : null
+}
+// The stops that don't fit, and the day each one could go to
+const overflow = computed(() => {
+  if (previewing.value || sampleMode.value || !endsLate(current.value)) return null
+  let keep = current.value.map((it) => it.stop)
+  const out = []
+  for (let n = 0; n < 20; n++) {
+    const items = retime(keep)
+    if (!endsLate(items)) break
+    const stop = stopToMove(items)
+    if (!stop) break
+    out.push(stop)
+    keep = keep.filter((x) => x.id !== stop.id)
+  }
+  const moves = []
+  const stuck = []
+  const taken = {}
+  for (const stop of out) {
+    const date = bestDayFor(stop, taken)
+    if (date) {
+      taken[date] = (taken[date] || 0) + (stop.duration || 1)
+      moves.push({ stop, date })
+    } else {
+      stuck.push(stop)
+    }
+  }
+  return { count: out.length || 1, moves, stuck }
+})
+
+// The "where should these go?" panel: one row per stop, set to our suggested day
+const overflowOpen = ref(false)
+const overflowRows = computed(() => {
+  const rows = []
+  if (!overflow.value) return rows
+  for (const m of overflow.value.moves) rows.push(overflowRow(m.stop, m.date))
+  for (const stop of overflow.value.stuck) rows.push(overflowRow(stop, null))
+  return rows
+})
+function overflowRow(stop, suggested) {
+  return { id: stop.id, name: stop.name, duration: stop.duration || 1, photo: photos.value[photoKey(stop)] || null, icon: categoryOf(stop).icon, suggested }
+}
+// Every other day, with its free time (and its city when it's not this day's city)
+const otherDays = computed(() => {
+  const list = []
+  for (const d of dayList.value) {
+    if (d === dayShown.value) continue
+    const info = props.dayIssues[d] || {}
+    const city = props.dayCities[d] || ''
+    list.push({
+      date: d,
+      label: 'Day ' + (dayList.value.indexOf(d) + 1) + ' · ' + longDate(d),
+      free: info.free == null ? 0 : info.free,
+      otherCity: city && props.dayCity && city !== props.dayCity ? city.split(', ')[0] : ''
+    })
+  }
+  return list
+})
+// moves = [{ id, date }] where date is a day or 'saved' (back to Saved places)
+function moveOverflow(moves) {
+  overflowOpen.value = false
+  emit('move-stops', moves)
+  let days = 0
+  let saved = 0
+  for (const m of moves) {
+    if (m.date === 'saved') saved++
+    else days++
+  }
+  const parts = []
+  if (days) parts.push(days + ' stop' + (days === 1 ? '' : 's') + ' moved to other days')
+  if (saved) parts.push(saved + ' back in Saved places')
+  showToast(parts.join(', '))
+}
+
+const matrix = computed(() => travelMatrix(work.value.concat(anchorList.value), travelPrefs.value))
 const current = computed(() => scheduleAsIs(work.value, matrix.value))
 
 // ---------- optimize ----------
@@ -799,6 +1116,78 @@ const previewing = computed(() => !!(preview.value && preview.value.better))
 // stopRows = the real stops in time order; timeline = the same plus lunch/dinner breaks (for showing)
 const stopRows = computed(() => (previewing.value ? preview.value.after.items.filter((it) => !it.stop.virtual) : current.value))
 const timeline = computed(() => (previewing.value ? preview.value.after.items : addMealBreaks(current.value, work.value, opts.value)))
+// (here, not next to overflow: watching it reads previewing, which only exists from this point)
+watch(overflow, (o) => { if (!o) overflowOpen.value = false })
+// Look up real travel times for each leg of the day as it's shown
+watch(() => stopRows.value.map((x) => x.stop.id + ':' + x.stop.lat).join() + '|' + anchorList.value.map((a) => a.lat).join(), () => {
+  const rows = stopRows.value
+  for (let k = 1; k < rows.length; k++) fetchLeg(rows[k - 1].stop, rows[k].stop)
+  if (rows.length && startAnchor.value) fetchLeg(startAnchor.value, rows[0].stop)
+  if (rows.length && endAnchor.value) fetchLeg(rows[rows.length - 1].stop, endAnchor.value)
+}, { immediate: true })
+// Getting from the hotel/airport to the first stop, and from the last stop back
+const startLeg = computed(() => {
+  const first = stopRows.value[0]
+  if (!startAnchor.value || !first || first.stop.lat == null || startAnchor.value.lat == null) return null
+  return travelBetween(startAnchor.value, first.stop, travelPrefs.value)
+})
+const endLeg = computed(() => {
+  const rows = stopRows.value
+  const last = rows[rows.length - 1]
+  if (!endAnchor.value || !last || last.stop.lat == null || endAnchor.value.lat == null) return null
+  return travelBetween(last.stop, endAnchor.value, travelPrefs.value)
+})
+function modeIcon(mode) {
+  return TRAVEL_MODES[mode] ? TRAVEL_MODES[mode].icon : 'map-pin'
+}
+function anchorLegText(leg) {
+  return TRAVEL_MODES[leg.mode].label + ' · ' + leg.min + ' min' + (leg.live ? '' : ' (est.)')
+}
+function openAnchorLeg(which) {
+  legOpener = document.activeElement
+  legOpen.value = { anchor: which }
+  const rows = stopRows.value
+  if (which === 'start') fetchLeg(startAnchor.value, rows[0].stop)
+  else fetchLeg(rows[rows.length - 1].stop, endAnchor.value)
+}
+
+// A hotel or flight was just set (or changed) for this day: re-time the day around it once
+// (switching days doesn't count, only a change on the same day)
+watch(() => dayShown.value + '|' + anchorList.value.map((x) => x.kind + x.name + (x.hour || '')).join(','), (now, before) => {
+  if (!before || now.split('|')[0] !== before.split('|')[0]) return
+  const s = startAnchor.value
+  nextTick(() => fitDayToPrefs(s && s.kind === 'arrive' ? 'Day planned around your flight' : 'Day re-timed from your hotel'))
+})
+
+// Editing the hotel / airport (AnchorSheet)
+const anchorEdit = ref(null)
+function editAnchor(which) {
+  let kind = which
+  if (which === 'start') kind = startAnchor.value && startAnchor.value.kind === 'arrive' ? 'arrive' : 'stay'
+  if (which === 'end') kind = endAnchor.value && endAnchor.value.kind === 'depart' ? 'depart' : 'stay'
+  const flight = kind === 'arrive' ? props.myFlight.arrival : kind === 'depart' ? props.myFlight.departure : null
+  anchorEdit.value = {
+    kind,
+    city: props.dayCity || props.destinations[0] || '',
+    current: kind === 'stay' ? (dayStay.value ? { name: dayStay.value.name, address: dayStay.value.address, lat: dayStay.value.lat, lon: dayStay.value.lon } : null)
+      : (flight && flight.place) || null,
+    flight: flight ? flight.flight || '' : '',
+    time: flight ? flight.time || '' : ''
+  }
+}
+function saveAnchor(data) {
+  const a = anchorEdit.value
+  anchorEdit.value = null
+  if (a.kind === 'stay') emit('save-stay', a.city, data.place)
+  else emit('save-flight', a.kind, { date: dayShown.value, time: data.time, flight: data.flight, place: data.place })
+}
+function removeAnchor() {
+  const a = anchorEdit.value
+  anchorEdit.value = null
+  if (a.kind === 'stay') emit('save-stay', a.city, null)
+  else emit('save-flight', a.kind, null)
+}
+
 // Number shown in a stop's circle (meal breaks aren't counted)
 function numberOf(it) {
   return stopRows.value.findIndex((x) => x.stop.id === it.stop.id)
@@ -843,15 +1232,24 @@ function fitDayToPrefs(note) {
   save(changes)
   if (note && first) noteChange(note + ': ' + first.stop.name + ' now starts at ' + formatHour(first.start))
 }
+// Is a flexible stop outside the day's hours? (your hours, or landing / take-off on a flight day)
 function outsideDay() {
+  const o = dayOpts.value
   for (const it of current.value) {
     if (it.stop.locked) continue
-    if (it.start < opts.value.dayStart - 0.01 || it.start + (it.stop.duration || 1) > opts.value.dayEnd + 0.01) return true
+    if (it.start < o.dayStart - 0.01 || it.start + (it.stop.duration || 1) > o.dayEnd + 0.01) return true
   }
   return false
 }
 watch(() => JSON.stringify(opts.value), () => fitDayToPrefs('Day re-timed to your preferences'))
-watch(dayShown, () => nextTick(() => { if (outsideDay()) fitDayToPrefs('Day re-timed to fit your hours') }))
+// Opening a day, the first load, or a flight saved from another day: re-time the day if it doesn't fit
+watch(() => dayShown.value + '|' + dayOpts.value.dayStart + '|' + dayOpts.value.dayEnd + '|' + current.value.length, () => nextTick(() => {
+  if (!outsideDay()) return
+  const s = startAnchor.value
+  const e = endAnchor.value
+  const flight = (s && s.kind === 'arrive') || (e && e.kind === 'depart')
+  fitDayToPrefs(flight ? 'Day planned around your flight' : 'Day re-timed to fit your hours')
+}), { immediate: true })
 
 async function optimize() {
   preview.value = null
@@ -861,7 +1259,7 @@ async function optimize() {
   await pause(350)
   phase.value = 'reorder'
   await pause(250)
-  preview.value = optimizeDay(work.value, rain.value, opts.value)
+  preview.value = optimizeDay(work.value, rain.value, { ...dayOpts.value, travel: travelPrefs.value })
   phase.value = ''
 }
 function applyPreview() {
@@ -996,8 +1394,8 @@ function replanFrom(it, newDuration, what) {
   const current = { ...it.stop, duration: newDuration }
   const rest = all.slice(i + 1)
   const leaveAt = it.start + newDuration
-  const items = scheduleInOrder(rest.filter((s) => !s.locked), rest.filter((s) => s.locked), travelMatrix(all),
-    { ...opts.value, dayStart: leaveAt, from: current, allStops: all })
+  const items = scheduleInOrder(rest.filter((s) => !s.locked), rest.filter((s) => s.locked), travelMatrix(all, travelPrefs.value),
+    { ...dayOpts.value, dayStart: leaveAt, from: current, allStops: all })
   const changes = [{ id: current.id, hour: it.start }]
   let moved = 0
   for (const x of items) {
@@ -1090,7 +1488,7 @@ function endDrag() {
 function retime(list) {
   const flex = list.filter((s) => !s.locked)
   const locked = list.filter((s) => s.locked)
-  return scheduleInOrder(flex, locked, travelMatrix(list), opts.value)
+  return scheduleInOrder(flex, locked, travelMatrix(list.concat(anchorList.value), travelPrefs.value), dayOpts.value)
 }
 
 function dropInto(slot) {
@@ -1134,7 +1532,7 @@ function otherCityOnDay(w) {
   return null
 }
 
-function scheduleWish(w, slot, confirmed = false) {
+function scheduleWish(w, slot, confirmed = false, roomOk = false) {
   if (previewing.value) return
   // Two cities on one day? Ask first (travel between cities eats the day)
   const other = confirmed ? null : otherCityOnDay(w)
@@ -1154,7 +1552,24 @@ function scheduleWish(w, slot, confirmed = false) {
   const fresh = toWork({ id: '__new', name: w.name, address: w.address || null, outdoor: !!w.outdoor, duration: w.duration || 1.5, lat: w.lat, lon: w.lon, hour: 0 })
   const list = stopRows.value.map((it) => it.stop)
   list.splice(slot, 0, fresh)
-  const changes = retime(list).map((it) => ({ id: it.stop.id, hour: it.start }))
+  const items = retime(list)
+  const changes = items.map((it) => ({ id: it.stop.id, hour: it.start }))
+  // Doesn't fit before the day ends? Suggest a day with room (or add it anyway)
+  if (!roomOk && !sampleMode.value && endsLate(items)) {
+    const date = bestDayFor(fresh, {})
+    openConfirm({
+      kind: 'full',
+      title: w.name + " won't fit on Day " + (dayIndex.value + 1),
+      lines: [dayEndReason.value + ', and this day is already full.' +
+        (date ? ' ' + dayLabel(date) + ' has room for it.' : ' No other day has room either: add it anyway, then take something off.')],
+      button: date ? 'Add to ' + dayLabel(date).split(' (')[0] : 'Add anyway',
+      alt: date ? 'Add anyway' : null,
+      wish: w,
+      slot,
+      date
+    })
+    return
+  }
   if (sampleMode.value) {
     const id = 'p-' + Date.now().toString(36)
     sample.value.stops.push({ ...w, id, date: sample.value.day, duration: w.duration || 1.5, locked: false, hour: 0 })
@@ -1259,11 +1674,123 @@ const LINE_ICONS = { '⏰': 'clock', '⏳': 'clock', '⚠️': 'alert', '⚠': '
 function lineIcon(emoji) {
   return LINE_ICONS[emoji] || ''
 }
+// ---------- the travel strip between two stops ----------
+// The stop before this one in the day's order
+function prevStopOf(it) {
+  const rows = stopRows.value
+  const i = rows.findIndex((x) => x.stop.id === it.stop.id)
+  return i > 0 ? rows[i - 1] : null
+}
+// The way used for this leg, with why (from the travel model in dayOptimizer.js)
+function legEntry(it) {
+  const prev = prevStopOf(it)
+  if (!prev || !matrix.value[prev.stop.id]) return {}
+  return matrix.value[prev.stop.id][it.stop.id] || {}
+}
+function legIcon(it) {
+  return TRAVEL_MODES[it.mode] ? TRAVEL_MODES[it.mode].icon : 'map-pin'
+}
 function legText(it) {
   if (it.mode === 'break') return ''
-  if (it.mode === 'walk') return it.travelMin + 'm walk (' + (it.km < 1 ? Math.round(it.km * 1000 / 50) * 50 + ' m' : it.km.toFixed(1) + ' km') + ')'
-  if (it.mode === 'transit') return '~' + it.travelMin + 'm by transit (est.)'
-  return '~' + it.travelMin + 'm (place not found on the map)'
+  if (it.mode === 'unknown') return '~' + it.travelMin + ' min (place not found on the map)'
+  if (!TRAVEL_MODES[it.mode]) return ''
+  const e = legEntry(it)
+  return TRAVEL_MODES[it.mode].label + ' · ' + it.travelMin + ' min' + (e.live ? '' : ' (est.)')
+}
+// Short note after it: who picked it, or why it's suggested (the panel has the full reason)
+function legNote(it) {
+  const e = legEntry(it)
+  if (e.picked) return it.stop.travelBy ? 'picked by ' + (it.stop.travelBy === props.me ? 'you' : it.stop.travelBy) : 'picked'
+  const r = e.reason || ''
+  const walk = r.match(/walking is (\d+) min/)
+  if (r.startsWith('fastest') || r.startsWith('cheapest')) return r.split(';')[0]
+  if (walk) return 'a walk would be ' + walk[1] + ' min'
+  return r === 'short walk' ? '' : r
+}
+
+// The leg panel (LegSheet)
+const legOpen = ref(null) // { fromId, toId }
+let legOpener = null
+function openLeg(it) {
+  const prev = prevStopOf(it)
+  if (!prev || it.mode === 'unknown' || previewing.value) return
+  legOpener = document.activeElement
+  legOpen.value = { fromId: prev.stop.id, toId: it.stop.id }
+  fetchLeg(prev.stop, it.stop)
+}
+function closeLeg() {
+  legOpen.value = null
+  nextTick(() => { if (legOpener && legOpener.focus) legOpener.focus() })
+}
+const legView = computed(() => {
+  if (!legOpen.value) return null
+  if (legOpen.value.anchor) return anchorLegView(legOpen.value.anchor)
+  const rows = stopRows.value
+  const fromIt = rows.find((x) => x.stop.id === legOpen.value.fromId)
+  const toIt = rows.find((x) => x.stop.id === legOpen.value.toId)
+  if (!fromIt || !toIt || fromIt.stop.lat == null || toIt.stop.lat == null) return null
+  const a = fromIt.stop
+  const b = toIt.stop
+  const tp = travelPrefs.value
+  const options = travelOptions(a, b, tp)
+  const rec = recommendTravel(options, tp)
+  const chosen = b.travelMode && b.travelFrom === a.id ? b.travelMode : ''
+  return {
+    fromName: a.name, toName: b.name,
+    from: { lat: a.lat, lon: a.lon }, to: { lat: b.lat, lon: b.lon },
+    leaveText: formatHour(fromIt.start + (a.duration || 1)),
+    options, recommended: rec.option.mode, reason: rec.reason,
+    chosen, chosenBy: chosen ? (b.travelBy === props.me ? 'You' : b.travelBy) : '',
+    group: tp.group, maxWalk: tp.maxWalk, modes: tp.modes, priority: tp.priority,
+    checking: !!asking.value[legKey(a, b)]
+  }
+})
+// Hotel/airport legs: shown with the suggestion, but not chosen per leg (they follow your settings)
+function anchorLegView(which) {
+  const rows = stopRows.value
+  if (!rows.length) return null
+  const a = which === 'start' ? startAnchor.value : rows[rows.length - 1].stop
+  const b = which === 'start' ? rows[0].stop : endAnchor.value
+  if (!a || !b || a.lat == null || b.lat == null) return null
+  const tp = travelPrefs.value
+  const options = travelOptions(a, b, tp)
+  const rec = recommendTravel(options, tp)
+  const leave = which === 'start' ? rows[0].start - rec.option.min / 60 : rows[rows.length - 1].start + (a.duration || 1)
+  return {
+    fromName: a.name, toName: b.name, from: { lat: a.lat, lon: a.lon }, to: { lat: b.lat, lon: b.lon },
+    leaveText: formatHour(Math.max(0, leave)), options, recommended: rec.option.mode, reason: rec.reason,
+    chosen: '', chosenBy: '', readonly: true,
+    group: tp.group, maxWalk: tp.maxWalk, modes: tp.modes, priority: tp.priority,
+    checking: !!asking.value[legKey(a, b)]
+  }
+}
+// A way was chosen (or null = back to the suggestion): save it on the stop and re-time the day
+function chooseTravel(mode) {
+  const leg = legOpen.value
+  if (!leg) return
+  const travel = mode ? { mode, from: leg.fromId, by: props.me || '' } : null
+  const list = []
+  let name = ''
+  for (const x of stopRows.value) {
+    if (x.stop.id === leg.toId) {
+      name = x.stop.name
+      list.push({ ...x.stop, travelMode: travel ? travel.mode : null, travelFrom: travel ? travel.from : null, travelBy: travel ? travel.by : '' })
+    } else {
+      list.push(x.stop)
+    }
+  }
+  const items = retime(list)
+  const changes = []
+  for (const it of items) if (!it.stop.virtual) changes.push({ id: it.stop.id, hour: Math.min(it.start, 23.75) })
+  if (sampleMode.value) {
+    const s = sample.value.stops.find((x) => x.id === leg.toId)
+    if (s) s.travel = travel
+    save(changes)
+  } else {
+    emit('travel', leg.toId, travel, changes)
+  }
+  legOpen.value = null
+  explainLocked(items, mode ? TRAVEL_MODES[mode].label + ' to ' + name : 'Suggested way to ' + name)
 }
 function wasAt(it) {
   if (!previewing.value) return null
@@ -1272,7 +1799,30 @@ function wasAt(it) {
 }
 function pillsFor(it) {
   if (previewing.value) return (it.reasons || []).filter((r) => r.kind !== 'travel')
-  return warningsFor(it, rain.value, opts.value).map((w) => ({ ...w, kind: 'warn' }))
+  return dayWarnings(it).map((w) => ({ ...w, kind: 'warn' }))
+}
+// The usual warnings, plus the flights: a stop before you land, or too late for your flight home
+function dayWarnings(it) {
+  const o = dayOpts.value
+  const s = startAnchor.value
+  const e = endAnchor.value
+  const landing = s && s.kind === 'arrive'
+  const leaving = e && e.kind === 'depart'
+  const out = []
+  if (it.stop.virtual) return out
+  if (it.start < o.dayStart - 0.01) {
+    if (landing) out.push({ icon: '✈️', text: 'Starts before you land (' + formatHour(s.hour) + ')' })
+    else if (!it.stop.locked) out.push({ icon: '🌅', text: 'Before your day starts' })
+  }
+  for (const w of warningsFor(it, rain.value, o)) {
+    if (w.icon === '🌅' && landing) continue
+    if (w.icon === '⏰' && leaving) {
+      out.push({ icon: '✈️', text: 'Too late for your ' + formatHour(e.hour) + ' flight home' })
+      continue
+    }
+    out.push(w)
+  }
+  return out
 }
 // ---------- weather + crowds at each stop (the small icons on every card) ----------
 const WEATHER_ICONS = { Clear: '☀️', Clouds: '⛅', Rain: '🌧️', Drizzle: '🌦️', Thunderstorm: '⛈️', Snow: '❄️' }
@@ -1373,9 +1923,12 @@ const issues = computed(() => {
   const list = []
   if (previewing.value) return list
   for (const it of timeline.value) {
-    for (const w of warningsFor(it, rain.value, opts.value)) {
+    for (const w of dayWarnings(it)) {
       const x = { key: it.stop.id + w.icon + w.text, it, icon: w.icon, text: w.text, section: 'time', fixLabel: 'Options', fix: null }
-      if (w.icon === '👥') {
+      if ((w.icon === '✈️' || w.icon === '🌅' || w.icon === '⏰') && !it.stop.locked) {
+        x.fixLabel = 'Re-time day'
+        x.fix = () => { issuesOpen.value = false; fitDayToPrefs(w.icon === '✈️' ? 'Day planned around your flight' : 'Day re-timed to fit your hours') }
+      } else if (w.icon === '👥') {
         x.section = 'crowd'
         const q = quieterTimes(it)
         if (q.length) {
@@ -1468,12 +2021,12 @@ function sheetEdit(fields) {
 
 const totals = computed(() => {
   let walk = 0
-  let transit = 0
+  let ride = 0 // minutes on transit, in taxis or on bikes (and legs we couldn't place)
   for (const it of stopRows.value) {
     if (it.mode === 'walk') walk += it.km || 0
-    else if (it.mode === 'transit' || it.mode === 'unknown') transit += it.travelMin
+    else if (it.mode !== 'start' && it.mode !== 'break') ride += it.travelMin || 0
   }
-  return { walkKm: walk.toFixed(1), transitMin: transit }
+  return { walkKm: walk.toFixed(1), transitMin: ride }
 })
 
 // ---------- numbered stops (same colour on the list and the map) ----------
@@ -1491,6 +2044,14 @@ let map = null
 let layer = null
 
 const mapRows = computed(() => stopRows.value.filter((it) => it.stop.lat != null))
+// Real places of the day that have no map position yet (meal breaks aren't places)
+const unmapped = computed(() => {
+  const names = []
+  for (const it of stopRows.value) {
+    if (it.stop.lat == null && placeText(it.stop)) names.push(it.stop.name)
+  }
+  return names
+})
 const selected = computed(() => {
   const list = stopRows.value
   return list.find((it) => it.stop.id === selectedId.value) || list[0] || null
@@ -1510,7 +2071,7 @@ function stepSelected(step) {
 let tilesPromise = null
 function tileConfig() {
   if (!tilesPromise) {
-    tilesPromise = axios.get('/api/maps/config')
+    tilesPromise = axios.get('/api/maps/config', { keep: true, timeout: 4000 }) // quick: the map shouldn't wait
       .then((res) => res.data)
       .catch(() => ({
         tiles: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1577,93 +2138,6 @@ function directionsUrl(stop) {
 function hoursText(stop) {
   if (stop.open == null || stop.close == null) return ''
   return 'Open ' + formatHour(stop.open) + ' – ' + formatHour(stop.close)
-}
-
-// transport feature 
-
-// to display the searched day and timing ["Mon 19 Oct, 9:00 AM (departing)"]
-function whenText(opt) {
-  if (!opt.day || !opt.time) return '';
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const [y, m, d] = opt.day.split('-').map(Number);
-  const [h, min] = opt.time.split(':').map(Number);
-  const weekday = days[new Date(y, m - 1, d).getDay()];
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const time = `${h % 12 || 12}:${String(min).padStart(2, '0')} ${ampm}`;
-  return `${weekday} ${d} ${months[m - 1]}, ${time} (${opt.timeType === 'arrive' ? 'arriving' : 'departing'})`;
-}
-
-// to diplay a short summary ["Bus N51 → N37 (6 stops) · Walk 21 mins"]
-function summarizeRoute(route = '') {
-  const chain = [];
-  let stops = 0, walk = 0, lastLabel = '';
-
-  for (const part of route.split('→').map(s => s.trim())) {
-    const w = part.match(/^Walk \((\d+) mins?\)$/);
-    if (w) { 
-      walk += Number(w[1]); 
-      continue; 
-    }
-
-    const t = part.match(/^(Bus|Train)\s+(.+?)(?:\s*\((\d+) stops?\))?$/);
-    if (t) {
-      chain.push(t[1] === lastLabel ? t[2] : `${t[1]} ${t[2]}`);   // repeat "Bus" only when the vehicle changes
-      lastLabel = t[1];
-      stops += Number(t[3] || 0);
-    }
-  }
-
-  if (!chain.length) { 
-    return route;   // Taxi ("Via ...") and Walk ("On foot") stay as they are
-  }
-
-  return chain.join(' → ')
-    + (stops ? ` (${stops} stop${stops > 1 ? 's' : ''})` : '')
-    + (walk ? ` · Walk ${walk} mins` : '');
-}
-
-// display the saved option as at the destination card
-function savedFor(item) {
-  if (!item || !item.name) return [];
-    return props.savedRoutes.filter(route => route.end === item.name);
-}
-
-// format to show cost
-function formatCost(opt) {
-  if (opt.cost === 0) return 'Free';
-  if (!opt.currency) return opt.cost.toLocaleString();
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: opt.currency }).format(opt.cost);
-  } catch {
-    return `${opt.currency} ${opt.cost}`;
-  }
-}
-
-// format to show duration
-function formatDuration(min) {
-  if (!min) return '0 mins';
-  if (min < 60) return `${min} mins`;
-  const hour = Math.floor(min / 60);
-  const mins = min % 60;
-  return mins ? `${hour} hr ${mins} mins` : `${hour} hr`; 
-}
-
-// only display cost if available 
-function hasValidCost(cost) {
-  return typeof cost === 'number' && !isNaN(cost);
-}  
-
-// go to Getting there with selected details previously saved
-function openInGettingthere(route, opt) {
-  transportPrefill.value = {
-    start: route.start,
-    end: route.end,
-    day: opt.day,
-    time: opt.time,
-    timeType: opt.timeType || 'depart'
-  };
-  emit('open-transport');   // lets the parent switch to the Go Options page
 }
 
 </script>
@@ -2234,6 +2708,47 @@ function openInGettingthere(route, opt) {
 }
 .ip-sample,
 .ip-muted,
+.ip-start {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+  margin: 4px 0 14px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1.5px dashed #e3d6bf;
+  background: #fbf5ea;
+}
+.ip-start-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #fbefd9;
+  color: #c98a1e;
+}
+.ip-start-text {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ip-start-text strong {
+  font-size: 15px;
+  color: #001d2c;
+}
+.ip-start-text small {
+  font-size: 13px;
+  color: #5a6b78;
+}
+.ip-start-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .ip-empty {
   color: var(--muted);
   font-size: 13px;
@@ -2347,6 +2862,197 @@ function openInGettingthere(route, opt) {
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
+}
+.ip-overflow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: #fbefd9;
+  border: 1.5px solid #edae49;
+  color: #001d2c;
+}
+.ip-overflow-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #d1495b;
+  color: #fff;
+}
+.ip-overflow-text {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+.ip-overflow-text strong {
+  font-size: 14px;
+}
+.ip-overflow-text small {
+  font-size: 12.5px;
+  color: #6b5a3e;
+}
+.ip-anchor-row {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0 0 6px;
+}
+.ip-anchor-row.end {
+  margin: 0 0 10px;
+}
+.ip-anchor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  padding: 10px 14px;
+  border: 1.5px solid #ece4d6;
+  border-radius: 18px;
+  background: #fbf5ea;
+  text-align: left;
+  color: #001d2c;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ip-anchor:hover {
+  border-color: #edae49;
+  box-shadow: 0 4px 12px rgba(0, 40, 62, 0.08);
+}
+.ip-anchor.empty {
+  border-style: dashed;
+  background: transparent;
+}
+.ip-anchor-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #003d5b;
+  color: #fff;
+}
+.ip-anchor.empty .ip-anchor-icon {
+  background: #f4efe6;
+  color: #c98a1e;
+}
+.ip-anchor-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ip-anchor-text small {
+  font-size: 12px;
+  color: #5a6b78;
+}
+.ip-anchor-text strong {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ip-anchor-edit {
+  flex: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: #00798c;
+}
+/* "Landing today? / Flying home today?": a clear card with its own button, in the sunset colours */
+.ip-flight-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  padding: 10px 12px 10px 14px;
+  border: 1.5px solid #f3d29a;
+  border-radius: 18px;
+  background: #fbefd9;
+  text-align: left;
+  color: #001d2c;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.ip-flight-card:hover {
+  border-color: #edae49;
+  box-shadow: 0 6px 16px rgba(201, 138, 30, 0.18);
+  transform: translateY(-1px);
+}
+.ip-flight-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #edae49;
+  color: #001d2c;
+}
+.ip-flight-card .ip-anchor-text strong {
+  white-space: normal;
+}
+.ip-flight-card .ip-anchor-text small {
+  color: #6b5a3e;
+}
+.ip-flight-btn {
+  flex: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #003d5b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+@media (max-width: 420px) {
+  .ip-flight-btn { padding: 6px 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ip-flight-card { transition: none; }
+  .ip-flight-card:hover { transform: none; }
+}
+.ip-anchor:focus-visible,
+.ip-flight-card:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.7);
+  outline-offset: 2px;
+}
+.ip-leg.clickable {
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.ip-leg.clickable:hover {
+  border-color: #edae49;
+  color: #003d5b;
+  box-shadow: 0 4px 12px rgba(0, 40, 62, 0.08);
+}
+.ip-leg:disabled {
+  cursor: default;
+}
+.ip-leg.picked {
+  border-color: #edae49;
+  background: #fbefd9;
+  color: #7a4b00;
+}
+.ip-leg-why {
+  font-weight: 500;
+  opacity: 0.85;
+}
+.ip-leg .ip-leg-go {
+  padding: 0 !important;
+  background: none !important;
+  color: inherit !important;
+}
+.ip-leg:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.7);
+  outline-offset: 2px;
 }
 .ip-leg :deep(svg) {
   box-sizing: content-box;
@@ -2868,6 +3574,33 @@ function openInGettingthere(route, opt) {
   line-height: 1;
   transition: background 0.15s, color 0.15s;
 }
+/* "Choose from saved places": the panel lights up and its + buttons pulse for a few seconds */
+.ip-drawer.flash {
+  border-color: #edae49;
+  animation: ip-flash-ring 1.2s ease-out 3;
+}
+@keyframes ip-flash-ring {
+  0% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.6); }
+  100% { box-shadow: 0 0 0 14px rgba(237, 174, 73, 0); }
+}
+.ip-drawer.flash .ip-add {
+  background: #edae49;
+  border-color: #edae49;
+  color: #001d2c;
+  animation: ip-flash-pop 1.2s ease-in-out 3;
+}
+@keyframes ip-flash-pop {
+  50% { transform: scale(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ip-drawer.flash,
+  .ip-drawer.flash .ip-add {
+    animation: none;
+  }
+  .ip-drawer.flash {
+    box-shadow: 0 0 0 4px rgba(237, 174, 73, 0.45);
+  }
+}
 .ip-add:hover {
   background: var(--primary);
   color: #fff;
@@ -2897,7 +3630,7 @@ function openInGettingthere(route, opt) {
   from { transform: translateY(-6px); opacity: 0.6; }
 }
 
-/* Tablets and phones: saved places above, everything in one column */
+/* Tablets and phones: one column, the day first and saved places under it */
 @media (max-width: 900px) {
   .ip-body,
   .ip-body.drawer-closed {
@@ -2905,7 +3638,7 @@ function openInGettingthere(route, opt) {
   }
   .ip-drawer {
     position: static;
-    order: -1;
+    order: 1;
   }
 }
 @media (max-width: 560px) {

@@ -118,7 +118,7 @@ export default {
       const codes = []
       for (const n of names) codes.push(codeForDestination(n) || '')
       try {
-        const res = await axios.get('/api/discover/cities', { params: { names: names.join('|'), codes: codes.join('|') } })
+        const res = await axios.get('/api/discover/cities', { params: { names: names.join('|'), codes: codes.join('|') }, background: true })
         const found = {}
         for (const c of res.data) found[c.label] = { lat: c.lat, lon: c.lon }
         this.places = found
