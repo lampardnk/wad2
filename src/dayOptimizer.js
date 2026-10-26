@@ -263,7 +263,10 @@ export function scheduleInOrder(order, locked, matrix, opts) {
     if (queue.length) {
       const s = queue[0]
       const t = travel(prev, s)
-      const start = quarter(time + t.min / 60 + (prev ? buffer : 0))
+      const arrive = time + t.min / 60 + (prev ? buffer : 0)
+
+      // If we arrive before the place opens, wait until opening time.
+      const start = quarter(Math.max(arrive, s.open ?? arrive))
       const end = start + (s.duration || 1)
       // Would this stop run past the latest time to eat? Eat first.
       if (meal && end > meal.latest + 1e-9 && (!lock || Math.max(time, meal.from) + meal.duration <= lock.hour)) {
@@ -528,6 +531,8 @@ export function optimizeDay(stops, rainByHour, opts = {}) {
 
   const afterItems = scheduleInOrder(bestOrder, locked, matrix, options)
   const after = score(afterItems, 0)
+  // Anything still worth a look after optimizing (shown with the result)
+  const hasWarnings = afterItems.some((it) => warningsFor(it, rainByHour, options).length > 0)
   const dayHasRain = (rainByHour || []).some((p) => p >= 0.5)
   let real = 0
   for (const it of afterItems) {
@@ -539,6 +544,7 @@ export function optimizeDay(stops, rainByHour, opts = {}) {
     before: { items: beforeItems, ...before },
     after: { items: afterItems, ...after },
     better: after.cost < before.cost - 1,
+    hasWarnings,
     summary: summarize(before, after, options)
   }
 }

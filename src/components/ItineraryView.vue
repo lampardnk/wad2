@@ -14,7 +14,7 @@
       :wishlist="allWishlist" :scheduled-names="scheduledNames" :day-name="tripDay" :weather-blocks="dayWeather" :typical="typicalWeather" :prefs="dayPrefs"
       :can-add-day="!isDemo && !!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :travellers="travellers" :me="me"
       :day-city="dayCities[selectedDate] || ''" :day-cities="dayCities" :stays="stays" :my-flight="myFlight"
-      @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
+      @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @notice="showNotice" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
       @apply="applyOptimized" @lock="setLocked" @schedule="scheduleWish" @unschedule="unscheduleStop" @status="plannerStatus = $event"
       @duration="setDuration" @move-day="moveToDay" @move-stops="moveStops" @swap="swapWithWish" @edit="editStop" @travel="setTravel"
       @save-stay="saveStay" @save-flight="saveFlight" />
@@ -68,6 +68,12 @@ export default {
       plannerStatus: { kind: 'idle', text: 'Add places to this day and the schedule balances itself.' },
       weather: [], // every forecast entry: { date, time, span, condition, rain }
       weatherError: false,
+      weatherSimulation: null,
+      // Example:
+      // {
+      //   stopId: 'abc123',
+      //   condition: 'Rain'
+      // }
       climate: [], // typical weather by month for each destination (for days beyond the 5-day forecast)
       climateRetried: false,
       mapsOff: false, // true once the server says Google Maps isn't set up
@@ -166,6 +172,42 @@ export default {
     isDemo() {
       return this.tripId === 'seoul'
     },
+    effectiveWeather() {
+      if (!this.weatherSimulation) {
+        return this.weather
+      }
+
+      const stop = trip.stops.find(
+        (s) => s.id === this.weatherSimulation.stopId
+      )
+
+      if (!stop) {
+        return this.weather
+      }
+
+      return this.weather.map((w) => {
+        const duration = stop.duration || 1
+
+        const overlapsStop =
+          w.date === stop.date &&
+          w.time < stop.hour + duration &&
+          w.time + (w.span || 3) > stop.hour
+
+        if (!overlapsStop) {
+          return w
+        }
+
+        const rainy =
+          this.weatherSimulation.condition === 'Rain'
+
+        return {
+          ...w,
+          condition: rainy ? 'Rain' : 'Clear',
+          rain: rainy,
+          demoSimulation: true
+        }
+      })
+    },
     // The selected day is too far ahead for a forecast: what's the weather usually like that month?
     typicalWeather() {
       if (!this.selectedDate || !this.climate.length) return null
@@ -254,7 +296,9 @@ export default {
       return this.selectedDate ? DAY_NAMES[new Date(this.selectedDate + 'T00:00:00').getDay()] : ''
     },
     dayWeather() {
-      return this.weather.filter((w) => w.date === this.selectedDate)
+      return this.effectiveWeather.filter(
+        (w) => w.date === this.selectedDate
+      )
     },
 
     // The selected day's stops in time order. A new array each time, so the store itself is never reordered.
@@ -281,7 +325,7 @@ export default {
           const dur = s.duration || 1
           planned += dur
           let wet = false
-          for (const w of this.weather) {
+          for (const w of this.effectiveWeather) {
             if (w.date === d && w.rain && w.time < s.hour + dur && w.time + (w.span || 3) > s.hour) wet = true
           }
           if (s.outdoor && !s.locked && wet) issues++
@@ -497,19 +541,47 @@ export default {
     async removeDay(date) {
       this.snapshotDays()
       const keep = []
+
       for (const s of trip.stops) {
+        // Locked bookings always stay on their original calendar date.
+        if (s.locked) {
+          keep.push(s)
+          continue
+        }
+
         if (s.date === date) {
-          const known = trip.wishlist.some((w) => w.name.toLowerCase() === s.name.toLowerCase())
-          if (!known) trip.wishlist.push({ id: newId('w'), name: s.name, address: s.address, outdoor: s.outdoor, type: 'custom', city: null, votes: [] })
+          const known = trip.wishlist.some(
+            (w) => w.name.toLowerCase() === s.name.toLowerCase()
+          )
+
+          if (!known) {
+            trip.wishlist.push({
+              id: newId('w'),
+              name: s.name,
+              address: s.address,
+              outdoor: s.outdoor,
+              type: 'custom',
+              city: null,
+              votes: []
+            })
+          }
         } else {
-          if (s.date > date) s.date = this.shiftDate(s.date, -1)
+          // Only unlocked stops on later days move earlier.
+          if (s.date > date) {
+            s.date = this.shiftDate(s.date, -1)
+          }
+
           keep.push(s)
         }
       }
+
       trip.stops = keep
+
       const newEnd = this.shiftDate(this.endDate, -1)
       if (this.selectedDate > newEnd) this.selectDay(newEnd)
+
       this.$emit('set-end-date', newEnd)
+
       await this.updateTransitTimes()
       this.reportItinerary()
     },
@@ -677,6 +749,49 @@ export default {
       }
     },
     // ---------- weather ----------
+    // Find the weather that overlaps with a stop
+    weatherForStop(stop) {
+      if (!stop) return null
+
+      return this.weather.find((w) => {
+        const duration = stop.duration || 1
+
+        return (
+          w.date === stop.date &&
+          w.time < stop.hour + duration &&
+          w.time + (w.span || 3) > stop.hour
+        )
+      }) || null
+    },
+
+    // Start a temporary weather simulation
+    simulateWeather(stopId, condition) {
+      const stop = trip.stops.find(
+        (s) => s.id === stopId
+      )
+
+      if (!stop) return
+
+      this.weatherSimulation = {
+        stopId,
+        condition
+      }
+
+      this.showNotice(
+        `Demo: ${condition} weather simulated for ${this.shortName(stop.name)}.`,
+        'info'
+      )
+    },
+
+    // Return to the original simulated forecast
+    resetWeatherSimulation() {
+      this.weatherSimulation = null
+
+      this.showNotice(
+        'Weather simulation reset.',
+        'info'
+      )
+    },
 
     // ---------- transit ----------
     // Travel time from every stop to the next (all requests run at once)
