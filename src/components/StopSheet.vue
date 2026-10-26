@@ -27,7 +27,11 @@
               <section v-if="tab === 'crowd'" aria-label="Crowds">
                 <p class="ss-lead">
                   <template v-if="crowd.value == null">No crowd data for this place.<template v-if="!stop.address"> Add its address under <button type="button" class="ss-link" @click="tab = 'time'">Details</button> to get it.</template></template>
-                  <template v-else><span class="ss-badge" :class="crowd.tone">{{ crowd.text }}</span> at {{ formatHour(start) }} · about {{ crowd.value }}% of its busiest</template>
+                  <template v-else>
+                    <span class="ss-badge" :class="crowd.tone">{{ crowd.text }}</span> 
+                    at {{ formatHour(start) }} · about {{ crowd.value }}% of its busiest
+                    <span v-if="crowd.isSimulated" class="ss-sim-tag">⚡ Simulated</span>
+                  </template>
                 </p>
                 <CrowdChart v-if="hasChart" :forecast="stop.forecast" :day-name="dayName"
                   :planned-hour="Math.floor(start)" :suggest-hour="quieter.length ? Math.floor(quieter[0].hour) : null" />
@@ -605,5 +609,14 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
 .ss-muted {
   font-size: 13px;
   opacity: 0.75;
+}
+.ss-sim-tag {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fbefd9;
+  color: #7a4b00;
+  font-size: 11.5px;
+  font-weight: 700;
 }
 </style>

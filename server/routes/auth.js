@@ -2,6 +2,7 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import mongoose from 'mongoose'
 import User from '../models/User.js'
 import Trip from '../models/trip.js'
 import Group from '../models/Group.js'
@@ -26,6 +27,31 @@ export function requireAuth(req, res, next) {
     next()
   } catch (err) {
     res.status(401).json({ message: 'Please log in again.' })
+  }
+}
+
+// checks if the user is a member of this trip 
+export async function requireTripMember(req, res, next) {
+  const tripId = req.query.tripId || req.body?.tripId;
+  if (!tripId || !mongoose.isValidObjectId(tripId)) {
+    return res.status(400).json({ error: 'Valid tripId is required' });
+  }
+
+  try {
+    // only load the fields needed for the check
+    const trip = await Trip.findById(tripId).select('owner members.user').lean();
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+
+    const uid = String(req.userId);
+    const isMember = String(trip.owner) === uid || (trip.members || []).some(m => String(m.user) === uid);
+
+      if (!isMember) {
+        return res.status(403).json({ error: 'You are not part of this trip' });
+      }
+      next();
+  } catch (err) {
+      console.error('Trip membership check failed:', err);
+      res.status(500).json({ error: 'Could not verify trip access' });
   }
 }
 

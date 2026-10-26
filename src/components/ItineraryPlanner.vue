@@ -604,6 +604,42 @@
               </div>
             </div>
           </section>
+
+          <!-- demo for crowd status -->
+          <section v-if="stopRows.length" class="ip-weather-sim">
+            <!-- Heading & Demo Badge -->
+            <div class="ip-sim-heading">
+              <div>
+                <h4>Simulate crowd conditions</h4>
+                <p>Test how the itinerary responds to live crowd level changes.</p>
+              </div>
+              <span class="ip-sim-badge">Demo</span>
+            </div>
+
+            <!-- Form Controls -->
+            <div class="ip-sim-fields">
+              <div class="ip-sim-field">
+                <label for="ip-crowd-stop">Itinerary stop</label>
+                <CustomDropdown id="ip-crowd-stop" v-model="demoStopId" :options="simStopOptions" block placeholder="Choose a stop" aria-label="Itinerary stop" />
+              </div>
+
+              <div class="ip-sim-field">
+                <label for="ip-crowd-level">Simulate crowd level</label>
+                <CustomDropdown id="ip-crowd-level" v-model="simulationCrowdLevel" :options="SIM_CROWD" block aria-label="Simulate crowd level" />
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="ip-sim-actions">
+              <button type="button" class="ip-sim-button" @click="applyCrowdSimulation">
+                Simulate crowd
+              </button>
+
+              <button v-if="crowdSimulation" type="button" class="ip-sim-reset" @click="resetCrowdSimulation">
+                Reset
+              </button>
+            </div>
+          </section>
         </template>
 
         <!-- ===== Map: numbered pins, the route, and the picked stop ===== -->
@@ -2447,12 +2483,29 @@ function weatherOf(it) {
     title: b.condition + (temp ? ', ' + temp + 'C' : '') + (wet ? ' · outdoors in the rain' : '')
   }
 }
+// track stop from demo
+const demoStopId = ref('')
+const simulationCrowdLevel = ref('Peak')
+const SIM_CROWD = [{ value: 'Quiet', label: 'Quiet', icon: '🟢' }, { value: 'Busy', label: 'Busy', icon: '🟠' }, { value: 'Peak', label: 'Peak', icon: '🔴' }]
+
+const crowdSimulation = ref(null)
+const crowdOverrides = ref({}) // store selected crwod status for demo
+
 function crowdOf(it) {
   const s = it.stop
-  if (!s.crowd && !s.popular) return { value: null, text: '–', tone: 'none', title: 'No crowd data (no address)' }
-  const c = Math.round(crowdAt(s, it.start))
+  const stopKey = s.id || s.name
+  let c
+
+  if (stopKey in crowdOverrides.value) {
+    c = crowdOverrides.value[stopKey]
+  } else {
+    if (!s.crowd && !s.popular) return { value: null, text: '–', tone: 'none', title: 'No crowd data (no address)' }
+    c = Math.round(crowdAt(s, it.start))
+  }
   const level = c >= 80 ? { text: 'Peak', tone: 'bad' } : c >= 55 ? { text: 'Busy', tone: 'mid' } : { text: 'Quiet', tone: 'ok' }
-  return { value: c, text: level.text, tone: level.tone, title: level.text + ' at this time, about ' + c + '% of its busiest' + (s.crowd ? '' : ' (estimate)') }
+  const isSimulated = stopKey in crowdOverrides.value
+
+  return { value: c, text: level.text, tone: level.tone, title: level.text + ' at this time, about ' + c + '% of its busiest' + (isSimulated ? ' (Simulated)' : (s.crowd ? '' : ' (estimate)')), isSimulated }
 }
 // Rain and crowds already show as the coloured icons, so the card doesn't repeat them as pills
 function cardPills(it) {
@@ -2594,8 +2647,15 @@ function previewCascadeForMove(it, newHour) {
 }
 
 function quieterTimes(it) {
-  if (!it.stop.crowd && !it.stop.popular) return []
-  const now = crowdAt(it.stop, it.start)
+  // if (!it.stop.crowd && !it.stop.popular) return []
+  // const now = crowdAt(it.stop, it.start)
+  // 1. Get current crowd level (checks crowdOverrides first, falls back to live data)
+  const currentCrowd = crowdOf(it)
+  if (currentCrowd.value == null) return []
+
+  // 2. Baseline value (simulated override or live percentage)
+  const now = currentCrowd.value
+
   return freeTimes(it, (h) => crowdAt(it.stop, h) <= now - 10)
 }
 function dryTimes(it) {
@@ -2935,6 +2995,47 @@ function hoursText(stop) {
   if (stop.open == null || stop.close == null) return ''
   return 'Open ' + formatHour(stop.open) + ' – ' + formatHour(stop.close)
 }
+
+// demo crowd 
+// set a stop's crowd status
+function applyCrowdSimulation() {
+  
+  if (!demoStopId.value) return
+
+  const presetMap = { Quiet: 25, Busy: 65, Peak: 90 }
+  const selectedLevel = simulationCrowdLevel.value
+  const targetId = demoStopId.value
+
+  crowdOverrides.value = {
+    ...crowdOverrides.value,
+    [targetId]: presetMap[selectedLevel] ?? 50
+  }
+
+  const targetStop = stopRows.value.find(item => item.stop.id === targetId)
+  crowdSimulation.value = {
+    stopId: targetId,
+    stopName: targetStop?.stop?.name || targetId,
+    level: selectedLevel
+  }
+}
+
+// reset all simulations back to live data
+function resetCrowdSimulation() {
+  crowdOverrides.value = {}
+  crowdSimulation.value = null
+  demoStopId.value = ''
+}
+
+// select the first stop
+watch(
+  () => stopRows.value,
+  (newRows) => {
+    if (newRows && newRows.length > 0 && !demoStopId.value) {
+      demoStopId.value = newRows[0].stop.id
+    }
+  },
+  { immediate: true, deep: true }
+)
 
 </script>
 <style scoped>
