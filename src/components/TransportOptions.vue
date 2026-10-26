@@ -83,23 +83,14 @@
         return places.value.find(p => p.name === name)?.address;
     }
 
-    // pick the first place as the default start
+       // clear the start point if it's no longer in the list (never auto-select)
     watch(places, (list) => {
-        const names = list.map(p => p.name);
-        if (names.length && !names.includes(startPoint.value)) {
-            startPoint.value = names[0];
-        } else if (!names.length) {
-            startPoint.value = '';
-        }
+        if (!list.some(p => p.name === startPoint.value)) startPoint.value = '';
     }, { immediate: true });
 
-    // auto-select the first destination option if available
+    // clear the destination if it's no longer available (never auto-select)
     watch(destinations, (available) => {
-        if (!available.includes(endPoint.value) && available.length) {
-            endPoint.value = available[0];
-        } else if (!available.length) {
-            endPoint.value = '';
-        }
+        if (!available.includes(endPoint.value)) endPoint.value = '';
     }, { immediate: true });
 
     // auto-select the zone from the trip destination 
