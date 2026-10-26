@@ -319,27 +319,6 @@
         }
     }
 
-    function googleMapsUrl() {
-        const origin = addressOf(startPoint.value);
-        const destination = addressOf(endPoint.value);
-
-        if (!origin || !destination) return '#';
-
-        const params = new URLSearchParams({
-            api: '1',
-            origin,
-            destination,
-            travelmode: 'transit'
-        });
-
-        return `https://www.google.com/maps/dir/?${params.toString()}`;
-        }
-
-    // auto fetch saved routes when the component loads
-    onMounted(() => {
-        fetchSavedRoutes(props.tripId);
-    });
-
     // checks if there are saved entries for the start + destination, return undefined if none
     function currentRoute() {
         return savedRoutesFromDb.value.find(opt => 
@@ -436,6 +415,39 @@
         return 'bg-info text-dark'; // if there is a fare
     }
 
+    function modeOf(opt) {
+    if (opt.type === 'Taxi' || opt.type === 'Car') return 'driving';
+    if (opt.type === 'Walk') return 'walking';
+    return 'transit';
+    }
+
+const cityText = computed(() => {
+    const d = props.destination;
+    return typeof d === 'string'
+        ? d
+        : [d?.city || d?.name, d?.country].filter(Boolean).join(', ');
+});
+
+function mapsUrl(mode = 'transit') {
+    if (!startPoint.value || !endPoint.value) return '#';
+
+    const origin = [startPoint.value, cityText.value].filter(Boolean).join(', ');
+    const dest = [endPoint.value, cityText.value].filter(Boolean).join(', ');
+
+    const base = `https://www.google.com/maps/dir/${encodeURIComponent(origin)}/${encodeURIComponent(dest)}/`;
+    const code = { driving: '3e0', walking: '3e2', transit: '3e3' }[mode];
+    const iso = getIsoTime(selectedDay.value, selectedTime.value);
+
+    if (!iso) return `${base}data=!4m2!4m1!${code}`;
+
+    const epoch = Math.floor(
+        new Date(`${selectedDay.value}T${selectedTime.value}:00Z`).getTime() / 1000
+    );
+    const when = timeType.value === 'arrive' ? 1 : 0;
+
+    return `${base}data=!4m6!4m5!2m3!6e${when}!7e2!8j${epoch}!${code}`;
+}
+
 </script>
 
 <template>
@@ -496,7 +508,7 @@
             >
             <strong>Train routes:</strong>
             <a
-                :href="googleMapsUrl()"
+                :href="mapsUrl('transit')"
                 target="_blank"
                 rel="noopener noreferrer"
             >
@@ -512,7 +524,6 @@
                             {{ isJapan && opt.type === 'Car' ? 'Taxi' : opt.type }} <span class="fw-normal text-muted">— {{ opt.route }}</span>
                         </div>
                         <!-- Line 2: Duration & Cost -->
-                        <!-- Line 2: Duration & Cost -->
                         <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
                             <span class="badge bg-dark text-white border">
                                 <i class="bi bi-clock me-1"></i>Duration: {{ formatDuration(opt.duration) }}
@@ -527,7 +538,7 @@
                         <div class="col-12 d-flex justify-content-between align-items-center mt-2">
                             <a
                                 v-if="opt.cost === null || opt.cost === undefined"
-                                :href="googleMapsUrl()"
+                                :href="mapsUrl(modeOf(opt))"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="small"
@@ -581,7 +592,7 @@
                                     class="mt-1"
                                 >
                                     <a
-                                    :href="googleMapsUrl()"
+                                    :href="mapsUrl(modeOf(opt))"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     class="small"
