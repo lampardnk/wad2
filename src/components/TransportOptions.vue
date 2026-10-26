@@ -4,17 +4,40 @@
     import CustomDropdown from './CustomDropdown.vue'
     
     const props = defineProps({
-        tripId: String, 
-        destination: [Object, String],
+        tripId: String,
+        destination: String,
         stops: Array,
         stay: Object,
         startDate: [String, Object, Date],
         endDate: [String, Object, Date]
     });
+
+    const isJapan = computed(() => {
+        const destination = String(props.destination || '').toLowerCase();
+
+        const japanDestinations = [
+            'kyoto',
+            'tokyo',
+            'osaka',
+            'nara',
+            'sapporo',
+            'fukuoka',
+            'nagoya',
+            'hiroshima'
+        ];
+
+        return destination.includes('japan') ||
+            japanDestinations.some((city) => destination.includes(city));
+        });
     
     const startPoint = ref('');
     const endPoint = ref('');
     const options = ref([]);
+    const hasTransitOption = computed(() =>
+        options.value.some((opt) =>
+            ['Bus & Train', 'Train / MRT', 'Bus'].includes(opt.type)
+        )
+    );
     const loading = ref(false);
     const selectedTime = ref('08:30'); // stores as HH:mm format
     const selectedDay = ref('');
@@ -60,7 +83,7 @@
         return places.value.find(p => p.name === name)?.address;
     }
 
-    // clear the start point if it's no longer in the list (never auto-select)
+       // clear the start point if it's no longer in the list (never auto-select)
     watch(places, (list) => {
         if (!list.some(p => p.name === startPoint.value)) startPoint.value = '';
     }, { immediate: true });
@@ -72,6 +95,7 @@
 
     // auto-select the zone from the trip destination 
     watch(() => props.destination, (dest) => {
+        console.log('destination prop:', dest, typeof dest);
         const name = (typeof dest === 'string' ? dest : dest?.name || '').toLowerCase();
         const match = Object.keys(cityZones).find(city => name.includes(city));
         if (match) timeZone.value = cityZones[match];
@@ -96,6 +120,13 @@
     }
 
     async function loadOptions() {
+        console.log('🚆 loadOptions() called', {
+            startPoint: startPoint.value,
+            endPoint: endPoint.value,
+            selectedDay: selectedDay.value,
+            selectedTime: selectedTime.value,
+            timeZone: timeZone.value
+        });
 
         // Make sure start and destination exist
         if (!startPoint.value || !endPoint.value) {
@@ -109,6 +140,11 @@
             // Get addresses
             const origin = addressOf(startPoint.value);
             const destination = addressOf(endPoint.value);
+
+            console.log('📍 Directions addresses:', {
+                origin,
+                destination
+            });
 
             // If address could not be resolved
             if (!origin || !destination) {
@@ -133,9 +169,19 @@
                 queryParams.set('timeType', timeType.value);
             }
 
+            console.log(
+                '🚆 About to fetch:',
+                `/api/directions?${queryParams}`
+            );
+
             // Call backend ONCE
             const res = await fetch(
                 `/api/directions?${queryParams}`
+            );
+
+            console.log(
+                '🚆 Directions response status:',
+                res.status
             );
 
             if (!res.ok) {
@@ -146,6 +192,11 @@
 
             // Read response ONCE
             options.value = await res.json();
+
+            console.log(
+                '🚆 Final options received:',
+                options.value
+            );
 
         } catch (error) {
             console.error(
@@ -259,50 +310,6 @@
         }
     }
 
-// rename mode name (for google map)
-function modeOf(opt) {
-    if (opt.type === 'Taxi') return 'driving';
-    if (opt.type === 'Walk') return 'walking';
-    return 'transit';
-}
-
-// city (and country, when the trip has one) used to make place names specific
-const cityText = computed(() => {
-    const d = props.destination;
-    return typeof d === 'string'
-        ? d
-        : [d?.city || d?.name, d?.country].filter(Boolean).join(', ');
-});
-
-// Google Maps link with the same start/end/time
-function mapsUrl(mode = 'transit') {
-     if (!startPoint.value || !endPoint.value) return '#';
-
-    // name + city reads like a normal Maps search, so it matches more reliably than a long saved address
-    const origin = [startPoint.value, cityText.value].filter(Boolean).join(', ');
-    const dest = [endPoint.value, cityText.value].filter(Boolean).join(', ');
-
-    const base = `https://www.google.com/maps/dir/${encodeURIComponent(origin)}/${encodeURIComponent(dest)}/`;
-    const code = { driving: '3e0', walking: '3e2', transit: '3e3' }[mode];
-    const iso = getIsoTime(selectedDay.value, selectedTime.value);
-
-    if (!iso) return `${base}data=!4m2!4m1!${code}`;
-
-    // clock time as picked, sent as a plain number for Maps to show
-    const epoch = Math.floor(new Date(`${selectedDay.value}T${selectedTime.value}:00Z`).getTime() / 1000);
-    const when = timeType.value === 'arrive' ? 1 : 0;
-    return `${base}data=!4m6!4m5!2m3!6e${when}!7e2!8j${epoch}!${code}`;
-}
-
-const hasTransit = computed(() =>
-    options.value.some(o => o.type !== 'Taxi' && o.type !== 'Walk')
-);
-
-    // auto fetch saved routes when the component loads
-    onMounted(() => {
-        fetchSavedRoutes(props.tripId);
-    });
-
     // checks if there are saved entries for the start + destination, return undefined if none
     function currentRoute() {
         return savedRoutesFromDb.value.find(opt => 
@@ -332,7 +339,19 @@ const hasTransit = computed(() =>
 
 // sends toggle request to backend and refreshes state
     async function toggleSaved(option) {
+        console.log('--- 1. toggleSaved clicked ---');
+        console.log('Current state:', {
+            tripId: props.tripId,
+            start: startPoint.value,
+            end: endPoint.value,
+            option: {
+                ...option,
+                day: selectedDay.value,
+                time: selectedTime.value,
+                timeType: timeType.value
 
+            }
+        });
         if (!startPoint.value || !endPoint.value || !props.tripId) {
                 console.warn('⚠️ Guard triggered! Missing required data:', {
                 start: startPoint.value,
@@ -350,12 +369,10 @@ const hasTransit = computed(() =>
         };
 
         try {
+            console.log('--- 2. Sending POST to /api/directions/toggle ---');
             const res = await fetch('/api/directions/toggle', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     tripId: props.tripId,
                     start: startPoint.value,
@@ -363,9 +380,11 @@ const hasTransit = computed(() =>
                     option: optionToSave
                 })
             });
+            console.log('--- 3. Response Status:', res.status);
 
             if (res.ok) {
                 const data = await res.json();
+                console.log('--- 4. Toggle success response from backend:', data);
                 await fetchSavedRoutes(props.tripId); // re-fetch from mongoDB to sync state
             } else {
                 const err = await res.json();
@@ -386,6 +405,39 @@ const hasTransit = computed(() =>
         }
         return 'bg-info text-dark'; // if there is a fare
     }
+
+    function modeOf(opt) {
+    if (opt.type === 'Taxi' || opt.type === 'Car') return 'driving';
+    if (opt.type === 'Walk') return 'walking';
+    return 'transit';
+    }
+
+const cityText = computed(() => {
+    const d = props.destination;
+    return typeof d === 'string'
+        ? d
+        : [d?.city || d?.name, d?.country].filter(Boolean).join(', ');
+});
+
+function mapsUrl(mode = 'transit') {
+    if (!startPoint.value || !endPoint.value) return '#';
+
+    const origin = [startPoint.value, cityText.value].filter(Boolean).join(', ');
+    const dest = [endPoint.value, cityText.value].filter(Boolean).join(', ');
+
+    const base = `https://www.google.com/maps/dir/${encodeURIComponent(origin)}/${encodeURIComponent(dest)}/`;
+    const code = { driving: '3e0', walking: '3e2', transit: '3e3' }[mode];
+    const iso = getIsoTime(selectedDay.value, selectedTime.value);
+
+    if (!iso) return `${base}data=!4m2!4m1!${code}`;
+
+    const epoch = Math.floor(
+        new Date(`${selectedDay.value}T${selectedTime.value}:00Z`).getTime() / 1000
+    );
+    const when = timeType.value === 'arrive' ? 1 : 0;
+
+    return `${base}data=!4m6!4m5!2m3!6e${when}!7e2!8j${epoch}!${code}`;
+}
 
 </script>
 
@@ -435,34 +487,64 @@ const hasTransit = computed(() =>
         </div>
         <!-- Empty State -->
         <div v-else-if="!options.length" class="text-center text-muted py-3">
-            {{ endPoint && endPoint ? 'No taxi or walking options found' : 'Select a starting point and destination to see travel options.' }}
+            {{ endPoint ? 'No travel options found for this route.' : 'Select a destination to see travel options.' }}
         </div>
 
         <!-- Options Content -->
         <template v-else>
+            <!-- Japan train fallback when Google does not return transit routes -->
+            <div
+            v-if="isJapan && !hasTransitOption"
+            class="alert alert-light border mb-3"
+            >
+            <strong>Train routes:</strong>
+            <a
+                :href="mapsUrl('transit')"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Open in Google Maps
+            </a>
+            </div>
             <!-- MOBILE VIEW (< md) -->
             <div class="d-block d-md-none">
                 <div v-for="opt in options" :key="opt.type + opt.route" class="p-3 border-bottom">
                     <div class="row align-items-center g-2">
                         <!-- Line 1: Type & Route -->
                         <div class="col-12 fw-semibold">
-                            {{ opt.type }} <span class="fw-normal text-muted">— {{ opt.route }}</span>
+                            {{ isJapan && opt.type === 'Car' ? 'Taxi' : opt.type }} <span class="fw-normal text-muted">— {{ opt.route }}</span>
                         </div>
                         <!-- Line 2: Duration & Cost -->
-                        <div class="col-8 d-flex gap-2 align-items-center">
+                        <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
                             <span class="badge bg-dark text-white border">
                                 <i class="bi bi-clock me-1"></i>Duration: {{ formatDuration(opt.duration) }}
                             </span>
+
                             <span class="badge" :class="getCostBadge(opt)">
                                 Cost: {{ formatCost(opt) }}
-                            </span><br>
-                            <a v-if="opt.cost === null || opt.cost === undefined"
-                            :href="mapsUrl(modeOf(opt))" target="_blank" rel="noopener" class="small ms-2">Open in Google Maps</a>
+                            </span>
                         </div>
-                        <!-- Action Button -->
-                        <div class="col-4 text-end">
-                            <button type="button" class="btn btn-sm" :class="isSaved(opt) ? 'btn-outline-danger' : 'btn-outline-primary'" 
-                            @click="toggleSaved(opt)">
+
+                        <!-- Line 3: Google Maps & Save -->
+                        <div class="col-12 d-flex justify-content-between align-items-center mt-2">
+                            <a
+                                v-if="opt.cost === null || opt.cost === undefined"
+                                :href="mapsUrl(modeOf(opt))"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="small"
+                            >
+                                Open in Google Maps
+                            </a>
+
+                            <span v-else></span>
+
+                            <button
+                                type="button"
+                                class="btn btn-sm"
+                                :class="isSaved(opt) ? 'btn-outline-danger' : 'btn-outline-primary'"
+                                @click="toggleSaved(opt)"
+                            >
                                 {{ isSaved(opt) ? 'Unsave' : 'Save' }}
                             </button>
                         </div>
@@ -484,7 +566,7 @@ const hasTransit = computed(() =>
                     </thead>
                     <tbody>
                         <tr v-for="opt in options" :key="opt.type + opt.route">
-                            <td class="fw-semibold">{{ opt.type }}</td>
+                            <td class="fw-semibold">{{ isJapan && opt.type === 'Car' ? 'Taxi' : opt.type }}</td>
                             <td>{{ opt.route }}</td>
                             <td>
                                 <span class="badge bg-dark text-white border">
@@ -494,10 +576,22 @@ const hasTransit = computed(() =>
                             <td>
                                 <span class="badge" :class="getCostBadge(opt)">
                                     {{ formatCost(opt) }}
-                                </span><br>
-                                <a v-if="opt.cost === null || opt.cost === undefined"
-                                :href="mapsUrl(modeOf(opt))" target="_blank" rel="noopener" class="small ms-2 text-center">Open in Google Maps</a>
-                            </td>
+                                </span>
+
+                                <div
+                                    v-if="opt.cost === null || opt.cost === undefined"
+                                    class="mt-1"
+                                >
+                                    <a
+                                    :href="mapsUrl(modeOf(opt))"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="small"
+                                    >
+                                    Open in Google Maps
+                                    </a>
+                                </div>
+                                </td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-sm" :class="isSaved(opt) ? 'btn-outline-danger' : 'btn-outline-primary'" 
                                 @click="toggleSaved(opt)">
@@ -509,9 +603,5 @@ const hasTransit = computed(() =>
                 </table>
             </div>
         </template>
-        <div v-if="!loading && endPoint && !hasTransit" class="text-center mt-3 pt-3 border-top">
-            🚆 Train &amp; bus routes:
-            <a :href="mapsUrl('transit')" target="_blank" rel="noopener">Open in Google Maps</a>
-        </div>
     </div>
 </template>

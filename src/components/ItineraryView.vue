@@ -13,9 +13,9 @@
     <ItineraryPlanner :days="dayList" :selected-date="selectedDate" :stops="itinerary"
       :wishlist="allWishlist" :scheduled-names="scheduledNames" :day-name="tripDay" :weather-blocks="dayWeather" :typical="typicalWeather" :prefs="dayPrefs"
       :can-add-day="!isDemo && !!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :saved-routes="savedRoutes" :travellers="travellers"
-      @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
+      @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @notice="showNotice" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
       @apply="applyOptimized" @lock="setLocked" @schedule="scheduleWish" @unschedule="unscheduleStop" @status="plannerStatus = $event"
-      @duration="setDuration" @move-day="moveToDay" @swap="swapWithWish" @edit="editStop" @open-transport="$emit('open-transport')"/>
+      @duration="setDuration" @move-day="moveToDay" @swap="swapWithWish" @edit="editStop" @open-transport="$emit('open-transport')" />
   </div>
 </template>
 
@@ -421,19 +421,47 @@ export default {
     async removeDay(date) {
       this.snapshotDays()
       const keep = []
+
       for (const s of trip.stops) {
+        // Locked bookings always stay on their original calendar date.
+        if (s.locked) {
+          keep.push(s)
+          continue
+        }
+
         if (s.date === date) {
-          const known = trip.wishlist.some((w) => w.name.toLowerCase() === s.name.toLowerCase())
-          if (!known) trip.wishlist.push({ id: newId('w'), name: s.name, address: s.address, outdoor: s.outdoor, type: 'custom', city: null, votes: [] })
+          const known = trip.wishlist.some(
+            (w) => w.name.toLowerCase() === s.name.toLowerCase()
+          )
+
+          if (!known) {
+            trip.wishlist.push({
+              id: newId('w'),
+              name: s.name,
+              address: s.address,
+              outdoor: s.outdoor,
+              type: 'custom',
+              city: null,
+              votes: []
+            })
+          }
         } else {
-          if (s.date > date) s.date = this.shiftDate(s.date, -1)
+          // Only unlocked stops on later days move earlier.
+          if (s.date > date) {
+            s.date = this.shiftDate(s.date, -1)
+          }
+
           keep.push(s)
         }
       }
+
       trip.stops = keep
+
       const newEnd = this.shiftDate(this.endDate, -1)
       if (this.selectedDate > newEnd) this.selectDay(newEnd)
+
       this.$emit('set-end-date', newEnd)
+
       await this.updateTransitTimes()
       this.reportItinerary()
     },
