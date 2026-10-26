@@ -9,3 +9,10 @@ dist/
 
 # Mac system files
 .DS_Store
+
+
+.env.test
+
+# Playwright generated files
+test-results/
+playwright-report/
