@@ -22,12 +22,13 @@ function sameId(a, b) {
   return String(a) === String(b)
 }
 
-// POST /api/friends/ping -> "I'm here" + the numbers for the profile menu badge
+// POST /api/friends/ping -> "I'm here" + the numbers for the profile menu badge and new trip invites
 router.post('/ping', requireAuth, async (req, res) => {
   const me = await User.findByIdAndUpdate(req.userId, { $set: { lastActiveAt: new Date() } }, { new: true }).select('friends friendRequests')
   if (!me) return res.status(404).json({ message: 'User not found.' })
   const online = await User.countDocuments({ _id: { $in: me.friends }, lastActiveAt: { $gte: new Date(Date.now() - ONLINE_FOR) } })
-  res.json({ requests: me.friendRequests.length, online })
+  const invites = await Trip.countDocuments({ 'pendingInvites.user': req.userId }) // trip invites waiting for me
+  res.json({ requests: me.friendRequests.length, online, invites })
 })
 
 // GET /api/friends -> { friends, incoming, outgoing }

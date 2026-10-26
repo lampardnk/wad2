@@ -117,15 +117,6 @@
                 </div>
                 <p class="ss-note"><AppIcon :name="stop.locked ? 'lock' : 'unlock'" :size="13" /> {{ stop.locked ? 'Locked: Optimize Route won\'t move it.' : 'Tip: lock a stop (the padlock on its card) to keep a booked time.' }}</p>
 
-                <!-- Routes saved in Getting around that end here -->
-                <div v-for="route in routes" :key="route.start" class="ss-route">
-                  <p class="ss-route-from"><AppIcon name="map-pin" :size="14" /> From <strong>{{ route.start }}</strong></p>
-                  <div v-for="opt in route.options" :key="opt.type" class="ss-route-opt">
-                    <span>{{ opt.route }}</span>
-                    <small><AppIcon name="clock" :size="12" /> ~{{ minutesText(opt.duration) }} · {{ opt.cost === 0 ? 'Free' : '~ ₩' + opt.cost.toLocaleString() }}</small>
-                  </div>
-                </div>
-
                 <form v-if="canChangeDay" class="ss-details" @submit.prevent="saveDetails">
                   <h4 class="ss-h">Details</h4>
                   <label for="ss-name" class="ss-label">Name</label>
@@ -172,8 +163,7 @@ const props = defineProps({
   quieter: { type: Array, default: () => [] },          // [{ hour, crowd }]
   dry: { type: Array, default: () => [] },
   indoorPicks: { type: Array, default: () => [] },
-  canChangeDay: { type: Boolean, default: true },
-  routes: { type: Array, default: () => [] }            // saved routes ending at this stop
+  canChangeDay: { type: Boolean, default: true }
 })
 const emit = defineEmits(['close', 'move-time', 'move-day', 'swap', 'edit'])
 
@@ -203,10 +193,6 @@ const blocks = computed(() => {
 })
 const rainWhileHere = computed(() => blocks.value.some((b) => b.here && b.rain))
 
-function minutesText(min) {
-  const h = Math.floor(min / 60)
-  return h > 0 ? h + 'h ' + (min % 60) + ' mins' : min + ' mins'
-}
 function shortHour(h) {
   const n = Math.floor(h) % 24
   if (n === 0) return '12a'
@@ -498,28 +484,6 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
   background: #fbf5ea;
   border: 1px solid #e6dfd2;
 }
-.ss-route {
-  margin: 12px 0;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: #f6f2ea;
-  font-size: 13px;
-}
-.ss-route-from {
-  margin: 0 0 4px;
-  color: #5a6b78;
-}
-.ss-route-opt {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 4px 0;
-  border-top: 1px solid #e6dfd2;
-}
-.ss-route-opt small {
-  flex-shrink: 0;
-  color: #5a6b78;
-}
 .ss-row {
   display: flex;
   align-items: center;
@@ -645,5 +609,14 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
 .ss-muted {
   font-size: 13px;
   opacity: 0.75;
+}
+.ss-sim-tag {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fbefd9;
+  color: #7a4b00;
+  font-size: 11.5px;
+  font-weight: 700;
 }
 </style>

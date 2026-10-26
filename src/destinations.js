@@ -43,6 +43,55 @@ export const COUNTRY_CODES = {
   'Saudi Arabia': 'SA', 'Qatar': 'QA', 'Bahrain': 'BH', 'Kuwait': 'KW', 'Israel': 'IL', 'Lebanon': 'LB', 'Iran': 'IR', 'Poland': 'PL', 'Croatia': 'HR', 'Slovenia': 'SI', 'Slovakia': 'SK', 'Romania': 'RO', 'Bulgaria': 'BG', 'Serbia': 'RS', 'Bosnia and Herzegovina': 'BA', 'Montenegro': 'ME', 'Albania': 'AL', 'North Macedonia': 'MK', 'Estonia': 'EE', 'Latvia': 'LV', 'Lithuania': 'LT', 'Georgia': 'GE', 'Armenia': 'AM', 'Azerbaijan': 'AZ', 'Moldova': 'MD'
 }
 
+// Any country's two-letter code, for flags: our list first, then the map's short names,
+// then every country name the browser knows ("Russia" -> "RU", "Côte d'Ivoire" -> "CI")
+const MAP_NAMES = {
+  'United States of America': 'US', 'Dem. Rep. Congo': 'CD', 'Congo': 'CG', 'Central African Rep.': 'CF',
+  'S. Sudan': 'SS', 'Bosnia and Herz.': 'BA', 'Dominican Rep.': 'DO', 'Eq. Guinea': 'GQ', 'eSwatini': 'SZ',
+  'W. Sahara': 'EH', 'Fr. S. Antarctic Lands': 'TF', 'Falkland Is.': 'FK', 'Solomon Is.': 'SB', 'N. Cyprus': 'CY',
+  'Somaliland': 'SO', 'Kosovo': 'XK', 'Macedonia': 'MK', 'Antigua and Barb.': 'AG', 'St. Kitts and Nevis': 'KN',
+  'St. Vin. and Gren.': 'VC', 'São Tomé and Principe': 'ST', 'Marshall Is.': 'MH', 'Fr. Polynesia': 'PF',
+  'N. Mariana Is.': 'MP', 'Cayman Is.': 'KY', 'Turks and Caicos Is.': 'TC', 'British Virgin Is.': 'VG',
+  'U.S. Virgin Is.': 'VI', 'Faeroe Is.': 'FO', 'Heard I. and McDonald Is.': 'HM', 'S. Geo. and the Is.': 'GS',
+  'Br. Indian Ocean Ter.': 'IO', 'Wallis and Futuna Is.': 'WF', 'St. Pierre and Miquelon': 'PM', 'Pitcairn Is.': 'PN',
+  'Cook Is.': 'CK', 'Ashmore and Cartier Is.': 'AU', 'Indian Ocean Ter.': 'AU', 'Siachen Glacier': 'IN',
+  'St-Martin': 'MF', 'St-Barthélemy': 'BL', 'Vatican': 'VA', 'Turkey': 'TR', 'Palestine': 'PS', 'Macao': 'MO'
+}
+// "Côte d’Ivoire" / "Bosnia & Herzegovina" / "Myanmar (Burma)" -> one simple spelling to compare
+function simple(name) {
+  return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\(.*\)/g, '')
+    .replace(/ sar china/, '').replace(/&/g, 'and').replace(/[^a-z]/g, '')
+}
+// Codes that aren't today's countries (the Soviet Union, East Timor's old code, the EU...)
+const OLD_CODES = ['SU', 'TP', 'BU', 'DD', 'YU', 'ZR', 'CS', 'FX', 'NT', 'AN', 'UK', 'EU', 'EZ', 'UN', 'QO', 'XA', 'XB', 'ZZ', 'DY', 'HV', 'NH', 'RH', 'VD', 'YD', 'CT', 'JT', 'MI', 'NQ', 'PC', 'PU', 'PZ', 'WK', 'FQ']
+let known = null
+export function codeForCountry(name) {
+  if (!name) return ''
+  if (COUNTRY_CODES[name]) return COUNTRY_CODES[name]
+  if (MAP_NAMES[name]) return MAP_NAMES[name]
+  if (!known) {
+    known = {}
+    try {
+      const names = new Intl.DisplayNames(['en'], { type: 'region' })
+      for (let a = 65; a <= 90; a++) {
+        for (let b = 65; b <= 90; b++) {
+          const code = String.fromCharCode(a, b)
+          let label = null
+          try {
+            label = names.of(code)
+          } catch (err) {
+            label = null
+          }
+          if (label && label !== code && !OLD_CODES.includes(code) && !known[simple(label)]) known[simple(label)] = code
+        }
+      }
+    } catch (err) {
+      // an old browser: only our own list
+    }
+  }
+  return known[simple(name)] || ''
+}
+
 // "Kyoto, Japan" -> "JP" (the country is the last part; "Singapore" on its own also works)
 export function codeForDestination(label) {
   const parts = label.split(', ')

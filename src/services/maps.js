@@ -4,6 +4,6 @@
 import axios from 'axios'
 
 export async function fetchTravelTime(origin, destination, mode = 'transit') {
-  const { data } = await axios.get('/api/distance-matrix', { params: { origin, destination, mode } })
+  const { data } = await axios.get('/api/distance-matrix', { params: { origin, destination, mode }, background: true })
   return data // { durationText: '24 mins', durationValue: 1440 }
 }

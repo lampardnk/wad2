@@ -243,6 +243,26 @@
    {
     "name": "Leshan Giant Buddha",
     "city": "Chengdu"
+   },
+   {
+    "name": "Hongyadong",
+    "city": "Chongqing"
+   },
+   {
+    "name": "Ciqikou",
+    "city": "Chongqing"
+   },
+   {
+    "name": "Jiefangbei CBD",
+    "city": "Chongqing"
+   },
+   {
+    "name": "Dazu Rock Carvings",
+    "city": "Chongqing"
+   },
+   {
+    "name": "Wulong Karst",
+    "city": "Chongqing"
    }
   ],
   "Thailand": [

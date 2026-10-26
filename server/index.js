@@ -15,7 +15,6 @@ import tripRoutes from './routes/trips.js'
 import weatherRoutes from './routes/weather.js'
 import distanceRoutes from './routes/distance.js'
 import flightRoutes from './routes/flights.js'
-import directionsRouter from './routes/directions.js'
 import placeRoutes from './routes/places.js'
 import rateRoutes from './routes/rates.js'
 import photoRoutes from './routes/photos.js'
@@ -28,7 +27,9 @@ import groupRoutes from './routes/groups.js'
 import mapRoutes from './routes/maps.js'
 import eatRoutes from './routes/eat.js'
 import discoverRoutes from './routes/discover.js'
+import { imageRoute, flagRoute } from './images.js'
 import iconRoutes from './routes/icons.js'
+import travelRoutes from './routes/travel.js'
 import { rateLimit } from './rateLimit.js'
 
 const app = express()
@@ -47,7 +48,7 @@ app.use('/api/invites/users', searchLimit)
 app.use('/api/friends/search', searchLimit)
 // Routes that call outside services (weather, maps, crowds...) which have their own quotas
 const outsideLimit = rateLimit({ max: 120, message: 'Too many lookups. Please wait a moment and try again.' })
-for (const path of ['/api/crowd', '/api/weather', '/api/distance-matrix', '/api/directions', '/api/flights', '/api/places', '/api/rates', '/api/safety', '/api/maps', '/api/eat', '/api/discover']) {
+for (const path of ['/api/crowd', '/api/weather', '/api/distance-matrix', '/api/travel', '/api/flights', '/api/places', '/api/rates', '/api/safety', '/api/maps', '/api/eat', '/api/discover']) {
   app.use(path, outsideLimit)
 }
 
@@ -63,15 +64,17 @@ app.use('/api/trips', tripRoutes)
 app.use('/api/groups', groupRoutes)
 app.use('/api/weather', weatherRoutes)
 app.use('/api/distance-matrix', distanceRoutes)
-app.use('/api/directions', directionsRouter)
 app.use('/api/flights', flightRoutes)
 app.use('/api/places', placeRoutes)
+app.use('/api/travel', travelRoutes) // travel times between stops (itinerary, Other journeys)
 app.use('/api/icons', iconRoutes) // 3D icons (Fluent Emoji), cached on disk
 app.use('/api/rates', rateRoutes)
 app.use('/api/safety', safetyRoutes)
 app.use('/api/maps', mapRoutes)
 app.use('/api/eat', eatRoutes)
 app.use('/api/discover', discoverRoutes)
+app.get('/api/flag/:code', flagRoute) // country flags from our disk (Discover's country banners)
+app.get('/api/img', imageRoute) // Wikimedia photos from our disk cache (no lookup limit: a page shows ~200)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })

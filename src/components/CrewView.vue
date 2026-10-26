@@ -1,5 +1,5 @@
 <template>
-  <!-- Trip Crew: everyone on the trip, their arrival, food needs and balance, plus invites -->
+  <!-- Trip Crew: everyone on the trip, their arrival and food needs, plus invites (money owed lives in Expenses) -->
   <div class="cw">
     <!-- ===== Header & quick invite ===== -->
     <header class="cw-head">
@@ -20,7 +20,9 @@
 
     <!-- ===== Profile cards ===== -->
     <div class="cw-grid">
-      <article v-for="p in people" :key="p.name" class="cw-card" :class="{ me: p.name === me, editing: editing === p.name }">
+      <!-- The whole card opens its editor (the Edit button does the same, for keyboards and screen readers) -->
+      <article v-for="p in people" :key="p.name" class="cw-card" :class="{ me: p.name === me, editing: editing === p.name, clickable: p.canEdit && editing !== p.name }"
+        @click="cardClick(p, $event)">
         <template v-if="editing !== p.name">
           <div class="cw-id">
             <span class="cw-avatar" :style="{ background: colorFor(p.name) }" aria-hidden="true">
@@ -39,8 +41,12 @@
 
           <div class="cw-pills">
             <span class="cw-pill" :class="{ empty: !p.flight.flight && !p.flight.arrival }">
-              <AppIcon name="plane" :size="14" /> <template v-if="p.flight.flight || p.flight.arrival">{{ p.flight.flight || 'Arrives' }}<template v-if="p.flight.arrival"> · Lands {{ arrivalText(p.flight.arrival) }}</template></template>
+              <AppIcon name="plane" :size="14" /> <template v-if="p.flight.flight || p.flight.arrival">{{ p.flight.flight || 'Arrives' }}<template v-if="p.flight.arrival"> · Lands {{ arrivalText(p.flight.arrival) }}</template><template v-if="p.flight.airport"> · {{ p.flight.airport }}</template></template>
               <template v-else>No flight added</template>
+            </span>
+            <!-- Flight home (added from the last day of the itinerary) -->
+            <span v-if="p.profile.departure" class="cw-pill">
+              <AppIcon name="plane" :size="14" /> Flies home {{ arrivalText(p.profile.departure) }}<template v-if="p.profile.departFlight"> · {{ p.profile.departFlight }}</template>
             </span>
             <span v-if="p.flightWith.length" class="cw-pill"><AppIcon name="users" :size="13" /> Same flight as {{ p.flightWith.join(', ') }}</span>
             <template v-if="p.diets.length">
@@ -50,14 +56,7 @@
             <span v-else class="cw-pill empty"><AppIcon name="utensils" :size="13" /> Food needs not added</span>
           </div>
 
-          <div class="cw-foot">
-            <button type="button" class="cw-balance" :class="p.balance > 0.009 ? 'pos' : p.balance < -0.009 ? 'neg' : ''"
-              :title="'See ' + p.name + ' in Expenses'" @click="$emit('go', 'expenses', p.name)">
-              <template v-if="p.balance === null">No expenses yet</template>
-              <template v-else-if="p.balance > 0.009">Gets back {{ money(p.balance, home) }}</template>
-              <template v-else-if="p.balance < -0.009">Owes {{ money(-p.balance, home) }}</template>
-              <template v-else>All settled</template>
-            </button>
+          <div v-if="p.profile.phone || p.canEdit" class="cw-foot">
             <span class="cw-links">
               <a v-if="p.profile.phone" class="cw-link" :href="'https://wa.me/' + p.profile.phone.replace(/[^\d]/g, '')"
                 target="_blank" rel="noopener" :aria-label="'WhatsApp ' + p.name">Message</a>
@@ -111,7 +110,6 @@
 
 <script>
 import axios from 'axios'
-import { balances, money } from '../expenses.js'
 import { dietTag } from '../crewOptions.js'
 import CrewDetailsForm from './CrewDetailsForm.vue'
 import AppIcon from './AppIcon.vue'
@@ -142,7 +140,6 @@ export default {
     members: { type: Array, default: () => [] },
     pendingInvites: { type: Array, default: () => [] },
     crew: { type: Object, default: () => ({}) },
-    expenses: { type: Object, default: null },
     role: { type: String, default: 'member' },
     me: { type: String, default: '' },
     myId: { type: String, default: '' }
@@ -155,7 +152,6 @@ export default {
       demo,
       profiles: demo ? { ...DEMO.crew } : { ...this.crew },
       pending: demo ? DEMO.pending.slice() : this.pendingInvites.slice(),
-      rates: {},
       copied: false,
       toast: '',
       editing: null,
@@ -175,14 +171,6 @@ export default {
   computed: {
     memberList() {
       return this.demo ? DEMO.members : this.members
-    },
-    home() {
-      return (this.expenses && this.expenses.homeCurrency) || 'SGD'
-    },
-    balanceMap() {
-      const e = this.demo ? null : this.expenses
-      if (!e || !e.items || !e.items.length) return null
-      return balances(this.travellers, e.items, e.settlements || [], this.rates, this.home)
     },
     // One entry per traveller, with everything the card shows
     people() {
@@ -217,8 +205,7 @@ export default {
           name, kind, activeNow, statusText, profile, diets, flight, flightWith,
           hasProfile: fromSettings ? !!m.contactSaved : !!this.profiles[name],
           fromSettings,
-          canEdit: name === this.me || (kind === 'guest' && this.role === 'owner') || this.demo,
-          balance: this.balanceMap ? this.balanceMap[name] || 0 : null
+          canEdit: name === this.me || (kind === 'guest' && this.role === 'owner') || this.demo
         })
       }
       // You first, then active people, then the rest
@@ -254,19 +241,7 @@ export default {
     }
   },
 
-  async created() {
-    if (this.balanceMap === null && !(this.expenses && this.expenses.items && this.expenses.items.length)) return
-    try {
-      const res = await axios.get('/api/rates', { params: { base: this.home } })
-      this.rates = res.data.rates
-    } catch (err) {
-      // balances are shown without converting other currencies
-    }
-  },
-
   methods: {
-    money,
-
     colorFor(name) {
       const i = Math.max(0, this.travellers.indexOf(name))
       return COLORS[i % COLORS.length]
@@ -312,9 +287,10 @@ export default {
       const pr = this.profiles[name] || {}
       if (pr.sameFlightAs) {
         const other = this.profiles[pr.sameFlightAs] || {}
-        if (!other.sameFlightAs) return { flight: other.flight || '', arrival: other.arrival || '' }
+        if (!other.sameFlightAs) return { flight: other.flight || '', arrival: other.arrival || '', airport: other.arriveAt ? other.arriveAt.name : '' }
       }
-      return { flight: pr.flight || '', arrival: pr.arrival || '' }
+      // (the airport is set from the first day of the itinerary)
+      return { flight: pr.flight || '', arrival: pr.arrival || '', airport: pr.arriveAt ? pr.arriveAt.name : '' }
     },
 
     // People you can pick in "Same as …": others with their own flight details
@@ -327,6 +303,13 @@ export default {
         }
       }
       return list
+    },
+
+    // A click anywhere on a card you can edit opens it (not on its own buttons/links, or while it's open)
+    cardClick(p, event) {
+      if (!p.canEdit || this.editing === p.name) return
+      if (event.target.closest('a, button, input, select, textarea, label')) return
+      this.startEdit(p)
     },
 
     startEdit(p) {
@@ -485,6 +468,9 @@ export default {
   gap: 10px;
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
+.cw-card.clickable {
+  cursor: pointer;
+}
 .cw-card:hover {
   transform: translateY(-3px);
   border-color: rgba(237, 174, 73, 0.35);
@@ -633,28 +619,10 @@ export default {
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
-.cw-balance {
-  border: 0;
-  background: none;
-  padding: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  white-space: nowrap;
-  cursor: pointer;
-}
-.cw-balance:hover {
-  text-decoration: underline;
-}
-.cw-balance.pos {
-  color: var(--mint);
-}
-.cw-balance.neg {
-  color: #ec8a97;
-}
 .cw-links {
   display: flex;
   gap: 14px;
+  margin-left: auto;
 }
 .cw-link {
   border: 0;
@@ -728,7 +696,6 @@ export default {
 .cw-primary:focus-visible,
 .cw-ghost:focus-visible,
 .cw-link:focus-visible,
-.cw-balance:focus-visible,
 .cw-persona.add:focus-visible {
   outline: 3px solid var(--mint);
   outline-offset: 2px;
@@ -760,7 +727,6 @@ export default {
 
 /* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
 @media (pointer: coarse), (max-width: 560px) {
-  .cw-balance,
   .cw-link {
     min-height: 40px;
     display: inline-flex;

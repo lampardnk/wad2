@@ -43,12 +43,16 @@ export const DEFAULT_PREFS = {
   dayStart: 8,                // earliest start the user wants
   dayEnd: 23,                 // everything should finish by this hour
   crowdSensitivity: 'medium', // 'low' | 'medium' | 'high'
-  travelBuffer: 0             // hours kept free between stops (0, 0.5 or 1)
+  travelBuffer: 0,            // hours kept free between stops (0, 0.5 or 1)
+  // Transport (Settings): ways to travel we suggest, the longest walk (min), and what matters most
+  travelModes: ['walk', 'transit', 'taxi'],
+  maxWalk: 20,
+  travelPriority: 'balanced'  // 'balanced' | 'fastest' | 'cheapest'
 }
 
 // Ask our server for a place's forecast (the server caches it in MongoDB)
 export async function getForecast(name, address) {
-  const res = await axios.get('/api/crowd', { params: { name, address } })
+  const res = await axios.get('/api/crowd', { params: { name, address }, background: true })
   return res.data
 }
 

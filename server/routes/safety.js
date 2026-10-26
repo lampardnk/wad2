@@ -1,6 +1,8 @@
 import express from 'express'
 import { requireAuth } from './auth.js'
 import { askOverpassFast } from './places.js'
+import { geoapifyReady, geoapifySearch } from '../geoapify.js'
+import { diskMap } from '../diskCache.js'
 
 // Safety tab helpers. These run on our server (not in the browser) so that:
 //  - busy OpenStreetMap servers are retried and results are cached (no more 504s in the browser)
@@ -10,8 +12,8 @@ const HEADERS = { 'User-Agent': 'ChuiseYourTrip/1.0 (SMU IS216 student project)'
 const DAY = 24 * 60 * 60 * 1000
 
 const nearbyCache = new Map() // 'lat,lon,home' -> { time, data }
-const placeCache = new Map()  // 'kyoto, japan' -> place
-const LIMIT = 300
+const placeCache = diskMap('located-places') // 'kyoto, japan' -> place (kept on disk, survives restarts)
+const LIMIT = 2000 // entries kept per cache
 
 function remember(map, key, value) {
   if (map.size >= LIMIT) map.delete(map.keys().next().value)
@@ -22,11 +24,65 @@ function remember(map, key, value) {
 const round = (n) => Math.round(Number(n) * 1000) / 1000
 
 // Photon (OpenStreetMap search). lang 'default' gives local names, e.g. Japanese.
-async function photon(params) {
+async function photon(params, options = {}) {
+  // A plain place search goes to Geoapify first when there's a key (it doesn't turn us away when busy).
+  // Searches by OSM tag (hospitals...) and the hotel search (it pairs English and local-language
+  // Photon answers by their OpenStreetMap id) stay on Photon.
+  if (geoapifyReady() && options.geoapify !== false && params.q && !params.osm_tag) {
+    try {
+      return await geoapifySearch({ q: params.q, limit: Number(params.limit) || 5, lat: params.lat, lon: params.lon })
+    } catch (err) {
+      console.warn('Geoapify search failed:', err.message, '(trying Photon)')
+    }
+  }
   const url = 'https://photon.komoot.io/api/?' + new URLSearchParams(params)
-  const res = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(8000) })
-  if (!res.ok) throw new Error('Photon ' + res.status)
-  return res.json()
+  let lastError = null
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(8000) })
+      if (!res.ok) throw new Error('Photon ' + res.status)
+      return await res.json()
+    } catch (err) {
+      lastError = err
+    }
+  }
+  // Photon is busy or down (it limits how often one server may ask): a plain place search can use
+  // Nominatim (OpenStreetMap's own search) instead. Searches by OSM tag (hospitals...) can't.
+  if (params.q && !params.osm_tag) {
+    try {
+      return await nominatimAsPhoton(params)
+    } catch (err) {
+      console.warn('Nominatim backup failed too:', err.message)
+    }
+  }
+  throw lastError
+}
+
+// Nominatim's answer, in Photon's shape (so the code above works with either)
+async function nominatimAsPhoton(params) {
+  const query = { q: params.q, format: 'jsonv2', limit: params.limit || '5', addressdetails: '1', 'accept-language': 'en' }
+  // Prefer results around a point (like Photon's lat/lon bias), about 100 km each way
+  if (params.lat && params.lon) {
+    const lat = Number(params.lat)
+    const lon = Number(params.lon)
+    query.viewbox = [lon - 1, lat + 1, lon + 1, lat - 1].join(',')
+  }
+  const res = await fetch('https://nominatim.openstreetmap.org/search?' + new URLSearchParams(query), { headers: HEADERS, signal: AbortSignal.timeout(8000) })
+  if (!res.ok) throw new Error('Nominatim ' + res.status)
+  const features = []
+  for (const r of await res.json()) {
+    const a = r.address || {}
+    features.push({
+      geometry: { coordinates: [Number(r.lon), Number(r.lat)] },
+      properties: {
+        name: r.name || (r.display_name || '').split(',')[0],
+        housenumber: a.house_number, street: a.road, district: a.suburb || a.neighbourhood,
+        city: a.city || a.town || a.village || a.county, postcode: a.postcode,
+        countrycode: (a.country_code || '').toUpperCase(), country: a.country || ''
+      }
+    })
+  }
+  return { features }
 }
 
 function addressOf(p) {
@@ -122,7 +178,7 @@ router.get('/stay-search', requireAuth, async (req, res) => {
   if (q.length < 3) return res.json([])
   try {
     const params = { q: near ? q + ', ' + near : q, limit: '5' }
-    const [en, local] = await Promise.all([photon({ ...params, lang: 'en' }), photon({ ...params, lang: 'default' })])
+    const [en, local] = await Promise.all([photon({ ...params, lang: 'en' }, { geoapify: false }), photon({ ...params, lang: 'default' }, { geoapify: false })])
     const out = []
     for (const f of en.features || []) {
       const p = f.properties || {}

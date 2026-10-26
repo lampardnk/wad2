@@ -13,3 +13,16 @@ Crowd data comes from the itinerary's BestTime forecasts when available (else a 
 
 ## UI
 ✨ Optimize Day (Analyzing route → Checking forecast → Reordering) → preview with summary + Apply / Dismiss. 🔒/🔓 per stop, ⋮⋮ drag (or arrow keys on the handle) re-times the day in the new order. "Try a sample Kyoto day" shows the before/after on mock data (not saved).
+
+## Getting around (travel between stops)
+Files: `src/dayOptimizer.js` (travel model), `src/components/LegSheet.vue` (panel), `TravelChoices.vue` (option list),
+`OtherJourneys.vue` (Getting around tab), `server/routes/travel.js` (live routes, Geoapify), Settings → Getting Around.
+
+1. `travelOptions(a, b, tp)`: walk / transit / taxi / bike times. Live routes from `/api/travel/leg` when the server has a
+   Geoapify key (walk, bicycle, drive; transit is OSM-approximated, so always labelled "estimate"), otherwise straight-line
+   estimates. Results are cached on the server (`server/data/cache/travel-legs.json`).
+2. `recommendTravel(options, tp)`: follows the user's preferences (allowed modes, longest walk, balanced / fastest / cheapest)
+   and explains why ("walking is 32 min, over your 20-min limit").
+3. A leg chosen by the group is saved on the destination stop as `travel: { mode, from, by }` (only valid while that stop
+   follows `from`). `travelBetween` uses it, so the timeline, the re-timing after a choice and Optimize Route all agree.
+4. Other journeys (airport → hotel, day trips) are saved on the trip as `journeys`.

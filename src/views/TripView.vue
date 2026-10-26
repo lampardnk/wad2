@@ -83,18 +83,15 @@
         </button>
       </div>
 
-      <p v-if="photoPage" class="trip-credit">
-        Photo: <a :href="photoPage" target="_blank" rel="noopener">Wikipedia</a>
-      </p>
-
       <!-- The open section -->
       <main ref="panel" class="trip-panel">
         <div class="trip-panel-head">
           <h2 class="trip-panel-title"><span class="trip-panel-icon"><TabIcon :name="currentTab.key" :size="18" /></span> {{ currentTab.title }}</h2>
         </div>
 
-        <!-- Safety banner: shown on every tab when SafetyLayer reports High/Critical risk -->
-        <div v-if="safetyWarning" class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+        <!-- Safety banner: shown on every other tab when SafetyLayer reports High/Critical risk
+             (not on Safety itself: its own banner already says it, with more detail) -->
+        <div v-if="safetyWarning && activeTab !== 'safety'" class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
           <span><AppIcon name="alert" :size="16" /> {{ safetyWarning }}</span>
           <button class="btn btn-sm btn-outline-danger" @click="activeTab = 'safety'">View safety</button>
         </div>
@@ -116,7 +113,7 @@
                 <strong>Itinerary</strong>: pick a day and drag your saved places onto it.
                 Each stop shows its weather and crowds (tap them for options), and <em><AppIcon name="sparkles" :size="14" /> Optimize Route</em> re-orders the whole day.
               </li>
-              <li>The other sections in the top bar cover packing, expenses, photos, safety and getting around.</li>
+              <li>The other sections in the top bar cover packing, expenses, photos, safety and transport.</li>
             </ol>
             <button type="button" class="btn btn-primary btn-sm" @click="showGuide = false">Got it</button>
           </section>
@@ -135,8 +132,9 @@
           :end-date="itineraryInfo.endDate"
           :initial-stops="itineraryInfo.stops"
           :initial-wishlist="itineraryInfo.wishlist" :initial-version="isDemo ? 0 : trip.version || 0" :travellers="itineraryInfo.travellers"
+          :me="myName" :stays="isDemo ? [] : trip.stays || []" :crew="isDemo ? {} : trip.crew || {}"
           @itinerary-change="updatePackingActivities" @set-end-date="setEndDate" @go-places="addFromItinerary"
-          @open-transport="activeTab = 'travelOptions'" />
+          @stays-change="staysChanged" @crew-change="trip.crew = $event" />
       </div>
       <!-- Places = Wishlist + Group decisions. Both use the same wishlist, which the itinerary saves. -->
       <div v-show="activeTab === 'places'" :id="'pane-places'" role="tabpanel" :class="{ 'has-return': returnTo }">
@@ -183,7 +181,7 @@
         <CrewView :key="'crew-' + id" :trip-id="id" :city="itineraryInfo.destinations[0].split(', ')[0]"
           :travellers="itineraryInfo.travellers" :members="isDemo ? [] : trip.members || []"
           :pending-invites="isDemo ? [] : trip.pendingInvites || []" :crew="isDemo ? {} : trip.crew || {}"
-          :expenses="isDemo ? null : trip.expenses" :role="isDemo ? 'owner' : trip.role" :me="myName"
+          :role="isDemo ? 'owner' : trip.role" :me="myName"
           :my-id="authUserId" @invite="showShare = true" @go="goFromCrew" @changed="reloadTrip" />
       </div>
       <!-- Recap (after the trip): the trip in numbers with its route on a map -->
@@ -203,14 +201,11 @@
       </div>
 
       <div v-show="activeTab === 'travelOptions'" :id="'pane-travelOptions'" role="tabpanel">
-        <TransportOptions 
-          :destination="itineraryInfo?.destination"
-          :stops="transportPlaces"
-          :stay="isDemo ? null : trip?.stay"
-          :tripId="trip?._id || trip?.id || trip?.tripId || $route.params.id" 
-          :start-date="itineraryInfo.startDate"
-          :end-date="itineraryInfo.endDate">
-        </TransportOptions>  
+        <!-- Journeys that aren't between two stops (travel between stops is planned in the itinerary) -->
+        <OtherJourneys :key="'oj-' + id" :trip-id="id" :is-demo="isDemo" :destinations="itineraryInfo.destinations" :stops="safetyStops"
+:stays="isDemo ? [] : trip.stays || []" :my-airports="myAirports" :travellers="itineraryInfo.travellers" :me="myName"
+          :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate"
+          :initial-journeys="isDemo ? [] : trip.journeys || []" :prefs="prefs" />
       </div>
 
     </main>
@@ -229,7 +224,8 @@ import PhotosView from '../components/PhotosView.vue'
 import ExpensesView from '../components/ExpensesView.vue'
 import SafetyLayer from '../components/SafetyLayer.vue'
 import FlightDelayWidget from '../components/FlightDelayWidget.vue'
-import TransportOptions from '../components/TransportOptions.vue'
+import OtherJourneys from '../components/OtherJourneys.vue'
+import { prefs } from '../preferences.js'
 import TripShare from '../components/TripShare.vue'
 import CrewView from '../components/CrewView.vue'
 import TripTabs from '../components/TripTabs.vue'
@@ -245,10 +241,11 @@ import { notify } from '../notify.js'
 
 
 export default {
-  components: { LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, TransportOptions, TripShare, CrewView, TripTabs, TabIcon },
+  components: { LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
   props: { id: { type: String, default: 'seoul' } }, // from the route /trip/:id
   data() {
     return {
+      prefs, // Settings → Transport (shared, loaded by the itinerary)
       activeTab: 'itinerary',
       placesTab: 'wishlist', // inside Places: 'wishlist' | 'vote'
       returnTo: null, // { date, day } when Places was opened from the itinerary's "Add stop"
@@ -263,7 +260,7 @@ export default {
         { key: 'safety', icon: '🛡', label: 'Safety', title: 'Safety', desc: 'Live alerts and risk levels near you.', testid: 'safety-tab' },
         { key: 'crew', icon: '👥', label: 'Crew', title: 'Trip crew', desc: '' },
         { key: 'recap', icon: '🗺', label: 'Recap', title: 'Trip recap', desc: 'Your finished trip in numbers, with the route on a map.' },
-        { key: 'travelOptions', icon: '🚆', label: 'Getting around', short: 'Transport', title: 'Getting around', desc: 'Ways to travel between your stops.' }
+        { key: 'travelOptions', icon: '🚆', label: 'Transport', short: 'Transport', title: 'Transport', desc: 'Airport transfers, day trips and other journeys. Travel between stops is planned in the Itinerary.' }
       ],
       // Shown once, after setting up the user's first trip
       showGuide: this.$route.query.welcome === '1',
@@ -350,8 +347,13 @@ export default {
     safetyStops() {
       return store.stops
     },
-    transportPlaces() {
-      return store.stops
+    // My airports (set from the itinerary), as suggestions in Other journeys
+    myAirports() {
+      const own = (this.trip.crew || {})[this.myName] || {}
+      const list = []
+      if (own.arriveAt) list.push(own.arriveAt)
+      if (own.departFrom && (!own.arriveAt || own.departFrom.name !== own.arriveAt.name)) list.push(own.departFrom)
+      return list
     },
     wishlistPlaces() {
       return store.wishlist
@@ -399,10 +401,6 @@ export default {
     // Left Places some other way: the "Back to Day 2" bar isn't needed any more
     activeTab(tab) {
       if (tab !== 'places') this.returnTo = null
-    },
-    // The photo credit line appears once the photo loads, which moves the panel down a little
-    photoPage() {
-      this.$nextTick(this.fitStage)
     }
   },
   async mounted() {
@@ -466,6 +464,11 @@ export default {
       })
     },
     // After someone is removed: fetch the trip again
+    // Hotels changed in the itinerary (the Safety taxi card may follow the first one)
+    staysChanged(data) {
+      this.trip.stays = data.stays || []
+      if (data.stay !== undefined) this.trip.stay = data.stay
+    },
     // Saved in "Edit trip": load the trip again, restart the planner, and say what happened
     async tripEdited(saved) {
       this.showEdit = false
@@ -578,17 +581,6 @@ export default {
     linear-gradient(180deg, rgba(0, 29, 44, 0.25) 0%, rgba(0, 29, 44, 0.1) 22%, rgba(0, 29, 44, 0.55) 42%, #001d2c 62%),
     var(--trip-photo, none) center 35% / cover no-repeat,
     #003d5b;
-}
-.trip-credit {
-  position: relative;
-  z-index: 1;
-  text-align: right;
-  font-size: 11px;
-  color: var(--app-muted, #5a6b78);
-  margin: 10px 28px 0;
-}
-.trip-credit a {
-  color: inherit;
 }
 .trip-loading {
   position: relative;

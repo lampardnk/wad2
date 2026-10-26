@@ -82,7 +82,7 @@
         <article v-for="g in groups" :key="g.country" :data-country="g.country" class="dx-country glass" :class="{ lit: hoverCountry === g.country, focused: focusCountry === g.country }"
           @mouseenter="hoverCountry = g.country" @mouseleave="hoverCountry = null" @click="openCountryCard($event, g.country)">
           <!-- Opened country: a photo header -->
-          <div v-if="focusCountry === g.country" class="dx-hero" :class="{ nophoto: !countryPhotos[g.country] }" :style="countryPhotos[g.country] ? { backgroundImage: 'linear-gradient(180deg, rgba(0, 38, 58,0) 40%, rgba(0, 38, 58,0.9)), url(' + countryPhotos[g.country] + ')' } : null">
+          <div v-if="focusCountry === g.country" class="dx-hero" :class="{ nophoto: !heroPhoto(g.country) }" :style="heroStyle(g.country)">
             <button type="button" class="dx-hero-back" @click="unfocus">‹ All countries</button>
             <h2 class="dx-hero-name">{{ flag(g.cc) }} {{ g.country }}</h2>
           </div>
@@ -127,7 +127,7 @@
             <h3 class="dx-sights-title">Top {{ sightsOf(g.country).length }} things to see</h3>
             <ol class="dx-sights-row">
               <li v-for="(a, i) in sightsOf(g.country)" :key="a.name">
-                <button type="button" class="dx-sight" :style="sightStyle(a)" :aria-label="(i + 1) + '. ' + sightName(a) + ', near ' + a.city + '. Show on the map'" @click="showSight(g.country, a)">
+                <button type="button" class="dx-sight" :class="{ loading: sightPhotos[a.name] === null }" :style="sightStyle(a)" :aria-label="(i + 1) + '. ' + sightName(a) + ', near ' + a.city + '. Show on the map'" @click="showSight(g.country, a)">
                   <span class="dx-sight-rank" aria-hidden="true">{{ i + 1 }}</span>
                   <span class="dx-sight-text">
                     <strong>{{ sightName(a) }}</strong>
@@ -140,11 +140,11 @@
         </article>
         <!-- A country without cities in Discover yet -->
         <article v-if="otherCountry" class="dx-country glass focused">
-          <div class="dx-hero" :class="{ nophoto: !countryPhotos[otherCountry] }" :style="countryPhotos[otherCountry] ? { backgroundImage: 'linear-gradient(180deg, rgba(0, 38, 58,0) 40%, rgba(0, 38, 58,0.9)), url(' + countryPhotos[otherCountry] + ')' } : null">
+          <div class="dx-hero" :class="{ nophoto: !heroPhoto(otherCountry) }" :style="heroStyle(otherCountry)">
             <button type="button" class="dx-hero-back" @click="unfocus">‹ All countries</button>
             <h2 class="dx-hero-name">{{ otherCountry }}</h2>
           </div>
-          <p class="dx-tagline big">Not in Discover yet: we haven't hand-picked its cities. You can still plan a trip here and choose the places yourself.</p>
+          <p class="dx-tagline big">Not in Discover yet. You can still plan a trip here and choose the places yourself.</p>
           <button type="button" class="dx-cta dx-other-cta" :disabled="!!dateError" @click="planOther">Plan a trip to {{ otherCountry }} →</button>
         </article>
         <p v-else-if="!groups.length && search.trim()" class="dx-empty glass">
@@ -242,8 +242,8 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import DATA from '../data/discoverCities.json'
 import SIGHTS from '../data/countryAttractions.json'
-import { PHOTO_CACHE } from '../photoCache.js'
-import { flagEmoji } from '../destinations.js'
+import { PHOTO_CACHE, photoUrl, loadCityPhotos } from '../photoCache.js'
+import { flagEmoji, codeForCountry } from '../destinations.js'
 import { loadMapLibre } from '../services/maplibre.js'
 import { topoFeatures, unwrapLongitudes } from '../topo.js'
 import { shortlist, syncShortlist } from '../shortlist.js'
@@ -333,7 +333,6 @@ const tripMonths = computed(() => {
 const focusCountry = ref(null)
 const otherCountry = ref(null) // a country with no cities in our data yet
 const hoverAny = ref(null)     // any country under the mouse on the map
-const countryPhotos = ref({})
 const feedEl = ref(null)
 // The sticky header's height, so the map and "scroll to" stop just below it instead of under it
 const topEl = ref(null)
@@ -350,15 +349,31 @@ function sightName(a) {
 }
 function sightStyle(a) {
   const url = sightPhotos.value[a.name]
-  return url ? { backgroundImage: 'linear-gradient(180deg, rgba(0, 38, 58,0) 35%, rgba(0, 38, 58,0.92)), url(' + url + ')' } : null
+  return url ? { backgroundImage: 'linear-gradient(180deg, rgba(0, 38, 58,0) 35%, rgba(0, 38, 58,0.92)), url(' + photoUrl(url, 500) + ')' } : null
 }
-function loadSightPhotos(country) {
+// The server answers within 1.5 s; "pending" = still looking it up, so ask again in a few seconds
+function loadSightPhotos(country, tries = 0) {
+  let pending = 0
   for (const a of sightsOf(country)) {
     if (sightPhotos.value[a.name] !== undefined) continue
-    sightPhotos.value = { ...sightPhotos.value, [a.name]: null }
+    sightPhotos.value = { ...sightPhotos.value, [a.name]: null } // null = loading ('' = no photo)
     axios.get('/api/discover/about', { params: { title: a.name } })
-      .then((res) => { if (res.data.photo) sightPhotos.value = { ...sightPhotos.value, [a.name]: res.data.photo } })
-      .catch(() => {})
+      .then((res) => {
+        if (res.data.pending && tries < 3) {
+          const copy = { ...sightPhotos.value }
+          delete copy[a.name]
+          sightPhotos.value = copy
+          if (pending++ === 0) setTimeout(() => loadSightPhotos(country, tries + 1), 3000)
+          return
+        }
+        sightPhotos.value = { ...sightPhotos.value, [a.name]: res.data.photo || '' }
+      })
+      .catch(() => {
+        // couldn't ask: let it try again the next time this country opens
+        const copy = { ...sightPhotos.value }
+        delete copy[a.name]
+        sightPhotos.value = copy
+      })
   }
 }
 // A sight's card flies the map to the city it's near
@@ -367,13 +382,29 @@ function showSight(country, a) {
   if (city) showOnMap(visibleCities.value.find((c) => c.id === city.id) || city)
 }
 
-function loadCountryPhoto(name) {
-  if (countryPhotos.value[name] === undefined) {
-    countryPhotos.value = { ...countryPhotos.value, [name]: null }
-    axios.get('/api/discover/about', { params: { title: name } })
-      .then((res) => { if (res.data.photo) countryPhotos.value = { ...countryPhotos.value, [name]: res.data.photo } })
-      .catch(() => {})
-  }
+// A country's banner is its flag: a tiny picture from our server (every flag is saved there
+// ahead of time), so it shows at once, for any country, in Discover or not
+function flagCode(country) {
+  const ours = countryOf(country)
+  return ((ours && ours.cc) || codeForCountry(country) || '').toLowerCase()
+}
+function heroPhoto(country) {
+  const code = flagCode(country)
+  return code ? '/api/flag/' + code + '.svg' : null
+}
+function heroStyle(country) {
+  const url = heroPhoto(country)
+  if (!url) return null
+  return { backgroundImage: 'linear-gradient(180deg, rgba(0, 38, 58,0.05) 35%, rgba(0, 38, 58,0.85)), url(' + url + ')' }
+}
+// Get a flag into the browser before it's needed (hovering a country on the map, opening Discover)
+const flagsLoaded = new Set()
+function preloadFlag(country) {
+  const url = heroPhoto(country)
+  if (!url || flagsLoaded.has(url)) return
+  flagsLoaded.add(url)
+  const img = new Image()
+  img.src = url
 }
 function focus(name) {
   otherCountry.value = null
@@ -381,7 +412,7 @@ function focus(name) {
   hoverCountry.value = null
   nextTick(() => feedEl.value && feedEl.value.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   fitCountry(name)
-  loadCountryPhoto(name)
+  preloadFlag(name)
   loadSightPhotos(name)
 }
 // Tapped a country we have no cities for: zoom to its shape and show the light card
@@ -389,7 +420,7 @@ function openOther(name, geometry) {
   focusCountry.value = null
   otherCountry.value = name
   nextTick(() => feedEl.value && feedEl.value.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-  loadCountryPhoto(name)
+  preloadFlag(name)
   if (map && ml && geometry) {
     const bounds = new ml.LngLatBounds()
     const polys = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates
@@ -507,40 +538,16 @@ function monthsText(list) {
 }
 
 // ---------- photos (heroImage, or Wikipedia when empty) ----------
+// The links are kept in this browser (photoCache.js), so after the first visit every card has its
+// photo at once; the photos themselves come from our server's copy, in card size
 const photos = ref({})
-// City photos: asked for 40 at a time (not one request per city), and kept for the rest of the visit
-async function loadPhotos() {
-  const found = { ...PHOTO_CACHE }
-  const titles = []
-  const idOf = {}
-  for (const c of allCities) {
-    if (c.heroImage) found[c.id] = c.heroImage
-    else if (!found[c.id]) {
-      const t = c.cityName + ', ' + c.country
-      titles.push(t)
-      idOf[t] = c.id
-    }
-  }
-  photos.value = found
-  for (let i = 0; i < titles.length; i += 40) {
-    try {
-      const res = await axios.get('/api/discover/photos', { params: { titles: titles.slice(i, i + 40).join('|') } })
-      const more = {}
-      for (const t in res.data) {
-        if (res.data[t]) {
-          more[idOf[t]] = res.data[t]
-          PHOTO_CACHE[idOf[t]] = res.data[t]
-        }
-      }
-      photos.value = { ...photos.value, ...more }
-    } catch (err) {
-      // no photo: the card keeps its plain colour
-    }
-  }
+function loadPhotos() {
+  loadCityPhotos(() => { photos.value = { ...PHOTO_CACHE } })
+  photos.value = { ...PHOTO_CACHE }
 }
 function photoStyle(c) {
   const url = photos.value[c.id]
-  return url ? { backgroundImage: 'linear-gradient(180deg, rgba(0, 38, 58,0.05) 30%, rgba(0, 38, 58,0.92)), url(' + url + ')' } : null
+  return url ? { backgroundImage: 'linear-gradient(180deg, rgba(0, 38, 58,0.05) 30%, rgba(0, 38, 58,0.92)), url(' + photoUrl(url, 500) + ')' } : null
 }
 
 // ---------- shortlist (kept in this browser) ----------
@@ -796,6 +803,7 @@ async function buildMap() {
         const name = ourName(e.features[0].properties.name)
         map.getCanvas().style.cursor = 'pointer' // every country can be tapped
         hoverAny.value = name
+        preloadFlag(name) // so its banner is already there if it's tapped
         hoverCountry.value = OUR_COUNTRIES.includes(name) ? name : null
       })
       map.on('mouseleave', 'dx-land', () => {
@@ -986,6 +994,7 @@ onMounted(() => {
   document.body.classList.add('dx-body')
   if (auth.token) syncShortlist() // picks saved on another device show up here too
   loadPhotos()
+  for (const c of DATA.countries) preloadFlag(c.country) // every country banner, ready before it's opened
   buildMap()
   if (topEl.value && window.ResizeObserver) {
     topWatcher = new ResizeObserver(() => { topHeight.value = topEl.value ? topEl.value.offsetHeight : 112 })
@@ -1602,6 +1611,17 @@ onBeforeUnmount(() => {
   color: var(--text);
   text-align: left;
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+/* Photo still on its way: a soft moving shine */
+.dx-sight.loading {
+  background: linear-gradient(110deg, #0f4566 30%, #1b5a80 50%, #0f4566 70%) 0 0 / 220% 100%;
+  animation: dx-shine 1.4s linear infinite;
+}
+@keyframes dx-shine {
+  to { background-position: -220% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dx-sight.loading { animation: none; }
 }
 .dx-sight:hover {
   transform: translateY(-3px);

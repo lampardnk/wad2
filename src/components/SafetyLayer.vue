@@ -21,6 +21,8 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import SafetyRadar from './SafetyRadar.vue'
+import CustomDropdown from './CustomDropdown.vue'
+import AppIcon from './AppIcon.vue'
 import {
   getLocationInfo, locatePlace, getTravelAdvisory, getNearbyEarthquakes, getDisasterAlerts,
   getNearbySafety, computeRiskScore, haversineKm, openStatus, EMERGENCY_NUMBERS, HOME_HELPLINE
@@ -40,7 +42,6 @@ const emit = defineEmits(['risk-change', 'stay-change'])
 
 /* Demo cities, so the presentation works without flying anywhere */
 const DEMO_LOCATIONS = {
-  hualien: { lat: 23.9871, lon: 121.6015, label: 'Hualien, Taiwan (quake zone)' },
   tokyo: { lat: 35.6812, lon: 139.7671, label: 'Tokyo, Japan' },
   seoul: { lat: 37.5665, lon: 126.978, label: 'Seoul, South Korea' },
   bangkok: { lat: 13.7563, lon: 100.5018, label: 'Bangkok, Thailand' }
@@ -85,12 +86,19 @@ const callLines = computed(() => EMERGENCY_NUMBERS[locationInfo.value && locatio
 
 const allAlerts = computed(() => {
   const list = []
+  // (demo) raised travel advice shows as an alert, so it's announced like the others
+  if (advisory.value && advisory.value.simulated) {
+    list.push({ id: 'sim-advice', level: 'warning', what: 'Travel advice: Level ' + advisory.value.level, where: (locationInfo.value && locationInfo.value.countryName) || placeName.value, severity: advisory.value.label, time: advisory.value.time, simulated: true })
+  }
   for (const d of disasters.value) {
     list.push({ ...d, level: d.alertLevel === 'Red' ? 'warning' : 'advisory', what: d.type, where: d.title, severity: d.alertLevel + ' alert' + (d.details ? ' · ' + d.details : '') })
   }
   for (const q of quakes.value) {
     list.push({ ...q, level: q.magnitude >= 6 ? 'warning' : 'advisory', what: 'Earthquake M' + q.magnitude.toFixed(1), where: q.distanceKm + ' km from ' + placeName.value + (q.place ? ' · ' + q.place : ''), severity: q.tsunami ? 'Tsunami possible: move to high ground' : q.magnitude >= 6 ? 'Strong' : 'Light to moderate' })
   }
+  // Most serious first (warnings before advisories), then the newest
+  const rank = (a) => (a.level === 'warning' ? 0 : 1)
+  list.sort((a, b) => rank(a) - rank(b) || new Date(b.time || 0) - new Date(a.time || 0))
   return list
 })
 
@@ -107,7 +115,8 @@ const areaOptions = computed(() => {
 const stayShown = computed(() => props.stay || stayCache.value)
 
 const bannerTitle = computed(() => {
-  if (risk.value.state === 'clear') return 'All clear'
+  // A small quake nearby keeps the score low, but it's still named (not "All clear")
+  if (risk.value.state === 'clear') return allAlerts.value.length ? allAlerts.value[0].what : 'All clear'
   const top = allAlerts.value[0]
   if (top) return top.what
   return risk.value.label + ' risk'
@@ -173,7 +182,7 @@ function searchUrl(term) {
 
 /* ---------- loading data ---------- */
 async function refresh(force = false) {
-  if (!position.value) return
+  if (!position.value || demoOffline.value) return // (demo) offline: nothing can be checked
   const { lat, lon } = position.value
   if (!force && lastFetchedAt && haversineKm(lat, lon, lastFetchedAt.lat, lastFetchedAt.lon) < MOVE_THRESHOLD_KM) return
   const run = ++refreshRun
@@ -209,12 +218,14 @@ async function refresh(force = false) {
       getDisasterAlerts(countryCode)
     ])
     if (!isCurrent()) return
-    if (adv.status === 'fulfilled') advisory.value = adv.value
-    else failed.push('travel advice')
+    if (adv.status === 'fulfilled') {
+      if (advisory.value && advisory.value.simulated) realAdvisory = adv.value // (demo) keep showing the raised advice
+      else advisory.value = adv.value
+    } else failed.push('travel advice')
     const simulated = quakes.value.filter((q) => q.simulated)
     if (eq.status === 'fulfilled') quakes.value = simulated.concat(eq.value)
     else failed.push('earthquakes')
-    if (dis.status === 'fulfilled') disasters.value = dis.value
+    if (dis.status === 'fulfilled') disasters.value = disasters.value.filter((d) => d.simulated).concat(dis.value)
     else failed.push('disaster alerts')
     lastUpdated.value = new Date()
     notifyNewAlerts()
@@ -263,8 +274,10 @@ async function useArea(key) {
   notice.value = ''
   lastFetchedAt = null
   locationInfo.value = null
-  advisory.value = null
-  disasters.value = []
+  // (demo) simulations stay on when you switch places; the real data is fetched again
+  if (advisory.value && advisory.value.simulated) realAdvisory = null
+  else advisory.value = null
+  disasters.value = disasters.value.filter((d) => d.simulated)
   places.value = []
   quakes.value = quakes.value.filter((q) => q.simulated)
   position.value = null
@@ -351,21 +364,188 @@ function showToast(message, level = 'advisory') {
   setTimeout(() => { toasts.value = toasts.value.filter((t) => t.id !== id) }, 8000)
 }
 
-async function enableNotifications() {
-  if ('Notification' in window) await Notification.requestPermission()
-}
 
-/* DEMO ONLY: a fake M6.2 quake 15 km away, to show the banner, score and itinerary react */
-function simulateEarthquake() {
-  if (!position.value) return
-  quakes.value.unshift({ id: 'sim-' + Date.now(), type: 'earthquake', title: 'SIMULATED earthquake (demo)', place: 'demo', magnitude: 6.2, distanceKm: 15, time: new Date(), url: null, simulated: true })
+/* ---------- demo scenarios (for presenting) ----------
+   One tap sets up a believable situation where you're looking, and the page reacts as it would for
+   real: banner, score, pop-up alert, the right guide, and (via risk-change) the itinerary's outdoor stops.
+   Everything simulated says "demo"/"SIMULATED". Shown when running locally (npm run dev) or with
+   ?demo=1 in the address, so real users of a built site never see it. */
+const showDemo = (import.meta.env && import.meta.env.DEV) || (typeof location !== 'undefined' && new URLSearchParams(location.search).has('demo'))
+// Earthquakes of each strength (the risk score treats them differently), and the other situations
+const DEMO_QUAKES = {
+  'quake-light': { magnitude: 4.8, label: 'Light earthquake (M4.8)' },
+  'quake-moderate': { magnitude: 5.8, label: 'Moderate earthquake (M5.8)' },
+  'quake-strong': { magnitude: 6.2, label: 'Strong earthquake (M6.2)' },
+  'quake-major': { magnitude: 7.2, label: 'Major earthquake (M7.2)' },
+  'quake-tsunami': { magnitude: 7.6, tsunami: true, label: 'Major earthquake + tsunami (M7.6)' }
+}
+const DEMO_OPTIONS = [
+  { value: 'quake-light', icon: '🫨', label: DEMO_QUAKES['quake-light'].label, description: 'Felt, rarely harmful' },
+  { value: 'quake-moderate', icon: '🫨', label: DEMO_QUAKES['quake-moderate'].label, description: 'Moderate within 100 km' },
+  { value: 'quake-strong', icon: '🫨', label: DEMO_QUAKES['quake-strong'].label, description: 'High within 50 km' },
+  { value: 'quake-major', icon: '🫨', label: DEMO_QUAKES['quake-major'].label, description: 'Critical within 150 km' },
+  { value: 'quake-tsunami', icon: '🌊', label: DEMO_QUAKES['quake-tsunami'].label, description: 'Critical: move to high ground' },
+  { value: 'storm', icon: '🌀', label: 'Typhoon warning', description: 'Orange alert: Moderate' },
+  { value: 'advisory', icon: '🛂', label: 'Travel advice raised', description: 'Level 3: High' },
+  { value: 'offline', icon: '📵', label: 'Go offline', description: 'What still works without internet' }
+]
+const demoPick = ref('quake-strong')
+const alsoStorm = ref(false) // "Add a typhoon" on top of the picked situation (not when the pick is the typhoon)
+const quakeKm = ref(15) // how far the simulated quake is from where you are
+const pickIsQuake = computed(() => demoPick.value.startsWith('quake'))
+const demoOffline = ref(false)
+const openGuide = ref('quake')   // which "If something happens" guide is open
+const highlight = ref('')        // a section that lights up for a few seconds
+const playing = ref(false)
+const bannerEl = ref(null)
+const actionsEl = ref(null)
+let realAdvisory = undefined     // the real advice while a raised one is simulated
+let storyTimers = []
+let highlightTimer = null
+
+// "Try another country": the demo cities
+const demoPlace = ref(null)
+const demoPlaces = computed(() => {
+  const list = []
+  for (const k in DEMO_LOCATIONS) list.push({ value: 'demo-' + k, label: DEMO_LOCATIONS[k].label })
+  return list
+})
+watch(demoPlace, (key) => { if (key && area.value !== key) useArea(key) })
+watch(area, (key) => { if (!key.startsWith('demo-')) demoPlace.value = null })
+
+function simQuakeShown() {
+  return quakes.value.find((q) => q.simulated) || null
+}
+function isOn(key) {
+  if (key.startsWith('quake')) return !!simQuakeShown()
+  if (key === 'storm') return disasters.value.some((d) => d.id === 'sim-storm')
+  if (key === 'advisory') return !!(advisory.value && advisory.value.simulated)
+  return demoOffline.value
+}
+function flash(section) {
+  highlight.value = section
+  clearTimeout(highlightTimer)
+  highlightTimer = setTimeout(() => { highlight.value = '' }, 4000)
+}
+function scrollTo(el) {
+  if (el) el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
+}
+// Tell everyone: pop-up alert, and the trip page (banner on other tabs, outdoor stops flagged)
+function announce() {
+  if (!lastUpdated.value) lastUpdated.value = new Date()
   notifyNewAlerts()
   emit('risk-change', { ...risk.value, location: locationInfo.value })
 }
 
-function clearSimulation() {
-  quakes.value = quakes.value.filter((q) => !q.simulated)
+function runScenario(key) {
+  if (!position.value) return
+  if (key.startsWith('quake')) {
+    // One simulated quake at a time: a new pick replaces it
+    quakes.value = [simQuake(key)].concat(quakes.value.filter((q) => !q.simulated))
+    openGuide.value = DEMO_QUAKES[key].tsunami ? 'tsunami' : 'quake'
+    flash('actions') // emergency numbers and "I'm safe"
+  }
+  if (key === 'storm' && !isOn('storm')) {
+    disasters.value.unshift({ id: 'sim-storm', type: 'Typhoon', title: 'SIMULATED typhoon approaching ' + placeName.value, alertLevel: 'Orange', details: 'winds up to 120 km/h, heavy rain', time: new Date(), url: null, simulated: true })
+    openGuide.value = 'storm'
+    flash('guides')
+  }
+  if (key === 'advisory' && !isOn('advisory')) {
+    realAdvisory = advisory.value
+    advisory.value = {
+      level: 3, label: 'Avoid travel to some areas', time: new Date(), simulated: true,
+      latestChange: 'SIMULATED (demo): advice raised after unrest near the city centre.',
+      url: (realAdvisory && realAdvisory.url) || 'https://www.gov.uk/foreign-travel-advice'
+    }
+    flash('advice')
+  }
+  if (key === 'offline' && !demoOffline.value) {
+    demoOffline.value = true
+    flash('offline') // what still works: the stay card and the guides
+    showToast("Demo: you're offline. Live checks are paused, but your stay card and the guides still work.", 'advisory')
+  }
+  announce()
+}
+
+function simQuake(kind) {
+  const q = DEMO_QUAKES[kind]
+  return { id: 'sim-' + kind, kind, type: 'earthquake', title: 'SIMULATED earthquake (demo)', place: 'demo', magnitude: q.magnitude, tsunami: !!q.tsunami, distanceKm: quakeKm.value, time: new Date(), url: null, simulated: true }
+}
+// Moving the distance slider moves the quake that's showing (the score and banner follow)
+watch(quakeKm, () => {
+  const shown = simQuakeShown()
+  if (!shown) return
+  const moved = { ...shown, distanceKm: quakeKm.value }
+  quakes.value = quakes.value.map((q) => (q.simulated ? moved : q))
   emit('risk-change', { ...risk.value, location: locationInfo.value })
+})
+// The typhoon checkbox: off (and locked) when the typhoon is the pick itself;
+// ticking or unticking it while something is showing adds or removes the typhoon straight away
+watch(demoPick, (key) => { if (key === 'storm') alsoStorm.value = false })
+watch(alsoStorm, (on) => {
+  if (on && activeSims.value.length && !isOn('storm')) runScenario('storm')
+  if (!on && isOn('storm') && demoPick.value !== 'storm') {
+    disasters.value = disasters.value.filter((d) => d.id !== 'sim-storm')
+    emit('risk-change', { ...risk.value, location: locationInfo.value })
+  }
+})
+// Picking another earthquake while one is showing swaps it straight away (like the slider)
+watch(demoPick, (key) => {
+  const shown = simQuakeShown()
+  if (key.startsWith('quake') && shown && shown.kind !== key) runScenario(key)
+})
+// What the picked situation would score here (shown before you press Simulate; hidden once it's showing)
+const demoPreview = computed(() => {
+  if (!pickIsQuake.value) return null
+  const shown = simQuakeShown()
+  if (shown && shown.kind === demoPick.value) return null
+  const others = quakes.value.filter((q) => !q.simulated)
+  const r = computeRiskScore({ advisory: advisory.value, quakes: others.concat(simQuake(demoPick.value)), disasters: disasters.value })
+  return r.score + '/100 · ' + r.label
+})
+// Which simulations are on, in words
+const activeSims = computed(() => {
+  const list = []
+  const q = simQuakeShown()
+  if (q) list.push(DEMO_QUAKES[q.kind].label.replace(/ \(.*/, '') + ', ' + q.distanceKm + ' km away')
+  if (isOn('storm')) list.push('Typhoon')
+  if (isOn('advisory')) list.push('Travel advice Level 3')
+  if (demoOffline.value) list.push('Offline')
+  return list
+})
+
+// Back to the real data
+function clearSimulation() {
+  for (const t of storyTimers) clearTimeout(t)
+  storyTimers = []
+  playing.value = false
+  quakes.value = quakes.value.filter((q) => !q.simulated)
+  disasters.value = disasters.value.filter((d) => !d.simulated)
+  if (advisory.value && advisory.value.simulated) advisory.value = realAdvisory || null
+  realAdvisory = undefined
+  demoOffline.value = false
+  highlight.value = ''
+  openGuide.value = 'quake'
+  emit('risk-change', { ...risk.value, location: locationInfo.value })
+}
+
+// The story: all clear -> the situation picked below (an earthquake at the distance on the slider,
+// plus the typhoon if it's ticked) -> "I'm safe". Only what you picked is shown.
+function playStory() {
+  if (!position.value) return
+  const pick = demoPick.value
+  clearSimulation()
+  playing.value = true
+  scrollTo(bannerEl.value)
+  storyTimers.push(setTimeout(() => {
+    if (alsoStorm.value && pick !== 'storm') runScenario('storm')
+    runScenario(pick)
+  }, 2500))
+  storyTimers.push(setTimeout(() => {
+    scrollTo(actionsEl.value)
+    flash('actions')
+    playing.value = false
+  }, 6500))
 }
 
 /* ---------- "I'm safe" ---------- */
@@ -503,6 +683,8 @@ onMounted(() => {
 onUnmounted(() => {
   stopLive()
   clearInterval(timerId)
+  for (const t of storyTimers) clearTimeout(t)
+  clearTimeout(highlightTimer)
 })
 </script>
 
@@ -513,20 +695,26 @@ onUnmounted(() => {
       <button v-for="o in areaOptions" :key="o.key" type="button" class="sf-pill" :class="{ on: area === o.key }"
         :aria-pressed="area === o.key" @click="useArea(o.key)">{{ o.label }}</button>
       <span v-if="area.startsWith('demo-')" class="sf-pill on">🎬 {{ DEMO_LOCATIONS[area.slice(5)].label }}</span>
-      <button type="button" class="sf-ghost ms-auto" title="Get a browser notification for new alerts" @click="enableNotifications">🔔 Alerts</button>
     </div>
     <p v-if="notice" class="sf-notice" role="status">{{ notice }}</p>
 
     <!-- ===== 1. Status banner (NERV style) ===== -->
-    <section class="sf-banner" :class="'is-' + risk.state" aria-live="polite" data-testid="risk-card">
+    <section ref="bannerEl" class="sf-banner" :class="['is-' + risk.state, { offline: demoOffline }]" aria-live="polite" data-testid="risk-card">
       <div class="sf-banner-main">
         <span class="sf-state-dot" aria-hidden="true"></span>
         <div class="flex-grow-1">
-          <p class="sf-kicker">{{ risk.state === 'clear' ? 'Normal' : risk.label + ' risk' }} · {{ placeName }}{{ locationInfo && locationInfo.countryName ? ', ' + locationInfo.countryName : '' }}</p>
-          <h3 class="sf-banner-title">{{ loading && !lastUpdated ? 'Checking…' : !lastUpdated ? "Couldn't check yet" : bannerTitle }}</h3>
+          <p class="sf-kicker">{{ demoOffline ? 'Offline' : risk.state === 'clear' ? 'Normal' : risk.label + ' risk' }} · {{ placeName }}{{ locationInfo && locationInfo.countryName ? ', ' + locationInfo.countryName : '' }}</p>
+          <h3 class="sf-banner-title">{{ demoOffline ? "You're offline" : loading && !lastUpdated ? 'Checking…' : !lastUpdated ? "Couldn't check yet" : bannerTitle }}<span v-if="demoOffline" class="sf-tag">demo</span></h3>
+          <!-- (demo) offline: say what still works -->
+          <p v-if="demoOffline" class="sf-banner-text">
+            Showing the last check{{ lastUpdated ? ' from ' + lastUpdated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '' }}. New alerts can't arrive until you're back online, but where you're staying and the guides below still work.
+          </p>
           <!-- Nothing loaded (e.g. offline): don't claim "All clear" -->
-          <p v-if="!lastUpdated && !loading" class="sf-banner-text">
+          <p v-else-if="!lastUpdated && !loading" class="sf-banner-text">
             We couldn't reach the safety services, so there's no check for this place yet. Press Refresh to try again.
+          </p>
+          <p v-else-if="risk.state === 'clear' && allAlerts.length" class="sf-banner-text">
+            Recorded in the area, but not strong or close enough to change your plans. Nothing else to report.
           </p>
           <p v-else-if="risk.state === 'clear'" class="sf-banner-text">
             No M4+ earthquakes within 300 km in the last 3 days, and no serious disaster alerts for {{ (locationInfo && locationInfo.countryName) || 'this country' }}.
@@ -554,13 +742,13 @@ onUnmounted(() => {
           <template v-else>Not checked yet</template>
           <template v-if="errors.length"> · couldn't load {{ errors.join(', ') }}</template>
         </span>
-        <button type="button" class="sf-ghost" :disabled="loading" @click="refresh(true)">{{ loading ? 'Checking…' : '↻ Refresh' }}</button>
+        <button type="button" class="sf-ghost" :disabled="loading || demoOffline" @click="refresh(true)">{{ loading ? 'Checking…' : '↻ Refresh' }}</button>
       </div>
     </section>
 
     <div class="sf-grid">
       <!-- ===== 2. Action center ===== -->
-      <section class="sf-card sf-actions" aria-labelledby="sf-act-title">
+      <section ref="actionsEl" class="sf-card sf-actions" :class="{ 'sf-flash': highlight === 'actions' }" aria-labelledby="sf-act-title">
         <h3 id="sf-act-title" class="sf-h">Emergency calls <span class="sf-sub">{{ (locationInfo && locationInfo.countryName) || '' }}</span></h3>
         <div class="sf-calls">
           <a v-for="(l, i) in callLines" :key="l.number" :href="telOf(l.number)" class="sf-call" :class="{ primary: i < 2 && !l.label.includes('Hotline') && !l.label.includes('Tourist') }">
@@ -576,7 +764,7 @@ onUnmounted(() => {
         <h3 class="sf-h mt-3">I'm safe</h3>
         <p class="sf-safe-preview">{{ safeMessage }}</p>
         <div class="sf-safe-btns">
-          <a class="sf-btn wa" :href="'https://wa.me/?text=' + encodeURIComponent(safeMessage)" target="_blank" rel="noopener">💬 WhatsApp</a>
+          <a class="sf-btn wa" :href="'https://wa.me/?text=' + encodeURIComponent(safeMessage)" target="_blank" rel="noopener"><AppIcon name="message" :size="15" /> WhatsApp</a>
           <a class="sf-btn" :href="'sms:?&body=' + encodeURIComponent(safeMessage)">✉️ SMS</a>
           <button type="button" class="sf-btn" @click="copySafe">{{ copied ? 'Copied ✓' : '📋 Copy' }}</button>
           <button v-if="canShare" type="button" class="sf-btn" @click="shareSafe">⋯ Share</button>
@@ -584,8 +772,8 @@ onUnmounted(() => {
       </section>
 
       <!-- ===== 3. Local radar ===== -->
-      <section class="sf-card" aria-labelledby="sf-radar-title">
-        <h3 id="sf-radar-title" class="sf-h">Help nearby</h3>
+      <section class="sf-card" :class="{ 'sf-dim': demoOffline }" aria-labelledby="sf-radar-title">
+        <h3 id="sf-radar-title" class="sf-h">Help nearby <span v-if="demoOffline" class="sf-needs-net">Needs internet</span></h3>
         <p v-if="!position" class="sf-muted">Pick a place above to see help nearby.</p>
         <template v-else>
           <SafetyRadar :center="position" :center-label="stayShown && area.startsWith('dest') && stayShown.lat ? stayShown.name : placeName"
@@ -626,7 +814,7 @@ onUnmounted(() => {
       </section>
 
       <!-- ===== 4. Offline card: where you're staying ===== -->
-      <section class="sf-card sf-taxi-card" :class="{ fullscreen: taxiMode }" aria-labelledby="sf-stay-title">
+      <section class="sf-card sf-taxi-card" :class="{ fullscreen: taxiMode, 'sf-flash': highlight === 'offline' }" aria-labelledby="sf-stay-title">
         <div class="d-flex justify-content-between align-items-center gap-2">
           <h3 id="sf-stay-title" class="sf-h mb-0">Where we're staying</h3>
           <span class="sf-offline" title="Saved in this browser, so it shows without internet">✓ Works offline</span>
@@ -669,9 +857,9 @@ onUnmounted(() => {
       </section>
 
       <!-- ===== Quick guides (static, so they work offline) ===== -->
-      <section class="sf-card" aria-labelledby="sf-guides-title">
+      <section class="sf-card" :class="{ 'sf-flash': highlight === 'guides' || highlight === 'offline' }" aria-labelledby="sf-guides-title">
         <h3 id="sf-guides-title" class="sf-h">If something happens</h3>
-        <details class="sf-guide" open>
+        <details class="sf-guide" :open="openGuide === 'quake'">
           <summary>🫨 Earthquake</summary>
           <ol>
             <li><strong>Drop, cover, hold on:</strong> get under a sturdy table, protect your head.</li>
@@ -680,14 +868,14 @@ onUnmounted(() => {
             <li>Near the coast? If shaking was strong or long, go to high ground at once (tsunami).</li>
           </ol>
         </details>
-        <details class="sf-guide">
+        <details class="sf-guide" :open="openGuide === 'tsunami'">
           <summary>🌊 Tsunami warning</summary>
           <ol>
             <li>Move to high ground or the 3rd floor or higher of a solid building now.</li>
             <li>Don't wait to see the wave and don't go back until the warning is lifted.</li>
           </ol>
         </details>
-        <details class="sf-guide">
+        <details class="sf-guide" :open="openGuide === 'storm'">
           <summary>🌀 Typhoon / heavy rain</summary>
           <ol>
             <li>Stay indoors, away from rivers and slopes. Charge your phone and power bank.</li>
@@ -718,10 +906,10 @@ onUnmounted(() => {
       </section>
 
       <!-- ===== 5. Official advice + how the score works ===== -->
-      <section class="sf-card" aria-labelledby="sf-adv-title">
-        <h3 id="sf-adv-title" class="sf-h">Official travel advice</h3>
+      <section class="sf-card" :class="{ 'sf-flash': highlight === 'advice', 'sf-dim': demoOffline }" aria-labelledby="sf-adv-title">
+        <h3 id="sf-adv-title" class="sf-h">Official travel advice <span v-if="demoOffline" class="sf-needs-net">Needs internet</span></h3>
         <template v-if="advisory">
-          <p class="sf-level" :class="'lvl-' + advisory.level">Level {{ advisory.level }} of 4 · {{ advisory.label }}</p>
+          <p class="sf-level" :class="'lvl-' + advisory.level">Level {{ advisory.level }} of 4 · {{ advisory.label }}<span v-if="advisory.simulated" class="sf-tag">demo</span></p>
           <p v-if="advisory.latestChange" class="small mb-2"><strong>Latest update:</strong> {{ advisory.latestChange }}</p>
           <a :href="advisory.url" target="_blank" rel="noopener" class="sf-link">Read the UK government's advice ↗</a>
         </template>
@@ -729,18 +917,38 @@ onUnmounted(() => {
         <details class="sf-guide mt-3">
           <summary>How the risk score works</summary>
           <p class="small mb-1">We combine three sources into one 0–100 score: the UK travel advice level, earthquakes (stronger, closer and newer count more) and UN/EU disaster alerts.</p>
-          <p class="small mb-0">Official "avoid travel" advice or a Red alert always shows as High or Critical. Sources: gov.uk, USGS, GDACS, OpenStreetMap.</p>
+          <p class="small mb-0">Official "avoid travel" advice or a Red alert always shows as High or Critical, and an Orange alert as at least Moderate. A strong earthquake close by (M6+ within 50 km) is High; a major one (M7+ within 150 km) or a tsunami warning is Critical. Sources: gov.uk, USGS, GDACS, OpenStreetMap.</p>
         </details>
       </section>
     </div>
 
-    <!-- Demo tools for the presentation -->
-    <details class="sf-demo">
+    <!-- Demo tools for the presentation: set up a situation on cue (everything simulated says "demo") -->
+    <details v-if="showDemo" class="sf-demo">
       <summary>🎬 Demo tools</summary>
-      <div class="d-flex flex-wrap gap-2 mt-2">
-        <button v-for="(loc, key) in DEMO_LOCATIONS" :key="key" type="button" class="sf-btn" @click="useArea('demo-' + key)">{{ loc.label }}</button>
-        <button type="button" class="sf-btn danger" :disabled="!position" @click="simulateEarthquake" data-testid="simulate-btn">Simulate M6.2 quake</button>
-        <button type="button" class="sf-btn" @click="clearSimulation">Clear simulation</button>
+      <!-- Pick a situation (earthquakes: also how far away), then play the story -->
+      <div class="sf-demo-row">
+        <span class="sf-demo-label">Situation</span>
+        <CustomDropdown v-model="demoPick" :options="DEMO_OPTIONS" size="sm" aria-label="Situation to simulate" />
+        <label v-if="pickIsQuake" class="sf-demo-km">
+          <span>{{ quakeKm }} km away</span>
+          <input v-model.number="quakeKm" type="range" min="5" max="300" step="5" aria-label="Distance of the earthquake from you, in km">
+        </label>
+        <span v-if="pickIsQuake && demoPreview" class="sf-demo-preview">→ {{ demoPreview }}</span>
+      </div>
+      <div class="sf-demo-row">
+        <label class="sf-demo-check" :class="{ off: demoPick === 'storm' }"
+          :title="demoPick === 'storm' ? 'The typhoon is already the situation picked' : 'Add a typhoon warning on top of the situation'">
+          <input v-model="alsoStorm" type="checkbox" :disabled="demoPick === 'storm'"> 🌀 Add a typhoon
+        </label>
+      </div>
+      <div class="sf-demo-row">
+        <button type="button" class="sf-btn story" :disabled="!position || playing" data-testid="simulate-btn" @click="playStory">{{ playing ? '▶ Playing…' : '▶ Play the whole story' }}</button>
+        <button type="button" class="sf-btn stop" @click="clearSimulation">■ Stop story</button>
+      </div>
+      <p v-if="activeSims.length" class="sf-demo-active">Simulating: {{ activeSims.join(' · ') }}</p>
+      <div class="sf-demo-row">
+        <span class="sf-demo-label">Try another country</span>
+        <CustomDropdown v-model="demoPlace" :options="demoPlaces" size="sm" placeholder="Pick a place" aria-label="Try another country" />
       </div>
     </details>
 
@@ -1029,6 +1237,9 @@ onUnmounted(() => {
   color: #fff;
 }
 .sf-btn.wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #1f8f4e;
   border-color: #25d366;
   color: #fff;
@@ -1306,6 +1517,116 @@ onUnmounted(() => {
 }
 .sf-demo summary {
   cursor: pointer;
+}
+.sf-demo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.sf-demo-km {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sf-demo-km span {
+  min-width: 78px;
+}
+.sf-demo-km input {
+  width: 160px;
+  accent-color: #edae49;
+}
+.sf-demo-preview {
+  font-size: 13px;
+  color: var(--text);
+}
+.sf-demo-active {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--advisory);
+}
+.sf-demo-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sf-demo-check input {
+  width: 17px;
+  height: 17px;
+  accent-color: #edae49;
+  cursor: pointer;
+}
+.sf-demo-check.off {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.sf-demo-check.off input {
+  cursor: not-allowed;
+}
+.sf-demo-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.sf-btn.story {
+  background: #edae49;
+  border-color: #edae49;
+  color: #001d2c;
+}
+.sf-btn.story:hover:not(:disabled) {
+  background: #f3c16f;
+  color: #001d2c;
+}
+/* Stop story: ends it and takes every simulation off (red pill) */
+.sf-btn.stop {
+  background: #d1495b;
+  border-color: #d1495b;
+  color: #fff;
+}
+.sf-btn.stop:hover:not(:disabled) {
+  background: #b83a4c;
+  color: #fff;
+}
+.sf-btn.on {
+  border-color: var(--advisory);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--advisory) 40%, transparent);
+}
+/* (demo) a section lights up for a few seconds when a scenario points at it */
+.sf-flash {
+  border-color: #edae49;
+  animation: sf-flash 1.2s ease-out 3;
+}
+@keyframes sf-flash {
+  0% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.55); }
+  100% { box-shadow: 0 0 0 14px rgba(237, 174, 73, 0); }
+}
+/* (demo) offline: live sections fade, with a "Needs internet" tag */
+.sf-dim {
+  opacity: 0.45;
+  filter: grayscale(0.7);
+  transition: opacity 0.3s, filter 0.3s;
+}
+.sf-needs-net {
+  margin-left: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--glass);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  vertical-align: middle;
+}
+.sf-banner.offline {
+  --tone: #8a9aa6;
+  filter: grayscale(0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sf-flash { animation: none; box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.5); }
 }
 
 /* Toasts */

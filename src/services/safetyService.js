@@ -267,20 +267,27 @@ export function computeRiskScore({ advisory, quakes = [], disasters = [] }) {
     score += Math.max(0, q.magnitude - 3) * 8 * distanceFactor * recencyFactor
   }
   let anyRed = false
+  let anyOrange = false
   for (const d of disasters) {
     score += d.alertLevel === 'Red' ? 30 : 15
     if (d.alertLevel === 'Red') anyRed = true
+    if (d.alertLevel === 'Orange') anyOrange = true
   }
   // A strong, close, recent quake is always worth a warning, whatever the formula says
   for (const q of quakes) {
     const hoursAgo = (Date.now() - q.time.getTime()) / 3600000
     if (q.distanceKm <= 100 && hoursAgo <= 24 && q.magnitude >= 5.5) score = Math.max(score, 30)
     if (q.distanceKm <= 100 && hoursAgo <= 24 && q.magnitude >= 6.5) score = Math.max(score, 50)
-    if (q.tsunami && hoursAgo <= 24) score = Math.max(score, 50)
+    // Strong and close: buildings and trains are likely affected, aftershocks expected
+    if (q.distanceKm <= 50 && hoursAgo <= 24 && q.magnitude >= 6) score = Math.max(score, 50)
+    // Major (wide-area damage), or a tsunami (move to high ground now): Critical
+    if (q.distanceKm <= 150 && hoursAgo <= 24 && q.magnitude >= 7) score = Math.max(score, 75)
+    if (q.tsunami && hoursAgo <= 24) score = Math.max(score, 75)
   }
   if (advisory && advisory.level === 3) score = Math.max(score, 50)
   if (advisory && advisory.level === 4) score = Math.max(score, 75)
   if (anyRed) score = Math.max(score, 50)
+  if (anyOrange) score = Math.max(score, 25) // an Orange alert in the country is always worth a heads-up
   score = Math.min(100, Math.round(score))
 
   // state drives the banner colours: clear (green), advisory (amber), warning (red), critical (purple)
