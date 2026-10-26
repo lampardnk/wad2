@@ -25,7 +25,7 @@ router.get('/', requireAuth, async (req, res) => {
 })
 
 // PUT /api/preferences  { dayStart, dayEnd, crowdSensitivity, travelBuffer, travelModes?, maxWalk?, travelPriority? }
-// (the Getting around ones are optional: left out = keep what's saved)
+// (the Transport ones are optional: left out = keep what's saved)
 router.put('/', requireAuth, async (req, res) => {
   const dayStart = Number(req.body.dayStart)
   const dayEnd = Number(req.body.dayEnd)

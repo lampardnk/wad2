@@ -89,8 +89,9 @@
           <h2 class="trip-panel-title"><span class="trip-panel-icon"><TabIcon :name="currentTab.key" :size="18" /></span> {{ currentTab.title }}</h2>
         </div>
 
-        <!-- Safety banner: shown on every tab when SafetyLayer reports High/Critical risk -->
-        <div v-if="safetyWarning" class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+        <!-- Safety banner: shown on every other tab when SafetyLayer reports High/Critical risk
+             (not on Safety itself: its own banner already says it, with more detail) -->
+        <div v-if="safetyWarning && activeTab !== 'safety'" class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
           <span><AppIcon name="alert" :size="16" /> {{ safetyWarning }}</span>
           <button class="btn btn-sm btn-outline-danger" @click="activeTab = 'safety'">View safety</button>
         </div>
@@ -112,7 +113,7 @@
                 <strong>Itinerary</strong>: pick a day and drag your saved places onto it.
                 Each stop shows its weather and crowds (tap them for options), and <em><AppIcon name="sparkles" :size="14" /> Optimize Route</em> re-orders the whole day.
               </li>
-              <li>The other sections in the top bar cover packing, expenses, photos, safety and getting around.</li>
+              <li>The other sections in the top bar cover packing, expenses, photos, safety and transport.</li>
             </ol>
             <button type="button" class="btn btn-primary btn-sm" @click="showGuide = false">Got it</button>
           </section>
@@ -244,7 +245,7 @@ export default {
   props: { id: { type: String, default: 'seoul' } }, // from the route /trip/:id
   data() {
     return {
-      prefs, // Settings → Getting around (shared, loaded by the itinerary)
+      prefs, // Settings → Transport (shared, loaded by the itinerary)
       activeTab: 'itinerary',
       placesTab: 'wishlist', // inside Places: 'wishlist' | 'vote'
       returnTo: null, // { date, day } when Places was opened from the itinerary's "Add stop"
@@ -259,7 +260,7 @@ export default {
         { key: 'safety', icon: '🛡', label: 'Safety', title: 'Safety', desc: 'Live alerts and risk levels near you.', testid: 'safety-tab' },
         { key: 'crew', icon: '👥', label: 'Crew', title: 'Trip crew', desc: '' },
         { key: 'recap', icon: '🗺', label: 'Recap', title: 'Trip recap', desc: 'Your finished trip in numbers, with the route on a map.' },
-        { key: 'travelOptions', icon: '🚆', label: 'Getting around', short: 'Transport', title: 'Getting around', desc: 'Airport transfers, day trips and other journeys. Travel between stops is planned in the Itinerary.' }
+        { key: 'travelOptions', icon: '🚆', label: 'Transport', short: 'Transport', title: 'Transport', desc: 'Airport transfers, day trips and other journeys. Travel between stops is planned in the Itinerary.' }
       ],
       // Shown once, after setting up the user's first trip
       showGuide: this.$route.query.welcome === '1',

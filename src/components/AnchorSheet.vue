@@ -48,6 +48,19 @@
               </div>
             </div>
 
+            <!-- Hotels after the first day: the whole trip, or a hotel change from this day -->
+            <fieldset v-if="anchor.kind === 'stay' && !anchor.firstDay" class="an-scope">
+              <legend class="an-label">Stay here</legend>
+              <label class="an-choice" :class="{ on: scope === 'onward' }">
+                <input v-model="scope" type="radio" value="onward">
+                <span><strong>From {{ anchor.dayLabel }}</strong><small>A hotel change: earlier days keep their hotel</small></span>
+              </label>
+              <label class="an-choice" :class="{ on: scope === 'trip' }">
+                <input v-model="scope" type="radio" value="trip">
+                <span><strong>Every night of the trip</strong><small>One hotel for the whole trip</small></span>
+              </label>
+            </fieldset>
+
             <p class="an-note">{{ note }}</p>
             <p v-if="error" class="an-hint err" role="alert">{{ error }}</p>
           </div>
@@ -86,15 +99,15 @@ const searchError = ref('')
 const flight = ref('')
 const time = ref('')
 const error = ref('')
+const scope = ref('trip') // hotels: 'trip' (every night) or 'onward' (from this day)
 
-const cityName = computed(() => (props.anchor && props.anchor.city ? props.anchor.city.split(', ')[0] : ''))
 const kicker = computed(() => ({ stay: 'Where you\'re staying', arrive: 'Your arrival', depart: 'Your flight home' })[props.anchor.kind])
 const title = computed(() => {
-  if (props.anchor.kind === 'stay') return cityName.value ? 'Your hotel in ' + cityName.value : 'Your hotel'
+  if (props.anchor.kind === 'stay') return 'Your hotel'
   return props.anchor.kind === 'arrive' ? 'Which airport do you land at?' : 'Which airport do you fly home from?'
 })
 const note = computed(() => (props.anchor.kind === 'stay'
-  ? 'Every day' + (cityName.value ? ' in ' + cityName.value : '') + ' starts and ends here, so the plan counts the trip there and back. Everyone on the trip sees it.'
+  ? 'Each day starts and ends here until you change hotel, so the plan counts the trip there and back. Everyone on the trip sees it.'
   : 'The day is planned around your flight, and it\'s saved on your Crew card too.'))
 
 // Fill in each time it opens
@@ -106,6 +119,8 @@ watch(() => props.anchor, (a) => {
   searchError.value = ''
   error.value = ''
   flight.value = a.flight || ''
+  // Changing hotel on a later day of a trip that has one already: most likely a hotel change
+  scope.value = a.kind === 'stay' && !a.firstDay && a.hasHotels ? 'onward' : 'trip'
   time.value = a.time || ''
   nextTick(() => {
     if (box.value) box.value.focus()
@@ -154,7 +169,7 @@ function save() {
     error.value = 'Add the time, so the day can be planned around it.'
     return
   }
-  emit('save', { place: place.value, flight: flight.value.trim().toUpperCase(), time: time.value })
+  emit('save', { place: place.value, flight: flight.value.trim().toUpperCase(), time: time.value, scope: scope.value })
 }
 </script>
 
@@ -242,7 +257,7 @@ function save() {
   width: 100%;
   border: 1.5px solid transparent;
   border-radius: 14px;
-  background: #fff;
+  background: #fbf5ea;
   padding: 11px 38px 11px 36px;
   font: inherit;
   font-size: 14px;
@@ -277,7 +292,7 @@ function save() {
   gap: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: #fff;
+  background: #fbf5ea;
   border: 1.5px solid #edae49;
 }
 .an-picked-icon {
@@ -306,7 +321,7 @@ function save() {
   margin: 8px 0 0;
   padding: 6px;
   border-radius: 16px;
-  background: #fff;
+  background: #fbf5ea;
   border: 1px solid #ece4d6;
 }
 .an-result {
@@ -341,6 +356,45 @@ function save() {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+.an-scope {
+  margin: 14px 0 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.an-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid #ece4d6;
+  border-radius: 14px;
+  background: #fbf5ea;
+  cursor: pointer;
+}
+.an-choice.on {
+  border-color: #edae49;
+  background: #fbefd9;
+}
+.an-choice input {
+  margin-top: 3px;
+  accent-color: #c98a1e;
+}
+.an-choice span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.an-choice strong {
+  font-size: 14px;
+  color: #001d2c;
+}
+.an-choice small {
+  font-size: 12.5px;
+  color: #5a6b78;
+}
 .an-note {
   margin: 14px 0 0;
   font-size: 12.5px;
@@ -359,7 +413,7 @@ function save() {
 .an-btn {
   border: 1.5px solid #e6dfd2;
   border-radius: 999px;
-  background: #fff;
+  background: #fbf5ea;
   color: #003d5b;
   padding: 9px 18px;
   font-weight: 700;

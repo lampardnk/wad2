@@ -180,8 +180,8 @@
           <p v-if="paceError" class="st-err" role="alert">{{ paceError }}</p>
         </div>
 
-        <!-- ===== Getting around: how the itinerary suggests travelling between stops ===== -->
-        <h2 id="getting-around" class="st-group-title">Getting Around</h2>
+        <!-- ===== Transport: how the itinerary suggests travelling between stops ===== -->
+        <h2 id="getting-around" class="st-group-title">Transport</h2>
         <div class="st-group">
           <div class="st-row stack">
             <span class="st-row-text">
@@ -361,7 +361,7 @@ const bufferChoices = [
 ]
 const pace = reactive({ ...prefs, travelModes: (prefs.travelModes || []).slice() })
 
-// ----- Getting around -----
+// ----- Transport -----
 const TRAVEL_CHOICES = [
   { value: 'walk', label: 'Walking', icon: 'footprints' },
   { value: 'transit', label: 'Public transport', icon: 'train' },
@@ -902,7 +902,7 @@ async function deleteAccount() {
   }
 }
 
-/* Getting around: ways to travel as toggle chips */
+/* Transport: ways to travel as toggle chips */
 .st-modes {
   display: flex;
   flex-wrap: wrap;

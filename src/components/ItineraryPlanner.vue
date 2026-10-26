@@ -198,7 +198,7 @@
                 <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="startAnchor && startAnchor.kind === 'arrive' ? 'plane' : 'door'" :size="16" /></span>
                 <span class="ip-anchor-text">
                   <small>{{ startCaption }}</small>
-                  <strong>{{ startAnchor ? startAnchor.name : 'Add where you\'re staying' + (cityName ? ' in ' + cityName : '') }}</strong>
+                  <strong>{{ startAnchor ? startAnchor.name : 'Add where you\'re staying' }}</strong>
                 </span>
                 <span class="ip-anchor-edit">{{ startAnchor ? 'Change' : 'Add' }}</span>
               </button>
@@ -283,6 +283,10 @@
                       <small v-if="wasAt(it) !== null" class="ip-was">was {{ formatHour(wasAt(it)) }}</small>
                     </span>
                     <h4 class="ip-name">{{ it.stop.name }}</h4>
+                    <p v-if="it.stop.kind === 'flight' && it.stop.flight" class="ip-flight-times">
+                      <AppIcon name="plane" :size="13" /> Takes off {{ formatHour(hourOf(it.stop.flight.dep)) }} · lands {{ formatHour(hourOf(it.stop.flight.arr)) }}<template v-if="it.stop.flight.number"> · {{ it.stop.flight.number }}</template>
+                      · be at the airport {{ it.stop.flight.intl ? '2.5 h' : '1.5 h' }} before
+                    </p>
                     <div class="ip-chips">
                       <span v-if="live && live.id === it.stop.id" class="ip-live-badge" :class="live.state">{{ live.state === 'now' ? '● Now' : 'Up next' }}</span>
                       <span class="ip-chip">{{ categoryOf(it.stop).label }}</span>
@@ -319,7 +323,7 @@
                         <circle cx="12" cy="12" r="9.5" /><path d="M9 9l6 6M15 9l-6 6" />
                       </svg>
                     </button>
-                    <button type="button" class="ip-lock" :class="{ on: it.stop.locked }" :aria-pressed="it.stop.locked" :disabled="previewing"
+                    <button v-if="it.stop.kind !== 'flight'" type="button" class="ip-lock" :class="{ on: it.stop.locked }" :aria-pressed="it.stop.locked" :disabled="previewing"
                       :aria-label="(it.stop.locked ? 'Unlock ' : 'Lock ') + it.stop.name" :title="it.stop.locked ? 'Fixed time (reservation)' : 'Lock this time'"
                       @click="toggleLock(it.stop)"><AppIcon :name="it.stop.locked ? 'lock' : 'unlock'" :size="17" /></button>
                     <button type="button" class="ip-go" :aria-label="'Show ' + it.stop.name + ' on the map'" title="Show on map" @click="openOnMap(it.stop)">
@@ -340,26 +344,44 @@
               <button v-if="endLeg" type="button" class="ip-leg clickable" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
                 <AppIcon :name="modeIcon(endLeg.mode)" :size="13" /> {{ anchorLegText(endLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
-              <button type="button" class="ip-anchor" :class="{ empty: !endAnchor }" @click="editAnchor('end')">
-                <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="endAnchor && endAnchor.kind === 'depart' ? 'plane' : 'door'" :size="16" /></span>
-                <span class="ip-anchor-text">
-                  <small>{{ endCaption }}</small>
-                  <strong>{{ endAnchor ? endAnchor.name : 'Add where you\'re staying' + (cityName ? ' in ' + cityName : '') }}</strong>
-                </span>
-                <span class="ip-anchor-edit">{{ endAnchor ? 'Change' : 'Add' }}</span>
-              </button>
-<button v-if="dayIndex === dayList.length - 1 && dayList.length > 1 && !departureToday" type="button" class="ip-flight-card" @click="editAnchor('depart')">
-                <span class="ip-flight-icon" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
-                <span class="ip-anchor-text">
-                  <strong>Flying home today?</strong>
-                  <small>Add your flight and the day ends in time to get to the airport</small>
-                </span>
-                <span class="ip-flight-btn">Add flight</span>
-              </button>
+              <!-- Last day, nothing set yet: one question, two answers (the flight home first: most people fly out) -->
+              <div v-if="isLastDay && !endAnchor" class="ip-end-choice" role="group" aria-labelledby="ip-end-q">
+                <p id="ip-end-q" class="ip-end-q">Where does the day end?</p>
+                <div class="ip-end-options">
+                  <button type="button" class="ip-end-option main" @click="editAnchor('depart')">
+                    <span class="ip-flight-icon" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
+                    <span class="ip-anchor-text">
+                      <strong>Flight home</strong>
+                      <small>The day ends in time to get to the airport</small>
+                    </span>
+                  </button>
+                  <button type="button" class="ip-end-option" @click="editAnchor('end')">
+                    <span class="ip-anchor-icon" aria-hidden="true"><AppIcon name="door" :size="16" /></span>
+                    <span class="ip-anchor-text">
+                      <strong>Back to the hotel</strong>
+                      <small>Staying on, or flying out another day</small>
+                    </span>
+                  </button>
+                </div>
+              </div>
+              <template v-else>
+                <button type="button" class="ip-anchor" :class="{ empty: !endAnchor }" @click="editAnchor('end')">
+                  <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="endAnchor && endAnchor.kind === 'depart' ? 'plane' : 'door'" :size="16" /></span>
+                  <span class="ip-anchor-text">
+                    <small>{{ endCaption }}</small>
+                    <strong>{{ endAnchor ? endAnchor.name : 'Add where you\'re staying' }}</strong>
+                  </span>
+                  <span class="ip-anchor-edit">{{ endAnchor ? 'Change' : 'Add' }}</span>
+                </button>
+                <!-- Last day ending at the hotel: switching to the flight home is one tap -->
+                <button v-if="isLastDay && endAnchor && endAnchor.kind === 'stay'" type="button" class="ip-end-switch" @click="editAnchor('depart')">
+                  <AppIcon name="plane" :size="14" /> Flying home today? Add your flight
+                </button>
+              </template>
             </li>
           </ol>
 
-          <button v-if="stopRows.length" type="button" class="ip-add-stop" @click="addPlace">
+          <button v-if="stopRows.length" type="button" class="ip-add-stop" @click="openAddSheet">
             <span aria-hidden="true">⊕</span> Add stop
           </button>
 
@@ -374,28 +396,17 @@
             </div>
 
             <div class="ip-sim-fields">
-              <label class="ip-sim-field">
-                <span>Itinerary stop</span>
+              <div class="ip-sim-field">
+                <label for="ip-sim-stop">Itinerary stop</label>
+                <CustomDropdown id="ip-sim-stop" v-model="simulationStopId" :options="simStopOptions" block
+                  placeholder="Choose a stop" aria-label="Itinerary stop" />
+              </div>
 
-                <select v-model="simulationStopId">
-                  <option
-                    v-for="it in stopRows"
-                    :key="it.stop.id"
-                    :value="it.stop.id"
-                  >
-                    {{ it.stop.name }} — {{ formatHour(it.start) }}
-                  </option>
-                </select>
-              </label>
-
-              <label class="ip-sim-field">
-                <span>Simulate weather</span>
-
-                <select v-model="simulationCondition">
-                  <option value="Rain">🌧️ Rainy</option>
-                  <option value="Clear">☀️ Sunny</option>
-                </select>
-              </label>
+              <div class="ip-sim-field">
+                <label for="ip-sim-weather">Simulate weather</label>
+                <CustomDropdown id="ip-sim-weather" v-model="simulationCondition" :options="SIM_WEATHER" block
+                  aria-label="Simulate weather" />
+              </div>
             </div>
 
             <div class="ip-sim-actions">
@@ -437,12 +448,17 @@
                   v-if="clearTimeOptions.length > 0"
                   class="ip-alt-options"
                 >
-                  <div
+                  <!-- The whole card is the button -->
+                  <button
                     v-for="option in clearTimeOptions"
                     :key="option.hour"
+                    type="button"
                     class="ip-alt-option"
+                    :class="{ chosen: weatherMovePreview && weatherMovePreview.toHour === option.hour }"
+                    :aria-label="'Preview moving it to ' + formatHour(option.hour) + (option.requiresAdjustment ? ', moves ' + option.conflicts.join(', ') : ', no conflicts')"
+                    @click="previewWeatherMove(option)"
                   >
-                    <div>
+                    <span class="ip-alt-body">
                       <span class="ip-alt-time">
                         {{ formatHour(option.hour) }}
                       </span>
@@ -451,30 +467,26 @@
                         ☀️ {{ option.temp }}°
                       </span>
 
-                      <div
+                      <span
                         v-if="option.requiresAdjustment"
                         class="ip-alt-conflict"
                       >
                         ⚠️ Requires itinerary adjustment:
                         {{ option.conflicts.join(', ') }}
-                      </div>
+                      </span>
 
-                      <div
+                      <span
                         v-else
                         class="ip-alt-clear"
                       >
                         ✓ No itinerary conflicts
-                      </div>
-                    </div>
+                      </span>
+                    </span>
 
-                    <button
-                      type="button"
-                      class="ip-preview-btn"
-                      @click="previewWeatherMove(option)"
-                    >
+                    <span class="ip-preview-btn" aria-hidden="true">
                       Preview →
-                    </button>
-                  </div>
+                    </span>
+                  </button>
                 </div>
 
                 <div
@@ -649,7 +661,9 @@
             <h5 class="ip-group-head">
               <span aria-hidden="true">{{ g.flag }}</span> {{ g.label }} <span class="ip-group-count">{{ g.items.length }}</span>
             </h5>
-            <div v-for="w in g.items" :key="w.id" class="ip-wish" draggable="true" @dragstart="startDrag($event, 'wish', w)" @dragend="endDrag">
+            <!-- The whole card adds it to the end of the day (the + does the same, for keyboards) -->
+            <div v-for="w in g.items" :key="w.id" class="ip-wish clickable" draggable="true" :title="'Add ' + w.name + ' to the end of the day'"
+              @dragstart="startDrag($event, 'wish', w)" @dragend="endDrag" @click="wishClick(w, $event)">
               <div class="ip-thumb sm" :class="'cat-' + categoryOf(w).key" :style="thumbStyle(w)" aria-hidden="true">
                 <span v-if="!photos[photoKey(w)]">{{ categoryOf(w).icon }}</span>
               </div>
@@ -694,6 +708,10 @@
     <LegSheet :leg="legView" @close="closeLeg" @choose="chooseTravel" />
     <!-- Your hotel in this city, or your airport -->
     <AnchorSheet :anchor="anchorEdit" @close="anchorEdit = null" @save="saveAnchor" @remove="removeAnchor" />
+    <!-- Add stop: saved places, your hotels, a flight, or finding new places -->
+    <AddStopSheet :open="addOpen" :day-label="'Day ' + (dayIndex + 1) + ' · ' + longDate(dayShown)" :hotels="hotelChoices" :places="placeChoices"
+      :near="dayCity || destinations[0] || ''" @close="addOpen = false" @find="addOpen = false; addPlace()"
+      @add-place="addFromSheet" @add-hotel="addHotelStop" @add-flight="addFlight" />
     <OverflowSheet :open="overflowOpen" :rows="overflowRows" :days="otherDays" :day-number="dayIndex + 1" :reason="dayEndReason"
       :can-add-day="canAddDay" @close="overflowOpen = false" @apply="moveOverflow" @add-day="overflowOpen = false; askAddDay()" />
   </section>
@@ -707,7 +725,7 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, addMealBreaks, defaultDuration, crowdAt, rainDuring,
-  travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL } from '../dayOptimizer.js'
+  travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf } from '../dayOptimizer.js'
 import { PLANNER_SAMPLE } from '../dayOptimizerSample.js'
 import { loadLeaflet } from '../services/leaflet.js'
 import EatDrawer from './EatDrawer.vue'
@@ -717,6 +735,8 @@ import AppIcon from './AppIcon.vue'
 import LegSheet from './LegSheet.vue'
 import AnchorSheet from './AnchorSheet.vue'
 import OverflowSheet from './OverflowSheet.vue'
+import CustomDropdown from './CustomDropdown.vue'
+import AddStopSheet from './AddStopSheet.vue'
 
 const props = defineProps({
   days: { type: Array, default: () => [] },
@@ -736,7 +756,9 @@ const props = defineProps({
   me: { type: String, default: '' },                    // my traveller name (shown on travel choices I make)
   dayCity: { type: String, default: '' },               // the trip city this day is in (e.g. 'Osaka, Japan')
   dayCities: { type: Object, default: () => ({}) },     // { '2026-10-22': 'Osaka, Japan' } for every day
-  stays: { type: Array, default: () => [] },            // hotels, one per city: [{ city, name, address, lat, lon }]
+  stays: { type: Array, default: () => [] },            // hotels by date: [{ from, name, address, lat, lon }]
+  dayStay: { type: Object, default: null },             // tonight's hotel (where the day ends)
+  morningStay: { type: Object, default: null },         // last night's hotel (where the day starts)
   myFlight: { type: Object, default: () => ({}) }       // { arrival: { date, time, flight, place }, departure: {...} } (mine, from Crew)
 })
 const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote', 'travel', 'save-stay', 'save-flight', 'move-stops', 'notice'])
@@ -1033,6 +1055,56 @@ function showSaved() {
     if (first) first.focus({ preventScroll: true })
   })
 }
+// ---------- Add stop (the sheet) ----------
+const addOpen = ref(false)
+function openAddSheet() {
+  if (sampleMode.value) return addPlace()
+  addOpen.value = true
+}
+// Your hotels (each once), e.g. back to the hotel for your bags before an evening flight
+const hotelChoices = computed(() => {
+  const list = []
+  for (const st of props.stays || []) {
+    if (list.some((h) => h.name === st.name)) continue
+    list.push({ name: st.name, address: st.address || '', lat: st.lat, lon: st.lon, sub: st.from ? 'From ' + longDate(st.from) : 'Your hotel' })
+  }
+  return list
+})
+const placeChoices = computed(() => {
+  const list = []
+  for (const w of picks.value) list.push({ ...w, icon: categoryOf(w).icon, sub: categoryOf(w).label + (w.city ? ' · ' + w.city.split(', ')[0] : '') })
+  return list
+})
+function addFromSheet(w) {
+  addOpen.value = false
+  scheduleWish(w, stopRows.value.length)
+}
+function addHotelStop(h) {
+  addOpen.value = false
+  scheduleWish({ id: 'hotel-' + h.name, name: h.name, address: h.address || null, lat: h.lat, lon: h.lon, duration: 0.5, kind: 'hotel' }, stopRows.value.length, true)
+}
+// A flight midway through the trip: a locked block from "be at the airport" until you've collected your bags
+function addFlight(f) {
+  addOpen.value = false
+  const before = f.intl ? 2.5 : 1.5
+  const after = f.intl ? 0.75 : 0.5
+  const dep = hourOf(f.dep)
+  let arr = hourOf(f.arr)
+  if (arr <= dep) arr += 24 // lands after midnight
+  const start = Math.max(0, Math.floor((dep - before) * 4) / 4)
+  const duration = Math.min(23.75 - start, Math.ceil((arr + after - start) * 4) / 4)
+  const short = (name) => name.replace(/ (International )?Airport.*$/i, '').split(',')[0]
+  const w = {
+    id: 'flight-' + Date.now().toString(36), name: 'Flight ' + short(f.from.name) + ' → ' + short(f.to.name),
+    address: null, duration, kind: 'flight', locked: true, lat: f.from.lat, lon: f.from.lon,
+    flight: { from: f.from, to: f.to, dep: f.dep, arr: f.arr, number: f.number, intl: f.intl }
+  }
+  // Only the flight gets a time: the rest of the day stays as planned, and anything that clashes
+  // with the flight is flagged (Optimize Route or "Day is too full" can then move it)
+  emit('schedule', w, [{ id: '__new', hour: start }])
+  showToast(w.name + ' added. Staying somewhere new tonight? Change the hotel at the end of the day.', false)
+}
+
 function addPlace() {
   if (sampleMode.value) drawerOpen.value = true
   else emit('add-place')
@@ -1111,10 +1183,18 @@ function crowdCurve(forecast) {
   return curve
 }
 function toWork(s) {
+  // A flight: a locked block from one airport to another (the next stop is reached from where it lands)
+  if (s.kind === 'flight' && s.flight) {
+    return {
+      id: s.id, name: s.name, address: null, hour: s.hour, outdoor: false, locked: true, kind: 'flight', flight: s.flight,
+      duration: s.duration || 2, lat: s.flight.from.lat, lon: s.flight.from.lon, endLat: s.flight.to.lat, endLon: s.flight.to.lon,
+      crowd: null, popular: false, open: null, close: null, transitSecs: 0, travelMode: null, travelFrom: null, travelBy: ''
+    }
+  }
   const c = s.lat != null ? { lat: s.lat, lon: s.lon } : coordsFor(s)
   const day = s.forecast && s.forecast.days && s.forecast.days[props.dayName]
   return {
-    id: s.id, name: s.name, address: s.address || null, hour: s.hour, outdoor: !!s.outdoor, locked: !!s.locked,
+    id: s.id, name: s.name, address: s.address || null, hour: s.hour, outdoor: !!s.outdoor, locked: !!s.locked, kind: s.kind || null,
   transitSecs: s.transitSecs || 0,
     // Your own time if you set one, else the place's typical visit time, else a guess from what it is
     duration: s.duration || (s.forecast && s.forecast.durationDefault) || defaultDuration(s),
@@ -1184,6 +1264,13 @@ watch([work, unscheduled], () => {
 
 // ---------- demo weather simulation ----------
 const simulationStopId = ref('')
+// For the two dropdowns (the app's own CustomDropdown, like everywhere else)
+const SIM_WEATHER = [{ value: 'Rain', label: 'Rainy', icon: '🌧️' }, { value: 'Clear', label: 'Sunny', icon: '☀️' }]
+const simStopOptions = computed(() => {
+  const list = []
+  for (const it of stopRows.value) list.push({ value: it.stop.id, label: it.stop.name, description: formatHour(it.start) })
+  return list
+})
 const simulationCondition = ref('Rain')
 const weatherSimulation = ref(null)
 const weatherMovePreview = ref(null)
@@ -1330,7 +1417,7 @@ const rain = computed(() =>
     : null)
 )
 
-// ---------- getting around (Settings → Getting around, plus live routes) ----------
+// ---------- transport (Settings → Transport, plus live routes) ----------
 const realLegs = ref({}) // legKey -> { walk: { min, km }, taxi: {...}, ... } from /api/travel/leg
 const asking = ref({})   // legKey -> true while it's being looked up
 const travelPrefs = computed(() => ({
@@ -1342,6 +1429,7 @@ const travelPrefs = computed(() => ({
 }))
 // Real travel times for one leg (in the background lane; kept by the server, so it's quick next time)
 function fetchLeg(a, b) {
+  a = exitOf(a) // after a flight: from the airport it lands at
   if (!a || !b || a.lat == null || b.lat == null || sampleMode.value) return
   const key = legKey(a, b)
   if (realLegs.value[key] || asking.value[key]) return
@@ -1357,14 +1445,19 @@ function fetchLeg(a, b) {
       asking.value = copy
     })
 }
+// Preferences are constraints for Optimize; they do not change saved itinerary times by themselves.
+const opts = computed(() => ({
+  dayStart: props.prefs.dayStart || 8,
+  dayEnd: Math.min(24, props.prefs.dayEnd || 23),
+  buffer: props.prefs.travelBuffer || 0,
+  crowdWeight: { low: 0.5, medium: 1, high: 2 }[props.prefs.crowdSensitivity] || 1
+}))
 // ---------- where the day starts and ends (hotel or airport) ----------
 const cityName = computed(() => (props.dayCity ? props.dayCity.split(', ')[0] : ''))
-// The hotel for this day's city (a one-city trip with one hotel always uses it)
-const dayStay = computed(() => {
-  if (sampleMode.value) return null
-  const list = props.stays || []
-  return list.find((x) => x.city === props.dayCity) || (list.length === 1 && props.destinations.length <= 1 ? list[0] : null)
-})
+// Tonight's hotel and last night's (they differ on the day you change hotel)
+const dayStay = computed(() => (sampleMode.value ? null : props.dayStay))
+const morningStay = computed(() => (sampleMode.value ? null : props.morningStay || props.dayStay))
+const changingHotel = computed(() => !!(dayStay.value && morningStay.value && dayStay.value.from === dayShown.value && morningStay.value.from !== dayStay.value.from))
 const arrivalToday = computed(() => {
   const a = props.myFlight && props.myFlight.arrival
   return !sampleMode.value && a && a.date === dayShown.value ? a : null
@@ -1372,6 +1465,13 @@ const arrivalToday = computed(() => {
 const departureToday = computed(() => {
   const d = props.myFlight && props.myFlight.departure
   return !sampleMode.value && d && d.date === dayShown.value ? d : null
+})
+// A flight home in the small hours of tomorrow (e.g. 3:50 AM): you go to the airport tonight
+const departureTonight = computed(() => {
+  const d = props.myFlight && props.myFlight.departure
+  const next = dayList.value[dayIndex.value + 1]
+  if (sampleMode.value || !d || !next || d.date !== next || !d.place) return null
+  return hourOf(d.time) - 2.5 < opts.value.dayStart ? d : null
 })
 function hourOf(hhmm) {
   const parts = (hhmm || '0:0').split(':').map(Number)
@@ -1381,24 +1481,34 @@ function hourOf(hhmm) {
 const startAnchor = computed(() => {
   const a = arrivalToday.value
   if (a && a.place) return { id: '@start', kind: 'arrive', name: a.place.name, lat: a.place.lat, lon: a.place.lon, hour: hourOf(a.time), flight: a.flight }
-  if (dayStay.value) return { id: '@start', kind: 'stay', name: dayStay.value.name, lat: dayStay.value.lat, lon: dayStay.value.lon }
+  const m = morningStay.value
+  if (m) return { id: '@start', kind: 'stay', name: m.name, lat: m.lat, lon: m.lon }
   return null
 })
 const endAnchor = computed(() => {
   const d = departureToday.value
-  if (d && d.place) return { id: '@end', kind: 'depart', name: d.place.name, lat: d.place.lat, lon: d.place.lon, hour: hourOf(d.time), flight: d.flight }
+  // early = you have to be at the airport before your day would even start: no time for plans today
+  if (d && d.place) return { id: '@end', kind: 'depart', name: d.place.name, lat: d.place.lat, lon: d.place.lon, hour: hourOf(d.time), flight: d.flight, early: hourOf(d.time) - 2.5 < opts.value.dayStart }
+  // tonight = the early flight is tomorrow, so today ends at the airport (hour past midnight, e.g. 27.8 = 3:50 AM)
+  const t = departureTonight.value
+  if (t) return { id: '@end', kind: 'depart', name: t.place.name, lat: t.place.lat, lon: t.place.lon, hour: 24 + hourOf(t.time), flight: t.flight, tonight: true }
   if (dayStay.value) return { id: '@end', kind: 'stay', name: dayStay.value.name, lat: dayStay.value.lat, lon: dayStay.value.lon }
   return null
 })
 const anchorList = computed(() => [startAnchor.value, endAnchor.value].filter(Boolean))
+const isLastDay = computed(() => dayList.value.length > 1 && dayIndex.value === dayList.value.length - 1)
 const startCaption = computed(() => {
   const a = startAnchor.value
   if (a && a.kind === 'arrive') return 'You land at ' + formatHour(a.hour) + (a.flight ? ' · ' + a.flight : '')
+  if (a && changingHotel.value) return 'Check out of your hotel'
   return a ? 'Day starts at your hotel' : 'Where does the day start?'
 })
 const endCaption = computed(() => {
   const a = endAnchor.value
+  if (a && a.kind === 'depart' && a.tonight) return 'Overnight to the airport · flight home at ' + formatHour(a.hour) + ' tomorrow' + (a.flight ? ' · ' + a.flight : '')
+  if (a && a.kind === 'depart' && a.early) return 'Flight home at ' + formatHour(a.hour) + (a.flight ? ' · ' + a.flight : '') + ' · at the airport by ' + formatHour(a.hour - 2)
   if (a && a.kind === 'depart') return 'Flight home at ' + formatHour(a.hour) + (a.flight ? ' · ' + a.flight : '') + ' · be there 2 h before'
+  if (a && changingHotel.value) return 'Check in at your new hotel'
   return a ? 'Back to your hotel' : 'Where does the day end?'
 })
 // The day's hours with the flights: start 45 min after landing (passport and bags),
@@ -1408,7 +1518,9 @@ const dayOpts = computed(() => {
   const s = startAnchor.value
   const e = endAnchor.value
   if (s && s.kind === 'arrive') o.dayStart = Math.max(o.dayStart, Math.ceil((s.hour + 0.75) * 4) / 4)
-  if (e && e.kind === 'depart') o.dayEnd = Math.min(o.dayEnd, Math.max(o.dayStart + 1, e.hour - 2.5))
+  // Leave for the airport 2.5 h before take-off. If that's before the day starts (a 3:50 AM flight),
+  // there's no time for plans at all; a flight early tomorrow only matters if you'd leave before the day ends
+  if (e && e.kind === 'depart') o.dayEnd = Math.min(o.dayEnd, Math.max(o.dayStart, e.hour - 2.5))
   if (s) o.from = s
   if (e) o.end = e
   return o
@@ -1419,6 +1531,8 @@ const dayOpts = computed(() => {
 const dayEndReason = computed(() => {
   const e = endAnchor.value
   const s = startAnchor.value
+  if (e && e.kind === 'depart' && e.early) return 'Your flight home leaves at ' + formatHour(e.hour) + ', so there\'s no time for plans today'
+  if (e && e.kind === 'depart' && e.tonight) return 'You head to the airport tonight for your ' + formatHour(e.hour) + ' flight, and your day ends at ' + formatHour(dayOpts.value.dayEnd)
   if (e && e.kind === 'depart') return 'You need to leave for your ' + formatHour(e.hour) + ' flight by ' + formatHour(dayOpts.value.dayEnd)
   if (s && s.kind === 'arrive') return 'You land at ' + formatHour(s.hour) + ' and your day ends at ' + formatHour(dayOpts.value.dayEnd)
   return 'Your day ends at ' + formatHour(dayOpts.value.dayEnd)
@@ -1616,20 +1730,26 @@ function editAnchor(which) {
     city: props.dayCity || props.destinations[0] || '',
     current: kind === 'stay' ? (dayStay.value ? { name: dayStay.value.name, address: dayStay.value.address, lat: dayStay.value.lat, lon: dayStay.value.lon } : null)
       : (flight && flight.place) || null,
+    // Hotels: for the whole trip, or from this day on (a hotel change); the first day is always the whole trip
+    dayLabel: 'Day ' + (dayIndex.value + 1) + ' (' + longDate(dayShown.value) + ')',
+    firstDay: dayIndex.value === 0,
+    hasHotels: (props.stays || []).length > 0,
+    from: dayStay.value ? dayStay.value.from : dayShown.value,
     flight: flight ? flight.flight || '' : '',
-    time: flight ? flight.time || '' : ''
+    time: flight ? flight.time || '' : '',
+    flightDate: flight && flight.date ? flight.date : dayShown.value, // (an early flight shown on the day before keeps its own date)
   }
 }
 function saveAnchor(data) {
   const a = anchorEdit.value
   anchorEdit.value = null
-  if (a.kind === 'stay') emit('save-stay', a.city, data.place)
-  else emit('save-flight', a.kind, { date: dayShown.value, time: data.time, flight: data.flight, place: data.place })
+  if (a.kind === 'stay') emit('save-stay', { place: data.place, scope: a.firstDay ? 'trip' : data.scope, from: dayShown.value })
+  else emit('save-flight', a.kind, { date: a.flightDate || dayShown.value, time: data.time, flight: data.flight, place: data.place })
 }
 function removeAnchor() {
   const a = anchorEdit.value
   anchorEdit.value = null
-  if (a.kind === 'stay') emit('save-stay', a.city, null)
+  if (a.kind === 'stay') emit('save-stay', { place: null, from: a.from })
   else emit('save-flight', a.kind, null)
 }
 
@@ -1648,13 +1768,6 @@ watch(() => dayShown.value + '|' + props.stops.map((s) => s.id + s.hour + s.lock
 const phase = ref('')
 const phaseText = computed(() => ({ route: 'Analyzing route…', forecast: 'Checking forecast…', reorder: 'Reordering…' })[phase.value] || 'Optimize Route')
 const pause = (ms) => new Promise((r) => setTimeout(r, ms))
-// Preferences are constraints for Optimize; they do not change saved itinerary times by themselves.
-const opts = computed(() => ({
-  dayStart: props.prefs.dayStart || 8,
-  dayEnd: Math.min(24, props.prefs.dayEnd || 23),
-  buffer: props.prefs.travelBuffer || 0,
-  crowdWeight: { low: 0.5, medium: 1, high: 2 }[props.prefs.crowdSensitivity] || 1
-}))
 
 // ---------- flight days ----------
 // Preferences never move saved stops by themselves: they guide Optimize Route and the warnings
@@ -2029,6 +2142,12 @@ function scheduleWish(w, slot, confirmed = false, roomOk = false) {
   }
 }
 
+// A tap on a saved place's card adds it to the end of the day (its + button handles its own click)
+function wishClick(w, event) {
+  if (event.target.closest('button')) return
+  scheduleWish(w, stopRows.value.length)
+}
+
 function dropOnDrawer() {
   const d = drag.value
   endDrag()
@@ -2046,6 +2165,8 @@ function unschedule(stop) {
   } else {
     emit('unschedule', stop.id)
   }
+  // A flight or a hotel visit just comes off the day; places go back to Saved places
+  if (stop.kind === 'flight' || stop.kind === 'hotel') return showToast(stop.name + ' removed from the day')
   drawerOpen.value = true
   showToast(stop.name + ' moved back to Saved places')
 }
@@ -2078,12 +2199,16 @@ const CATEGORIES = [
   { key: 'nature', label: 'Nature', icon: '🌿', words: ['park', 'garden', 'forest', 'grove', 'bamboo', 'mountain', 'beach', 'lake', 'river', 'hike', 'trail', 'falls', 'waterfall', 'island'] }
 ]
 const SIGHT = { key: 'sight', label: 'Sight', icon: '📍' }
+const FLIGHT_CAT = { key: 'transport', label: 'Flight', icon: '✈️' }
+const HOTEL_CAT = { key: 'hotel', label: 'Hotel', icon: '🏨' }
 // The type a place was saved with in Places (from OpenStreetMap) beats guessing from the name
 const TYPE_TO_CATEGORY = {
   museum: 'culture', gallery: 'culture', heritage: 'culture', food: 'food', shop: 'shopping',
   park: 'nature', zoo: 'nature', transport: 'transport'
 }
 function categoryOf(s) {
+  if (s.kind === 'flight') return FLIGHT_CAT
+  if (s.kind === 'hotel') return HOTEL_CAT
   const list = sampleMode.value ? sample.value.wishlist : props.wishlist
   const saved = s.type ? s : list.find((w) => w.name.toLowerCase() === (s.name || '').toLowerCase())
   const fromType = saved && TYPE_TO_CATEGORY[saved.type]
@@ -2177,7 +2302,7 @@ const legView = computed(() => {
   const fromIt = rows.find((x) => x.stop.id === legOpen.value.fromId)
   const toIt = rows.find((x) => x.stop.id === legOpen.value.toId)
   if (!fromIt || !toIt || fromIt.stop.lat == null || toIt.stop.lat == null) return null
-  const a = fromIt.stop
+  const a = exitOf(fromIt.stop)
   const b = toIt.stop
   const tp = travelPrefs.value
   const options = travelOptions(a, b, tp)
@@ -2197,7 +2322,7 @@ const legView = computed(() => {
 function anchorLegView(which) {
   const rows = stopRows.value
   if (!rows.length) return null
-  const a = which === 'start' ? startAnchor.value : rows[rows.length - 1].stop
+  const a = which === 'start' ? startAnchor.value : exitOf(rows[rows.length - 1].stop)
   const b = which === 'start' ? rows[0].stop : endAnchor.value
   if (!a || !b || a.lat == null || b.lat == null) return null
   const tp = travelPrefs.value
@@ -2264,8 +2389,9 @@ function dayWarnings(it) {
   }
   for (const w of warningsFor(it, rain.value, o)) {
     if (w.icon === '🌅' && landing) continue
+    if (w.icon === '🍽' && leaving && e.early) continue // no day today at all: "no time for lunch" is beside the point
     if (w.icon === '⏰' && leaving) {
-      out.push({ icon: '✈️', text: 'Too late for your ' + formatHour(e.hour) + ' flight home' })
+      out.push({ icon: '✈️', text: e.early ? 'No time today: your flight home leaves at ' + formatHour(e.hour) : 'Too late for your ' + formatHour(e.hour) + ' flight home' })
       continue
     }
     out.push(w)
@@ -3637,6 +3763,75 @@ function hoursText(stop) {
   font-weight: 700;
   color: #00798c;
 }
+/* Last day: "Where does the day end?" with two answers side by side */
+.ip-end-choice {
+  width: 100%;
+  max-width: 520px;
+  padding: 12px;
+  border: 1.5px dashed #e3d6bf;
+  border-radius: 18px;
+}
+.ip-end-q {
+  margin: 0 0 8px 4px;
+  font-size: 12.5px;
+  color: #5a6b78;
+}
+.ip-end-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ip-end-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid #ece4d6;
+  border-radius: 14px;
+  background: #fbf5ea;
+  text-align: left;
+  color: #001d2c;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.ip-end-option.main {
+  background: #fbefd9;
+  border-color: #f3d29a;
+}
+.ip-end-option:hover {
+  border-color: #edae49;
+  box-shadow: 0 6px 16px rgba(201, 138, 30, 0.16);
+  transform: translateY(-1px);
+}
+.ip-end-option .ip-anchor-text strong {
+  white-space: normal;
+}
+.ip-end-option:focus-visible,
+.ip-end-switch:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.7);
+  outline-offset: 2px;
+}
+.ip-end-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1.5px solid #f3d29a;
+  border-radius: 999px;
+  background: #fbefd9;
+  color: #7a4b00;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ip-end-switch:hover {
+  border-color: #edae49;
+}
+@media (max-width: 480px) {
+  .ip-end-options { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ip-end-option { transition: none; }
+  .ip-end-option:hover { transform: none; }
+}
 /* "Landing today? / Flying home today?": a clear card with its own button, in the sunset colours */
 .ip-flight-card {
   display: flex;
@@ -3868,6 +4063,16 @@ function hoursText(stop) {
   font-weight: 600;
   margin-left: 4px;
 }
+.ip-flight-times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #7a4b00;
+}
 .ip-name {
   font-size: 15px;
   font-weight: 700;
@@ -4023,14 +4228,6 @@ function hoursText(stop) {
   font-weight: 700;
 }
 
-.ip-sim-field select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ded4bd;
-  border-radius: 12px;
-  background: #fffdf8;
-  color: #17324d;
-}
 
 .ip-sim-actions {
   display: flex;
@@ -4138,7 +4335,7 @@ function hoursText(stop) {
   font-weight: 700;
 }
 
-.ip-alt-option > span:nth-child(2) {
+.ip-alt-body > span:nth-child(2) {
   color: #69798a;
   font-size: 12px;
 }
@@ -4162,11 +4359,45 @@ function hoursText(stop) {
 }
 
 .ip-preview-btn {
-  border: none;
-  background: transparent;
   font-weight: 700;
-  cursor: pointer;
   color: inherit;
+}
+/* The clear-time cards are buttons: lift on hover, a ring when picked or focused */
+.ip-alt-option {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.ip-alt-option:hover {
+  border-color: #edae49;
+  box-shadow: 0 6px 16px rgba(0, 61, 91, 0.1);
+  transform: translateY(-1px);
+}
+.ip-alt-option:hover .ip-preview-btn {
+  text-decoration: underline;
+}
+.ip-alt-option.chosen {
+  border-color: #edae49;
+  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.3);
+}
+.ip-alt-option:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.7);
+  outline-offset: 2px;
+}
+.ip-alt-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.ip-alt-conflict,
+.ip-alt-clear {
+  flex-basis: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ip-alt-option { transition: none; }
+  .ip-alt-option:hover { transform: none; }
 }
 
 .ip-move-preview {
@@ -4533,6 +4764,18 @@ function hoursText(stop) {
 .ip-vote:focus-visible {
   background: #edae49;
   color: #001d2c;
+}
+.ip-wish.clickable {
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ip-wish.clickable:hover {
+  border-color: #edae49;
+  box-shadow: 0 4px 12px rgba(0, 61, 91, 0.08);
+}
+.ip-wish.clickable:hover .ip-add {
+  background: var(--primary);
+  color: #fff;
 }
 .ip-add {
   flex: none;

@@ -13,7 +13,8 @@
     <ItineraryPlanner :days="dayList" :selected-date="selectedDate" :stops="itinerary"
       :wishlist="allWishlist" :scheduled-names="scheduledNames" :day-name="tripDay" :weather-blocks="dayWeather" :typical="typicalWeather" :prefs="dayPrefs"
       :can-add-day="!isDemo && !!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :travellers="travellers" :me="me"
-      :day-city="dayCities[selectedDate] || ''" :day-cities="dayCities" :stays="stays" :my-flight="myFlight"
+      :day-city="dayCities[selectedDate] || ''" :day-cities="dayCities" :stays="staysByDate" :my-flight="myFlight"
+      :day-stay="stayOn(selectedDate)" :morning-stay="morningStayOn(selectedDate)"
       @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @notice="showNotice" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
       @apply="applyOptimized" @lock="setLocked" @schedule="scheduleWish" @unschedule="unscheduleStop" @status="plannerStatus = $event"
       @duration="setDuration" @move-day="moveToDay" @move-stops="moveStops" @swap="swapWithWish" @edit="editStop" @travel="setTravel"
@@ -59,7 +60,7 @@ export default {
     initialVersion: { type: Number, default: 0 },
     travellers: { type: Array, default: () => [] }, // names, for the "majority of the group" rule on saved places
     me: { type: String, default: '' },              // my traveller name (shown on travel choices I make)
-    stays: { type: Array, default: () => [] },      // hotels, one per city (each day starts and ends there)
+    stays: { type: Array, default: () => [] },      // hotels: [{ from: 'YYYY-MM-DD', name, address, lat, lon, by }], each until the next one
     crew: { type: Object, default: () => ({}) }     // crew profiles (my flights come from here and are saved there)
   },
   data() {
@@ -273,6 +274,26 @@ export default {
       const departure = own.departure ? { date: own.departure.slice(0, 10), time: own.departure.slice(11, 16), flight: own.departFlight || '', place: own.departFrom || null } : null
       return { arrival, departure }
     },
+    // Hotels in date order, each from its first night until the next one starts (so one hotel
+    // covers the whole trip, and a hotel change midway only needs adding once).
+    // Older trips saved one hotel per city: those start on the first day planned in that city.
+    staysByDate() {
+      const list = []
+      for (const st of this.stays) {
+        let from = st.from || ''
+        if (!from) {
+          for (const d of this.dayList) {
+            if (this.dayCities[d] === st.city) {
+              from = d
+              break
+            }
+          }
+        }
+        list.push({ ...st, from: from || this.dayList[0] || '' })
+      }
+      list.sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0))
+      return list
+    },
     dayList() {
       if (this.startDate) {
         const end = this.endDate || this.startDate
@@ -388,17 +409,46 @@ export default {
     },
     // ---------- hotel and flights, set from the start / end of a day ----------
     // A hotel for one city (place = { name, address, lat, lon }, or null to remove it)
-    async saveStay(city, place) {
-      const list = []
-      for (const st of this.stays) if (st.city !== city) list.push(st)
-      if (place) list.push({ city, ...place, by: this.me })
+    // The hotel you sleep at on this date (the latest one that starts on or before it)
+    stayOn(date) {
+      let found = null
+      for (const st of this.staysByDate) if (st.from <= date) found = st
+      return found
+    },
+    // Last night's hotel (where the day starts): the day before's, or the first day's own.
+    // (Uses the day list, not date maths, so it's safe before a day is picked.)
+    morningStayOn(date) {
+      const i = this.dayList.indexOf(date)
+      return i > 0 ? this.stayOn(this.dayList[i - 1]) : this.stayOn(date)
+    },
+    // A hotel from the itinerary: { place, scope: 'trip' | 'onward', from } (place null = remove the one from `from`)
+    //   trip:   the only hotel, every night of the trip
+    //   onward: a hotel change: from that day until the next change
+    async saveStay(change) {
+      let list = []
+      for (const st of this.staysByDate) {
+        const { city, ...rest } = st // (dates replace the old one-per-city hotels)
+        list.push(rest)
+      }
+      const dayNo = this.dayList.indexOf(change.from) + 1
+      let message = 'Hotel removed.'
+      if (!change.place) {
+        list = list.filter((st) => st.from !== change.from)
+      } else if (change.scope === 'trip') {
+        list = [{ from: this.dayList[0] || change.from, ...change.place, by: this.me }]
+        message = 'Hotel saved: every day of the trip starts and ends there.'
+      } else {
+        list = list.filter((st) => st.from !== change.from)
+        list.push({ from: change.from, ...change.place, by: this.me })
+        message = 'Hotel saved from Day ' + dayNo + ' until your next hotel change.'
+      }
       if (this.isDemo) return this.$emit('stays-change', { stays: list })
       try {
         const res = await axios.put('/api/trips/' + this.tripId + '/stays', list)
         this.$emit('stays-change', res.data)
-        notify(place ? 'Hotel saved: every day in ' + city.split(', ')[0] + ' now starts and ends there.' : 'Hotel removed.', null, 'ok')
+        notify(message, null, 'ok')
       } catch (err) {
-        notify(errorText(err, 'Could not save the hotel.'), () => this.saveStay(city, place))
+        notify(errorText(err, 'Could not save the hotel.'), () => this.saveStay(change))
       }
     },
     // My arrival or flight home (data = { date, time, flight, place }, or null to remove it); saved on my Crew card
@@ -497,13 +547,13 @@ export default {
     // (date = another day, when this one was full: the stop goes after that day's last stop)
     async scheduleWish(w, changes, date) {
       if (date && date !== this.selectedDate) {
-        const later = runtimeStop({ id: newId('s'), name: w.name, address: w.address || null, date, hour: this.nextFreeHour(date), duration: w.duration || 1.5, outdoor: !!w.outdoor })
+        const later = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date, hour: this.nextFreeHour(date), duration: w.duration || 1.5, outdoor: !!w.outdoor })
         trip.stops.push(later)
         await this.applyOptimized([])
         this.loadForecast(later)
         return
       }
-      const stop = runtimeStop({ id: newId('s'), name: w.name, address: w.address || null, date: this.selectedDate, hour: 0, duration: w.duration || 1.5, outdoor: !!w.outdoor })
+      const stop = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date: this.selectedDate, hour: 0, duration: w.duration || 1.5, outdoor: !!w.outdoor })
       trip.stops.push(stop)
       await this.applyOptimized(changes.map((c) => (c.id === '__new' ? { ...c, id: stop.id } : c)))
       this.loadForecast(stop)
@@ -514,7 +564,7 @@ export default {
       if (!stop) return
       this.snapshotDays()
       const known = trip.wishlist.some((w) => w.name.toLowerCase() === stop.name.toLowerCase())
-      if (!known) {
+      if (!known && !stop.kind) { // (flights and hotel visits aren't places to save)
         // A stop added straight to the itinerary: file it under the trip's city when there's only one
         const city = this.destinations.length === 1 ? this.destinations[0] : null
         trip.wishlist.push({ id: newId('w'), name: stop.name, address: stop.address, outdoor: stop.outdoor, type: 'custom', city, votes: [] })
@@ -691,7 +741,12 @@ export default {
 
     // ---------- crowd data ----------
     // Load one stop's crowd forecast (stops without an address aren't tracked)
+    // What a hotel or flight brings along: its map position, its kind, the flight details (flights are locked)
+    extraOf(w) {
+      return { lat: w.lat ?? null, lon: w.lon ?? null, kind: w.kind || null, flight: w.flight || null, locked: w.kind === 'flight' }
+    },
     async loadForecast(item) {
+      if (item.kind === 'flight' || item.kind === 'hotel') return // no crowds or opening hours to look up
       // No address: look it up by name in the trip's city (breaks like "Lunch" are skipped)
       const where = item.address || (/^(breakfast|brunch|lunch|dinner|supper)( break)?$/i.test((item.name || '').trim()) ? '' : this.destination)
       if (!where) return

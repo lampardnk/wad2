@@ -27,6 +27,9 @@ export function runtimeStop(s) {
     outdoor: !!s.outdoor,
     locked: !!s.locked,
     travel: s.travel || null, // how the group chose to get here: { mode, from (stop id), by }
+    lat: s.lat ?? null, lon: s.lon ?? null, // known map position (hotels, flights); others are looked up
+    kind: s.kind || null,     // 'flight' | 'hotel' | null (a place)
+    flight: s.flight || null, // { from: { name, lat, lon }, to: {...}, dep: 'HH:mm', arr: 'HH:mm', number, intl }
     forecast: null, bestTime: null, loading: false, error: '', highlight: false, dataFrom: '',
     transitToNext: null, transitSecs: 0, replacedFrom: null
   }
@@ -73,7 +76,7 @@ export function loadFromServer(saved) {
 // Only the fields worth saving (no crowd data, loading flags, etc.)
 export function savedShape() {
   return {
-    stops: trip.stops.map((s) => ({ id: s.id, name: s.name, address: s.address, date: s.date, hour: s.hour, duration: s.duration, outdoor: s.outdoor, locked: s.locked, travel: s.travel || null })),
+    stops: trip.stops.map((s) => ({ id: s.id, name: s.name, address: s.address, date: s.date, hour: s.hour, duration: s.duration, outdoor: s.outdoor, locked: s.locked, travel: s.travel || null, lat: s.lat ?? null, lon: s.lon ?? null, kind: s.kind || null, flight: s.flight || null })),
     wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address, outdoor: !!w.outdoor, type: w.type || null, city: w.city || null, votes: w.votes || [], duration: w.duration || null, bookedVia: w.bookedVia || null, link: w.link || null }))
   }
 }

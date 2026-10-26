@@ -44,7 +44,7 @@ export function haversineKm(a, b) {
 // ---------- getting from one stop to the next ----------
 // Every way to get there, with its time. Real times come from the server's route lookup (tp.real);
 // until they arrive (or without a map key) we estimate from the straight-line distance.
-// tp ("travel preferences", from Settings → Getting around):
+// tp ("travel preferences", from Settings → Transport):
 //   { modes: ['walk', 'transit', 'taxi', 'bike'], maxWalk: 20, priority: 'balanced' | 'fastest' | 'cheapest',
 //     group: 4 (people sharing a taxi), real: { 'lat,lon>lat,lon': { walk: { min, km }, taxi: {...}, ... } } }
 export const TRAVEL_MODES = {
@@ -70,7 +70,13 @@ function estimateMin(mode, km) {
 }
 
 // Every way from a to b: [{ mode, min, km, live (a real route, not a guess), allowed (in your preferences) }]
+// Where you are when you leave a stop: a flight ends at another airport (endLat/endLon), everything else where it is
+export function exitOf(s) {
+  return s && s.endLat != null ? { ...s, lat: s.endLat, lon: s.endLon } : s
+}
+
 export function travelOptions(a, b, tp = DEFAULT_TRAVEL) {
+  a = exitOf(a)
   if (!a || !b || a.lat == null || b.lat == null) return []
   const km = haversineKm(a, b)
   const real = (tp.real && tp.real[legKey(a, b)]) || {}
@@ -128,6 +134,7 @@ export function recommendTravel(options, tp = DEFAULT_TRAVEL) {
 // from a), otherwise the suggestion. Without tp it's the old simple rule (walk up to 1.3 km, else transit).
 // Unknown places (not on the map) count as 15 min.
 export function travelBetween(a, b, tp) {
+  a = exitOf(a)
   if (!a || !b || a.lat == null || b.lat == null) return { min: 15, mode: 'unknown', km: null }
   if (!tp) {
     const km = haversineKm(a, b)

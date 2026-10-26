@@ -20,7 +20,9 @@
 
     <!-- ===== Profile cards ===== -->
     <div class="cw-grid">
-      <article v-for="p in people" :key="p.name" class="cw-card" :class="{ me: p.name === me, editing: editing === p.name }">
+      <!-- The whole card opens its editor (the Edit button does the same, for keyboards and screen readers) -->
+      <article v-for="p in people" :key="p.name" class="cw-card" :class="{ me: p.name === me, editing: editing === p.name, clickable: p.canEdit && editing !== p.name }"
+        @click="cardClick(p, $event)">
         <template v-if="editing !== p.name">
           <div class="cw-id">
             <span class="cw-avatar" :style="{ background: colorFor(p.name) }" aria-hidden="true">
@@ -303,6 +305,13 @@ export default {
       return list
     },
 
+    // A click anywhere on a card you can edit opens it (not on its own buttons/links, or while it's open)
+    cardClick(p, event) {
+      if (!p.canEdit || this.editing === p.name) return
+      if (event.target.closest('a, button, input, select, textarea, label')) return
+      this.startEdit(p)
+    },
+
     startEdit(p) {
       this.error = ''
       this.editing = p.name
@@ -458,6 +467,9 @@ export default {
   flex-direction: column;
   gap: 10px;
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.cw-card.clickable {
+  cursor: pointer;
 }
 .cw-card:hover {
   transform: translateY(-3px);

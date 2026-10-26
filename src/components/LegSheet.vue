@@ -7,7 +7,7 @@
         <aside ref="panel" class="ls" role="dialog" aria-modal="true" aria-labelledby="ls-title" tabindex="-1">
           <header class="ls-head">
             <div>
-              <p class="ls-kicker">Getting around</p>
+              <p class="ls-kicker">Transport</p>
               <h3 id="ls-title" class="ls-title">To {{ leg.toName }}</h3>
               <p class="ls-sub">From {{ leg.fromName }} · leave around {{ leg.leaveText }}</p>
             </div>
@@ -33,10 +33,10 @@
             <TravelChoices :options="leg.options" :recommended="leg.recommended" :chosen="leg.chosen || ''" :chosen-by="leg.chosenBy"
               :group="leg.group" :maps-url="mapsUrl" :choosable="!leg.readonly" @choose="(m) => emit('choose', m)" />
 
-            <p v-if="leg.readonly" class="ls-note">Travel to and from your hotel or airport follows your Getting around settings.</p>
+            <p v-if="leg.readonly" class="ls-note">Travel to and from your hotel or airport follows your Transport settings.</p>
             <p v-else class="ls-note">Choosing a way re-times the rest of the day. Everyone on the trip sees the choice.</p>
 
-            <!-- What the suggestion is based on (Settings → Getting around) -->
+            <!-- What the suggestion is based on (Settings → Transport) -->
             <div class="ls-prefs">
               <span class="ls-chip">{{ priorityText }}</span>
               <span class="ls-chip">Walk ≤ {{ leg.maxWalk }} min</span>
@@ -153,7 +153,7 @@ watch(() => !!props.leg, (open) => {
   margin: 0 0 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: #fff;
+  background: #fbf5ea;
   border: 1px solid #ece4d6;
   font-size: 14px;
   line-height: 1.45;

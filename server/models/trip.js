@@ -51,7 +51,7 @@ const tripSchema = new mongoose.Schema({
   wishlist: { type: [mongoose.Schema.Types.Mixed], default: [] },
   // Where the group sleeps, one per city (set from the itinerary): { city, name, address, lat, lon, by }
   stays: { type: [mongoose.Schema.Types.Mixed], default: [] },
-  // "Other journeys" (Getting around tab): { id, from, to, mode, min, date, by }
+  // "Other journeys" (Transport tab): { id, from, to, mode, min, date, by }
   journeys: { type: [mongoose.Schema.Types.Mixed], default: [] },
 
   // Notes the crew leave on a stop ("book ahead, it sells out"). Kept apart from the stops,

@@ -142,10 +142,29 @@ function cleanStops(list) {
     if (s.travel && TRAVEL_MODES.includes(s.travel.mode) && typeof s.travel.from === 'string') {
       travel = { mode: s.travel.mode, from: s.travel.from.slice(0, 40), by: String(s.travel.by || '').slice(0, 40) }
     }
+    // Where it is on the map (hotels, flights), and what kind of stop it is
+    const lat = Number(s.lat)
+    const lon = Number(s.lon)
+    const point = (p) => (p && typeof p.name === 'string' && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lon))
+      ? { name: p.name.trim().slice(0, 120), lat: Number(p.lat), lon: Number(p.lon) } : null)
+    let kind = s.kind === 'flight' || s.kind === 'hotel' ? s.kind : null
+    let flight = null
+    // A flight in the middle of the trip: from one airport to another (it's a locked block on its day)
+    if (kind === 'flight') {
+      const f = s.flight || {}
+      const TIME = /^\d{2}:\d{2}$/
+      if (point(f.from) && point(f.to) && TIME.test(f.dep) && TIME.test(f.arr)) {
+        flight = { from: point(f.from), to: point(f.to), dep: f.dep, arr: f.arr, number: String(f.number || '').trim().slice(0, 12), intl: !!f.intl }
+      } else {
+        kind = null
+      }
+    }
     out.push({
       id: String(s.id || new mongoose.Types.ObjectId()).slice(0, 40),
       name, address, date: s.date, hour, duration,
-      outdoor: !!s.outdoor, locked: !!s.locked, travel
+      outdoor: !!s.outdoor, locked: !!s.locked || kind === 'flight', travel,
+      lat: Number.isFinite(lat) && s.lat !== null ? lat : null, lon: Number.isFinite(lon) && s.lon !== null ? lon : null,
+      kind, flight
     })
   }
   return out
@@ -424,6 +443,7 @@ router.put('/:id/journeys', requireAuth, async (req, res) => {
     if (!from || !to || !TRAVEL_MODES.includes(j.mode) || !Number.isFinite(min) || min < 0 || min > 24 * 60) {
       return res.status(400).json({ message: 'Each journey needs a start, an end, a way to travel and a time.' })
     }
+    if (from.toLowerCase() === to.toLowerCase()) continue // same place twice: not a journey (dropped, so older ones like that don't block saving)
     const date = typeof j.date === 'string' && DATE_PATTERN.test(j.date) ? j.date : ''
     journeys.push({ id: text(j.id, 40) || String(new mongoose.Types.ObjectId()), from, to, mode: j.mode, min: Math.round(min), date, by: text(j.by, 40) })
   }
@@ -462,17 +482,25 @@ router.put('/:id/albums', requireAuth, async (req, res) => {
 // (set from the itinerary: each day starts and ends there). Anyone on the trip can change it.
 // The Safety tab's taxi card follows the first one, unless someone set that card's hotel by hand.
 router.put('/:id/stays', requireAuth, async (req, res) => {
-  if (!Array.isArray(req.body) || req.body.length > 20) return res.status(400).json({ message: 'Hotels are invalid.' })
+  if (!Array.isArray(req.body) || req.body.length > 31) return res.status(400).json({ message: 'Hotels are invalid.' })
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
   const by = memberName(trip, req.userId) || ''
   const stays = []
+  // Each hotel runs from its first night ("from") until the next one starts
+  // (older trips: one hotel per city, without "from")
   for (const st of req.body) {
     const place = cleanPlace(st)
+    const from = typeof (st && st.from) === 'string' && DATE_PATTERN.test(st.from) ? st.from : ''
     const city = typeof (st && st.city) === 'string' ? st.city.trim().slice(0, 80) : ''
-    if (!place || !city) return res.status(400).json({ message: 'Each hotel needs a city and a place on the map.' })
-    if (!stays.some((x) => x.city === city)) stays.push({ city, ...place, by: typeof st.by === 'string' && st.by ? st.by.slice(0, 40) : by })
+    if (!place || (!from && !city)) return res.status(400).json({ message: 'Each hotel needs a day and a place on the map.' })
+    if (stays.some((x) => (from ? x.from === from : x.city === city))) continue // one hotel per night
+    const entry = { ...place, by: typeof st.by === 'string' && st.by ? st.by.slice(0, 40) : by }
+    if (from) entry.from = from
+    else entry.city = city
+    stays.push(entry)
   }
+  stays.sort((a, b) => ((a.from || '') < (b.from || '') ? -1 : (a.from || '') > (b.from || '') ? 1 : 0))
   trip.stays = stays
   trip.markModified('stays')
   if (!trip.stay || trip.stay.fromPlan) {

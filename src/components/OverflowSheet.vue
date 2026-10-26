@@ -28,11 +28,7 @@
                 <div class="os-main">
                   <label :for="'os-' + r.id" class="os-name">{{ r.name }}</label>
                   <small class="os-dur">{{ hoursText(r.duration) }}</small>
-                  <select :id="'os-' + r.id" v-model="choice[r.id]" class="os-select">
-                    <option v-for="d in days" :key="d.date" :value="d.date">{{ optionText(d, r) }}</option>
-                    <option value="saved">Back to Saved places</option>
-                    <option value="keep">Keep on Day {{ dayNumber }}</option>
-                  </select>
+                  <CustomDropdown :id="'os-' + r.id" v-model="choice[r.id]" :options="optionsFor(r)" block :aria-label="'Where ' + r.name + ' goes'" />
                   <small v-if="warnFor(r)" class="os-warn">{{ warnFor(r) }}</small>
                 </div>
               </li>
@@ -52,6 +48,7 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import AppIcon from './AppIcon.vue'
+import CustomDropdown from './CustomDropdown.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -88,10 +85,17 @@ function hoursText(h) {
   if (mins < 60) return mins + ' min'
   return Math.floor(mins / 60) + ' h' + (mins % 60 ? ' ' + (mins % 60) + ' min' : '')
 }
-function optionText(d, r) {
-  const free = freeOn(d.date, r.id)
-  const room = free >= 0.25 ? hoursText(free) + ' free' : 'full'
-  return d.label + ' · ' + room + (d.otherCity ? ' · ' + d.otherCity : '')
+// Every other day (with the time it has left), then Saved places, then keeping it here
+function optionsFor(r) {
+  const list = []
+  for (const d of props.days) {
+    const free = freeOn(d.date, r.id)
+    const room = free >= 0.25 ? hoursText(free) + ' free' : 'Full'
+    list.push({ value: d.date, label: d.label, description: room + (d.otherCity ? ' · ' + d.otherCity : '') })
+  }
+  list.push({ value: 'saved', label: 'Back to Saved places', icon: '📌' })
+  list.push({ value: 'keep', label: 'Keep on Day ' + props.dayNumber, description: 'Still runs past the end of the day' })
+  return list
 }
 // A gentle note when a choice overfills a day (still allowed)
 function warnFor(r) {
@@ -242,23 +246,6 @@ function apply() {
 .os-dur {
   font-size: 12px;
   color: #5a6b78;
-}
-.os-select {
-  margin-top: 6px;
-  width: 100%;
-  padding: 8px 10px;
-  border: 1.5px solid #ece4d6;
-  border-radius: 12px;
-  background: #f6f2eb;
-  font: inherit;
-  font-size: 13.5px;
-  color: #001d2c;
-}
-.os-select:focus {
-  outline: none;
-  background: #fbf5ea;
-  border-color: #edae49;
-  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.2);
 }
 .os-warn {
   margin-top: 4px;

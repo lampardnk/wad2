@@ -1,22 +1,23 @@
 <template>
-  <!-- Getting around → Other journeys: trips that aren't between two stops on the plan
+  <!-- Transport → Other journeys: trips that aren't between two stops on the plan
        (airport → hotel, a day trip to another city). Between-stop travel lives in the itinerary. -->
   <section class="oj" aria-labelledby="oj-title">
     <header class="oj-head">
       <h2 id="oj-title" class="oj-title">Other journeys</h2>
     </header>
 
-    <!-- Plan a journey -->
-    <form class="oj-form" @submit.prevent="findWays">
+    <!-- Plan a journey (or change a saved one) -->
+    <p v-if="editing" class="oj-editing" role="status">
+      <AppIcon name="pencil" :size="15" /> Changing <strong>{{ editing.from }} → {{ editing.to }}</strong>
+      <button type="button" class="oj-link" @click="cancelEdit">Cancel</button>
+    </p>
+    <form ref="formEl" class="oj-form" :class="{ editing: !!editing }" @submit.prevent="findWays">
       <PlaceInput id="oj-from" v-model="fromText" label="From" :placeholder="fromHint" :groups="placeGroups" class="oj-field" />
       <button type="button" class="oj-swap" aria-label="Swap from and to" title="Swap" @click="swap"><AppIcon name="swap" :size="16" /></button>
       <PlaceInput id="oj-to" v-model="toText" label="To" :placeholder="toHint" :groups="placeGroups" class="oj-field" />
       <div v-if="dayOptions.length" class="oj-field small">
         <label for="oj-day">Day</label>
-        <select id="oj-day" v-model="day" class="oj-input">
-          <option value="">Any day</option>
-          <option v-for="d in dayOptions" :key="d.value" :value="d.value">{{ d.label }}</option>
-        </select>
+        <CustomDropdown id="oj-day" v-model="day" :options="[{ value: '', label: 'Any day' }].concat(dayOptions)" block aria-label="Day" />
       </div>
       <button type="submit" class="oj-go" :disabled="busy || !fromText.trim() || !toText.trim()">{{ busy ? 'Finding…' : 'Find ways' }}</button>
     </form>
@@ -31,20 +32,25 @@
         <span v-if="result.checking"> Checking live routes…</span>
       </p>
       <TravelChoices :options="result.options" :recommended="result.recommended" :group="group" :maps-url="mapsUrl"
+        :chosen="editing ? editing.mode : ''" :chosen-by="editing ? editing.by : ''"
         action-label="Save" :mark-in-use="false" @choose="saveJourney" />
-      <p class="oj-note">Save the way you'll go, so everyone on the trip can see it.</p>
+      <p class="oj-note">{{ editing ? 'Save replaces the saved journey.' : 'Save the way you\'ll go, so everyone on the trip can see it.' }}</p>
     </div>
 
     <!-- Saved journeys -->
     <h3 class="oj-h">Saved journeys <span class="oj-count">{{ journeys.length }}</span></h3>
     <p v-if="!journeys.length" class="oj-empty">Nothing saved yet. Airport transfers and day trips you plan above appear here.</p>
     <ul v-else class="oj-list">
-      <li v-for="j in journeys" :key="j.id" class="oj-item">
-        <span class="oj-item-icon" aria-hidden="true"><AppIcon :name="MODES[j.mode].icon" :size="18" /></span>
-        <div class="oj-item-main">
-          <strong>{{ j.from }} → {{ j.to }}</strong>
-          <small>{{ MODES[j.mode].label }} · {{ durationText(j.min) }}<template v-if="j.date"> · {{ dayLabel(j.date) }}</template><template v-if="j.by"> · added by {{ j.by }}</template></small>
-        </div>
+      <li v-for="j in journeys" :key="j.id" class="oj-item" :class="{ editing: editing && editing.id === j.id }">
+        <!-- Tap a saved journey to change it (it opens in the form above) -->
+        <button type="button" class="oj-item-open" :aria-label="'Change ' + j.from + ' to ' + j.to" @click="editJourney(j)">
+          <span class="oj-item-icon" aria-hidden="true"><AppIcon :name="MODES[j.mode].icon" :size="18" /></span>
+          <span class="oj-item-main">
+            <strong>{{ j.from }} → {{ j.to }}</strong>
+            <small>{{ MODES[j.mode].label }} · {{ durationText(j.min) }}<template v-if="j.date"> · {{ dayLabel(j.date) }}</template><template v-if="j.by"> · added by {{ j.by }}</template></small>
+          </span>
+          <span class="oj-item-edit" aria-hidden="true"><AppIcon name="pencil" :size="14" /> Change</span>
+        </button>
         <button type="button" class="oj-del" :aria-label="'Delete ' + j.from + ' to ' + j.to" @click="removeJourney(j)"><AppIcon name="trash" :size="16" /></button>
       </li>
     </ul>
@@ -57,7 +63,8 @@ import axios from 'axios'
 import AppIcon from './AppIcon.vue'
 import TravelChoices from './TravelChoices.vue'
 import PlaceInput from './PlaceInput.vue'
-import { TRAVEL_MODES as MODES, travelOptions, recommendTravel, legKey, DEFAULT_TRAVEL } from '../dayOptimizer.js'
+import CustomDropdown from './CustomDropdown.vue'
+import { TRAVEL_MODES as MODES, travelOptions, recommendTravel, legKey, DEFAULT_TRAVEL, haversineKm } from '../dayOptimizer.js'
 import { notify, errorText } from '../notify.js'
 
 const props = defineProps({
@@ -65,7 +72,7 @@ const props = defineProps({
   isDemo: { type: Boolean, default: false },
   destinations: { type: Array, default: () => [] },
   stops: { type: Array, default: () => [] },          // the itinerary's stops (names + addresses as suggestions)
-  stays: { type: Array, default: () => [] },         // hotels, one per city (set in the itinerary)
+  stays: { type: Array, default: () => [] },         // hotels (set in the itinerary): { from: date, name, ... } (older ones: { city, ... })
   myAirports: { type: Array, default: () => [] },    // my arrival / departure airports (set in the itinerary)
   travellers: { type: Array, default: () => [] },
   me: { type: String, default: '' },
@@ -82,6 +89,8 @@ const busy = ref(false)
 const error = ref('')
 const result = ref(null)
 const journeys = ref(props.initialJourneys.slice())
+const editing = ref(null) // the saved journey being changed, or null
+const formEl = ref(null)
 const group = computed(() => Math.max(1, props.travellers.length))
 
 function label(mode) {
@@ -96,7 +105,10 @@ function durationText(min) {
 const placeGroups = computed(() => {
   const groups = []
   const hotels = []
-  for (const st of props.stays) hotels.push({ label: st.name, sub: st.city.split(', ')[0] })
+  for (const st of props.stays) {
+    if (hotels.some((h) => h.label === st.name)) continue
+    hotels.push({ label: st.name, sub: st.from ? 'From ' + dayLabel(st.from) : st.city ? st.city.split(', ')[0] : '' })
+  }
   if (hotels.length) groups.push({ label: hotels.length === 1 ? 'Your hotel' : 'Your hotels', icon: 'door', items: hotels })
   const stops = []
   for (const s of props.stops) {
@@ -180,9 +192,19 @@ function build(from, to, real, checking) {
   return { fromName: fromText.value.trim(), toName: toText.value.trim(), from, to, options, recommended: rec.option.mode, reason: rec.reason, checking }
 }
 
+// "V&A Waterfront" and "v&a waterfront " are the same place
+function samePlace(a, b) {
+  return a.trim().toLowerCase().replace(/\s+/g, ' ') === b.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+const SAME_PLACE = 'From and To are the same place. Choose two different places.'
+
 async function findWays() {
   error.value = ''
   result.value = null
+  if (samePlace(fromText.value, toText.value)) {
+    error.value = SAME_PLACE
+    return
+  }
   busy.value = true
   let from = null
   let to = null
@@ -193,6 +215,12 @@ async function findWays() {
     error.value = err.response && err.response.status === 404
       ? "We couldn't find one of those places. Try adding the city, e.g. \"Namba Station, Osaka\"."
       : errorText(err, 'Place search is busy right now. Try again in a moment.')
+    return
+  }
+  // Two names for the same spot (under 100 m apart): nothing to travel
+  if (haversineKm(from, to) < 0.1) {
+    busy.value = false
+    error.value = SAME_PLACE
     return
   }
   // Show the estimate straight away, then the live routes when they arrive
@@ -228,15 +256,41 @@ async function store(list, done) {
 function saveJourney(mode) {
   const r = result.value
   const opt = r.options.find((o) => o.mode === mode)
-  const j = { id: 'j-' + Date.now().toString(36), from: r.fromName, to: r.toName, mode, min: opt.min, date: day.value, by: props.me }
-  store([j].concat(journeys.value), () => {
+  const old = editing.value
+  // Changing a saved journey keeps its place in the list (and its id); a new one goes first
+  const j = { id: old ? old.id : 'j-' + Date.now().toString(36), from: r.fromName, to: r.toName, mode, min: opt.min, date: day.value, by: props.me }
+  let list = [j].concat(journeys.value)
+  if (old) {
+    list = []
+    for (const x of journeys.value) list.push(x.id === old.id ? j : x)
+  }
+  store(list, () => {
     result.value = null
+    editing.value = null
     fromText.value = ''
     toText.value = ''
-    notify('Journey saved: ' + j.from + ' → ' + j.to + ' by ' + label(mode) + '.', null, 'ok')
+    notify((old ? 'Journey updated: ' : 'Journey saved: ') + j.from + ' → ' + j.to + ' by ' + label(mode) + '.', null, 'ok')
   })
 }
+// Open a saved journey in the form, with its ways to go already looked up
+function editJourney(j) {
+  editing.value = j
+  fromText.value = j.from
+  toText.value = j.to
+  day.value = j.date || ''
+  if (formEl.value) formEl.value.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
+  findWays()
+}
+function cancelEdit() {
+  editing.value = null
+  result.value = null
+  error.value = ''
+  fromText.value = ''
+  toText.value = ''
+  day.value = ''
+}
 function removeJourney(j) {
+  if (editing.value && editing.value.id === j.id) cancelEdit()
   store(journeys.value.filter((x) => x.id !== j.id))
 }
 </script>
@@ -259,7 +313,7 @@ function removeJourney(j) {
   gap: 10px;
   padding: 16px;
   border-radius: 22px;
-  background: #fff;
+  background: #fbf5ea;
   border: 1px solid #ece4d6;
 }
 .oj-field {
@@ -287,7 +341,7 @@ function removeJourney(j) {
 }
 .oj-input:focus {
   outline: none;
-  background: #fff;
+  background: #fbf5ea;
   border-color: #edae49;
   box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.2);
 }
@@ -370,7 +424,7 @@ function removeJourney(j) {
   gap: 12px;
   padding: 12px 14px;
   border-radius: 18px;
-  background: #fff;
+  background: #fbf5ea;
   border: 1px solid #ece4d6;
 }
 .oj-item-icon {
@@ -382,6 +436,76 @@ function removeJourney(j) {
   place-items: center;
   background: #003d5b;
   color: #fff;
+}
+.oj-item {
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.oj-item:hover,
+.oj-item.editing {
+  border-color: #edae49;
+  box-shadow: 0 6px 16px rgba(0, 61, 91, 0.08);
+}
+.oj-item.editing {
+  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.3);
+}
+/* The card's main part is one big button (the delete button sits beside it) */
+.oj-item-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -12px 0 -12px -14px;
+  padding: 12px 0 12px 14px;
+  border: 0;
+  border-radius: 18px 0 0 18px;
+  background: none;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.oj-item-open:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.7);
+  outline-offset: -3px;
+}
+.oj-item-edit {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #00798c;
+}
+.oj-item-open:hover .oj-item-edit {
+  background: #e6f2f4;
+}
+.oj-editing {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: #fbefd9;
+  color: #7a4b00;
+  font-size: 13.5px;
+}
+.oj-link {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #00798c;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.oj-form.editing {
+  border-color: #edae49;
 }
 .oj-item-main {
   flex: 1;

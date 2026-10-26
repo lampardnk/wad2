@@ -44,7 +44,7 @@ export const DEFAULT_PREFS = {
   dayEnd: 23,                 // everything should finish by this hour
   crowdSensitivity: 'medium', // 'low' | 'medium' | 'high'
   travelBuffer: 0,            // hours kept free between stops (0, 0.5 or 1)
-  // Getting around (Settings): ways to travel we suggest, the longest walk (min), and what matters most
+  // Transport (Settings): ways to travel we suggest, the longest walk (min), and what matters most
   travelModes: ['walk', 'transit', 'taxi'],
   maxWalk: 20,
   travelPriority: 'balanced'  // 'balanced' | 'fastest' | 'cheapest'
