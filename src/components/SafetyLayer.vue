@@ -765,9 +765,9 @@ onUnmounted(() => {
         <p class="sf-safe-preview">{{ safeMessage }}</p>
         <div class="sf-safe-btns">
           <a class="sf-btn wa" :href="'https://wa.me/?text=' + encodeURIComponent(safeMessage)" target="_blank" rel="noopener"><AppIcon name="message" :size="15" /> WhatsApp</a>
-          <a class="sf-btn" :href="'sms:?&body=' + encodeURIComponent(safeMessage)">✉️ SMS</a>
-          <button type="button" class="sf-btn" @click="copySafe">{{ copied ? 'Copied ✓' : '📋 Copy' }}</button>
-          <button v-if="canShare" type="button" class="sf-btn" @click="shareSafe">⋯ Share</button>
+          <a class="sf-btn ic" :href="'sms:?&body=' + encodeURIComponent(safeMessage)"><AppIcon name="mail" :size="15" /> SMS</a>
+          <button type="button" class="sf-btn ic" @click="copySafe"><AppIcon :name="copied ? 'check' : 'copy'" :size="15" /> {{ copied ? 'Copied' : 'Copy' }}</button>
+          <button v-if="canShare" type="button" class="sf-btn ic" @click="shareSafe"><AppIcon name="upload" :size="15" /> Share</button>
         </div>
       </section>
 
@@ -829,9 +829,9 @@ onUnmounted(() => {
             <p v-if="stayShown.address" class="sf-taxi-en-addr">{{ stayShown.address }}</p>
           </div>
           <div class="sf-safe-btns">
-            <button type="button" class="sf-btn" @click="taxiMode = !taxiMode">{{ taxiMode ? '✕ Close' : '⛶ Show big for taxi' }}</button>
-            <button type="button" class="sf-btn" @click="printCard">🖨 Print / save PDF</button>
-            <button type="button" class="sf-btn" @click="editingStay = true">✎ Change</button>
+            <button type="button" class="sf-btn ic" @click="taxiMode = !taxiMode"><AppIcon :name="taxiMode ? 'x' : 'eye'" :size="15" /> {{ taxiMode ? 'Close' : 'Show big for taxi' }}</button>
+            <button type="button" class="sf-btn ic" @click="printCard"><AppIcon name="archive" :size="15" /> Print / save PDF</button>
+            <button type="button" class="sf-btn ic" @click="editingStay = true"><AppIcon name="pencil" :size="15" /> Change</button>
           </div>
         </template>
 
@@ -1235,6 +1235,12 @@ onUnmounted(() => {
 .sf-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
+}
+/* Buttons with a line icon (the app's own icons, not emoji) */
+.sf-btn.ic {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .sf-btn.wa {
   display: inline-flex;

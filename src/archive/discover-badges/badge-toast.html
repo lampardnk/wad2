@@ -1,0 +1,7 @@
+    <transition name="dx-toast">
+      <div v-if="toast" class="dx-toast" role="status">
+        <PlaneGuide :size="58" mood="wave" />
+        <p><small>Badge unlocked!</small><strong>{{ toast.name }}</strong>{{ toast.how }}</p>
+      </div>
+    </transition>
+

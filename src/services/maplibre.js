@@ -1,4 +1,4 @@
-// Loads MapLibre GL (free, open-source 3D maps, no API key) from a CDN the first time it's needed
+// Loads MapLibre GL 5 (free, open-source 3D maps with a globe view, no API key) from a CDN the first time it's needed
 let loading = null
 
 export function loadMapLibre() {
@@ -7,10 +7,10 @@ export function loadMapLibre() {
   loading = new Promise((resolve, reject) => {
     const css = document.createElement('link')
     css.rel = 'stylesheet'
-    css.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'
+    css.href = 'https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css'
     document.head.appendChild(css)
     const script = document.createElement('script')
-    script.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'
+    script.src = 'https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js'
     script.onload = () => resolve(window.maplibregl)
     script.onerror = () => {
       loading = null

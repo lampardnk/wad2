@@ -12,6 +12,8 @@
       <div class="trip-stage" :style="stageStyle" aria-hidden="true"></div>
 
       <!-- Top bar: back, trip name, every section of the trip. Stays on screen while scrolling. -->
+      <!-- One line: back, trip name, then the tabs. As the window narrows, tabs move into "More" one by one;
+           on phones they become one menu button. -->
       <nav class="trip-nav" aria-label="Trip sections">
         <router-link to="/home" class="trip-back" data-testid="back-to-trips" title="Back to My Trips">
           <span aria-hidden="true">‹</span><span class="trip-back-text">My Trips</span>
@@ -182,7 +184,7 @@
           :travellers="itineraryInfo.travellers" :members="isDemo ? [] : trip.members || []"
           :pending-invites="isDemo ? [] : trip.pendingInvites || []" :crew="isDemo ? {} : trip.crew || {}"
           :role="isDemo ? 'owner' : trip.role" :me="myName"
-          :my-id="authUserId" @invite="showShare = true" @go="goFromCrew" @changed="reloadTrip" />
+          :my-id="authUserId" :flights="tripFlights" @invite="showShare = true" @go="goFromCrew" @changed="reloadTrip" />
       </div>
       <!-- Recap (after the trip): the trip in numbers with its route on a map -->
       <div v-if="!isDemo && tripPhase === 'after'" v-show="activeTab === 'recap'" id="pane-recap" role="tabpanel">
@@ -205,7 +207,7 @@
         <OtherJourneys :key="'oj-' + id" :trip-id="id" :is-demo="isDemo" :destinations="itineraryInfo.destinations" :stops="safetyStops"
 :stays="isDemo ? [] : trip.stays || []" :my-airports="myAirports" :travellers="itineraryInfo.travellers" :me="myName"
           :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate"
-          :initial-journeys="isDemo ? [] : trip.journeys || []" :prefs="prefs" />
+          :initial-journeys="isDemo ? [] : trip.journeys || []" :prefs="prefs" :flights="tripFlights" />
       </div>
 
     </main>
@@ -346,6 +348,15 @@ export default {
     // Itinerary stops for the safety radar
     safetyStops() {
       return store.stops
+    },
+    // Flights added on itinerary days (between cities, midway through the trip), in time order
+    tripFlights() {
+      const list = []
+      for (const s of store.stops) {
+        if (s.kind === 'flight' && s.flight) list.push({ id: s.id, date: s.date, ...s.flight })
+      }
+      list.sort((a, b) => (a.date + a.dep < b.date + b.dep ? -1 : 1))
+      return list
     },
     // My airports (set from the itinerary), as suggestions in Other journeys
     myAirports() {
@@ -568,18 +579,23 @@ export default {
   position: relative;
   padding: 12px 0 40px;
 }
-/* Glowing photo behind the top of the page */
+/* Trip photo behind the top of the page, edge to edge: it breaks out of the page column to the full
+   screen width (100vw, centred on the page), and tucks up under the navbar's rounded bottom.
+   The text and cards sit in .trip-inner-width columns, so they never touch the screen edges. */
 .trip-stage {
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 610px;
-  border-radius: 28px;
+  top: -64px;
+  left: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  height: 674px;
+  border-radius: 0 0 36px 36px;
   z-index: 0;
   overflow: hidden;
   /* Photo first: the cover photo shows clearly at the top, then fades into navy behind the cards */
   background:
     linear-gradient(180deg, rgba(0, 29, 44, 0.25) 0%, rgba(0, 29, 44, 0.1) 22%, rgba(0, 29, 44, 0.55) 42%, #001d2c 62%),
-    var(--trip-photo, none) center 35% / cover no-repeat,
+    var(--trip-photo, none) center 35% / cover no-repeat, /* cover: fills any width without stretching */
     #003d5b;
 }
 .trip-loading {
@@ -638,23 +654,29 @@ export default {
   font-family: var(--font-display);
   font-size: 1.15rem;
   max-width: 200px;
+  min-width: 0;
+  flex: 0 1 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* The tabs take the width they need (how many show depends on the window's width, see TripTabs);
+   the trip name gives way first (it's also the big title below) */
 .trip-tabs {
   margin-left: auto;
+  flex: 0 0 auto;
 }
+
 
 /* Title */
 .trip-head {
   position: relative;
   z-index: 1;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   text-align: left;
   color: #fff;
-  padding: 150px 32px 0;
+  padding: 150px clamp(16px, 4vw, 48px) 0;
 }
 .trip-title {
   font-family: var(--font-display);
@@ -802,9 +824,9 @@ export default {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 44px auto 0;
-  padding: 0 16px;
+  padding: 0 clamp(16px, 4vw, 48px);
   align-items: end;
 }
 .trip-card {
@@ -1034,13 +1056,7 @@ export default {
 /* Small screens: tabs get their own scrolling row, cards stack */
 @media (max-width: 900px) {
   .trip-nav {
-    flex-wrap: wrap;
     margin: 0 8px;
-  }
-  .trip-tabs {
-    order: 3;
-    width: 100%;
-    margin-left: 0;
   }
   /* Cards become three small tiles so they still fit on the header */
   .trip-cards {

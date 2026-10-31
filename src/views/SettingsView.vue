@@ -5,7 +5,57 @@
       Go back
     </button>
 
+    <!-- faded notebook marks in the outer margins (wide screens only) -->
+    <div class="st-margin left" aria-hidden="true">
+      <span class="st-margin-rule"></span>
+      <svg class="st-margin-compass" viewBox="0 0 100 100">
+        <g fill="none" stroke="currentColor" stroke-width="1.2">
+          <circle cx="50" cy="50" r="40" /><circle cx="50" cy="50" r="34" stroke-dasharray="1 4" />
+          <path d="M50 6 55 45 94 50 55 55 50 94 45 55 6 50 45 45Z" />
+        </g>
+        <text x="50" y="4.5" text-anchor="middle" font-size="7" fill="currentColor">N</text>
+      </svg>
+      <svg class="st-margin-route" viewBox="0 0 60 220">
+        <path d="M30 4C6 40 54 70 30 110S8 180 30 216" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 6" stroke-linecap="round" />
+        <circle cx="30" cy="4" r="3" fill="currentColor" /><path d="M24 210l6 8 6-8" fill="none" stroke="currentColor" stroke-width="1.2" />
+      </svg>
+    </div>
+    <div class="st-margin right" aria-hidden="true">
+      <svg class="st-margin-stamp" viewBox="0 0 110 110">
+        <g fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="55" cy="55" r="48" /><circle cx="55" cy="55" r="36" />
+          <path d="M10 48h90M10 62h90" stroke-dasharray="2 3" />
+        </g>
+        <text x="55" y="59" text-anchor="middle" font-size="10" font-weight="800" letter-spacing="2" fill="currentColor">FIELD NOTES</text>
+      </svg>
+      <span class="st-margin-rule"></span>
+      <svg class="st-margin-stars" viewBox="0 0 60 60">
+        <g fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M14 10l2 5 5 .6-3.6 3.4.8 5-4.2-2.4-4.2 2.4.8-5L7 15.6l5-.6Z" />
+          <path d="M44 34l2.4 5.4 6 .8-4.4 4 1.2 6-5.2-3-5.2 3 1.2-6-4.4-4 6-.8Z" />
+          <path d="M16 22 42 38" stroke-dasharray="2 4" />
+        </g>
+      </svg>
+    </div>
+
     <section class="st" aria-labelledby="st-title">
+      <!-- faint debossed motifs in two corners: a compass rose and a little star cluster -->
+      <svg class="st-motif rose" viewBox="0 0 120 120" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="1.2">
+          <circle cx="60" cy="60" r="44" /><circle cx="60" cy="60" r="38" stroke-dasharray="1 4" />
+          <path d="M60 8 66 54 112 60 66 66 60 112 54 66 8 60 54 54Z" />
+          <path d="M60 30 63 57 90 60 63 63 60 90 57 63 30 60 57 57Z" transform="rotate(45 60 60)" />
+        </g>
+        <text x="60" y="6" text-anchor="middle" font-size="7" fill="currentColor">N</text>
+      </svg>
+      <svg class="st-motif stars" viewBox="0 0 120 80" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M14 30l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z" />
+          <path d="M60 14l2 5 5 .6-3.6 3.4.8 5-4.2-2.4-4.2 2.4.8-5L52 19.6l5-.6Z" />
+          <path d="M98 44l2.4 5.4 6 .8-4.4 4 1.2 6-5.2-3-5.2 3 1.2-6-4.4-4 6-.8Z" />
+          <path d="M24 34 60 19M60 19l38 30" stroke-dasharray="2 4" />
+        </g>
+      </svg>
       <!-- Header + auto-save status -->
       <header class="st-head">
         <div>
@@ -20,7 +70,13 @@
 
       <!-- Came from the new-account prompt on Home: say where to start -->
       <div v-if="welcome" class="st-welcome" role="status">
-        <span class="st-welcome-icon" aria-hidden="true">👋</span>
+        <!-- brass bulldog clip holding the note -->
+        <svg class="st-clip" viewBox="0 0 70 34" aria-hidden="true">
+          <defs><linearGradient id="st-brass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2c48a" /><stop offset="0.55" stop-color="#b08d57" /><stop offset="1" stop-color="#8a6a3a" /></linearGradient></defs>
+          <path d="M8 14h54v14a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4Z" fill="url(#st-brass)" stroke="#5e4622" stroke-width="1.4" />
+          <path d="M20 14V6a6 6 0 0 1 12 0M38 14V6a6 6 0 0 1 12 0" fill="none" stroke="#7a5d30" stroke-width="2.2" stroke-linecap="round" />
+          <path d="M12 18h46" stroke="#f1dcae" stroke-width="1.2" opacity="0.7" />
+        </svg>
         <div>
           <strong>Welcome! Start with My Information.</strong>
           <p>Add your food needs and WhatsApp: your crew sees them on every trip you join. Then check your base currency and trip pacing.</p>
@@ -28,12 +84,33 @@
         <button type="button" class="st-primary" @click="router.push('/home')">Done, show my trips</button>
       </div>
 
-      <LoadingSkeleton v-if="loading" variant="list" :count="3" dark label="Loading your settings…" />
+      <LoadingSkeleton v-if="loading" variant="list" :count="3" label="Loading your settings…" />
       <div v-else class="st-cols">
         <!-- Left column on wide screens -->
         <div class="st-col">
+        <!-- ===== Travel Twin (3D avatar; new clothes and gear unlock as trips are finished) ===== -->
+        <h2 id="avatar" class="st-group-title"><span class="st-num">01</span>Travel Twin</h2>
+        <div class="st-group st-pass">
+          <button type="button" class="st-twin" @click="studioOpen = true">
+            <span class="st-twin-pic">
+              <img v-if="avatar.picture" :src="avatar.picture" alt="">
+              <AppIcon v-else name="smile" :size="26" />
+            </span>
+            <span class="st-twin-text">
+              <span class="st-pass-kicker">Explorer pass</span>
+              <strong>
+                {{ avatar.picture ? 'Your travel twin' : 'Create your travel twin' }}
+                <span v-if="twinNew" class="st-twin-new">New gear</span>
+              </strong>
+              <small>Tier {{ avatar.progress.tier }} · {{ avatar.progress.tierName }} · {{ avatar.progress.xp }} XP · {{ twinNextText }}</small>
+              <span class="st-twin-bar" aria-hidden="true"><span :style="{ width: twinProgress + '%' }"></span></span>
+            </span>
+            <span class="st-twin-cta">Customise <AppIcon name="chevron" :size="14" /></span>
+          </button>
+        </div>
+
         <!-- ===== My information ===== -->
-        <h2 class="st-group-title">My Information</h2>
+        <h2 class="st-group-title"><span class="st-num">02</span>My Information</h2>
         <div class="st-group" :class="{ 'st-spot': welcome }">
           <div class="st-row">
             <label class="st-row-label" for="st-email">Email</label>
@@ -52,11 +129,11 @@
         </div>
 
         <!-- ===== Session & account ===== -->
-        <h2 class="st-group-title">Session & Account</h2>
+        <h2 class="st-group-title"><span class="st-num">03</span>Session &amp; Account</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-who">
-              <span class="st-avatar" aria-hidden="true">{{ initial }}</span>
+              <span class="st-avatar" aria-hidden="true"><img v-if="avatar.picture" :src="avatar.picture" alt="" class="st-avatar-img"><template v-else>{{ initial }}</template></span>
               <span class="st-row-text">
                 <span class="st-row-label">@{{ user.username }}</span>
                 <span class="st-row-hint">{{ savedEmail }}</span>
@@ -70,7 +147,7 @@
               <span class="st-row-label">Password</span>
               <span class="st-row-hint">{{ pwDone ? '✓ Changed' : 'At least 8 characters' }}</span>
             </span>
-            <button type="button" class="st-logout" :aria-expanded="pwOpen" aria-controls="st-pw-form" @click="togglePassword">
+            <button type="button" class="st-logout amber" :aria-expanded="pwOpen" aria-controls="st-pw-form" @click="togglePassword">
               {{ pwOpen ? 'Cancel' : 'Change' }}
             </button>
           </div>
@@ -93,7 +170,7 @@
         </div>
 
         <!-- ===== Delete account (asks for the password first) ===== -->
-        <h2 class="st-group-title">Delete Account</h2>
+        <h2 class="st-group-title"><span class="st-num">04</span>Delete Account</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-row-text">
@@ -123,7 +200,7 @@
         <!-- Right column on wide screens -->
         <div class="st-col">
         <!-- ===== Trip preferences ===== -->
-        <h2 class="st-group-title">Trip Preferences</h2>
+        <h2 class="st-group-title"><span class="st-num">05</span>Trip Preferences</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-row-text">
@@ -147,7 +224,7 @@
         </div>
 
         <!-- ===== Pacing: how the itinerary planner times your days ===== -->
-        <h2 id="pacing" class="st-group-title">Trip Pacing</h2>
+        <h2 id="pacing" class="st-group-title"><span class="st-num">06</span>Trip Pacing</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-row-text">
@@ -181,7 +258,7 @@
         </div>
 
         <!-- ===== Transport: how the itinerary suggests travelling between stops ===== -->
-        <h2 id="getting-around" class="st-group-title">Transport</h2>
+        <h2 id="getting-around" class="st-group-title"><span class="st-num">07</span>Transport</h2>
         <div class="st-group">
           <div class="st-row stack">
             <span class="st-row-text">
@@ -219,7 +296,7 @@
         </div>
 
         <!-- ===== Safety & notifications ===== -->
-        <h2 class="st-group-title">Safety & Notifications</h2>
+        <h2 class="st-group-title"><span class="st-num">08</span>Safety &amp; Notifications</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-row-text">
@@ -242,11 +319,13 @@
         </div>
       </div>
     </section>
+
+    <AvatarStudio :open="studioOpen" @close="studioOpen = false" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { auth, logout, saveLogin } from '../auth.js'
@@ -258,6 +337,9 @@ import DietTagsInput from '../components/DietTagsInput.vue'
 import PhoneInput from '../components/PhoneInput.vue'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import AppIcon from '../components/AppIcon.vue'
+import AvatarStudio from '../components/AvatarStudio.vue'
+import { avatar, loadAvatar, loadProgress, newUnlocks } from '../avatarStore.js'
+import { loadThree } from '../services/three.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -292,6 +374,26 @@ const settings = reactive({ currency: 'SGD', units: 'metric', hazardAlerts: true
 
 const user = computed(() => auth.user || { name: '', username: '' })
 const initial = computed(() => (user.value.name || '?').charAt(0).toUpperCase())
+
+// ----- Travel Twin card -----
+const studioOpen = ref(false)
+const twinNew = computed(() => newUnlocks().length > 0)
+const twinProgress = computed(() => {
+  const P = avatar.progress
+  if (!P.next) return 100
+  const from = P.tier === 1 ? 0 : P.tier === 2 ? 40 : 120
+  return Math.round(((P.xp - from) / (P.next.min - from)) * 100)
+})
+const twinNextText = computed(() => {
+  const P = avatar.progress
+  return P.next ? P.next.min - P.xp + ' XP to ' + P.next.name : 'all gear unlocked'
+})
+loadAvatar()
+loadProgress()
+// Start loading the 3D engine in the background, so the studio opens straight away
+setTimeout(() => loadThree().catch(() => {}), 1500)
+if (route.hash === '#avatar') studioOpen.value = true
+watch(() => route.hash, (h) => { if (h === '#avatar') studioOpen.value = true }) // menu link while already here
 
 // ----- Auto-save -----
 // Changes are collected for a moment, then sent together (fewer requests while typing)
@@ -443,7 +545,10 @@ function saveEmail() {
 }
 
 // Save anything still waiting when leaving the page
+// Dropdown menus open on <body>: this class lets them match the paper look while Settings is open
+onMounted(() => document.body.classList.add('st-paper'))
 onBeforeUnmount(() => {
+  document.body.classList.remove('st-paper')
   clearTimeout(timer)
   if (paceTimer) {
     clearTimeout(paceTimer)
@@ -531,169 +636,293 @@ async function deleteAccount() {
 </script>
 
 <style scoped>
+/* ===== Explorer's Field Guide, night edition =====
+   A deep navy-slate card on the cream page. One clean font throughout. */
 .st-page {
   position: relative;
-  max-width: 1080px;
+  max-width: 1152px; /* about max-w-6xl */
   margin: 0 auto;
   padding-bottom: 48px;
-  --mint: #edae49;
-  --text: #e6edf3;
-  --muted: #8b949e;
+  --paper: #0f172a; /* the card */
+  --slip: #132238; /* subsection cards */
+  --field: #0b131d; /* inputs and dropdowns */
+  --ink: #f8fafc; /* main text */
+  --ink-2: #334155; /* borders */
+  --soft: #cbd5e1;
+  --muted: #94a3b8;
+  --rule: rgba(148, 163, 184, 0.16);
+  --brass: #c9a46a;
+  --brass-dark: #d9b97e;
+  --teal: #2f8f94;
+  --teal-dark: #1f5f63;
+  --teal-hi: #5fbfc4;
+  --amber: #e0a43a;
+  --amber-dark: #8a5a17;
+  --on-amber: #1a1408;
+  --oxblood: #f87171;
+  color: #1f2f3d;
 }
 
-/* Go back */
+/* Faded notebook marks in the empty side margins, only when there is room for them */
+.st-margin {
+  display: none;
+  position: absolute;
+  top: 90px;
+  bottom: 60px;
+  width: 110px;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  pointer-events: none;
+  color: rgba(31, 47, 61, 0.09);
+}
+.st-margin.left {
+  right: calc(100% + 28px);
+}
+.st-margin.right {
+  left: calc(100% + 28px);
+}
+.st-margin-compass,
+.st-margin-stamp {
+  width: 96px;
+}
+.st-margin-stamp {
+  transform: rotate(-12deg);
+}
+.st-margin-route {
+  width: 40px;
+}
+.st-margin-stars {
+  width: 54px;
+}
+/* a faint double marginalia line, like the red rule on notebook paper */
+.st-margin-rule {
+  flex: 1;
+  max-height: 340px;
+  width: 5px;
+  border-left: 1px solid rgba(156, 58, 58, 0.14);
+  border-right: 1px solid rgba(156, 58, 58, 0.14);
+}
+@media (min-width: 1400px) {
+  .st-margin {
+    display: flex;
+  }
+}
+
+/* Go back: a small paper tab */
 .st-back {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 40px;
-  padding: 0 16px 0 12px;
+  min-height: 38px;
+  padding: 0 14px 0 10px;
   margin-bottom: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
-  font-weight: 600;
+  border: 1.5px solid #3a4a57;
+  border-radius: 8px;
+  background: #fffdf8;
+  color: #1f2f3d;
+  font-weight: 700;
   font-size: 14px;
-  transition: transform 0.15s, border-color 0.15s, color 0.15s;
+  box-shadow: 0 2px 0 #3a4a57;
+  transition: transform 0.12s, box-shadow 0.12s;
 }
 .st-back svg {
   transition: transform 0.15s;
 }
 .st-back:hover {
-  border-color: rgba(237, 174, 73, 0.5);
-  color: var(--mint);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 #3a4a57;
 }
 .st-back:hover svg {
   transform: translateX(-2px);
 }
 .st-back:active {
-  transform: scale(0.96);
+  transform: translateY(2px);
+  box-shadow: 0 0 0 #3a4a57;
 }
 
-/* Card */
+/* The card: deep navy-slate with a faint grid, a fold down the middle on wide screens */
 .st {
-  background: rgba(0, 45, 68, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
   padding: 22px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 60px rgba(0, 0, 0, 0.45);
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--paper);
+  color: var(--ink);
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.2);
+}
+.st-motif {
+  position: absolute;
+  pointer-events: none;
+  color: rgba(148, 163, 184, 0.1);
+  /* debossed: a dark edge below the line */
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.45));
+}
+.st-motif.rose {
+  top: 14px;
+  right: 18px;
+  width: 120px;
+}
+.st-motif.stars {
+  left: 14px;
+  bottom: 12px;
+  width: 110px;
 }
 .st-cols {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0 28px;
+  gap: 0 44px;
 }
 .st-col {
   min-width: 0;
 }
 @media (min-width: 860px) {
   .st {
-    padding: 30px 32px 32px;
+    padding: 32px 36px 40px;
   }
   .st-cols {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  /* the fold between the two pages */
+  .st-cols::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--rule) 8%, var(--rule) 92%, transparent);
+    box-shadow: 1px 0 0 rgba(0, 0, 0, 0.35);
+  }
+}
+/* wide screens: a little more room around and between the two columns */
+@media (min-width: 1200px) {
+  .st {
+    padding: 36px 44px 44px;
+  }
+  .st-cols {
+    gap: 0 56px;
   }
 }
 .st-head {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--ink-2);
+  box-shadow: 0 3px 0 -1.5px var(--paper), 0 4.5px 0 -1.5px var(--rule); /* a double rule under the title */
+  padding-right: 120px; /* clear of the compass rose */
 }
 .st-title {
-  font-family: var(--font-display);
-  font-size: 1.6rem;
   margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--ink);
 }
 .st-sub {
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 13px;
-  margin: 2px 0 0;
+  font-size: 13.5px;
 }
 
-/* Auto-save status */
+/* Auto-save status: a small inked stamp */
 .st-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   flex: none;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--mint);
-  background: rgba(237, 174, 73, 0.08);
-  border: 1px solid rgba(237, 174, 73, 0.2);
+  margin-top: 8px;
+  padding: 3px 9px;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--teal-hi);
+  transform: rotate(-2deg);
 }
 .st-status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.6);
-  animation: st-pulse 2s infinite;
 }
 .st-status.saving {
-  color: #cbd5e1;
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
 }
 .st-status.saving .st-status-dot {
   animation: st-blink 0.8s infinite alternate;
 }
 .st-status.error {
-  color: #ec8a97;
-  background: rgba(209, 73, 91, 0.1);
-  border-color: rgba(209, 73, 91, 0.3);
-}
-.st-status.error .st-status-dot {
-  animation: none;
+  color: var(--oxblood);
 }
 
-/* Groups */
+/* Section headings: a number, the name, and a rule running out to the edge */
 .st-group-title {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 20px 4px 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 28px 2px 10px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--ink);
 }
+.st-group-title::after {
+  content: '';
+  flex: 1;
+  align-self: center;
+  border-bottom: 1px solid var(--rule);
+}
+.st-num {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--brass);
+}
+
+/* Each group: a subsection card with a fine inner margin */
 .st-group {
-  background: #0b3a56;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  overflow: visible;
+  position: relative;
+  background: var(--slip);
+  border: 1px solid var(--ink-2);
+  border-radius: 8px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+.st-group::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  pointer-events: none;
 }
 .st-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-height: 54px;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  transition: background 0.15s;
+  min-height: 56px;
+  padding: 10px 16px;
+  border-bottom: 1px dashed var(--rule);
 }
 .st-row:last-child {
   border-bottom: 0;
-}
-.st-row:first-child {
-  border-radius: 14px 14px 0 0;
-}
-.st-row:last-child {
-  border-radius: 0 0 14px 14px;
-}
-.st-row:only-child {
-  border-radius: 14px;
-}
-.st-row:hover {
-  background: rgba(255, 255, 255, 0.02);
 }
 .st-row.stack {
   flex-direction: column;
@@ -707,26 +936,29 @@ async function deleteAccount() {
 }
 .st-row-label {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+  font-weight: 700;
+  color: var(--ink);
 }
 .st-row-hint {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Inputs: dark wells with white text */
 .st-input {
   flex: 1;
   max-width: 280px;
   min-width: 0;
-  background: #00283c;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  color: var(--text);
+  padding: 8px 10px;
+  border: 1.5px solid var(--ink-2);
+  border-radius: 4px;
+  background: var(--field);
+  color: var(--ink);
   font-size: 14px;
-  padding: 7px 10px;
+  font-weight: 600;
   text-align: right;
   color-scheme: dark;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -734,30 +966,141 @@ async function deleteAccount() {
 .st-input:focus {
   outline: none;
   text-align: left;
-  border-color: var(--mint);
-  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.15);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(95, 191, 196, 0.22);
 }
 .st-input[aria-invalid='true'] {
-  border-color: rgba(209, 73, 91, 0.6);
+  border-color: var(--oxblood);
 }
 .st-err {
-  color: #f09aa5;
-  font-size: 12px;
   margin: 0;
-  padding: 0 14px 10px;
+  padding: 0 16px 10px;
+  color: var(--oxblood);
+  font-size: 12.5px;
+  font-weight: 600;
   text-align: right;
 }
 
-/* Segmented km/mi toggle with a sliding thumb */
+/* Shared controls, restyled for the dark card */
+/* dropdowns: dark wells with an amber edge */
+.st-page .st :deep(.dd-trigger) {
+  height: 36px;
+  padding: 0 10px 0 12px;
+  border: 1.5px solid var(--ink-2);
+  border-left: 4px solid var(--amber);
+  border-radius: 5px;
+  background: var(--field);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 2px 0 var(--ink-2);
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.15s;
+}
+.st-page .st :deep(.dd-trigger:hover:not(:disabled)) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 var(--ink-2);
+}
+.st-page .st :deep(.dd-trigger:active:not(:disabled)) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--ink-2);
+}
+.st-page .st :deep(.dd.open .dd-trigger),
+.st-page .st :deep(.dd-trigger:focus-visible) {
+  border-color: var(--teal);
+  border-left-color: var(--amber);
+  box-shadow: 0 2px 0 var(--teal), 0 0 0 3px rgba(95, 191, 196, 0.22);
+}
+.st-page .st :deep(.dd-chevron),
+.st-page .st :deep(.dd.open .dd-chevron) {
+  color: var(--brass-dark);
+}
+.st-page .st :deep(.dd-value.placeholder) {
+  color: var(--muted);
+}
+/* food needs */
+.st-page .st :deep(.dt) {
+  border: 1.5px solid var(--ink-2);
+  border-radius: 4px;
+  background: var(--field);
+}
+.st-page .st :deep(.dt.focus) {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(95, 191, 196, 0.22);
+}
+.st-page .st :deep(.dt-input) {
+  color: var(--ink);
+  font-weight: 600;
+}
+.st-page .st :deep(.dt-input::placeholder),
+.st-page .st :deep(.pi-number::placeholder) {
+  color: #64748b;
+}
+.st-page .st :deep(.dt-tag) {
+  border: 1px solid #475569;
+  border-radius: 3px;
+  background: #1e293b;
+  color: var(--ink);
+}
+.st-page .st :deep(.dt-tag.allergy) {
+  border-color: var(--oxblood);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+}
+.st-page .st :deep(.dt-x:hover),
+.st-page .st :deep(.dt-x:focus-visible) {
+  background: rgba(148, 163, 184, 0.18);
+}
+.st-page .st :deep(.dt-menu) {
+  border: 1.5px solid var(--ink-2);
+  border-radius: 5px;
+  background: var(--field);
+  color: var(--ink);
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+  backdrop-filter: none;
+}
+.st-page .st :deep(.dt-menu li.active) {
+  background: #1e293b;
+  color: var(--ink);
+}
+.st-page .st :deep(.dt-hint) {
+  color: var(--muted);
+}
+/* WhatsApp */
+.st-page .st :deep(.pi) {
+  border: 1.5px solid var(--ink-2);
+  border-radius: 4px;
+  background: var(--field);
+}
+.st-page .st :deep(.pi:focus-within) {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(95, 191, 196, 0.22);
+}
+.st-page .st :deep(.pi-code .dd-trigger) {
+  height: 100%;
+  border: 0;
+  border-right: 1.5px solid var(--ink-2);
+  border-radius: 0;
+  background: var(--slip);
+  box-shadow: none;
+  transform: none;
+}
+.st-page .st :deep(.pi-number) {
+  color: var(--ink);
+  font-weight: 600;
+  color-scheme: dark;
+}
+
+/* km / mi: a two-way toggle with an amber thumb */
 .st-seg {
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   flex: none;
   padding: 3px;
-  border-radius: 999px;
-  background: #00283c;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1.5px solid var(--ink-2);
+  border-radius: 6px;
+  background: var(--field);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .st-seg-thumb {
   position: absolute;
@@ -765,71 +1108,64 @@ async function deleteAccount() {
   bottom: 3px;
   left: 3px;
   width: calc(50% - 3px);
-  border-radius: 999px;
-  background: rgba(237, 174, 73, 0.14);
-  border: 1px solid rgba(237, 174, 73, 0.35);
-  box-shadow: 0 0 12px rgba(237, 174, 73, 0.15);
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #e8b24f, var(--amber));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 0 var(--amber-dark);
+  transition: transform 0.25s cubic-bezier(0.3, 1.2, 0.5, 1);
 }
 .st-seg.right .st-seg-thumb {
   transform: translateX(100%);
 }
 .st-seg button {
   position: relative;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
   padding: 6px 12px;
-  border-radius: 999px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--soft);
+  font-size: 13px;
+  font-weight: 700;
   white-space: nowrap;
   transition: color 0.2s;
 }
 .st-seg button.on {
-  color: var(--mint);
+  color: var(--on-amber);
 }
 
-/* Toggle switch */
+/* On/off: teal when on, with a brass knob */
 .st-switch {
   position: relative;
   flex: none;
-  width: 44px;
+  width: 46px;
   height: 26px;
   padding: 0;
+  border: 1.5px solid var(--ink-2);
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #2a323d;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  background: var(--field);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition: background 0.2s, border-color 0.2s;
 }
 .st-knob {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
+  border: 1.5px solid var(--ink-2);
   border-radius: 50%;
-  background: #cbd5e1;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+  background: radial-gradient(circle at 35% 30%, #f6e6c4, var(--brass));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  transition: transform 0.25s cubic-bezier(0.3, 1.2, 0.5, 1);
 }
 .st-switch[aria-checked='true'] {
-  background: rgba(237, 174, 73, 0.85);
-  border-color: rgba(237, 174, 73, 0.9);
-  box-shadow: 0 0 14px rgba(237, 174, 73, 0.3);
+  background: var(--teal);
+  border-color: var(--teal-hi);
 }
 .st-switch[aria-checked='true'] .st-knob {
-  transform: translateX(18px);
-  background: #fbf5ea;
-}
-.st-switch:active .st-knob {
-  width: 24px;
-}
-.st-switch[aria-checked='true']:active .st-knob {
-  transform: translateX(14px);
+  transform: translateX(20px);
 }
 
-/* Account */
+/* Account: an identity badge */
 .st-who {
   display: flex;
   align-items: center;
@@ -840,49 +1176,90 @@ async function deleteAccount() {
   display: grid;
   place-items: center;
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid var(--ink-2);
   border-radius: 50%;
-  background: linear-gradient(135deg, #00798c, #edae49);
-  color: #fff;
-  font-weight: 700;
+  outline: 1px solid var(--rule);
+  outline-offset: 2px;
+  background: repeating-linear-gradient(45deg, #1e293b 0 3px, #172033 3px 4px);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
 }
+.st-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  filter: sepia(0.25) contrast(1.05);
+}
+/* tactile buttons: brass-teal (Log out) and burnished amber (Change) */
 .st-logout {
   flex: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: #cbd5e1;
-  border-radius: 999px;
-  padding: 6px 14px;
+  padding: 7px 14px;
+  border: 1.5px solid var(--teal-dark);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #3aa3a8, var(--teal));
+  color: #f8fafc;
   font-size: 13px;
-  font-weight: 600;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 0 var(--teal-dark);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.st-logout.amber {
+  border-color: var(--amber-dark);
+  background: linear-gradient(180deg, #e8b24f, var(--amber));
+  color: var(--on-amber);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 3px 0 var(--amber-dark);
 }
 .st-logout:hover {
-  color: #ec8a97;
-  border-color: rgba(209, 73, 91, 0.45);
-  background: rgba(209, 73, 91, 0.08);
+  transform: translateY(-1px);
+}
+.st-logout:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 var(--teal-dark);
 }
 
-/* Welcome note for new accounts */
+/* Welcome: a ruled field note held by a brass clip */
 .st-welcome {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin: 16px 0 4px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: rgba(237, 174, 73, 0.1);
-  border: 1px solid rgba(237, 174, 73, 0.35);
+  gap: 16px;
+  margin: 26px 0 6px;
+  padding: 22px 18px 16px;
+  border: 1.5px solid #3a4a57;
+  border-radius: 4px;
+  color: #1f2f3d;
+  background:
+    linear-gradient(90deg, transparent 0 30px, rgba(156, 58, 58, 0.25) 30px 31px, transparent 31px),
+    repeating-linear-gradient(180deg, transparent 0 23px, rgba(47, 111, 115, 0.12) 23px 24px),
+    #fffdf7;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), 0 14px 24px -16px rgba(0, 0, 0, 0.6);
+  transform: rotate(-0.4deg);
   font-size: 14px;
 }
-.st-welcome-icon {
-  font-size: 26px;
+.st-clip {
+  position: absolute;
+  top: -16px;
+  left: 50px;
+  width: 64px;
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.2));
+}
+.st-welcome > div {
+  padding-left: 22px;
+}
+.st-welcome strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.3;
 }
 .st-welcome p {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 13px;
+  margin: 4px 0 0;
+  color: #3a4a57;
+  font-size: 13.5px;
+  line-height: 1.5;
 }
 .st-welcome .st-primary {
   flex: none;
@@ -890,48 +1267,60 @@ async function deleteAccount() {
   margin-left: auto;
 }
 .st-spot {
-  border-color: rgba(237, 174, 73, 0.6);
-  box-shadow: 0 0 0 4px rgba(237, 174, 73, 0.12);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(224, 164, 58, 0.55);
 }
 @media (max-width: 640px) {
   .st-welcome {
     flex-wrap: wrap;
   }
   .st-welcome .st-primary {
-    margin-left: 0;
+    margin-left: 22px;
   }
 }
 
-/* Transport: ways to travel as toggle chips */
+/* Transport: vintage tickets with notched sides (the outline follows the notches) */
 .st-modes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px 12px;
 }
 .st-mode {
+  --tk: var(--field);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  padding: 7px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  padding: 8px 18px;
+  border: 0;
+  background:
+    radial-gradient(circle at 0 50%, transparent 5px, var(--tk) 5.5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 5px, var(--tk) 5.5px) right / 51% 100% no-repeat;
+  color: var(--soft);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  filter:
+    drop-shadow(1.2px 0 0 var(--tk-edge, #475569)) drop-shadow(-1.2px 0 0 var(--tk-edge, #475569))
+    drop-shadow(0 1.2px 0 var(--tk-edge, #475569)) drop-shadow(0 -1.2px 0 var(--tk-edge, #475569));
+  transition: transform 0.12s, color 0.15s;
+}
+.st-mode:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.st-mode:active:not(:disabled) {
+  transform: translateY(1px);
 }
 .st-mode.on {
-  background: rgba(237, 174, 73, 0.16);
-  border-color: rgba(237, 174, 73, 0.6);
-  color: var(--text);
+  --tk: var(--amber);
+  --tk-edge: var(--amber-dark);
+  color: var(--on-amber);
 }
 .st-mode:disabled {
   cursor: not-allowed;
 }
 .st-mode:focus-visible {
-  outline: 2px solid var(--mint);
-  outline-offset: 2px;
+  outline: 2px solid var(--teal-hi);
+  outline-offset: 3px;
 }
 
 /* Password and delete-account forms */
@@ -944,36 +1333,46 @@ async function deleteAccount() {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--soft);
 }
 .st-input.full {
   max-width: none;
   text-align: left;
   padding: 10px 12px;
+  text-transform: none;
+  letter-spacing: 0;
 }
 .st-err.left {
   text-align: left;
   padding: 0;
 }
+/* burnished amber primary button */
 .st-primary,
 .st-danger.solid {
   align-self: flex-start;
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 20px;
-  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: 800;
   font-size: 14px;
-  transition: transform 0.15s, opacity 0.15s;
+  transition: transform 0.12s, box-shadow 0.12s, opacity 0.15s;
 }
 .st-primary {
-  background: #edae49;
-  color: #001d2c;
+  border: 1.5px solid var(--amber-dark);
+  background: linear-gradient(180deg, #e8b24f, var(--amber));
+  color: var(--on-amber);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 0 var(--amber-dark);
 }
 .st-primary:hover:not(:disabled),
 .st-danger.solid:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+.st-primary:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 var(--amber-dark);
 }
 .st-primary:disabled,
 .st-danger:disabled {
@@ -982,30 +1381,37 @@ async function deleteAccount() {
 }
 .st-danger {
   flex: none;
-  border: 1px solid rgba(209, 73, 91, 0.45);
-  background: transparent;
-  color: #ec8a97;
-  border-radius: 999px;
-  padding: 6px 14px;
+  padding: 7px 14px;
+  border: 1.5px solid var(--oxblood);
+  border-radius: 6px;
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--oxblood);
   font-size: 13px;
-  font-weight: 600;
-  transition: background 0.15s, color 0.15s;
+  font-weight: 700;
+  box-shadow: 0 2px 0 #7f1d1d;
+  transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
 }
 .st-danger:hover:not(:disabled) {
-  background: rgba(209, 73, 91, 0.12);
+  background: rgba(248, 113, 113, 0.16);
+}
+.st-danger:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--oxblood);
 }
 .st-danger.solid {
-  background: #d1495b;
-  border: 0;
+  border: 1.5px solid #7f1d1d;
+  background: #dc2626;
   color: #fff;
+  box-shadow: 0 4px 0 #7f1d1d;
 }
 .st-warn {
   margin: 0;
   padding: 12px 14px 12px 30px;
-  border-radius: 12px;
-  background: rgba(209, 73, 91, 0.1);
-  border: 1px solid rgba(209, 73, 91, 0.25);
-  color: var(--text);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-left: 3px solid var(--oxblood);
+  border-radius: 3px;
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--ink);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -1017,24 +1423,152 @@ async function deleteAccount() {
 .st-logout:focus-visible,
 .st-primary:focus-visible,
 .st-danger:focus-visible {
-  outline: 2px solid var(--mint);
-  outline-offset: 2px;
-}
-
-@keyframes st-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.55); }
-  70% { box-shadow: 0 0 0 6px rgba(237, 174, 73, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0); }
+  outline: 2px solid var(--teal-hi);
+  outline-offset: 3px;
 }
 @keyframes st-blink {
   from { opacity: 0.3; }
   to { opacity: 1; }
 }
 
+/* Travel Twin: an embossed explorer pass with a perforated edge */
+.st-pass {
+  padding: 5px;
+  border: 0;
+  border-radius: 8px;
+  background: radial-gradient(circle, transparent 2.2px, #1e293b 2.6px) -4px -4px / 9px 9px;
+  box-shadow: none;
+}
+.st-pass::before {
+  display: none;
+}
+.st-twin {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1.5px solid var(--ink-2);
+  border-radius: 4px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 40%),
+    var(--slip);
+  /* embossed */
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.06), inset -1px -1px 0 rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.st-twin:hover {
+  transform: translateY(-1px);
+}
+.st-twin:focus-visible {
+  outline: 2px solid var(--teal-hi);
+  outline-offset: 3px;
+}
+/* the portrait: an etched medallion (double ring, fine hatching, a little sepia) */
+.st-twin-pic {
+  flex: none;
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1.5px solid var(--ink-2);
+  border-radius: 50%;
+  outline: 1px solid var(--ink-2);
+  outline-offset: 3px;
+  background: repeating-linear-gradient(45deg, #1e293b 0 3px, #172033 3px 4px);
+  color: var(--muted);
+}
+.st-twin-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: sepia(0.3) contrast(1.05) saturate(0.9);
+}
+.st-twin-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.st-pass-kicker {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-dark);
+}
+.st-twin-text strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.st-twin-text small {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.st-twin-new {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--oxblood);
+  border-radius: 3px;
+  color: var(--oxblood);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: 4px;
+}
+.st-twin-bar {
+  display: block;
+  height: 4px;
+  margin-top: 5px;
+  max-width: 220px;
+  border: 1px solid var(--ink-2);
+  border-radius: 2px;
+  background: var(--field);
+  overflow: hidden;
+}
+.st-twin-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--brass), #d9b97e);
+}
+.st-twin-cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--amber-dark);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #e8b24f, var(--amber));
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--on-amber);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 0 var(--amber-dark);
+}
+.st-twin:active .st-twin-cta {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--amber-dark);
+}
+
 @media (max-width: 480px) {
   .st {
     padding: 16px;
-    border-radius: 18px;
+    border-radius: 10px;
+  }
+  .st-head {
+    padding-right: 0;
+  }
+  .st-motif.rose {
+    width: 80px;
+    opacity: 0.6;
   }
   .st-row {
     padding: 10px 12px;
@@ -1045,32 +1579,69 @@ async function deleteAccount() {
   .st-input {
     max-width: 60%;
   }
+  .st-twin-cta {
+    font-size: 0;
+    padding: 6px 8px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .st-status-dot,
-  .st-seg-thumb,
-  .st-knob,
-  .st-switch,
-  .st-back,
-  .st-back svg {
+  .st-status-dot, .st-seg-thumb, .st-knob, .st-switch, .st-back, .st-back svg {
     animation: none;
     transition: none;
   }
 }
-
-/* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */
+/* Phones and touch screens: every control is at least 40px to tap */
 @media (pointer: coarse), (max-width: 560px) {
   .st-seg button {
     min-height: 40px;
-  }
-  /* the switch stays small to look at, but its tap area is 44px */
-  .st-switch {
-    position: relative;
   }
   .st-switch::after {
     content: '';
     position: absolute;
     inset: -9px -4px;
   }
+}
+</style>
+
+<!-- The dropdown menus open on <body>; while Settings is open they match the dark card -->
+<style>
+body.st-paper .dd-menu.dd-menu {
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #0b131d;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 18px 34px -14px rgba(0, 0, 0, 0.6);
+  color: #f8fafc;
+}
+body.st-paper .dd-menu.dd-menu .dd-header {
+  color: #c9a46a;
+}
+body.st-paper .dd-menu.dd-menu .dd-search {
+  border: 1px solid #334155;
+  border-radius: 4px;
+  background: #132238;
+  color: #94a3b8;
+}
+body.st-paper .dd-menu.dd-menu .dd-search input {
+  color: #f8fafc;
+}
+body.st-paper .dd-menu.dd-menu .dd-list li.active {
+  background: #1e293b;
+}
+body.st-paper .dd-menu.dd-menu .dd-list li.selected {
+  color: #f2c16b;
+  font-weight: 800;
+}
+body.st-paper .dd-menu.dd-menu .dd-list li.selected.active {
+  background: #1e293b;
+}
+body.st-paper .dd-menu.dd-menu .dd-desc,
+body.st-paper .dd-menu.dd-menu .dd-empty {
+  color: #94a3b8;
+}
+body.st-paper .dd-menu.dd-menu .dd-check {
+  color: #e0a43a;
+  filter: none;
 }
 </style>

@@ -1,3 +1,4 @@
+import DISCOVER from './data/discoverCities.json'
 // Popular destinations: shown instantly while the online search loads,
 // and used on their own if the online search is unavailable.
 export const POPULAR_DESTINATIONS = [
@@ -92,10 +93,56 @@ export function codeForCountry(name) {
   return known[simple(name)] || ''
 }
 
-// "Kyoto, Japan" -> "JP" (the country is the last part; "Singapore" on its own also works)
+// Everyday names the browser's country list doesn't use ("UK", "Czech Republic", "Burma"...)
+const ALIASES = {
+  usa: 'US', us: 'US', unitedstatesofamerica: 'US', america: 'US', uk: 'GB', england: 'GB', scotland: 'GB', wales: 'GB',
+  northernireland: 'GB', greatbritain: 'GB', britain: 'GB', czechrepublic: 'CZ', holland: 'NL', uae: 'AE',
+  burma: 'MM', ivorycoast: 'CI', swaziland: 'SZ', macedonia: 'MK', turkiye: 'TR', northkorea: 'KP', southkorea: 'KR',
+  korea: 'KR', russianfederation: 'RU', vatican: 'VA', vaticancity: 'VA', capeverde: 'CV', easttimor: 'TL',
+  drc: 'CD', congokinshasa: 'CD', congobrazzaville: 'CG', laos: 'LA', bali: 'ID', tibet: 'CN'
+}
+// Capitals and big cities people often type on their own (Discover's 224 cities are added to these)
+const CITY_CODES = {
+  bishkek: 'KG', almaty: 'KZ', astana: 'KZ', tashkent: 'UZ', samarkand: 'UZ', bukhara: 'UZ', dushanbe: 'TJ', ashgabat: 'TM',
+  ulaanbaatar: 'MN', pyongyang: 'KP', moscow: 'RU', stpetersburg: 'RU', saintpetersburg: 'RU', tbilisi: 'GE', yerevan: 'AM',
+  baku: 'AZ', kyiv: 'UA', kiev: 'UA', minsk: 'BY', warsaw: 'PL', krakow: 'PL', prague: 'CZ', budapest: 'HU', vienna: 'AT',
+  bratislava: 'SK', bucharest: 'RO', sofia: 'BG', belgrade: 'RS', zagreb: 'HR', ljubljana: 'SI', sarajevo: 'BA', tirana: 'AL',
+  skopje: 'MK', athens: 'GR', istanbul: 'TR', ankara: 'TR', fez: 'MA', fes: 'MA', marrakech: 'MA', casablanca: 'MA', rabat: 'MA',
+  tunis: 'TN', algiers: 'DZ', cairo: 'EG', giza: 'EG', luxor: 'EG', amman: 'JO', petra: 'JO', beirut: 'LB', muscat: 'OM',
+  doha: 'QA', dubai: 'AE', abudhabi: 'AE', riyadh: 'SA', tehran: 'IR', kabul: 'AF', islamabad: 'PK', lahore: 'PK', dhaka: 'BD',
+  thimphu: 'BT', kathmandu: 'NP', yangon: 'MM', vientiane: 'LA', phnompenh: 'KH', nairobi: 'KE', addisababa: 'ET', lagos: 'NG',
+  accra: 'GH', capetown: 'ZA', johannesburg: 'ZA', reykjavik: 'IS', oslo: 'NO', stockholm: 'SE', helsinki: 'FI', copenhagen: 'DK',
+  tallinn: 'EE', riga: 'LV', vilnius: 'LT', dublin: 'IE', lisbon: 'PT', madrid: 'ES', barcelona: 'ES', paris: 'FR', rome: 'IT',
+  berlin: 'DE', amsterdam: 'NL', brussels: 'BE', zurich: 'CH', geneva: 'CH', london: 'GB', edinburgh: 'GB', newyork: 'US',
+  losangeles: 'US', sanfrancisco: 'US', toronto: 'CA', vancouver: 'CA', mexicocity: 'MX', havana: 'CU', lima: 'PE', cusco: 'PE',
+  bogota: 'CO', buenosaires: 'AR', santiago: 'CL', riodejaneiro: 'BR', saopaulo: 'BR', sydney: 'AU', melbourne: 'AU',
+  auckland: 'NZ', chongqing: 'CN', chengdu: 'CN', beijing: 'CN', shanghai: 'CN', xian: 'CN'
+}
+// "Bishkek" on its own -> KG
+let cityCountry = null
+function codeOfCity(name) {
+  if (!cityCountry) {
+    cityCountry = {}
+    for (const c of DISCOVER.cities) cityCountry[simple(c.cityName)] = COUNTRY_CODES[c.country] || codeForCountry(c.country)
+  }
+  return CITY_CODES[simple(name)] || cityCountry[simple(name)] || ''
+}
+
+// "Kyoto, Japan" -> "JP". The country is the last part; failing that, any part that is a country
+// ("North Korea", "Russia"), then a city we know ("Bishkek" -> Kyrgyzstan). '' if we can't tell.
 export function codeForDestination(label) {
-  const parts = label.split(', ')
-  return COUNTRY_CODES[parts[parts.length - 1]] || ''
+  if (!label) return ''
+  const parts = label.split(',').map((p) => p.trim()).filter(Boolean)
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]
+    const code = COUNTRY_CODES[p] || ALIASES[simple(p)] || codeForCountry(p)
+    if (code) return code
+  }
+  for (const p of parts) {
+    const code = codeOfCity(p)
+    if (code) return code
+  }
+  return ''
 }
 
 // "JP" -> 🇯🇵 (a flag emoji is two special "regional indicator" letters)

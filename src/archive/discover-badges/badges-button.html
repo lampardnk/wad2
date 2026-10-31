@@ -1,0 +1,14 @@
+          <div class="dx-badges-wrap">
+            <button type="button" class="dx-badges-btn" :aria-expanded="badgesOpen" @click.stop="badgesOpen = !badgesOpen">
+              <DoodleIcon name="star" :size="20" anim="" /> {{ badges.length }}/{{ BADGES.length }} <span class="ft-sr">badges</span>
+            </button>
+            <transition name="dx-pop">
+              <ul v-if="badgesOpen" class="dx-badges" aria-label="Badges" @click.stop>
+                <li v-for="b in BADGES" :key="b.id" :class="{ got: badges.includes(b.id) }">
+                  <span class="dx-badge-icon" aria-hidden="true"><DoodleIcon :name="b.doodle" :size="24" anim="" /></span>
+                  <span><strong>{{ b.name }}</strong><small>{{ b.how }}</small></span>
+                  <span class="ft-sr">{{ badges.includes(b.id) ? '(earned)' : '(not yet)' }}</span>
+                </li>
+              </ul>
+            </transition>
+          </div>

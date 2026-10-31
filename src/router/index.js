@@ -7,6 +7,7 @@ import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import TripSetupView from '../views/TripSetupView.vue'
 import JoinView from '../views/JoinView.vue'
 import SettingsView from '../views/SettingsView.vue'
+import AvatarView from '../views/AvatarView.vue'
 import DiscoverView from '../views/DiscoverView.vue'
 import LandingView from '../views/LandingView.vue'
 import { auth } from '../auth.js'
@@ -16,7 +17,8 @@ const routes = [
   { path: '/home', name: 'Home', component: HomeView, meta: { requiresAuth: true } },
   { path: '/welcome', redirect: '/' }, // old address
   { path: '/discover', name: 'Discover', component: DiscoverView }, // open to guests
-  { path: '/settings', name: 'Settings', component: SettingsView, meta: { requiresAuth: true, dark: true } },
+  { path: '/settings', name: 'Settings', component: SettingsView, meta: { requiresAuth: true } },
+  { path: '/avatar', name: 'Avatar', component: AvatarView, meta: { requiresAuth: true, dark: true } }, // Travel Twin studio
   { path: '/trip/:id', name: 'Trip', component: TripView, props: true, meta: { requiresAuth: true } },
   // New trips: step 1 = invite, step 2 = wishlist, step 3 = vote, then the trip page
   { path: '/trip/:id/setup/:step(invite|wishlist|vote)', name: 'TripSetup', component: TripSetupView, props: true, meta: { requiresAuth: true } },

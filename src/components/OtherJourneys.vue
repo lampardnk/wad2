@@ -37,6 +37,20 @@
       <p class="oj-note">{{ editing ? 'Save replaces the saved journey.' : 'Save the way you\'ll go, so everyone on the trip can see it.' }}</p>
     </div>
 
+    <!-- Flights between cities, added on itinerary days (read-only here: change them on their day) -->
+    <template v-if="flights.length">
+      <h3 class="oj-h">Flights on the plan <span class="oj-count">{{ flights.length }}</span></h3>
+      <ul class="oj-list">
+        <li v-for="f in flights" :key="f.id" class="oj-item">
+          <span class="oj-item-icon sun" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
+          <span class="oj-item-main">
+            <strong>{{ shortAirport(f.from.name) }} → {{ shortAirport(f.to.name) }}</strong>
+            <small>{{ dayLabel(f.date) }} · takes off {{ f.dep }} · lands {{ f.arr }}<template v-if="f.number"> · {{ f.number }}</template> · on the itinerary</small>
+          </span>
+        </li>
+      </ul>
+    </template>
+
     <!-- Saved journeys -->
     <h3 class="oj-h">Saved journeys <span class="oj-count">{{ journeys.length }}</span></h3>
     <p v-if="!journeys.length" class="oj-empty">Nothing saved yet. Airport transfers and day trips you plan above appear here.</p>
@@ -79,8 +93,12 @@ const props = defineProps({
   startDate: { type: String, default: '' },
   endDate: { type: String, default: '' },
   initialJourneys: { type: Array, default: () => [] },
-  prefs: { type: Object, default: () => ({}) }
+  prefs: { type: Object, default: () => ({}) },
+  flights: { type: Array, default: () => [] } // flights on itinerary days: [{ id, date, from, to, dep, arr, number }]
 })
+function shortAirport(name) {
+  return name.replace(/ (International )?Airport.*$/i, '').split(',')[0]
+}
 
 const fromText = ref('')
 const toText = ref('')
@@ -506,6 +524,10 @@ function removeJourney(j) {
 }
 .oj-form.editing {
   border-color: #edae49;
+}
+.oj-item-icon.sun {
+  background: #edae49;
+  color: #001d2c;
 }
 .oj-item-main {
   flex: 1;

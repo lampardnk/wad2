@@ -62,9 +62,9 @@ function cleanPacking(p) {
 async function memberContacts(trip) {
   const ids = []
   for (const m of trip.members || []) ids.push(m.user)
-  const users = await User.find({ _id: { $in: ids } }, 'diet phone contactSaved')
+  const users = await User.find({ _id: { $in: ids } }, 'diet phone contactSaved avatarVersion')
   const map = {}
-  for (const u of users) map[String(u._id)] = { diet: u.diet || [], phone: u.phone || '', saved: !!u.contactSaved }
+  for (const u of users) map[String(u._id)] = { diet: u.diet || [], phone: u.phone || '', saved: !!u.contactSaved, avatarV: u.avatarVersion || 0 }
   return map
 }
 
@@ -77,7 +77,7 @@ function toClient(t, userId, contacts) {
     me: userId ? memberName(t, userId) : null, // my traveller name on this trip
     members: (t.members || []).map((m) => {
       const c = contacts ? contacts[String(m.user)] : null
-      return { id: m.user, name: m.name, role: m.role, joinedAt: m.joinedAt, lastSeenAt: m.lastSeenAt || null, diet: c ? c.diet : null, phone: c ? c.phone : null, contactSaved: c ? c.saved : false }
+      return { id: m.user, name: m.name, role: m.role, joinedAt: m.joinedAt, lastSeenAt: m.lastSeenAt || null, diet: c ? c.diet : null, phone: c ? c.phone : null, contactSaved: c ? c.saved : false, avatarV: c ? c.avatarV : 0 }
     }),
     crew: t.crew || {},
     // Only filled in when the users were looked up (populate), e.g. on GET /api/trips/:id
@@ -218,6 +218,8 @@ router.get('/', requireAuth, async (req, res) => {
     const c = toClient(t, req.userId)
     c.stopCount = (t.stops || []).length
     delete c.stops // the card only needs how many
+    c.createdAt = t.createdAt // for "Recently added / edited" on My Trips
+    c.updatedAt = t.updatedAt
     list.push(c)
   }
   res.json(list)

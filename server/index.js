@@ -27,6 +27,7 @@ import groupRoutes from './routes/groups.js'
 import mapRoutes from './routes/maps.js'
 import eatRoutes from './routes/eat.js'
 import discoverRoutes from './routes/discover.js'
+import avatarRoutes from './routes/avatar.js'
 import { imageRoute, flagRoute } from './images.js'
 import iconRoutes from './routes/icons.js'
 import travelRoutes from './routes/travel.js'
@@ -73,6 +74,7 @@ app.use('/api/safety', safetyRoutes)
 app.use('/api/maps', mapRoutes)
 app.use('/api/eat', eatRoutes)
 app.use('/api/discover', discoverRoutes)
+app.use('/api/avatar', avatarRoutes) // Travel Twin: XP, outfits, pictures
 app.get('/api/flag/:code', flagRoute) // country flags from our disk (Discover's country banners)
 app.get('/api/img', imageRoute) // Wikimedia photos from our disk cache (no lookup limit: a page shows ~200)
 

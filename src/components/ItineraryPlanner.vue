@@ -171,7 +171,7 @@
           </div>
 
           <p v-if="stopRows.length > 1 && !previewing" class="ip-reorder-hint">
-            <AppIcon name="swap" :size="14" /> Drag a stop by its dots, or use the arrows, to change the order. Times update by themselves.
+            <AppIcon name="swap" :size="14" /> Drag a stop by its dots (on a phone: press and hold it), or use the arrows, to change the order. Times update by themselves.
           </p>
           <!-- More planned than the day has time for: say so once, with a fix -->
           <div v-if="overflow" class="ip-overflow" role="status">
@@ -208,7 +208,7 @@
             </li>
             <template v-for="(it, i) in timeline" :key="it.stop.id">
               <!-- Between stops: how to get there, or a drop slot while dragging -->
-              <li class="ip-gap" :class="{ active: dropAt === i, first: i === 0 }"
+              <li class="ip-gap" :data-gap="i" :class="{ active: dropAt === i, first: i === 0 }"
                 @dragover.prevent="dropAt = i" @dragleave="dropAt = null" @drop.prevent="dropInto(slotOf(i))">
                 <span v-if="drag" class="ip-drop">Drop here</span>
                 <!-- How to get here: the suggested (or the group's chosen) way. Tap to see every way and change it. -->
@@ -230,11 +230,12 @@
                 </div>
               </li>
 
-              <li v-else class="ip-stop" :class="{ moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
+              <li v-else class="ip-stop" :data-i="i" :class="{ moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
                 <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }"
                   :draggable="!it.stop.locked && !previewing" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag"
+                  @touchstart="touchStart($event, it, i)" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchCancel"
                   @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(slotOf(dropAt == null ? i : dropAt))">
                   <!-- Move: drag the dots, or tap the arrows (works on phones and keyboards too) -->
                   <div v-if="!it.stop.locked && !previewing" class="ip-move">
@@ -2078,6 +2079,61 @@ function startDrag(e, kind, item) {
 function endDrag() {
   drag.value = null
   dropAt.value = null
+}
+
+// ---------- phones: press and hold a stop, then slide it to a new place ----------
+// (drag and drop doesn't work with fingers; the arrows still work too)
+let touch = null // { timer, x, y, i, dragging }
+function touchStart(e, it, i) {
+  if (it.stop.locked || previewing.value || e.touches.length !== 1) return
+  if (e.target.closest('button, a, input, select, textarea')) return
+  const t = e.touches[0]
+  touch = { x: t.clientX, y: t.clientY, i, dragging: false, timer: null }
+  touch.timer = setTimeout(() => {
+    if (!touch) return
+    touch.dragging = true
+    drag.value = { kind: 'stop', item: it.stop }
+    dropAt.value = i
+    if (navigator.vibrate) navigator.vibrate(15) // a small buzz: "you're holding it"
+  }, 400)
+}
+function touchMove(e) {
+  if (!touch) return
+  const t = e.touches[0]
+  if (!touch.dragging) {
+    // Moved before the hold finished: they're scrolling, not moving the stop
+    if (Math.abs(t.clientX - touch.x) > 10 || Math.abs(t.clientY - touch.y) > 10) touchCancel()
+    return
+  }
+  e.preventDefault() // the page doesn't scroll while you're moving a stop
+  // Which gap is under the finger (a stop card: its top half = before it, bottom half = after it)
+  const under = document.elementFromPoint(t.clientX, t.clientY)
+  const gap = under && under.closest('[data-gap]')
+  const card = under && under.closest('[data-i]')
+  if (gap) dropAt.value = Number(gap.dataset.gap)
+  else if (card) {
+    const box = card.getBoundingClientRect()
+    const i = Number(card.dataset.i)
+    dropAt.value = t.clientY < box.top + box.height / 2 ? i : i + 1
+  }
+  // Near the top or bottom of the screen: scroll, so stops further away can be reached
+  if (t.clientY < 90) window.scrollBy(0, -14)
+  else if (t.clientY > window.innerHeight - 90) window.scrollBy(0, 14)
+}
+function touchEnd(e) {
+  if (!touch) return
+  clearTimeout(touch.timer)
+  const was = touch
+  touch = null
+  if (!was.dragging) return // just a tap (or a scroll)
+  e.preventDefault() // not a click on the card
+  dropInto(slotOf(dropAt.value == null ? was.i : dropAt.value))
+}
+function touchCancel() {
+  if (!touch) return
+  clearTimeout(touch.timer)
+  if (touch.dragging) endDrag()
+  touch = null
 }
 
 // Re-time the day for a new order: the day starts when it already did (or the user's day start)
@@ -4080,6 +4136,18 @@ watch(
   justify-content: center;
   width: 28px;
   color: #9aa7b1;
+}
+/* Phones and tablets: holding a stop picks it up (no text selection or "copy" menu), and bigger arrows */
+@media (hover: none) {
+  .ip-card {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .ip-move-btn {
+    width: 36px !important;
+    height: 32px !important;
+  }
 }
 .ip-move-btn {
   width: 28px;

@@ -210,6 +210,7 @@ function meJson(user) {
     id: user._id, name: user.name, username: user.username, email: user.email,
     diet: user.diet || [], phone: user.phone || '',
     shortlist: user.discoverShortlist || [],
+    avatarVersion: user.avatar && (user.avatar.picture || user.avatar.snapshot) ? user.avatarVersion || 0 : 0,
     settings: {
       currency: s.currency || 'SGD',
       units: s.units === 'imperial' ? 'imperial' : 'metric',

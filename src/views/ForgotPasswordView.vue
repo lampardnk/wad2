@@ -1,12 +1,14 @@
 <template>
   <AuthShell title="Forgot your password?" :subtitle="step === 1 ? 'No worries. Enter the email you signed up with and we\'ll send you a 6-digit code.' : 'Check your inbox for the code, then pick a new password.'"
-    switch-to="/login" switch-label="Log in">
+    switch-to="/login" switch-label="Sign In" bubble="Forgot your password? No problem!">
 
     <!-- Step 1: which account -->
     <form v-if="step === 1" class="as-form" @submit.prevent="sendCode" novalidate>
-      <label for="fp-email" class="visually-hidden">Email</label>
-      <input id="fp-email" type="email" class="as-input" v-model="email" placeholder="Email you signed up with"
-        autocomplete="email" autocapitalize="none" spellcheck="false" required>
+      <label for="fp-email" class="as-label">Email</label>
+      <div class="as-field"><span class="as-field-icon"><AuthIcon name="mail" /></span>
+        <input id="fp-email" type="email" class="as-input" v-model="email" placeholder="Email you signed up with"
+          autocomplete="email" autocapitalize="none" spellcheck="false" required>
+      </div>
 
       <p v-if="errorMessage" class="as-error" role="alert">{{ errorMessage }}</p>
 
@@ -17,17 +19,23 @@
     <form v-else class="as-form" @submit.prevent="resetPassword" novalidate>
       <p class="as-success" role="status">{{ sentMessage }} <span class="fp-to">Sent to <strong>{{ email.trim() }}</strong>.</span></p>
 
-      <label for="fp-code" class="visually-hidden">6-digit code</label>
-      <input id="fp-code" ref="codeInput" type="text" inputmode="numeric" maxlength="6" class="as-input fp-code" v-model="code"
-        placeholder="6-digit code" autocomplete="one-time-code" required>
+      <label for="fp-code" class="as-label">6-digit code</label>
+      <div class="as-field"><span class="as-field-icon"><AuthIcon name="code" /></span>
+        <input id="fp-code" ref="codeInput" type="text" inputmode="numeric" maxlength="6" class="as-input fp-code" v-model="code"
+          placeholder="6-digit code" autocomplete="one-time-code" required>
+      </div>
 
-      <label for="fp-pass" class="visually-hidden">New password</label>
-      <input id="fp-pass" type="password" class="as-input" v-model="password"
-        placeholder="New password (min. 8 characters)" autocomplete="new-password" required>
+      <label for="fp-pass" class="as-label">New password</label>
+      <div class="as-field"><span class="as-field-icon"><AuthIcon name="key" /></span>
+        <input id="fp-pass" type="password" class="as-input" v-model="password"
+          placeholder="At least 8 characters" autocomplete="new-password" required>
+      </div>
 
-      <label for="fp-confirm" class="visually-hidden">Confirm new password</label>
-      <input id="fp-confirm" type="password" class="as-input" v-model="confirmPassword"
-        placeholder="Confirm new password" autocomplete="new-password" required>
+      <label for="fp-confirm" class="as-label">Confirm new password</label>
+      <div class="as-field"><span class="as-field-icon"><AuthIcon name="key" /></span>
+        <input id="fp-confirm" type="password" class="as-input" v-model="confirmPassword"
+          placeholder="Confirm new password" autocomplete="new-password" required>
+      </div>
 
       <p v-if="errorMessage" class="as-error" role="alert">{{ errorMessage }}</p>
 
@@ -43,16 +51,17 @@
     </form>
 
     <p class="as-or">Remembered it?</p>
-    <p class="as-foot"><router-link to="/login">Back to log in</router-link></p>
+    <p class="as-foot"><router-link to="/login">Back to Sign In</router-link></p>
   </AuthShell>
 </template>
 
 <script>
 import axios from 'axios'
 import AuthShell from '../components/AuthShell.vue'
+import AuthIcon from '../components/AuthIcon.vue'
 
 export default {
-  components: { AuthShell },
+  components: { AuthShell, AuthIcon },
   data() {
     return {
       step: 1,
@@ -159,12 +168,12 @@ export default {
   padding: 6px 0;
   border: 0;
   background: none;
-  color: #2fe0a1;
+  color: #0f6e7b;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
 }
 .fp-link:disabled {
-  color: #8b949e;
+  color: #8a99a5;
   font-weight: 500;
   cursor: default;
 }
@@ -174,6 +183,6 @@ export default {
 .fp-hint {
   margin: 0;
   font-size: 13px;
-  color: #8b949e;
+  color: #5a6b78;
 }
 </style>

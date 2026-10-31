@@ -27,7 +27,7 @@
             </div>
             <ul v-if="results.length" class="fd-list fd-results" aria-label="Search results">
               <li v-for="u in results" :key="u.id" class="fd-row">
-                <span class="fd-avatar sm" :style="{ background: colourFor(u.name) }" aria-hidden="true">{{ initials(u.name) }}</span>
+                <TwinFace class="fd-avatar sm" :style="{ background: colourFor(u.name) }" :user-id="u.id" :version="u.avatarV || 0" :name="u.name" :text="initials(u.name)" />
                 <span class="fd-who">
                   <strong class="fd-name">{{ u.name }}</strong>
                   <span class="fd-muted">@{{ u.username }}</span>
@@ -68,9 +68,9 @@
               <ul v-else class="fd-list" aria-label="Your friends">
                 <li v-for="f in list" :key="f.id" class="fd-friend">
                   <div class="fd-row">
-                    <span class="fd-avatar" :style="{ background: colourFor(f.name) }" aria-hidden="true">
-                      {{ initials(f.name) }}<span v-if="f.online" class="fd-dot"></span>
-                    </span>
+                    <TwinFace class="fd-avatar" :style="{ background: colourFor(f.name) }" :user-id="f.id" :version="f.avatarV || 0" :name="f.name" :text="initials(f.name)">
+                      <span v-if="f.online" class="fd-dot"></span>
+                    </TwinFace>
                     <span class="fd-who">
                       <strong class="fd-name">{{ f.name }}</strong>
                       <span class="fd-muted">
@@ -124,7 +124,7 @@
                 <h3 class="fd-group">Waiting for you</h3>
                 <ul class="fd-list">
                   <li v-for="u in incoming" :key="u.id" class="fd-row">
-                    <span class="fd-avatar" :style="{ background: colourFor(u.name) }" aria-hidden="true">{{ initials(u.name) }}</span>
+                    <TwinFace class="fd-avatar" :style="{ background: colourFor(u.name) }" :user-id="u.id" :version="u.avatarV || 0" :name="u.name" :text="initials(u.name)" />
                     <span class="fd-who">
                       <strong class="fd-name">{{ u.name }}</strong>
                       <span class="fd-muted">@{{ u.username }}</span>
@@ -138,7 +138,7 @@
                 <h3 class="fd-group">Sent</h3>
                 <ul class="fd-list">
                   <li v-for="u in outgoing" :key="u.id" class="fd-row">
-                    <span class="fd-avatar" :style="{ background: colourFor(u.name) }" aria-hidden="true">{{ initials(u.name) }}</span>
+                    <TwinFace class="fd-avatar" :style="{ background: colourFor(u.name) }" :user-id="u.id" :version="u.avatarV || 0" :name="u.name" :text="initials(u.name)" />
                     <span class="fd-who">
                       <strong class="fd-name">{{ u.name }}</strong>
                       <span class="fd-muted">@{{ u.username }} · waiting</span>
@@ -170,6 +170,7 @@ import axios from 'axios'
 import { auth } from '../auth.js'
 import { friends, lastActiveText, copyText } from '../friends.js'
 import AppIcon from './AppIcon.vue'
+import TwinFace from './TwinFace.vue'
 import LoadingSkeleton from './LoadingSkeleton.vue'
 
 const panelEl = ref(null)

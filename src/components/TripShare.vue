@@ -90,17 +90,17 @@
 
       <!-- Quick share -->
       <div class="ts-share">
-        <a class="ts-app" :href="'https://wa.me/?text=' + encodeURIComponent(message)" target="_blank" rel="noopener">
+        <a class="ts-app wa" :href="'https://wa.me/?text=' + encodeURIComponent(message)" target="_blank" rel="noopener">
           <span class="ts-app-icon" style="background:#25d366" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg></span>WhatsApp
         </a>
-        <a class="ts-app" :href="'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(shortMessage)" target="_blank" rel="noopener">
+        <a class="ts-app tg" :href="'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(shortMessage)" target="_blank" rel="noopener">
           <span class="ts-app-icon" style="background:none" aria-hidden="true"><svg viewBox="0 0 24 24" width="36" height="36" fill="#26a5e4" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></span>Telegram
         </a>
-        <a class="ts-app" :href="'mailto:?subject=' + encodeURIComponent('Join ' + tripName + ' on Chui-se Your Trip') + '&body=' + encodeURIComponent(message)">
-          <span class="ts-app-icon" style="background:#5a6b78" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>Email
+        <a class="ts-app em" :href="'mailto:?subject=' + encodeURIComponent('Join ' + tripName + ' on Chui-se Your Trip') + '&body=' + encodeURIComponent(message)">
+          <span class="ts-app-icon" style="background:#24407a" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>Email
         </a>
-        <button v-if="canNativeShare" type="button" class="ts-app" @click="nativeShare">
-          <span class="ts-app-icon" style="background:#003d5b" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span>More
+        <button v-if="canNativeShare" type="button" class="ts-app more" @click="nativeShare">
+          <span class="ts-app-icon" style="background:#12324a" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span>More
         </button>
       </div>
 
@@ -448,8 +448,10 @@ export default {
   width: 100%;
   max-height: none;
   overflow: visible;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
   box-shadow: none;
-  border: 1px solid #e6dfd2;
   animation: none;
 }
 .ts-guest-form {
@@ -461,13 +463,18 @@ export default {
 .ts-guest-input {
   flex: 1;
   min-width: 0;
-  border: 1.5px solid #e6dfd2;
-  border-radius: 999px;
-  padding: 7px 14px;
+  padding: 12px 16px;
+  font-size: 15px;
   outline: none;
+  border: 2px solid #efdcbc;
+  border-radius: 16px;
+  background: #fff6e6;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .ts-guest-input:focus {
-  border-color: #00798c;
+  border-color: #ffbf3c;
+  background: #fbf5ea;
+  box-shadow: 0 0 0 4px rgba(255, 191, 60, 0.25);
 }
 .ts-head {
   display: flex;
@@ -488,14 +495,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f6f2ea;
-  border: 1.5px solid #e6dfd2;
-  border-radius: 999px;
-  padding: 5px 5px 5px 14px;
-  transition: border-color 0.2s;
+  padding: 6px 6px 6px 16px;
+  border: 2px solid #efdcbc;
+  border-radius: 16px;
+  background: #fff6e6;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .ts-link.copied {
-  border-color: #00798c;
+  border-color: #19b3c4;
+  background: #ecfafb;
 }
 .ts-link input {
   flex: 1;
@@ -503,31 +511,43 @@ export default {
   border: 0;
   background: transparent;
   outline: none;
-  font-size: 14px;
-  color: #003d5b;
+  padding: 8px 0;
+  font-size: 15px;
+  color: #12324a;
 }
 .ts-copy {
-  border: 0;
-  border-radius: 999px;
-  background: #003d5b;
-  color: #edae49;
-  font-weight: 600;
-  padding: 8px 16px;
+  padding: 10px 18px;
   white-space: nowrap;
+  background: #12324a;
+  color: #ffd87a;
+  box-shadow: 0 4px 0 #0b1f2e;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s;
 }
 .ts-link.copied .ts-copy {
-  background: #00798c;
+  background: #19b3c4;
   color: #fff;
+  box-shadow: 0 4px 0 #0f8391;
+}
+.ts-copy:active:not(:disabled),
+.ts-invite:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: none;
 }
 .ts-error {
-  color: #d1495b;
+  color: #c43a4b;
   font-size: 13px;
+  font-weight: 700;
   margin: 8px 4px 0;
 }
 .ts-share {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0 22px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  margin: 16px 0 28px;
 }
 .ts-friends {
   margin-bottom: 18px;
@@ -538,11 +558,11 @@ export default {
 .ts-friend-list {
   list-style: none;
   margin: 0;
-  padding: 4px 12px;
+  padding: 4px 14px;
   max-height: 232px;
   overflow-y: auto;
-  border: 1px solid #efe9df;
-  border-radius: 16px;
+  border-radius: 18px;
+  background: #fff6e6;
 }
 .ts-friend {
   display: flex;
@@ -551,7 +571,7 @@ export default {
   padding: 8px 0;
 }
 .ts-friend + .ts-friend {
-  border-top: 1px solid #efe9df;
+  border-top: 2px dashed #efdcbc;
 }
 .ts-friend-name {
   flex: 1;
@@ -570,7 +590,7 @@ export default {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #22c55e;
+  background: #19b3c4;
   border: 2px solid #fff;
 }
 .ts-invite:disabled {
@@ -581,40 +601,46 @@ export default {
 }
 .ts-label {
   display: block;
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #12324a;
+  margin-bottom: 8px;
 }
 .ts-search {
   display: flex;
   align-items: center;
-  border: 1.5px solid #e6dfd2;
-  border-radius: 999px;
-  padding: 2px 6px 2px 14px;
-  transition: border-color 0.15s;
+  padding: 4px 8px 4px 16px;
+  border: 2px solid #efdcbc;
+  border-radius: 16px;
+  background: #fff6e6;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .ts-search:focus-within {
-  border-color: #00798c;
+  border-color: #ffbf3c;
+  background: #fbf5ea;
+  box-shadow: 0 0 0 4px rgba(255, 191, 60, 0.25);
 }
 .ts-at {
-  color: #5a6b78;
-  font-weight: 700;
+  color: #c98a1a;
+  font-weight: 900;
 }
 .ts-search input {
   flex: 1;
   min-width: 0;
   border: 0;
   outline: none;
-  padding: 8px 6px;
+  padding: 9px 8px;
+  font-size: 15px;
+  color: #12324a;
   background: transparent;
 }
 .ts-results {
   list-style: none;
   padding: 6px;
-  margin: 6px 0 0;
-  border: 1px solid #e6dfd2;
-  border-radius: 16px;
-  box-shadow: 0 10px 24px rgba(0, 40, 62, 0.08);
+  margin: 8px 0 0;
+  border-radius: 18px;
+  background: #fbf5ea;
+  box-shadow: 0 14px 30px -14px rgba(18, 50, 74, 0.35);
 }
 .ts-result {
   display: flex;
@@ -633,52 +659,55 @@ export default {
   transition: background 0.15s;
 }
 .ts-result.clickable:hover {
-  background: #f6f2ea;
+  background: #fff6e6;
 }
 .ts-result.clickable:hover .ts-invite {
-  background: #00626f;
+  background: #ffd36e;
 }
 .ts-result.clickable:focus-visible {
-  outline: 3px solid rgba(0, 121, 140, 0.4);
+  outline: 3px solid #19b3c4;
   outline-offset: 1px;
 }
 .ts-result.clickable:disabled {
   cursor: default;
 }
 .ts-invite {
-  border: 0;
-  border-radius: 999px;
-  background: #00798c;
-  color: #fff;
-  font-weight: 600;
+  padding: 7px 16px;
   font-size: 13px;
-  padding: 6px 14px;
+  background: #ffbf3c;
+  color: #12324a;
+  box-shadow: 0 3px 0 #d0901c;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s;
 }
 .ts-result.clickable:disabled .ts-invite {
   opacity: 0.6;
 }
 .ts-ok {
-  color: #00798c;
+  color: #0f8391;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   margin: 8px 4px 0;
 }
 .ts-or {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 18px 0 12px;
-  color: #8a99a5;
+  gap: 12px;
+  margin: 26px 0 14px;
+  color: #b08a52;
   font-size: 12px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 .ts-or::before,
 .ts-or::after {
   content: '';
   flex: 1;
-  height: 1px;
-  background: #e6dfd2;
+  border-top: 2px dashed #efdcbc;
 }
 .ts-av.sm {
   width: 28px;
@@ -686,30 +715,45 @@ export default {
   font-size: 12px;
 }
 .ts-av.invited {
-  background: #eaf1fb;
-  color: #30638e;
-  border: 2px solid #30638e;
+  background: #eaf4ff;
+  color: #24407a;
+  border: 2px solid #8fcbff;
 }
 .ts-app {
-  flex: 1;
+  --tile: #fff;
+  --edge: #ecd6b0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 4px;
-  border: 1px solid #e6dfd2;
-  border-radius: 16px;
-  background: #fbf5ea;
-  color: #003d5b;
-  font-size: 13px;
-  font-weight: 500;
+  justify-content: center;
+  gap: 8px;
+  min-height: 92px;
+  padding: 14px 8px 12px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--tile);
+  color: #12324a;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
   text-decoration: none;
-  transition: background 0.15s, transform 0.15s;
+  cursor: pointer;
+  box-shadow: 0 5px 0 var(--edge), 0 12px 22px -14px rgba(18, 50, 74, 0.4);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .ts-app:hover {
-  background: #f6f2ea;
+  color: #12324a;
   transform: translateY(-2px);
+  box-shadow: 0 7px 0 var(--edge), 0 16px 26px -14px rgba(18, 50, 74, 0.4);
 }
+.ts-app:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--edge), 0 4px 8px -6px rgba(18, 50, 74, 0.4);
+}
+.ts-app.wa { --tile: #e9fbef; --edge: #b4e6c5; }
+.ts-app.tg { --tile: #e7f5fd; --edge: #b0daf2; }
+.ts-app.em { --tile: #eef1fb; --edge: #c3cbe9; }
+.ts-app.more { --tile: #fff3df; --edge: #efd3a2; }
 .ts-app-icon {
   width: 36px;
   height: 36px;
@@ -720,14 +764,15 @@ export default {
   font-size: 16px;
 }
 .ts-sub {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
+  color: #12324a;
   margin-bottom: 8px;
 }
 .ts-count {
-  font-weight: 400;
+  font-weight: 600;
   font-size: 13px;
-  color: #5a6b78;
+  color: #6a7f8f;
   margin-left: 6px;
 }
 .ts-people {
@@ -739,8 +784,8 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 4px;
-  border-bottom: 1px solid #efe9df;
+  padding: 12px 4px;
+  border-bottom: 2px dashed #efdcbc;
 }
 .ts-person.guest strong {
   color: #5a6b78;
@@ -763,26 +808,26 @@ export default {
 }
 .ts-badge {
   font-size: 12px;
-  font-weight: 600;
-  background: #f5eee2;
-  color: #00798c;
+  font-weight: 800;
+  background: #fff1cf;
+  color: #a26b06;
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 4px 11px;
 }
 .ts-text-btn {
   border: 0;
   background: none;
-  color: #00798c;
-  font-weight: 600;
+  color: #24407a;
+  font-weight: 800;
   font-size: 13px;
-  padding: 4px 6px;
-  border-radius: 8px;
+  padding: 5px 8px;
+  border-radius: 10px;
 }
 .ts-text-btn:hover {
-  background: #f6f2ea;
+  background: #fff1d6;
 }
 .ts-text-btn.danger {
-  color: #d1495b;
+  color: #c43a4b;
 }
 .ts-foot {
   display: flex;
@@ -803,7 +848,7 @@ export default {
 .ts-text-btn:focus-visible,
 .ts-invite:focus-visible,
 .ts-done:focus-visible {
-  outline: 3px solid rgba(0, 121, 140, 0.45);
+  outline: 3px solid #19b3c4;
   outline-offset: 2px;
 }
 @keyframes ts-fade {
