@@ -1,51 +1,83 @@
 /* ============ App theme (all pages except login/signup) ============ */
 :root {
-  --app-primary: #00798c;
-  --app-primary-dark: #00626f;
-  --app-bg: #efe4d2;
-  --app-ink: #003d5b;
-  --app-muted: #5a6b78;
-  --bs-body-bg: #fbf5ea;
-  --bs-secondary-bg: #f3ead9;
-  --bs-tertiary-bg: #f6eee0;
-  --app-border: #e6dfd2;
+  --app-primary: #d79a2b;
+  --app-primary-dark: #b77d1c;
+  --app-bg: #efe3c6;
+  --app-surface: #fbf4df;
+  --app-surface-soft: #f4ead2;
+  --app-ink: #26233f;
+  --app-muted: #746e63;
+  --app-border: #b8aa8f;
+  --app-border-soft: #d9cdb5;
+  --app-navy: #292647;
+  --app-navy-soft: #3b365d;
+  --app-gold: #d79a2b;
 
-  /* Make Bootstrap's "primary" colour our green everywhere
-     (badges, links, text-primary, bg-primary-subtle...) */
-  --bs-primary: #00798c;
-  --bs-primary-rgb: 0, 121, 140;
-  --bs-link-color-rgb: 0, 121, 140;
-  --bs-link-hover-color-rgb: 0, 98, 111;
-  --bs-primary-bg-subtle: #d6eef1;
-  --bs-primary-text-emphasis: #004e5a;
+  --bs-body-bg: #f8f0dc;
+  --bs-secondary-bg: #f2e6cc;
+  --bs-tertiary-bg: #f6edd9;
+  --bs-body-color: var(--app-ink);
+
+  --bs-primary: #292647;
+  --bs-primary-rgb: 41, 38, 71;
+  --bs-link-color-rgb: 41, 38, 71;
+  --bs-link-hover-color-rgb: 59, 54, 93;
+  --bs-primary-bg-subtle: #e7e3ef;
+  --bs-primary-text-emphasis: #211f39;
+
+  --font-display: 'Trebuchet MS', 'Avenir Next', Avenir, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Trebuchet MS', 'Avenir Next', Avenir, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --photo-shade: linear-gradient(180deg, rgba(28, 26, 48, 0) 35%, rgba(28, 26, 48, 0.84) 100%);
 }
 
 body {
   background-color: var(--app-bg);
   font-family: var(--font-body);
   color: var(--app-ink);
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+  -webkit-font-smoothing: antialiased;
   transition: background-color 0.25s ease;
 }
+
 /* Dark pages (Settings): set on <body> by App.vue as soon as you navigate there */
 body.dark-page {
   background:
-    radial-gradient(900px 420px at 50% -120px, rgba(237, 174, 73, 0.14), transparent 70%),
-    radial-gradient(600px 300px at 85% 10%, rgba(0, 121, 140, 0.12), transparent 70%),
-    #00202f fixed;
-  background-color: #00202f;
+    radial-gradient(900px 420px at 50% -120px, rgba(215, 154, 43, 0.14), transparent 70%),
+    radial-gradient(600px 300px at 85% 10%, rgba(59, 54, 93, 0.18), transparent 70%),
+    #201e35 fixed;
+  background-color: #201e35;
 }
 
-h2, h4, h5 {
-  font-weight: 600;
-}
-h2 {
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: var(--font-display);
+  color: var(--app-ink);
+  letter-spacing: -0.015em;
+}
+
+h1, h2, h3, .h1, .h2, .h3 {
+  font-weight: 800;
+}
+
+h4, h5, h6, .h4, .h5, .h6 {
+  font-weight: 700;
+}
+
+h1, .h1 { font-size: clamp(1.9rem, 2.7vw, 2.7rem); }
+h2, .h2 { font-size: clamp(1.55rem, 2vw, 2rem); }
+h3, .h3 { font-size: clamp(1.25rem, 1.6vw, 1.55rem); }
+
+small, .small,
+.text-muted {
+  color: var(--app-muted) !important;
 }
 
 .container {
   padding-bottom: 48px;
 }
-/* Small screens: use the full width (Bootstrap's 540px box leaves big side gaps on phones/small tablets) */
+
 @media (max-width: 767.98px) {
   .container {
     max-width: 100%;
@@ -54,57 +86,114 @@ h2 {
   }
 }
 
-/* Navbar and trip header use the same dark green-blue as the login page */
+/* Navbar and trip header use the ticket's dark navy */
 .navbar.bg-dark {
-  background: linear-gradient(90deg, #002a40, #003d5b) !important;
-}
-.navbar-brand {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-}
-.trip-hero {
-  background: linear-gradient(135deg, #002a40, #30638e);
-  border: 0;
+  background: linear-gradient(90deg, #211f39, #312d50) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Cards */
+.navbar-brand {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.trip-hero {
+  background: linear-gradient(135deg, #25223f, #3a355d);
+  border: 1px solid rgba(215, 154, 43, 0.28);
+  border-radius: 14px;
+}
+
+/* Cards: paper-ticket feel rather than highly modern floating cards */
 .card {
+  background: var(--app-surface);
   border-radius: 12px;
-  border: 1px solid var(--app-border);
-  box-shadow: 0 2px 8px rgba(0, 40, 62, 0.06);
+  border: 1px solid var(--app-border-soft);
+  box-shadow: 0 3px 10px rgba(73, 61, 39, 0.08);
+}
+
+.card-header,
+.card-footer {
+  background: rgba(244, 234, 210, 0.7);
+  border-color: var(--app-border-soft);
 }
 
 /* Buttons */
 .btn {
   border-radius: 8px;
-  font-weight: 500;
-}
-.btn-primary {
-  --bs-btn-bg: var(--app-primary);
-  --bs-btn-border-color: var(--app-primary);
-  --bs-btn-hover-bg: var(--app-primary-dark);
-  --bs-btn-hover-border-color: var(--app-primary-dark);
-  --bs-btn-active-bg: var(--app-primary-dark);
-  --bs-btn-active-border-color: var(--app-primary-dark);
-  --bs-btn-disabled-bg: var(--app-primary);
-  --bs-btn-disabled-border-color: var(--app-primary);
-}
-.btn-outline-primary {
-  --bs-btn-color: var(--app-primary);
-  --bs-btn-border-color: var(--app-primary);
-  --bs-btn-hover-bg: var(--app-primary);
-  --bs-btn-hover-border-color: var(--app-primary);
-  --bs-btn-active-bg: var(--app-primary-dark);
-  --bs-btn-active-border-color: var(--app-primary-dark);
-  --bs-btn-disabled-color: var(--app-primary);
-  --bs-btn-disabled-border-color: var(--app-primary);
+  font-weight: 700;
+  font-size: 0.94rem;
+  letter-spacing: 0.01em;
+  padding: 0.55rem 1rem;
 }
 
-/* Inputs: green focus ring instead of Bootstrap blue */
+.btn-primary {
+  --bs-btn-bg: var(--app-navy);
+  --bs-btn-border-color: var(--app-navy);
+  --bs-btn-color: #fffaf0;
+  --bs-btn-hover-bg: var(--app-navy-soft);
+  --bs-btn-hover-border-color: var(--app-navy-soft);
+  --bs-btn-active-bg: #1f1c34;
+  --bs-btn-active-border-color: #1f1c34;
+  --bs-btn-disabled-bg: var(--app-navy);
+  --bs-btn-disabled-border-color: var(--app-navy);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--app-navy);
+  --bs-btn-border-color: #81789b;
+  --bs-btn-hover-bg: var(--app-navy);
+  --bs-btn-hover-border-color: var(--app-navy);
+  --bs-btn-hover-color: #fffaf0;
+  --bs-btn-active-bg: #1f1c34;
+  --bs-btn-active-border-color: #1f1c34;
+}
+
+.btn-warning,
+.btn-outline-warning {
+  --bs-btn-bg: var(--app-gold);
+  --bs-btn-border-color: #b77d1c;
+  --bs-btn-color: #2b251c;
+  --bs-btn-hover-bg: #e2aa42;
+  --bs-btn-hover-border-color: #b77d1c;
+  --bs-btn-hover-color: #2b251c;
+}
+
+/* Inputs and selects */
+.form-control,
+.form-select {
+  background-color: #fffaf0;
+  color: var(--app-ink);
+  border: 1px solid #a89b82;
+  border-radius: 8px;
+  min-height: 44px;
+  font-size: 0.95rem;
+}
+
+.form-control::placeholder {
+  color: #9a9182;
+}
+
 .form-control:focus,
 .form-select:focus {
-  border-color: var(--app-primary);
-  box-shadow: 0 0 0 0.2rem rgba(0, 121, 140, 0.2);
+  border-color: var(--app-gold);
+  box-shadow: 0 0 0 0.2rem rgba(215, 154, 43, 0.2);
+  background-color: #fffdf6;
+}
+
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #3d394f;
+  margin-bottom: 0.35rem;
+}
+
+/* Badges/chips */
+.badge {
+  border-radius: 6px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 /* The 7 trip tabs scroll sideways on phones instead of wrapping into a mess */
@@ -112,9 +201,45 @@ h2 {
   flex-wrap: nowrap;
   overflow-x: auto;
   padding-bottom: 4px;
+  gap: 6px;
 }
+
 .nav-pills .btn {
   white-space: nowrap;
+}
+
+.nav-pills .nav-link,
+.nav-tabs .nav-link {
+  border-radius: 8px;
+  color: var(--app-navy);
+  font-weight: 700;
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: var(--app-navy);
+  color: #fffaf0;
+}
+
+/* Tables */
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--app-ink);
+  --bs-table-border-color: var(--app-border-soft);
+}
+
+.table thead th {
+  color: #3d394f;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+  background-color: rgba(244, 234, 210, 0.65);
+}
+
+/* Alerts */
+.alert {
+  border-radius: 10px;
+  border-width: 1px;
 }
 
 /* Page transition (see App.vue) */
@@ -140,9 +265,8 @@ h2 {
 }
 
 /* ============ Login & Sign-up pages ============ */
-/* Night sky with an aurora, logo on top, dark glass card in the middle */
 :root {
-  --auth-accent: #edae49;        /* aurora green */
+  --auth-accent: #edae49;
   --auth-accent-hover: #f3c26f;
   --auth-accent-text: #00283c;
   --auth-card: rgba(18, 21, 28, 0.72);
@@ -165,16 +289,12 @@ h2 {
   font-family: var(--font-body);
   color: var(--auth-text);
   background:
-    /* darken the photo a little so the card and text stay readable */
     linear-gradient(180deg, rgba(3, 6, 15, 0.45), rgba(3, 6, 15, 0.25) 50%, rgba(3, 6, 15, 0.55)),
-    /* aurora photo: put the file at public/aurora.jpg */
     url('/aurora.jpg') center / cover no-repeat,
-    /* fallback night sky if the photo is missing */
     linear-gradient(180deg, #03060f 0%, #002a40 50%, #003d5b 100%);
   background-size: 100% 100%, cover, 100% 100%;
 }
 
-/* The aurora: blurred green/teal/violet glows drifting slowly */
 .auth-page::before,
 .auth-page::after {
   content: '';
@@ -182,9 +302,9 @@ h2 {
   inset: -20%;
   pointer-events: none;
   filter: blur(40px);
-  opacity: 0.45; /* gentle extra glow on top of the photo */
+  opacity: 0.45;
 }
-/* main green curtain sweeping across the sky */
+
 .auth-page::before {
   background:
     radial-gradient(ellipse 55% 9% at 35% 38%, rgba(237, 174, 73, 0.85), transparent 72%),
@@ -194,7 +314,7 @@ h2 {
   transform: rotate(-18deg);
   animation: aurora-drift 16s ease-in-out infinite alternate;
 }
-/* softer teal and violet glow */
+
 .auth-page::after {
   background:
     radial-gradient(ellipse 35% 8% at 72% 55%, rgba(167, 139, 250, 0.55), transparent 72%),
@@ -203,10 +323,12 @@ h2 {
   transform: rotate(10deg);
   animation: aurora-drift 22s ease-in-out infinite alternate-reverse;
 }
+
 @keyframes aurora-drift {
   from { translate: -4% 0; }
   to   { translate: 4% -3%; }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .auth-page::before,
   .auth-page::after {
@@ -214,59 +336,60 @@ h2 {
   }
 }
 
-/* Keep the logo and card above the aurora layers */
 .auth-brand,
 .auth-card {
   position: relative;
   z-index: 1;
 }
 
-/* Logo */
 .auth-brand {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 .auth-brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: 11px;
+  border-radius: 9px;
   background: var(--auth-accent);
   color: var(--auth-accent-text);
   box-shadow: 0 0 24px rgba(237, 174, 73, 0.45);
 }
+
 .auth-brand-name {
   font-family: var(--font-display);
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 800;
   color: #fff;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.1px;
 }
 
-/* Card */
 .auth-card {
   width: 100%;
   max-width: 430px;
   background: var(--auth-card);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  border-radius: 14px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
 }
+
 .auth-sheet {
   padding: 40px 44px 32px;
 }
 
 .auth-title {
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 800;
   margin: 0 0 8px;
   color: #fff;
 }
+
 .auth-subtitle {
   color: var(--auth-muted);
   font-size: 14px;
@@ -278,7 +401,7 @@ h2 {
   width: 100%;
   height: 50px;
   border: 1px solid var(--auth-input-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--auth-input);
   padding: 0 16px;
   margin-bottom: 12px;
@@ -287,6 +410,7 @@ h2 {
   outline: none;
   transition: border-color 0.15s, background 0.15s;
 }
+
 .auth-input:-webkit-autofill,
 .auth-input:-webkit-autofill:hover,
 .auth-input:-webkit-autofill:focus {
@@ -295,9 +419,11 @@ h2 {
   caret-color: var(--auth-text);
   transition: background-color 9999s;
 }
+
 .auth-input::placeholder {
   color: var(--auth-muted);
 }
+
 .auth-input:focus {
   border-color: var(--auth-accent);
   background: rgba(255, 255, 255, 0.1);
@@ -309,23 +435,27 @@ h2 {
   height: 50px;
   margin-top: 8px;
   border: none;
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--auth-accent);
   color: var(--auth-accent-text);
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   transition: background 0.15s, transform 0.1s;
 }
+
 .auth-btn:hover {
   background: var(--auth-accent-hover);
 }
+
 .auth-btn:active {
   transform: translateY(1px);
 }
+
 .auth-btn:focus-visible {
   outline: 3px solid rgba(237, 174, 73, 0.5);
   outline-offset: 2px;
 }
+
 .auth-btn:disabled {
   opacity: 0.6;
 }
@@ -335,12 +465,13 @@ h2 {
   font-size: 13px;
   margin: 2px 0 8px;
 }
+
 .auth-success {
   background: rgba(237, 174, 73, 0.12);
   border: 1px solid rgba(237, 174, 73, 0.35);
   color: var(--auth-accent);
   font-size: 14px;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px 14px;
   margin: 0 0 16px;
 }
@@ -351,84 +482,65 @@ h2 {
   opacity: 1;
   margin: 28px 0 20px;
 }
+
 .auth-switch {
   font-size: 14px;
   color: var(--auth-muted);
   margin: 0;
 }
+
 .auth-link {
   color: var(--auth-accent);
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
 }
+
 .auth-link:hover {
   text-decoration: underline;
 }
 
-/* Phones */
 @media (max-width: 480px) {
   .auth-page {
     justify-content: flex-start;
     padding-top: 48px;
   }
+
   .auth-sheet {
     padding: 32px 22px 26px;
   }
+
   .auth-brand-name {
     font-size: 22px;
   }
 }
 
-/* Trial theme: Bootstrap's white/light helper backgrounds use the ivory/sand tones too */
+/* Bootstrap light helpers follow the paper palette */
 .bg-white {
-  background-color: #fbf5ea !important;
-}
-.bg-light {
-  background-color: #f3ead9 !important;
+  background-color: var(--app-surface) !important;
 }
 
-/* ---------- Loading placeholders (shared) ----------
-   A grey shape that gently shimmers while data loads. Add class "skel" to any block;
-   "skel dark" on dark pages. Used by <LoadingSkeleton>. */
+.bg-light {
+  background-color: var(--app-surface-soft) !important;
+}
+
+/* ---------- Loading placeholders (shared) ---------- */
 .skel {
   display: block;
-  border-radius: 12px;
-  background: linear-gradient(90deg, #efe9df 25%, #f9f6f0 50%, #efe9df 75%);
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e8ddc6 25%, #f8f0dc 50%, #e8ddc6 75%);
   background-size: 200% 100%;
   animation: skel-shimmer 1.3s ease-in-out infinite;
 }
+
 .skel.dark {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.06) 25%, rgba(255, 255, 255, 0.14) 50%, rgba(255, 255, 255, 0.06) 75%);
   background-size: 200% 100%;
 }
+
 @keyframes skel-shimmer {
   to { background-position: -200% 0; }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .skel { animation: none; }
-}
-
-/* ============ Polarsteps-style base: one friendly font, lighter pages, bold headings ============ */
-:root {
-  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --app-bg: #f6f2eb;            /* lighter, warmer page background */
-  --bs-body-bg: #fffdf9;
-  --bs-body-font-family: var(--font-body);
-  --photo-shade: linear-gradient(180deg, rgba(0, 29, 44, 0) 35%, rgba(0, 29, 44, 0.85) 100%);
-}
-body {
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
-}
-h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
-  font-family: var(--font-display);
-  letter-spacing: -0.02em;
-}
-h1, h2, h3, .h1, .h2, .h3 {
-  font-weight: 800;
-}
-.btn {
-  border-radius: 999px;
-  font-weight: 700;
 }
