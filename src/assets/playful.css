@@ -1,0 +1,226 @@
+/* ============ Playful design system (loaded after style.css) ============
+   Brighter navy / amber / sunset / teal, pastel page gradients, chunky rounded shapes,
+   pillowy shadows and small bouncy animations. Utility classes start with pl-.
+   Hand-drawn icons: components/DoodleIcon.vue. Tour guide: components/PlaneGuide.vue. */
+
+:root {
+  /* brand, a notch brighter */
+  --pl-navy: #0e3a5c;
+  --pl-navy-deep: #082a44;
+  --pl-ink: #12324a;
+  --pl-amber: #ffbf3c;
+  --pl-amber-dark: #d99a1c;
+  --pl-sunset: #ff6b7a;
+  --pl-sunset-dark: #d94b5b;
+  --pl-teal: #19b3c4;
+  --pl-teal-dark: #0f8d9b;
+  --pl-sky: #8fcbff;
+  --pl-lilac: #c3b0ff;
+  /* pastel tints for backgrounds */
+  --pl-cream: #fff7e8;
+  --pl-peach: #ffe6dc;
+  --pl-blush: #ffe1e6;
+  --pl-mint: #dff6f3;
+  --pl-ice: #e3f1ff;
+  /* shapes */
+  --pl-radius: 28px;
+  --pl-radius-sm: 18px;
+  --pl-shadow: 0 2px 0 rgba(18, 50, 74, 0.06), 0 18px 40px -14px rgba(18, 50, 74, 0.22);
+  --pl-shadow-lift: 0 2px 0 rgba(18, 50, 74, 0.06), 0 26px 50px -16px rgba(18, 50, 74, 0.3);
+  --pl-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --app-bg: var(--pl-cream);
+}
+
+/* ---------- page ---------- */
+body:not(.dark-page) {
+  background:
+    radial-gradient(1100px 520px at 8% -10%, var(--pl-peach), transparent 60%),
+    radial-gradient(900px 520px at 100% 0%, var(--pl-ice), transparent 60%),
+    radial-gradient(900px 600px at 50% 110%, var(--pl-mint), transparent 60%),
+    var(--pl-cream) fixed;
+}
+
+/* No sideways scrolling anywhere: full-width banners (like the trip page's photo) poke out of the content
+   column to reach the screen edges. clip (not hidden) so sticky bars inside still stick. */
+body {
+  overflow-x: hidden;
+}
+.pl-app {
+  overflow-x: clip;
+}
+
+/* Wide layout: content uses the full width with comfortable side padding (no narrow boxed column) */
+.pl-shell {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0 clamp(14px, 3.2vw, 44px) 56px;
+}
+
+/* ---------- full-width navbar ---------- */
+.pl-nav {
+  position: relative;
+  z-index: 1030;
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2vw, 28px);
+  width: 100%;
+  padding: 10px clamp(14px, 3.2vw, 44px);
+  margin-bottom: 24px;
+  background: linear-gradient(100deg, var(--pl-navy-deep), var(--pl-navy) 55%, #145079);
+  border-radius: 0 0 28px 28px;
+  box-shadow: 0 10px 30px -12px rgba(8, 42, 68, 0.55);
+}
+.pl-brand {
+  margin-right: auto; /* pushes the profile menu to the far right */
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: default; /* just the name, not a link */
+}
+.pl-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--pl-amber);
+  box-shadow: 0 4px 0 var(--pl-amber-dark);
+  transition: transform 0.3s var(--pl-spring);
+}
+.pl-links {
+  display: flex;
+  gap: 6px;
+  margin-right: auto;
+}
+.pl-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, transform 0.25s var(--pl-spring);
+}
+.pl-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+.pl-link.router-link-active {
+  color: var(--pl-navy-deep);
+  background: #fff7e8;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18);
+}
+@media (max-width: 640px) {
+  .pl-link span {
+    display: none; /* icons only on phones */
+  }
+  .pl-link {
+    padding: 8px 10px;
+  }
+}
+
+/* ---------- chunky buttons ("press" down on click) ---------- */
+.pl-btn {
+  --b: var(--pl-amber);
+  --b-dark: var(--pl-amber-dark);
+  --b-text: var(--pl-navy-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--b);
+  color: var(--b-text);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 5px 0 var(--b-dark);
+  transition: transform 0.2s var(--pl-spring), box-shadow 0.2s, filter 0.2s;
+}
+.pl-btn:hover {
+  color: var(--b-text);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 var(--b-dark);
+  filter: saturate(1.1);
+}
+.pl-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--b-dark);
+  transition-duration: 0.06s;
+}
+.pl-btn:focus-visible {
+  outline: 3px solid var(--pl-teal);
+  outline-offset: 3px;
+}
+.pl-btn.teal { --b: var(--pl-teal); --b-dark: var(--pl-teal-dark); --b-text: #fff; }
+.pl-btn.sunset { --b: var(--pl-sunset); --b-dark: var(--pl-sunset-dark); --b-text: #fff; }
+.pl-btn.navy { --b: var(--pl-navy); --b-dark: var(--pl-navy-deep); --b-text: #fff; }
+.pl-btn.ghost { --b: #fff; --b-dark: #e7d8c0; --b-text: var(--pl-ink); }
+
+/* ---------- pillowy cards ---------- */
+.pl-card {
+  background: #fff;
+  border-radius: var(--pl-radius);
+  box-shadow: var(--pl-shadow);
+  transition: transform 0.3s var(--pl-spring), box-shadow 0.3s;
+}
+.pl-card.lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--pl-shadow-lift);
+}
+
+/* Bootstrap bits used across the app, made chunkier */
+.card {
+  border-radius: var(--pl-radius-sm);
+  border: 0;
+  box-shadow: var(--pl-shadow);
+}
+.btn {
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+/* ---------- small animations ---------- */
+@keyframes pl-pop-in {
+  0% { opacity: 0; transform: translateY(14px) scale(0.96); }
+  60% { opacity: 1; transform: translateY(-3px) scale(1.01); }
+  100% { transform: none; }
+}
+@keyframes pl-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes pl-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-4deg); }
+  60% { transform: rotate(3deg); }
+}
+.pl-pop-in { animation: pl-pop-in 0.55s var(--pl-spring) both; }
+.pl-float { animation: pl-float 3.4s ease-in-out infinite; }
+.pl-hover-wiggle:hover { animation: pl-wiggle 0.45s ease-in-out; }
+.pl-hover-bounce { transition: transform 0.3s var(--pl-spring); }
+.pl-hover-bounce:hover { transform: translateY(-3px) scale(1.03); }
+
+/* The page fade-in gets a little spring */
+.page-enter-active {
+  transition: opacity 0.35s ease, transform 0.45s var(--pl-spring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-pop-in, .pl-float, .pl-hover-wiggle:hover { animation: none; }
+  .pl-btn, .pl-card, .pl-hover-bounce, .pl-link, .pl-brand-mark { transition: none; }
+}

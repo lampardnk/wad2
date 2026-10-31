@@ -1,36 +1,37 @@
 <template>
-  <!-- First-visit tour: small bubbles that point at real parts of the page, one after another.
+  <!-- First-visit tour with "Pip", our paper-plane guide: a speech bubble points at real parts of the page,
+       one after another, with a little flight-path progress bar. Finishing gets a loop-the-loop and confetti.
        Not a blocking pop-up: the page stays usable, and "Skip" ends it at any time.
        Usage: <FeatureTour storage-key="tour-discover-v1" :steps="[{ target: '[data-tour=filters]', title, body, cta }]" /> -->
   <Teleport to="body">
     <template v-if="active && step">
-      <!-- Pulsing beacon on the thing being explained -->
+      <!-- Pulsing ring on the thing being explained -->
       <span class="ft-beacon" :style="{ left: beacon.x + 'px', top: beacon.y + 'px' }" aria-hidden="true">
         <span class="ft-beacon-ping"></span>
         <span class="ft-beacon-dot"></span>
       </span>
 
       <transition name="ft-pop" appear>
-        <div ref="bubbleEl" class="ft-bubble" :class="'is-' + side" :style="{ left: pos.x + 'px', top: pos.y + 'px' }"
+        <div ref="bubbleEl" :key="index" class="ft-bubble" :class="'is-' + side" :style="{ left: pos.x + 'px', top: pos.y + 'px' }"
           role="dialog" aria-modal="false" :aria-labelledby="'ft-title-' + index" :aria-describedby="'ft-body-' + index"
-          @click="next" @keydown.esc.stop="skip">
+          @keydown.esc.stop="skip">
           <span class="ft-arrow" :style="{ left: arrowX + 'px' }" aria-hidden="true"></span>
+          <span class="ft-guide"><PlaneGuide :size="86" :mood="index === 0 ? 'wave' : 'talk'" /></span>
 
-          <button type="button" class="ft-skip" aria-label="Skip the tour" @click.stop="skip">
-            <AppIcon name="x" :size="12" :stroke="2.6" /> Skip
-          </button>
+          <button type="button" class="ft-skip" aria-label="Skip the tour" @click.stop="skip">Skip</button>
 
-          <p class="ft-count" aria-hidden="true">Tip {{ index + 1 }} of {{ steps.length }}</p>
-          <h2 :id="'ft-title-' + index" class="ft-title">
-            <span v-if="step.icon" class="ft-icon"><AppIcon :name="step.icon" :size="16" /></span>
-            {{ step.title }}
-          </h2>
+          <h2 :id="'ft-title-' + index" class="ft-title">{{ step.title }}</h2>
           <p :id="'ft-body-' + index" class="ft-body">{{ step.body }}</p>
 
           <div class="ft-foot">
-            <span class="ft-dots" aria-hidden="true">
-              <span v-for="(s, i) in steps" :key="i" class="ft-dot" :class="{ on: i === index, done: i < index }"></span>
-            </span>
+            <!-- Flight path: the little plane moves along as you go -->
+            <div class="ft-path" aria-hidden="true">
+              <span class="ft-path-done" :style="{ width: pathPct + '%' }"></span>
+              <span v-for="(s, i) in steps" :key="i" class="ft-stop" :class="{ done: i < index, on: i === index }"
+                :style="{ left: (steps.length > 1 ? (i / (steps.length - 1)) * 100 : 0) + '%' }"></span>
+              <span class="ft-path-plane" :style="{ left: pathPct + '%' }"><DoodleIcon name="plane" :size="20" anim="" /></span>
+            </div>
+            <span class="ft-count">Step {{ index + 1 }} of {{ steps.length }}</span>
             <button ref="ctaEl" type="button" class="ft-cta" @click.stop="next">
               {{ step.cta || (index < steps.length - 1 ? 'Next' : 'Got it') }}
             </button>
@@ -38,12 +39,23 @@
         </div>
       </transition>
     </template>
+
+    <!-- All done: Pip loops, confetti pops -->
+    <transition name="ft-pop">
+      <div v-if="cheering" class="ft-cheer" role="status">
+        <span class="ft-confetti" aria-hidden="true"><span v-for="i in 18" :key="i" :style="confetti(i)"></span></span>
+        <PlaneGuide :size="96" mood="loop" />
+        <strong>You're all set!</strong>
+        <small>Have a great trip.</small>
+      </div>
+    </transition>
   </Teleport>
 </template>
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import AppIcon from './AppIcon.vue'
+import PlaneGuide from './PlaneGuide.vue'
+import DoodleIcon from './DoodleIcon.vue'
 
 const props = defineProps({
   // [{ target: CSS selector, fallback?: selector if target isn't on the page, title, body, cta?, icon?, placement?: 'top' | 'bottom' }]
@@ -69,6 +81,21 @@ let startTimer = null
 let resizeObs = null
 
 const step = computed(() => props.steps[index.value])
+const cheering = ref(false) // the "You're all set!" moment after the last tip
+let cheerTimer = null
+// How far along the flight path the little plane is
+const pathPct = computed(() => (props.steps.length > 1 ? (index.value / (props.steps.length - 1)) * 100 : 100))
+// Confetti pieces round Pip
+function confetti(i) {
+  const colors = ['#ffbf3c', '#ff6b7a', '#19b3c4', '#8fcbff', '#c3b0ff']
+  const angle = (i / 18) * Math.PI * 2
+  return {
+    '--dx': Math.round(Math.cos(angle) * (60 + (i % 3) * 22)) + 'px',
+    '--dy': Math.round(Math.sin(angle) * (50 + (i % 4) * 16)) + 'px',
+    background: colors[i % colors.length],
+    animationDelay: (i % 5) * 0.04 + 's'
+  }
+}
 
 // ---------- has this person seen it? (localStorage can be blocked, e.g. private mode) ----------
 function seen() {
@@ -166,8 +193,17 @@ async function show(i) {
   if (ctaEl.value) ctaEl.value.focus({ preventScroll: true })
 }
 function next() {
-  if (index.value < props.steps.length - 1) show(index.value + 1)
-  else finish()
+  if (index.value < props.steps.length - 1) {
+    show(index.value + 1)
+    return
+  }
+  finish()
+  // Finished every tip (not skipped): a little celebration
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    cheering.value = true
+    clearTimeout(cheerTimer)
+    cheerTimer = setTimeout(() => { cheering.value = false }, 2400)
+  }
 }
 function skip() {
   finish()
@@ -213,6 +249,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   clearTimeout(startTimer)
+  clearTimeout(cheerTimer)
   cancelAnimationFrame(frame)
   stopWatching()
   window.removeEventListener('resize', schedule)
@@ -221,202 +258,266 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Speech bubble: cream paper, chunky ink border, pillowy shadow */
 .ft-bubble {
-  /* Colours from the app: deep navy glass with the sunset-yellow accent */
-  --ft-bg: rgba(0, 29, 44, 0.9);
-  --ft-line: rgba(255, 255, 255, 0.1);
-  --ft-text: #f6f1e7;
-  --ft-muted: #b4c3cf;
-  --ft-accent: #edae49;
+  --ft-ink: #12324a;
+  --ft-paper: #fffaf0;
+  --ft-muted: #5a6b78;
+  --ft-accent: #ffbf3c;
   position: fixed;
   z-index: 1500;
-  box-sizing: border-box;
-  width: min(320px, calc(100vw - 24px));
-  padding: 16px 16px 14px;
-  border-radius: 16px;
-  border: 1px solid var(--ft-line);
-  background: var(--ft-bg);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  color: var(--ft-text);
-  /* hairline accent ring + soft glow */
-  box-shadow: 0 0 0 1.5px rgba(237, 174, 73, 0.55), 0 0 28px rgba(237, 174, 73, 0.18), 0 18px 44px rgba(0, 0, 0, 0.45);
-  cursor: pointer;
-  transition: left 0.25s ease, top 0.25s ease;
+  width: min(330px, calc(100vw - 24px));
+  padding: 16px 18px 14px 18px;
+  border-radius: 24px;
+  background: var(--ft-paper);
+  color: var(--ft-ink);
+  border: 2.5px solid var(--ft-ink);
+  box-shadow: 0 6px 0 var(--ft-ink), 0 24px 40px -12px rgba(18, 50, 74, 0.4);
+  font-family: var(--font-body);
+}
+/* Pip pokes out of the bubble's top-left corner */
+.ft-guide {
+  position: absolute;
+  top: -58px;
+  left: -26px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 6px rgba(18, 50, 74, 0.2));
+}
+.is-top .ft-guide {
+  top: auto;
+  bottom: -50px;
 }
 .ft-arrow {
   position: absolute;
-  width: 14px;
-  height: 14px;
-  margin-left: -7px;
-  background: var(--ft-bg);
-  border: 1px solid var(--ft-line);
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  background: var(--ft-paper);
+  border: 2.5px solid var(--ft-ink);
   transform: rotate(45deg);
 }
-.ft-bubble.is-bottom .ft-arrow {
-  top: -8px;
+.is-bottom .ft-arrow {
+  top: -11px;
   border-right: 0;
   border-bottom: 0;
-  box-shadow: -1px -1px 0 0.5px rgba(237, 174, 73, 0.55);
 }
-.ft-bubble.is-top .ft-arrow {
-  bottom: -8px;
+.is-top .ft-arrow {
+  bottom: -11px;
   border-left: 0;
   border-top: 0;
-  box-shadow: 1px 1px 0 0.5px rgba(237, 174, 73, 0.55);
 }
 .ft-skip {
   position: absolute;
   top: 10px;
-  right: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  right: 12px;
+  padding: 3px 10px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--ft-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-.ft-skip:hover,
-.ft-skip:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--ft-text);
-  outline: none;
-}
-.ft-count {
-  margin: 0 0 4px;
-  font-size: 11px;
+  font: inherit;
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ft-accent);
+  cursor: pointer;
+}
+.ft-skip:hover {
+  background: rgba(18, 50, 74, 0.07);
+  color: var(--ft-ink);
 }
 .ft-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 56px 6px 0;
-  font-size: 16px;
+  margin: 14px 40px 6px 44px;
+  font-family: var(--font-display);
+  font-size: 1.08rem;
   font-weight: 800;
-  line-height: 1.3;
-  color: var(--ft-text);
-}
-.ft-icon {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(237, 174, 73, 0.15);
-  color: var(--ft-accent);
+  line-height: 1.25;
 }
 .ft-body {
-  margin: 0 0 14px;
+  margin: 0;
   font-size: 14px;
-  line-height: 1.45;
-  color: var(--ft-muted);
+  line-height: 1.5;
+  color: #2b4a60;
 }
 .ft-foot {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px 12px;
+  margin-top: 14px;
 }
-.ft-dots {
-  display: inline-flex;
-  gap: 5px;
+/* flight-path progress */
+.ft-path {
+  position: relative;
+  grid-column: 1 / -1;
+  height: 22px;
+  margin: 0 10px;
 }
-.ft-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  transition: width 0.2s ease, background 0.2s ease;
+.ft-path::before,
+.ft-path-done {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  height: 3px;
+  border-radius: 2px;
 }
-.ft-dot.done {
-  background: rgba(237, 174, 73, 0.5);
+.ft-path::before {
+  right: 0;
+  background: repeating-linear-gradient(90deg, rgba(18, 50, 74, 0.25) 0 5px, transparent 5px 10px);
 }
-.ft-dot.on {
-  width: 18px;
+.ft-path-done {
   background: var(--ft-accent);
+  transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ft-stop {
+  position: absolute;
+  top: 6px;
+  width: 11px;
+  height: 11px;
+  margin-left: -5.5px;
+  border-radius: 50%;
+  background: #fbf5ea;
+  border: 2.5px solid rgba(18, 50, 74, 0.3);
+  transition: background 0.3s, border-color 0.3s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ft-stop.done {
+  background: var(--ft-accent);
+  border-color: var(--ft-ink);
+}
+.ft-stop.on {
+  border-color: var(--ft-ink);
+  transform: scale(1.25);
+}
+.ft-path-plane {
+  position: absolute;
+  top: -8px;
+  margin-left: -10px;
+  transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ft-count {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ft-muted);
 }
 .ft-cta {
-  min-height: 38px;
-  padding: 0 16px;
+  padding: 8px 18px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 14px;
   background: var(--ft-accent);
-  color: #001d2c;
+  color: var(--ft-ink);
+  font: inherit;
   font-size: 14px;
   font-weight: 800;
-  white-space: nowrap;
-  transition: transform 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #d99a1c;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
 }
 .ft-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(237, 174, 73, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #d99a1c;
 }
-.ft-cta:focus-visible {
-  outline: 3px solid #f3c26f;
+.ft-cta:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #d99a1c;
+}
+.ft-bubble button:focus-visible {
+  outline: 3px solid #19b3c4;
   outline-offset: 2px;
 }
 
-/* Beacon: a dot with a ring that keeps pulsing outwards (like Tailwind's animate-ping) */
+/* Pulsing ring on the target */
 .ft-beacon {
   position: fixed;
   z-index: 1499;
-  width: 16px;
-  height: 16px;
-  margin: -8px 0 0 -8px;
+  width: 0;
+  height: 0;
   pointer-events: none;
-  transition: left 0.25s ease, top 0.25s ease;
 }
 .ft-beacon-dot,
 .ft-beacon-ping {
   position: absolute;
-  inset: 0;
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #edae49;
-}
-.ft-beacon-dot {
-  box-shadow: 0 0 0 3px rgba(0, 29, 44, 0.85);
+  background: #ffbf3c;
+  border: 3px solid #12324a;
 }
 .ft-beacon-ping {
-  animation: ft-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  border: 0;
+  animation: ft-ping 1.4s ease-out infinite;
 }
 @keyframes ft-ping {
-  75%,
-  100% {
-    transform: scale(2.6);
-    opacity: 0;
-  }
+  from { transform: scale(1); opacity: 0.7; }
+  to { transform: scale(3.4); opacity: 0; }
 }
 
-.ft-pop-enter-active,
-.ft-pop-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+/* "You're all set!" */
+.ft-cheer {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 18px 26px 16px;
+  border-radius: 26px;
+  background: #fffaf0;
+  color: #12324a;
+  border: 2.5px solid #12324a;
+  box-shadow: 0 6px 0 #12324a, 0 24px 40px -12px rgba(18, 50, 74, 0.4);
+  text-align: center;
 }
-.ft-pop-enter-from,
+.ft-cheer strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+.ft-cheer small {
+  color: #5a6b78;
+}
+.ft-confetti {
+  position: absolute;
+  left: 50%;
+  top: 46px;
+  pointer-events: none;
+}
+.ft-confetti span {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  border-radius: 3px;
+  animation: ft-burst 1.1s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes ft-burst {
+  0% { transform: translate(0, 0) rotate(0) scale(0.4); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(420deg) scale(1); opacity: 0; }
+}
+
+.ft-pop-enter-active {
+  transition: opacity 0.25s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ft-pop-leave-active {
+  transition: opacity 0.15s ease;
+}
+.ft-pop-enter-from {
+  opacity: 0;
+  transform: translateY(10px) scale(0.92);
+}
 .ft-pop-leave-to {
   opacity: 0;
-  transform: translateY(6px) scale(0.98);
+}
+@media (max-width: 480px) {
+  .ft-guide {
+    left: -8px;
+    top: -50px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ft-beacon-ping {
-    animation: none;
-    opacity: 0.35;
-    transform: scale(1.8);
-  }
-  .ft-bubble,
-  .ft-beacon,
-  .ft-pop-enter-active,
-  .ft-pop-leave-active {
-    transition: none;
-  }
+  .ft-beacon-ping { animation: none; }
+  .ft-path-done, .ft-path-plane, .ft-stop, .ft-cta { transition: none; }
+  .ft-pop-enter-active { transition: opacity 0.2s; }
+  .ft-pop-enter-from { transform: none; }
 }
 </style>

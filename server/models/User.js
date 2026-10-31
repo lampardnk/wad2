@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, default: '' },  // WhatsApp, e.g. '+65 9123 4567'
   contactSaved: { type: Boolean, default: false }, // saved Settings at least once (empty diet then means "no restrictions")
 
+  // Travel Twin (Settings -> Avatar studio): { look, picture, seen: [unlocked ids], outfits: [3], tripLooks: { tripId: { look, picture } } }
+  // See server/routes/avatar.js. avatarVersion goes up on every new picture (so picture links change).
+  avatar: { type: mongoose.Schema.Types.Mixed, default: null },
+  avatarVersion: { type: Number, default: 0 },
+
   // Discover shortlist (city ids), so a guest's picks follow them into their account
   discoverShortlist: { type: [String], default: [] },
 

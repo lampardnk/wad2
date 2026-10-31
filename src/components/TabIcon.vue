@@ -1,6 +1,8 @@
 <template>
-  <!-- 15px line icons (Lucide shapes); they use the text colour of whatever they sit in -->
-  <svg class="tab-icon" :width="size" :height="size" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  <!-- Trip tab icons: the hand-drawn doodles where there is one, otherwise 15px line icons (Lucide shapes)
+       that use the text colour of whatever they sit in -->
+  <DoodleIcon v-if="DOODLE_FOR[name]" :name="DOODLE_FOR[name]" :size="Number(size) + 5" />
+  <svg v-else class="tab-icon" :width="size" :height="size" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
     <path v-for="(d, i) in paths" :key="i" :d="d" />
   </svg>
@@ -8,6 +10,13 @@
 
 <script setup>
 import { computed } from 'vue'
+import DoodleIcon from './DoodleIcon.vue'
+
+// Trip tabs -> hand-drawn icons (see doodles.js)
+const DOODLE_FOR = {
+  itinerary: 'calendar', places: 'pin', packing: 'backpack', expenses: 'wallet', photos: 'camera',
+  safety: 'shield', crew: 'users', recap: 'map', travelOptions: 'plane'
+}
 
 const props = defineProps({
   name: { type: String, required: true },

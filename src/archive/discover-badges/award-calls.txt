@@ -1,0 +1,6 @@
+if (explored.value.length >= 5) award('globetrotter')
+award('quiz')
+award('spin')
+if (rarity.key !== 'common') award('gem')
+if (rarity.key === 'legendary') award('legend')
+if (shortlist.value.length >= CASE_SIZE) award('packed')

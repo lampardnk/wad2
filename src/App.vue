@@ -1,15 +1,17 @@
 <template>
-  <div>
-    <nav v-if="!$route.meta.hideNav" class="navbar navbar-dark bg-dark px-4 py-2 mb-4">
-      <router-link to="/home" class="navbar-brand fw-bold text-decoration-none text-white">
+  <div class="pl-app">
+    <!-- Full-width playful navbar: brand (just the name, not a link) and the profile menu -->
+    <nav v-if="!$route.meta.hideNav" class="pl-nav" aria-label="Main">
+      <span class="pl-brand">
+        <span class="pl-brand-mark"><DoodleIcon name="plane" :size="28" tint="cream" anim="float" /></span>
         Chui-se Your Trip
-      </router-link>
-      <!-- Profile button + account menu (trip crew and code while a trip is open) -->
+      </span>
+      <!-- Profile button + account menu -->
       <UserProfileMenu v-if="auth.user" />
     </nav>
     <!-- Login/signup pages use the full screen; other pages sit in the container -->
     <router-view v-if="$route.meta.hideNav" />
-    <div v-else class="container">
+    <div v-else class="pl-shell">
       <!-- Pages fade and slide in when you open a trip or go back -->
       <router-view v-slot="{ Component, route }">
         <transition name="page" mode="out-in">
@@ -19,6 +21,8 @@
     </div>
     <!-- Friends drawer, opened from the profile menu -->
     <FriendsDrawer v-if="auth.token" />
+    <!-- "New gear unlocked!" for your Travel Twin (once, when your trips earn something new) -->
+    <TwinCelebration v-if="auth.token" />
     <!-- Errors with "Try again", and the "can't reach the server" bar -->
     <AppToast />
   </div>
@@ -29,11 +33,13 @@ import { auth } from './auth.js'
 import UserProfileMenu from './components/UserProfileMenu.vue'
 import FriendsDrawer from './components/FriendsDrawer.vue'
 import AppToast from './components/AppToast.vue'
+import TwinCelebration from './components/TwinCelebration.vue'
+import DoodleIcon from './components/DoodleIcon.vue'
 import { startFriends, stopFriends } from './friends.js'
 
 export default {
   name: 'App',
-  components: { UserProfileMenu, FriendsDrawer, AppToast },
+  components: { UserProfileMenu, FriendsDrawer, AppToast, TwinCelebration, DoodleIcon },
   data() {
     return { auth }
   },

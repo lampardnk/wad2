@@ -25,10 +25,10 @@
         @click="cardClick(p, $event)">
         <template v-if="editing !== p.name">
           <div class="cw-id">
-            <span class="cw-avatar" :style="{ background: colorFor(p.name) }" aria-hidden="true">
-              {{ p.name.charAt(0).toUpperCase() }}
+            <!-- Their Travel Twin (this trip's outfit if they made one), or their initial -->
+            <TwinFace class="cw-avatar" :style="{ background: colorFor(p.name) }" :user-id="p.id" :version="p.avatarV" :name="p.name" :trip="tripId">
               <span v-if="p.kind !== 'guest'" class="cw-dot" :class="{ on: p.activeNow }"></span>
-            </span>
+            </TwinFace>
             <div class="cw-who">
               <span class="cw-name">{{ p.name }}<span v-if="p.name === me" class="cw-you"> (you)</span></span>
               <span class="cw-status">{{ p.statusText }}</span>
@@ -49,6 +49,10 @@
               <AppIcon name="plane" :size="14" /> Flies home {{ arrivalText(p.profile.departure) }}<template v-if="p.profile.departFlight"> · {{ p.profile.departFlight }}</template>
             </span>
             <span v-if="p.flightWith.length" class="cw-pill"><AppIcon name="users" :size="13" /> Same flight as {{ p.flightWith.join(', ') }}</span>
+            <!-- Flights between cities on the itinerary (the whole group's plan) -->
+            <span v-for="f in flights" :key="f.id" class="cw-pill" :title="'On the itinerary: ' + f.from.name + ' → ' + f.to.name">
+              <AppIcon name="plane" :size="14" /> {{ shortAirport(f.from.name) }} → {{ shortAirport(f.to.name) }} · {{ flightDay(f) }}<template v-if="f.number"> · {{ f.number }}</template>
+            </span>
             <template v-if="p.diets.length">
               <span v-for="d in p.diets" :key="d.key" class="cw-pill" :class="d.allergy ? 'allergy' : 'diet'">{{ d.icon }} {{ d.label }}</span>
             </template>
@@ -113,6 +117,7 @@ import axios from 'axios'
 import { dietTag } from '../crewOptions.js'
 import CrewDetailsForm from './CrewDetailsForm.vue'
 import AppIcon from './AppIcon.vue'
+import TwinFace from './TwinFace.vue'
 
 const COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
@@ -132,7 +137,7 @@ const DEMO = {
 }
 
 export default {
-  components: { AppIcon, CrewDetailsForm },
+  components: { AppIcon, CrewDetailsForm, TwinFace },
   props: {
     tripId: { type: String, required: true },
     city: { type: String, default: 'Trip' },
@@ -142,7 +147,8 @@ export default {
     crew: { type: Object, default: () => ({}) },
     role: { type: String, default: 'member' },
     me: { type: String, default: '' },
-    myId: { type: String, default: '' }
+    myId: { type: String, default: '' },
+    flights: { type: Array, default: () => [] } // flights between cities on the itinerary: [{ id, date, from, to, dep, arr, number }]
   },
   emits: ['invite', 'go', 'changed'],
 
@@ -203,6 +209,7 @@ export default {
         }
         list.push({
           name, kind, activeNow, statusText, profile, diets, flight, flightWith,
+          id: m ? m.id : '', avatarV: m ? m.avatarV || 0 : 0,
           hasProfile: fromSettings ? !!m.contactSaved : !!this.profiles[name],
           fromSettings,
           canEdit: name === this.me || (kind === 'guest' && this.role === 'owner') || this.demo
@@ -242,6 +249,14 @@ export default {
   },
 
   methods: {
+    // "Cape Town International Airport" -> "Cape Town"
+    shortAirport(name) {
+      return name.replace(/ (International )?Airport.*$/i, '').split(',')[0]
+    },
+    // "Mon 21 Dec, 12:30"
+    flightDay(f) {
+      return new Date(f.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' + f.dep
+    },
     colorFor(name) {
       const i = Math.max(0, this.travellers.indexOf(name))
       return COLORS[i % COLORS.length]

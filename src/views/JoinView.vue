@@ -35,7 +35,7 @@
 
         <div class="jv-going">
           <span class="jv-faces" aria-hidden="true">
-            <span v-for="(m, i) in trip.members.slice(0, 5)" :key="m.name" class="jv-face" :style="{ zIndex: 10 - i }">{{ m.name.charAt(0).toUpperCase() }}</span>
+            <TwinFace v-for="(m, i) in trip.members.slice(0, 5)" :key="m.name" class="jv-face" :style="{ zIndex: 10 - i }" :user-id="m.id || ''" :version="m.avatarV || 0" :name="m.name" />
           </span>
           <span>{{ goingText }}</span>
         </div>
@@ -78,9 +78,10 @@ import axios from 'axios'
 import { auth } from '../auth.js'
 import { codeForDestination, flagEmoji } from '../destinations.js'
 import AppIcon from '../components/AppIcon.vue'
+import TwinFace from '../components/TwinFace.vue'
 
 export default {
-  components: { AppIcon },
+  components: { AppIcon, TwinFace },
   props: { code: { type: String, required: true } },
 
   data() {
