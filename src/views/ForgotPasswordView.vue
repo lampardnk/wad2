@@ -59,6 +59,7 @@
 import axios from 'axios'
 import AuthShell from '../components/AuthShell.vue'
 import AuthIcon from '../components/AuthIcon.vue'
+import { passwordProblem } from '../../server/passwordRules.js'
 
 export default {
   components: { AuthShell, AuthIcon },
@@ -117,8 +118,9 @@ export default {
         this.errorMessage = 'Enter the 6-digit code from the email.'
         return
       }
-      if (this.password.length < 8) {
-        this.errorMessage = 'Password must be at least 8 characters.'
+      const problem = passwordProblem(this.password, { email: this.email })
+      if (problem) {
+        this.errorMessage = problem
         return
       }
       if (this.password !== this.confirmPassword) {
