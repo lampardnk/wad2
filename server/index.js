@@ -28,7 +28,6 @@ import mapRoutes from './routes/maps.js'
 import eatRoutes from './routes/eat.js'
 import discoverRoutes from './routes/discover.js'
 import { imageRoute, flagRoute } from './images.js'
-import iconRoutes from './routes/icons.js'
 import travelRoutes from './routes/travel.js'
 import { rateLimit } from './rateLimit.js'
 
@@ -67,7 +66,6 @@ app.use('/api/distance-matrix', distanceRoutes)
 app.use('/api/flights', flightRoutes)
 app.use('/api/places', placeRoutes)
 app.use('/api/travel', travelRoutes) // travel times between stops (itinerary, Other journeys)
-app.use('/api/icons', iconRoutes) // 3D icons (Fluent Emoji), cached on disk
 app.use('/api/rates', rateRoutes)
 app.use('/api/safety', safetyRoutes)
 app.use('/api/maps', mapRoutes)

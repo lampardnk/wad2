@@ -8,7 +8,7 @@
             <p class="te-kicker">Organiser</p>
             <h2 id="te-title" class="te-title">Edit trip</h2>
           </div>
-          <button type="button" class="te-x" aria-label="Close" @click="close">×</button>
+          <button type="button" class="te-x" aria-label="Close" @click="close"><AppIcon name="x" :size="18" /></button>
         </header>
 
         <div class="te-body">
@@ -21,12 +21,12 @@
           <ol class="te-route" aria-labelledby="te-route-label">
             <li v-for="(d, k) in destinations" :key="d" class="te-stop">
               <span class="te-dot" aria-hidden="true"></span>
-              <span class="te-stop-name"><span aria-hidden="true">{{ flagFor(d) }}</span> {{ d }}</span>
+              <span class="te-stop-name"><FlagImg :code="flagFor(d)" :size="12" /> {{ d }}</span>
               <span class="te-stop-tools">
                 <button type="button" class="te-icon" :disabled="k === 0" :aria-label="'Move ' + d + ' earlier'" @click="move(k, -1)">↑</button>
                 <button type="button" class="te-icon" :disabled="k === destinations.length - 1" :aria-label="'Move ' + d + ' later'" @click="move(k, 1)">↓</button>
                 <button type="button" class="te-icon remove" :disabled="destinations.length === 1" :aria-label="'Remove ' + d"
-                  :title="destinations.length === 1 ? 'A trip needs at least one destination' : 'Remove'" @click="destinations.splice(k, 1)">×</button>
+                  :title="destinations.length === 1 ? 'A trip needs at least one destination' : 'Remove'" @click="destinations.splice(k, 1)"><AppIcon name="x" :size="14" /></button>
               </span>
             </li>
           </ol>
@@ -41,7 +41,7 @@
             <ul v-if="options.length" id="te-dest-list" class="te-suggest" role="listbox">
               <li v-for="(o, k) in options" :id="'te-opt-' + k" :key="o" role="option" :aria-selected="k === active"
                 :class="{ on: k === active }" @mousedown.prevent="addDestination(o)" @mouseenter="active = k">
-                <span aria-hidden="true">{{ flagFor(o) }}</span> {{ o }}
+                <FlagImg :code="flagFor(o)" :size="12" /> {{ o }}
               </li>
             </ul>
           </div>
@@ -89,7 +89,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { POPULAR_DESTINATIONS, codeForDestination, flagEmoji } from '../destinations.js'
+import { POPULAR_DESTINATIONS, codeForDestination } from '../destinations.js'
+import FlagImg from './FlagImg.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   trip: { type: Object, required: true } // { id, name, destinations, startDate, endDate }
@@ -137,7 +139,7 @@ const shiftText = computed(() => {
 })
 
 function flagFor(label) {
-  return flagEmoji(codeForDestination(label))
+  return codeForDestination(label) // country code for <FlagImg>
 }
 
 function move(k, step) {

@@ -15,7 +15,7 @@
             <div class="ss-tabs" role="tablist" aria-label="About this stop">
               <button v-for="t in tabs" :key="t.key" type="button" role="tab" :aria-selected="tab === t.key"
                 :class="{ on: tab === t.key }" @click="tab = t.key">
-                <span aria-hidden="true">{{ t.icon }}</span> {{ t.label }}<span v-if="t.key === 'notes' && noteCount" class="ss-count">{{ noteCount }}</span>
+                <span aria-hidden="true"><AppIcon :name="lineIconFor(t.icon)" :size="16" /></span> {{ t.label }}<span v-if="t.key === 'notes' && noteCount" class="ss-count">{{ noteCount }}</span>
                 <i v-if="t.key === 'crowd' && crowd.tone === 'bad' || t.key === 'weather' && wet" class="ss-dot" aria-label="needs a look"></i>
               </button>
             </div>
@@ -62,7 +62,7 @@
                     <li v-for="b in blocks" :key="b.time" :class="{ here: b.here, wet: b.rain }"
                       :aria-label="formatHour(b.time) + ': ' + b.condition + (b.temp != null ? ', ' + b.temp + ' degrees' : '') + (b.here ? ' (while you are here)' : '')">
                       <small>{{ shortHour(b.time) }}</small>
-                      <span aria-hidden="true">{{ b.icon }}</span>
+                      <span aria-hidden="true"><AppIcon :name="lineIconFor(b.icon)" :size="16" /></span>
                       <strong v-if="b.temp != null">{{ b.temp }}°</strong>
                     </li>
                   </ol>
@@ -141,6 +141,7 @@ import CustomDropdown from './CustomDropdown.vue'
 import { formatHour } from '../crowd.js'
 import AppIcon from './AppIcon.vue'
 import StopNotes from './StopNotes.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 const props = defineProps({
   open: { type: Boolean, default: false },

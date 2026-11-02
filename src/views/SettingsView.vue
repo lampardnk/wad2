@@ -839,7 +839,7 @@ async function deleteAccount() {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.14em;
-  color: var(--brass);
+  color: var(--brass-dark);
 }
 
 /* Each group: a subsection card with a fine inner margin */
@@ -959,7 +959,7 @@ async function deleteAccount() {
 .st-page .st :deep(.dd.open .dd-chevron) {
   color: var(--brass-dark);
 }
-.st-page .st :deep(.dd-value.placeholder) {
+.st-page .st :deep(.dd-value.dd-unset) {
   color: var(--muted);
 }
 /* food needs */

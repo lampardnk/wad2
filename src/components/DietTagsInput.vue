@@ -2,7 +2,7 @@
   <!-- Food needs as removable tags in one box, with a small menu of common ones -->
   <div class="dt" :class="{ focus: menuOpen }" @click="input.focus()">
     <span v-for="t in tags" :key="t.key" class="dt-tag" :class="{ allergy: t.allergy }">
-      {{ t.icon }} {{ t.label }}
+      <AppIcon :name="lineIconFor(t.icon)" :size="16" /> {{ t.label }}
       <button type="button" class="dt-x" :aria-label="'Remove ' + t.label" @click.stop="removeTag(t.key)"><AppIcon name="x" :size="12" /></button>
     </span>
     <input :id="id || null" ref="input" v-model="query" class="dt-input" maxlength="30" autocomplete="off"
@@ -14,7 +14,7 @@
     <ul v-if="menuOpen && options.length" :id="uid + '-menu'" class="dt-menu" role="listbox">
       <li v-for="(o, i) in options" :id="uid + '-o' + i" :key="o.key" role="option" :aria-selected="i === active"
         :class="{ active: i === active }" @mousedown.prevent="addTag(o.key)" @mouseenter="active = i">
-        <span aria-hidden="true">{{ o.icon }}</span> {{ o.label }}
+        <span aria-hidden="true"><AppIcon :name="lineIconFor(o.icon)" :size="16" /></span> {{ o.label }}
         <span v-if="o.custom" class="dt-hint">custom</span>
       </li>
     </ul>
@@ -26,6 +26,7 @@
 import { ref, computed, watch } from 'vue'
 import { DIETS, dietTag } from '../crewOptions.js'
 import AppIcon from './AppIcon.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },

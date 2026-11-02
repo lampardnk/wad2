@@ -10,7 +10,7 @@
         <div class="pk-tiles">
           <button v-for="o in ACTIVITIES" :key="o.key" type="button" class="pk-tile" :class="{ on: profile.activities.includes(o.key) }"
             :aria-pressed="profile.activities.includes(o.key)" :title="o.label" @click="toggleOption(profile.activities, o.key)">
-            <Icon3D class="pk-tile-icon" :emoji="o.icon" :size="44" />
+            <DoodleIcon class="pk-tile-icon" :name="o.icon" :size="44" />
             <span class="pk-tile-label">{{ o.short || o.label }}</span>
           </button>
         </div>
@@ -24,7 +24,7 @@
         <div class="pk-seg">
           <button v-for="o in WEATHER" :key="o.key" type="button" :class="{ on: profile.weather.includes(o.key) }"
             :aria-pressed="profile.weather.includes(o.key)" @click="toggleOption(profile.weather, o.key)">
-            <Icon3D :emoji="o.icon" :size="22" /> {{ o.label }}
+            <DoodleIcon :name="o.icon" :size="22" /> {{ o.label }}
           </button>
         </div>
       </fieldset>
@@ -35,7 +35,7 @@
         <div class="pk-switches">
           <button v-for="o in EXTRAS" :key="o.key" type="button" role="switch" class="pk-switch-row"
             :aria-checked="profile.extras.includes(o.key)" @click="toggleOption(profile.extras, o.key)">
-            <span class="pk-switch-text pk-switch-icon"><Icon3D :emoji="o.icon" :size="26" /> {{ o.label }}</span>
+            <span class="pk-switch-text pk-switch-icon"><DoodleIcon :name="o.icon" :size="26" /> {{ o.label }}</span>
             <span class="pk-switch" aria-hidden="true"><span class="pk-knob"></span></span>
           </button>
         </div>
@@ -68,7 +68,7 @@
       <!-- Built from: tap Edit to change -->
       <div class="pk-profile">
         <span class="pk-muted small">Built for {{ days }} day{{ days === 1 ? '' : 's' }}<span v-if="profileTags.length">:</span></span>
-        <span v-for="t in profileTags" :key="t.key" class="pk-tag"><Icon3D :emoji="t.icon" :size="18" /> {{ t.label }}</span>
+        <span v-for="t in profileTags" :key="t.key" class="pk-tag"><DoodleIcon :name="t.icon" :size="18" /> {{ t.label }}</span>
         <button type="button" class="pk-link" @click="editing = true"><AppIcon name="pencil" :size="14" /> Edit trip details</button>
         <label class="pk-hide ms-auto">
           <input v-model="hidePacked" type="checkbox"> Hide packed
@@ -78,10 +78,10 @@
       <!-- ===== Categories ===== -->
       <section v-for="cat in groups" :key="cat.key" class="pk-cat" :aria-labelledby="'pk-cat-' + cat.key">
         <button type="button" class="pk-cat-head" :aria-expanded="!collapsed[cat.key]" @click="collapsed[cat.key] = !collapsed[cat.key]">
-          <span class="pk-cat-icon"><Icon3D :emoji="cat.icon" :size="30" /></span>
+          <span class="pk-cat-icon"><DoodleIcon :name="cat.icon" :size="30" /></span>
           <h3 :id="'pk-cat-' + cat.key" class="pk-cat-title">{{ cat.label }}</h3>
           <span class="pk-cat-count" :class="{ full: cat.packed === cat.items.length }">{{ cat.packed }}/{{ cat.items.length }}</span>
-          <span class="pk-chevron" aria-hidden="true">{{ collapsed[cat.key] ? '›' : '⌄' }}</span>
+          <AppIcon class="pk-chevron" :name="collapsed[cat.key] ? 'chevron' : 'chevron-down'" :size="18" />
         </button>
 
         <div v-show="!collapsed[cat.key]">
@@ -130,10 +130,10 @@ import axios from 'axios'
 import { ACTIVITIES, WEATHER, EXTRAS } from '../tripOptions.js'
 import { CATEGORIES, buildPackingList } from '../packingList.js'
 import AppIcon from './AppIcon.vue'
-import Icon3D from './Icon3D.vue'
+import DoodleIcon from './DoodleIcon.vue'
 
 export default {
-  components: { AppIcon, Icon3D },
+  components: { AppIcon, DoodleIcon },
   props: {
     tripId: { type: String, default: '' },
     days: { type: Number, default: 3 },
@@ -402,7 +402,7 @@ export default {
   color: #00798c;
 }
 
-/* The 3D icon bounces up a little on hover and when picked */
+/* The icon lifts a little on hover and when picked */
 .pk-tile:hover .pk-tile-icon,
 .pk-tile.on .pk-tile-icon {
   transform: translateY(-3px) scale(1.06);

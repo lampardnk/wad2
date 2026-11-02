@@ -34,7 +34,7 @@
       </div>
 
       <div class="ip-strip-row">
-        <button type="button" class="ip-arrow" :disabled="dayIndex <= 0" aria-label="Previous day" @click="stepDay(-1)">‹</button>
+        <button type="button" class="ip-arrow" :disabled="dayIndex <= 0" aria-label="Previous day" @click="stepDay(-1)"><AppIcon name="chevron-left" :size="18" /></button>
         <div class="ip-strip-wrap" :class="{ 'fade-l': fadeL, 'fade-r': fadeR }">
           <div ref="stripEl" class="ip-days" role="tablist" aria-label="Trip days" @scroll.passive="updateFades" @keydown="onDayKey">
             <button v-for="(d, n) in dayList" :key="d" :ref="(el) => { if (el) dayEls[d] = el }" type="button" role="tab" class="ip-day"
@@ -50,7 +50,7 @@
             </button>
           </div>
         </div>
-        <button type="button" class="ip-arrow" :disabled="dayIndex >= dayList.length - 1" aria-label="Next day" @click="stepDay(1)">›</button>
+        <button type="button" class="ip-arrow" :disabled="dayIndex >= dayList.length - 1" aria-label="Next day" @click="stepDay(1)"><AppIcon name="chevron" :size="18" /></button>
       </div>
     </div>
 
@@ -96,7 +96,7 @@
           <p class="ip-issues-title">Things to check on Day {{ dayIndex + 1 }}</p>
           <ul>
             <li v-for="x in issues" :key="x.key">
-              <span class="ip-issue-icon" aria-hidden="true"><AppIcon v-if="lineIcon(x.icon)" :name="lineIcon(x.icon)" :size="15" /><template v-else>{{ x.icon }}</template></span>
+              <span class="ip-issue-icon" aria-hidden="true"><AppIcon :name="lineIconFor(x.icon)" :size="15" /></span>
               <button type="button" class="ip-issue-text" :title="'Open ' + x.it.stop.name" @click="openSheet(x.it, x.section)">
                 <strong>{{ x.it.stop.name }}</strong>
                 <small>{{ x.text }}</small>
@@ -216,7 +216,7 @@
 
               <!-- Lunch / dinner break (kept free when no meal is planned) -->
               <li v-if="it.stop.virtual" class="ip-stop ip-meal-row">
-                <span class="ip-num meal" aria-hidden="true">{{ it.stop.icon }}</span>
+                <span class="ip-num meal" aria-hidden="true"><AppIcon :name="lineIconFor(it.stop.icon)" :size="16" /></span>
                 <div class="ip-meal">
                   <span class="ip-when">{{ formatHour(it.start) }} <small>· {{ durationText(it.stop.duration) }}</small></span>
                   <strong class="ip-meal-name">{{ it.stop.name }}</strong>
@@ -250,7 +250,7 @@
                   </span>
 
                   <div class="ip-thumb" :class="'cat-' + categoryOf(it.stop).key" :style="thumbStyle(it.stop)" aria-hidden="true">
-                    <span v-if="!photos[photoKey(it.stop)]">{{ categoryOf(it.stop).icon }}</span>
+                    <span v-if="!photos[photoKey(it.stop)]"><AppIcon :name="lineIconFor(categoryOf(it.stop).icon)" :size="16" /></span>
                   </div>
 
                   <div class="ip-info">
@@ -289,7 +289,7 @@
                       <template v-if="!previewing">
                         <button type="button" class="ip-sig" :class="weatherOf(it).tone" :title="weatherOf(it).title"
                           :aria-label="'Weather at ' + it.stop.name + ': ' + weatherOf(it).title" @click="openSheet(it, 'weather')">
-                          <span aria-hidden="true">{{ weatherOf(it).icon }}</span> {{ weatherOf(it).text }}
+                          <span aria-hidden="true"><AppIcon :name="lineIconFor(weatherOf(it).icon)" :size="16" /></span> {{ weatherOf(it).text }}
                         </button>
                         <button type="button" class="ip-sig" :class="crowdOf(it).tone" :title="crowdOf(it).title"
                           :aria-label="'Crowds at ' + it.stop.name + ': ' + crowdOf(it).title" @click="openSheet(it, 'crowd')">
@@ -300,7 +300,7 @@
                           <AppIcon name="message" :size="14" /> Notes
                         </button>
                       </template>
-                      <span v-for="(p, k) in cardPills(it)" :key="k" class="ip-pill" :class="p.kind"><AppIcon v-if="lineIcon(p.icon)" :name="lineIcon(p.icon)" :size="13" /><template v-else>{{ p.icon }}</template> {{ p.text }}</span>
+                      <span v-for="(p, k) in cardPills(it)" :key="k" class="ip-pill" :class="p.kind"><AppIcon :name="lineIconFor(p.icon)" :size="13" /> {{ p.text }}</span>
                     </div>
 
                     <!-- On the day: finish early or stay longer, and the rest of the day follows -->
@@ -648,7 +648,7 @@
           <article v-if="selected" class="ip-detail">
             <div class="ip-detail-photo" :class="'cat-' + categoryOf(selected.stop).key" :style="thumbStyle(selected.stop)">
               <span class="ip-num sm" :style="{ background: numberColor(selectedIndex) }">{{ selectedIndex + 1 }}</span>
-              <span v-if="!photos[photoKey(selected.stop)]" class="ip-detail-icon" aria-hidden="true">{{ categoryOf(selected.stop).icon }}</span>
+              <span v-if="!photos[photoKey(selected.stop)]" class="ip-detail-icon" aria-hidden="true"><AppIcon :name="lineIconFor(categoryOf(selected.stop).icon)" :size="16" /></span>
             </div>
             <div class="ip-detail-info">
               <h4 class="ip-detail-name">{{ selected.stop.name }}</h4>
@@ -656,9 +656,9 @@
               <p v-if="hoursText(selected.stop)" class="ip-detail-line"><AppIcon name="door" :size="15" /> {{ hoursText(selected.stop) }}</p>
               <span class="ip-chip">{{ categoryOf(selected.stop).label }}</span>
               <div class="ip-detail-btns">
-                <button type="button" class="ip-step" :disabled="selectedIndex <= 0" aria-label="Previous stop" @click="stepSelected(-1)">‹</button>
+                <button type="button" class="ip-step" :disabled="selectedIndex <= 0" aria-label="Previous stop" @click="stepSelected(-1)"><AppIcon name="chevron-left" :size="18" /></button>
                 <a class="ip-directions" :href="directionsUrl(selected.stop)" target="_blank" rel="noopener"><AppIcon name="compass" :size="16" /> Get directions</a>
-                <button type="button" class="ip-step" :disabled="selectedIndex >= stopRows.length - 1" aria-label="Next stop" @click="stepSelected(1)">›</button>
+                <button type="button" class="ip-step" :disabled="selectedIndex >= stopRows.length - 1" aria-label="Next stop" @click="stepSelected(1)"><AppIcon name="chevron" :size="18" /></button>
               </div>
             </div>
           </article>
@@ -690,13 +690,13 @@
           </p>
           <section v-for="g in savedGroups" :key="g.city" class="ip-group" :aria-label="'Saved in ' + g.label">
             <h5 class="ip-group-head">
-              <span aria-hidden="true">{{ g.flag }}</span> {{ g.label }} <span class="ip-group-count">{{ g.items.length }}</span>
+              <FlagImg :code="g.flag" :size="12" /> {{ g.label }} <span class="ip-group-count">{{ g.items.length }}</span>
             </h5>
             <!-- The whole card adds it to the end of the day (the + does the same, for keyboards) -->
             <div v-for="w in g.items" :key="w.id" class="ip-wish clickable" draggable="true" :title="'Add ' + w.name + ' to the end of the day'"
               @dragstart="startDrag($event, 'wish', w)" @dragend="endDrag" @click="wishClick(w, $event)">
               <div class="ip-thumb sm" :class="'cat-' + categoryOf(w).key" :style="thumbStyle(w)" aria-hidden="true">
-                <span v-if="!photos[photoKey(w)]">{{ categoryOf(w).icon }}</span>
+                <span v-if="!photos[photoKey(w)]"><AppIcon :name="lineIconFor(categoryOf(w).icon)" :size="16" /></span>
               </div>
               <div class="ip-wish-text">
                 <span class="ip-wish-name">{{ w.name }}</span>
@@ -713,7 +713,7 @@
             </h5>
             <div v-for="w in waiting" :key="w.id" class="ip-wish waiting">
               <div class="ip-thumb sm" :class="'cat-' + categoryOf(w).key" :style="thumbStyle(w)" aria-hidden="true">
-                <span v-if="!photos[photoKey(w)]">{{ categoryOf(w).icon }}</span>
+                <span v-if="!photos[photoKey(w)]"><AppIcon :name="lineIconFor(categoryOf(w).icon)" :size="16" /></span>
               </div>
               <div class="ip-wish-text">
                 <span class="ip-wish-name">{{ w.name }}</span>
@@ -761,13 +761,15 @@ import { PLANNER_SAMPLE } from '../dayOptimizerSample.js'
 import { loadLeaflet } from '../services/leaflet.js'
 import EatDrawer from './EatDrawer.vue'
 import StopSheet from './StopSheet.vue'
-import { codeForDestination, flagEmoji } from '../destinations.js'
+import { codeForDestination } from '../destinations.js'
+import FlagImg from './FlagImg.vue'
 import AppIcon from './AppIcon.vue'
 import LegSheet from './LegSheet.vue'
 import AnchorSheet from './AnchorSheet.vue'
 import OverflowSheet from './OverflowSheet.vue'
 import CustomDropdown from './CustomDropdown.vue'
 import AddStopSheet from './AddStopSheet.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 const props = defineProps({
   days: { type: Array, default: () => [] },
@@ -1275,7 +1277,7 @@ const savedGroups = computed(() => {
       g = {
         city,
         label: city ? city.split(', ')[0] : 'Other places',
-        flag: city ? flagEmoji(codeForDestination(city)) : '📍',
+        flag: city ? codeForDestination(city) : '', // country code ('' shows a pin)
         items: []
       }
       groups.push(g)
@@ -1940,8 +1942,8 @@ function explainLocked(items, what) {
     if (it.stop.locked && it.lateMin > 0 && !late) late = it
     if (it.start + (it.stop.duration || 1) > opts.value.dayEnd + 0.01) over = it
   }
-  if (late) noteChange(what + '. ⚠ ' + late.stop.name + ' at ' + formatHour(late.start) + ' is now tight (' + late.lateMin + ' min late)', 'warn')
-  else if (over) noteChange(what + ". ⚠ The day now runs past your end time. Send " + lastFlexible(items) + ' back to Saved places?', 'warn')
+  if (late) noteChange(what + '. ' + late.stop.name + ' at ' + formatHour(late.start) + ' is now tight (' + late.lateMin + ' min late)', 'warn')
+  else if (over) noteChange(what + ". The day now runs past your end time. Send " + lastFlexible(items) + ' back to Saved places?', 'warn')
   else noteChange(what + '. The rest of the day was re-timed.')
 }
 function lastFlexible(items) {
@@ -2026,7 +2028,7 @@ const status = computed(() => {
     for (const p of pillsFor(it)) if (p.kind === 'warn') problems.push(it.stop.name + ': ' + p.text.toLowerCase())
   }
   if (problems.length) {
-    return { kind: 'warn', text: problems.length + ' thing' + (problems.length === 1 ? '' : 's') + ' to check on this day. Tap ⚠ next to Optimize Route to see them.' }
+    return { kind: 'warn', text: problems.length + ' thing' + (problems.length === 1 ? '' : 's') + ' to check on this day. Tap the warning sign next to Optimize Route to see them.' }
   }
   if (!stopRows.value.length) return { kind: 'idle', text: 'Add places to this day and the schedule balances itself.' }
   return { kind: 'ok', text: 'All clear: no overlaps, crowd peaks or rain clashes on this day.' }
@@ -2324,11 +2326,6 @@ function durationText(h) {
   const min = Math.round((hrs - whole) * 60)
   if (min === 30) return (whole + 0.5) + ' hrs'
   return whole + (whole === 1 ? ' hr' : ' hrs') + (min ? ' ' + min + 'm' : '')
-}
-// Status emoji from the optimizer -> the matching line icon (weather and place types stay as pictures)
-const LINE_ICONS = { '⏰': 'clock', '⏳': 'clock', '⚠️': 'alert', '⚠': 'alert', '🍽': 'utensils', '👥': 'users', '🔒': 'lock', '🚇': 'train', '🚶': 'footprints', '🚪': 'door', '📍': 'map-pin' }
-function lineIcon(emoji) {
-  return LINE_ICONS[emoji] || ''
 }
 // ---------- the travel strip between two stops ----------
 // The stop before this one in the day's order

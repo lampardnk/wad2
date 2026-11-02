@@ -27,6 +27,7 @@ import {
   getLocationInfo, locatePlace, getTravelAdvisory, getNearbyEarthquakes, getDisasterAlerts,
   getNearbySafety, computeRiskScore, haversineKm, openStatus, EMERGENCY_NUMBERS, HOME_HELPLINE
 } from '../services/safetyService.js'
+import { lineIconFor } from '../emojiIcons.js'
 
 const props = defineProps({
   tripId: { type: String, default: '' },
@@ -106,8 +107,8 @@ const placeName = computed(() => (locationInfo.value && locationInfo.value.city)
 
 const areaOptions = computed(() => {
   const list = []
-  props.destinations.forEach((d, i) => list.push({ key: 'dest-' + i, label: '📍 ' + d.split(', ')[0] }))
-  list.push({ key: 'live', label: '🧭 My location' })
+  props.destinations.forEach((d, i) => list.push({ key: 'dest-' + i, label: d.split(', ')[0] }))
+  list.push({ key: 'live', label: 'My location' })
   return list
 })
 
@@ -128,7 +129,7 @@ const safeMessage = computed(() => {
   const map = position.value ? ' Map: https://maps.google.com/?q=' + position.value.lat.toFixed(4) + ',' + position.value.lon.toFixed(4) : ''
   const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const status = risk.value.state === 'clear' ? 'No warnings here.' : 'There is a ' + bannerTitle.value.toLowerCase() + ' alert nearby, but I am OK.'
-  return "✅ I'm safe. " + (props.me ? '— ' + props.me + ', ' : '') + where + '. ' + status + ' (' + time + ')' + map
+  return "I'm safe. " + (props.me ? '— ' + props.me + ', ' : '') + where + '. ' + status + ' (' + time + ')' + map
 })
 
 /*
@@ -137,12 +138,12 @@ const safeMessage = computed(() => {
   before the trip we show the opening hours instead.
 */
 const KIND_GROUPS = [
-  { kind: 'hospital', label: '🏥 Hospitals', search: 'hospital', show: 5 },
-  { kind: 'clinic', label: '🩺 Clinics', search: 'clinic', show: 3 },
-  { kind: 'police', label: '👮 Police', search: 'police', show: 2 },
-  { kind: 'shelter', label: '🟢 Evacuation points', search: 'evacuation site', show: 3 },
-  { kind: 'fire_station', label: '🚒 Fire stations', search: 'fire station', show: 1 },
-  { kind: 'embassy', label: '🇸🇬 Singapore embassy', search: 'Singapore embassy', show: 1 }
+  { kind: 'hospital', icon: 'heart-pulse', label: 'Hospitals', search: 'hospital', show: 5 },
+  { kind: 'clinic', icon: 'heart-pulse', label: 'Clinics', search: 'clinic', show: 3 },
+  { kind: 'police', icon: 'shield', label: 'Police', search: 'police', show: 2 },
+  { kind: 'shelter', icon: 'map-pin', label: 'Evacuation points', search: 'evacuation site', show: 3 },
+  { kind: 'fire_station', icon: 'flame', label: 'Fire stations', search: 'fire station', show: 1 },
+  { kind: 'embassy', icon: 'flag', label: 'Singapore embassy', search: 'Singapore embassy', show: 1 }
 ]
 const showNow = computed(() => area.value === 'live' || tripIsNow.value)
 const expanded = ref([]) // kinds showing all their options
@@ -353,7 +354,7 @@ function notifyNewAlerts() {
     if (notifiedIds.includes(a.id)) continue
     notifiedIds.push(a.id)
     const message = a.what + ' · ' + a.where
-    if ('Notification' in window && Notification.permission === 'granted') new Notification('⚠️ Safety alert', { body: message })
+    if ('Notification' in window && Notification.permission === 'granted') new Notification('Safety alert', { body: message })
     showToast(message, a.level)
   }
 }
@@ -751,11 +752,11 @@ onUnmounted(() => {
         <h3 id="sf-act-title" class="sf-h">Emergency calls <span class="sf-sub">{{ (locationInfo && locationInfo.countryName) || '' }}</span></h3>
         <div class="sf-calls">
           <a v-for="(l, i) in callLines" :key="l.number" :href="telOf(l.number)" class="sf-call" :class="{ primary: i < 2 && !l.label.includes('Hotline') && !l.label.includes('Tourist') }">
-            <span class="sf-call-icon" aria-hidden="true">{{ l.icon }}</span>
+            <span class="sf-call-icon" aria-hidden="true"><AppIcon :name="lineIconFor(l.icon)" :size="16" /></span>
             <span class="sf-call-text"><strong>{{ l.number }}</strong><span>{{ l.label }}</span></span>
           </a>
           <a :href="telOf(HOME_HELPLINE.number)" class="sf-call">
-            <span class="sf-call-icon" aria-hidden="true">{{ HOME_HELPLINE.icon }}</span>
+            <span class="sf-call-icon" aria-hidden="true"><AppIcon :name="lineIconFor(HOME_HELPLINE.icon)" :size="16" /></span>
             <span class="sf-call-text"><strong>{{ HOME_HELPLINE.number }}</strong><span>{{ HOME_HELPLINE.label }}</span></span>
           </a>
         </div>
@@ -783,7 +784,7 @@ onUnmounted(() => {
           <!-- Several options per kind, with opening hours, so there's a backup if one is closed -->
           <div v-for="g in KIND_GROUPS" :key="g.kind" v-show="optionsByKind[g.kind] && optionsByKind[g.kind].length" class="sf-group">
             <div class="sf-group-head">
-              <span class="sf-group-title">{{ g.label }}</span>
+              <span class="sf-group-title"><AppIcon :name="g.icon" :size="15" /> {{ g.label }}</span>
               <a :href="searchUrl(g.search)" target="_blank" rel="noopener" class="sf-more-link">More on Google Maps ↗</a>
             </div>
             <ul class="sf-options">

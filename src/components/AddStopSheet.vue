@@ -92,7 +92,7 @@
               <ul v-else class="ad-list">
                 <li v-for="p in places" :key="p.id">
                   <button type="button" class="ad-item" @click="emit('add-place', p)">
-                    <span class="ad-item-icon" aria-hidden="true">{{ p.icon }}</span>
+                    <span class="ad-item-icon" aria-hidden="true"><AppIcon :name="lineIconFor(p.icon)" :size="16" /></span>
                     <span class="ad-item-text"><strong>{{ p.name }}</strong><small>{{ p.sub }}</small></span>
                     <span class="ad-plus" aria-hidden="true">+</span>
                   </button>
@@ -109,6 +109,7 @@
 import { ref, reactive, watch, nextTick } from 'vue'
 import axios from 'axios'
 import AppIcon from './AppIcon.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 const props = defineProps({
   open: { type: Boolean, default: false },

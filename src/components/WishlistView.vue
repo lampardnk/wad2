@@ -3,7 +3,7 @@
     <!-- Indoor / outdoor filter (the "Find a place" box below is the only search) -->
     <div class="wl-filters" role="group" aria-label="Show">
       <button v-for="f in filterOptions" :key="f.value" type="button" class="wl-chip" :class="{ active: filter === f.value }"
-        :aria-pressed="filter === f.value" @click="filter = f.value">{{ f.label }}</button>
+        :aria-pressed="filter === f.value" @click="filter = f.value"><AppIcon v-if="f.icon" :name="f.icon" :size="15" /> {{ f.label }}</button>
     </div>
 
     <!-- ===== Your wishlist ===== -->
@@ -27,7 +27,7 @@
         <div class="wl-info">
           <h4 class="wl-name" :title="w.name">{{ w.name }}</h4>
           <span class="wl-sub" :title="w.address || ''">
-            <template v-if="w.city">{{ flagFor(w.city) }} {{ w.city.split(', ')[0] }}</template><template v-if="w.city && streetOf(w)"> · </template>{{ streetOf(w) }}
+            <template v-if="w.city"><FlagImg :code="flagFor(w.city)" :size="12" /> {{ w.city.split(', ')[0] }}</template><template v-if="w.city && streetOf(w)"> · </template>{{ streetOf(w) }}
           </span>
           <span v-if="w.votes && w.votes.length" class="wl-votes" :title="w.votes.join(', ') + ' want to go'"><AppIcon name="thumbs-up" :size="12" /> {{ w.votes.length }} want to go</span>
         </div>
@@ -80,7 +80,7 @@
             :class="['wl-row-' + row.kind, { active: k === active }]" :aria-selected="k === active"
             :aria-expanded="row.kind === 'chain' ? openChain === row.name : null"
             @mousedown.prevent="choose(row)" @mouseenter="active = k">
-            <span class="wl-row-icon" aria-hidden="true">{{ row.icon }}</span>
+            <span class="wl-row-icon" aria-hidden="true"><AppIcon :name="lineIconFor(row.icon)" :size="16" /></span>
             <span class="wl-row-text">
               <!-- The part that matches what you typed is highlighted -->
               <strong v-if="row.kind === 'own' || row.kind === 'branch'">{{ row.name }}</strong>
@@ -88,7 +88,7 @@
               <span v-if="row.note" class="wl-row-note"> {{ row.note }}</span>
               <span v-if="row.sub" class="d-block small text-muted text-truncate">{{ row.sub }}</span>
             </span>
-            <span v-if="row.kind === 'chain'" class="wl-row-arrow" aria-hidden="true">{{ openChain === row.name ? '▾' : '›' }}</span>
+            <AppIcon v-if="row.kind === 'chain'" class="wl-row-arrow" :name="openChain === row.name ? 'chevron-down' : 'chevron'" :size="16" />
           </li>
         </ul>
         <p v-if="showSuggest && searching" class="wl-searching small text-muted" role="status">Searching…</p>
@@ -170,7 +170,7 @@
     <!-- ===== Popular places: one section per destination ===== -->
     <section v-for="sec in sections" :key="sec.dest" class="mt-5" :aria-label="'Popular in ' + sec.city">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h3 class="wl-heading mb-0">{{ sec.flag }} Popular in {{ sec.city }}</h3>
+        <h3 class="wl-heading mb-0"><FlagImg :code="sec.flag" :size="14" /> Popular in {{ sec.city }}</h3>
         <span v-if="sec.list.length" class="small text-muted">
           {{ sec.list.length }} {{ sec.list.length === 1 ? 'place' : 'places' }} ·
           <template v-if="sec.partial">top picks</template>
@@ -232,10 +232,12 @@
 <script>
 import axios from 'axios'
 import { trip, newId, runtimeStop } from '../itineraryStore.js'
-import { codeForDestination, flagEmoji } from '../destinations.js'
+import { codeForDestination } from '../destinations.js'
 import { placeStyle } from '../placeStyle.js'
 import CustomDropdown from './CustomDropdown.vue'
 import AppIcon from './AppIcon.vue'
+import { lineIconFor } from '../emojiIcons.js'
+import FlagImg from './FlagImg.vue'
 
 // ---------- search matching ----------
 // One letter without its accent, lower case: "É" -> "e" (so "cafe" finds "Café")
@@ -273,7 +275,7 @@ function emptyTour() {
 }
 
 export default {
-  components: { AppIcon, CustomDropdown },
+  components: { FlagImg, AppIcon, CustomDropdown },
   props: {
     // All of the trip's destinations, e.g. ['Tokyo, Japan', 'Kyoto, Japan']
     destinations: { type: Array, default: () => [] },
@@ -290,8 +292,8 @@ export default {
       filter: 'all',
       filterOptions: [
         { value: 'all', label: 'All' },
-        { value: 'indoor', label: '🏛 Indoor' },
-        { value: 'outdoor', label: '🌳 Outdoor' }
+        { value: 'indoor', label: 'Indoor', icon: 'landmark' },
+        { value: 'outdoor', label: 'Outdoor', icon: 'trees' }
       ],
       form: { name: '', address: '' },
       showSuggest: false,
@@ -372,7 +374,7 @@ export default {
     },
     cityOptions() {
       const list = []
-      for (const d of this.destinations) list.push({ value: d, label: d.split(', ')[0], icon: this.flagFor(d), description: d.split(', ').slice(1).join(', ') })
+      for (const d of this.destinations) list.push({ value: d, label: d.split(', ')[0], flag: this.flagFor(d), description: d.split(', ').slice(1).join(', ') })
       return list
     },
     // The shared wishlist (saved together with the itinerary)
@@ -429,7 +431,7 @@ export default {
       popular.sort((a, b) => b.score - a.score)
       for (const m of popular.slice(0, 4)) {
         const p = m.p
-        rows.push({ key: 'p-' + p.name, kind: 'popular', name: p.name, note: '★ Popular', sub: placeStyle(p.type).label, icon: placeStyle(p.type).icon, place: p })
+        rows.push({ key: 'p-' + p.name, kind: 'popular', name: p.name, note: 'Popular', sub: placeStyle(p.type).label, icon: placeStyle(p.type).icon, place: p })
         names.push(plain(p.name))
       }
 
@@ -459,6 +461,7 @@ export default {
   },
 
   methods: {
+    lineIconFor,
     placeStyle,
 
     // Split a name into the bit that matches what was typed and the rest: "Phewa Lake" + "phew" -> [Phew][a Lake]
@@ -842,7 +845,7 @@ export default {
     },
 
     flagFor(d) {
-      return flagEmoji(codeForDestination(d))
+      return codeForDestination(d) // country code for <FlagImg>
     }
   }
 }

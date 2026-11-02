@@ -144,10 +144,3 @@ export function codeForDestination(label) {
   }
   return ''
 }
-
-// "JP" -> 🇯🇵 (a flag emoji is two special "regional indicator" letters)
-export function flagEmoji(code) {
-  if (!code || code.length !== 2) return '📍'
-  const A = 0x1F1E6
-  return String.fromCodePoint(A + code.charCodeAt(0) - 65, A + code.charCodeAt(1) - 65)
-}

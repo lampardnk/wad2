@@ -28,7 +28,7 @@
         <p class="jv-route">
           <span v-for="(d, i) in trip.destinations" :key="d">
             <span v-if="i > 0" class="jv-arrow" aria-hidden="true">→</span>
-            {{ flagFor(d) }} {{ d.split(', ')[0] }}
+            <FlagImg :code="flagFor(d)" :size="12" /> {{ d.split(', ')[0] }}
           </span>
         </p>
         <p class="jv-meta"><AppIcon name="calendar" :size="15" /> {{ dateText }}</p>
@@ -76,12 +76,13 @@
 <script>
 import axios from 'axios'
 import { auth } from '../auth.js'
-import { codeForDestination, flagEmoji } from '../destinations.js'
+import { codeForDestination } from '../destinations.js'
 import AppIcon from '../components/AppIcon.vue'
 import InitialBadge from '../components/InitialBadge.vue'
+import FlagImg from '../components/FlagImg.vue'
 
 export default {
-  components: { AppIcon, InitialBadge },
+  components: { FlagImg, AppIcon, InitialBadge },
   props: { code: { type: String, required: true } },
 
   data() {
@@ -130,7 +131,7 @@ export default {
 
   methods: {
     flagFor(d) {
-      return flagEmoji(codeForDestination(d))
+      return codeForDestination(d) // country code for <FlagImg>
     },
 
     async loadPhoto() {

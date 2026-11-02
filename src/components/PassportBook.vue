@@ -41,7 +41,7 @@
 import PassportStamp from './PassportStamp.vue'
 
 defineProps({
-  stamps: { type: Array, default: () => [] }, // [{ place: 'Kyoto, Japan', date: 'MAR 2025', flag: '🇯🇵' }]
+  stamps: { type: Array, default: () => [] }, // [{ place: 'Kyoto, Japan', date: 'MAR 2025', flag: 'JP' }]
   countries: { type: Number, default: 0 },
   holder: { type: String, default: '' },
   picture: { type: String, default: '' },   // Travel Twin face (optional)

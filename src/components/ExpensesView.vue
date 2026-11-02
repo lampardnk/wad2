@@ -104,7 +104,7 @@
             <ul class="xp-list">
               <li v-for="e in day.items" :key="e.id">
                 <button type="button" class="xp-row" @click="openForm(e)" :aria-label="'Edit ' + e.title">
-                  <span class="xp-icon" :style="{ background: categoryOf(e.category).color + '22' }" aria-hidden="true">{{ categoryOf(e.category).icon }}</span>
+                  <span class="xp-icon" :style="{ background: categoryOf(e.category).color + '22' }" aria-hidden="true"><AppIcon :name="lineIconFor(categoryOf(e.category).icon)" :size="16" /></span>
                   <span class="xp-row-main">
                     <span class="xp-row-title">{{ e.title }}</span>
                     <span class="xp-row-sub">
@@ -182,7 +182,7 @@
               <li v-for="c in byCategory" :key="c.key">
                 <button type="button" class="xp-legend-row" :class="{ on: filterCat === c.key }" @click="filterCat = filterCat === c.key ? '' : c.key">
                   <span class="xp-dot" :style="{ background: c.color }" aria-hidden="true"></span>
-                  <span class="flex-grow-1 text-start">{{ c.icon }} {{ c.label }}</span>
+                  <span class="flex-grow-1 text-start"><AppIcon :name="lineIconFor(c.icon)" :size="16" /> {{ c.label }}</span>
                   <span class="xp-num">{{ money(c.amount, home) }}</span>
                   <span class="xp-pct xp-num">{{ Math.round(c.pct) }}%</span>
                 </button>
@@ -239,6 +239,7 @@ import ExchangeRates from './ExchangeRates.vue'
 import CustomDropdown from './CustomDropdown.vue'
 import { CATEGORIES, CURRENCIES, currencyOptions, categoryOf, money, toHome, sharesOf, balances, settleUp, demoExpenses } from '../expenses.js'
 import AppIcon from './AppIcon.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 export default {
   components: { AppIcon, ExpenseForm, CustomDropdown, ExchangeRates },
@@ -480,6 +481,7 @@ export default {
   },
 
   methods: {
+    lineIconFor,
     money,
     categoryOf,
 

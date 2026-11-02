@@ -210,7 +210,7 @@
         <div class="invite-text">
           <p class="mb-0"><strong>{{ inv.invitedBy }}</strong> invited you to <strong>{{ inv.name }}</strong></p>
           <p class="invite-meta mb-0">
-            <template v-for="(d, k) in inv.destinations" :key="d"><span v-if="k > 0"> → </span>{{ flagFor(d) }} {{ shortPlace(d) }}</template>
+            <template v-for="(d, k) in inv.destinations" :key="d"><span v-if="k > 0"> → </span><FlagImg :code="flagCode(d)" :size="12" /> {{ shortPlace(d) }}</template>
             <template v-if="inv.startDate"> · {{ dateRange(inv) }}</template>
             · {{ inv.people }} going
           </p>
@@ -368,7 +368,7 @@
 <script>
 import axios from 'axios'
 import { auth } from '../auth.js'
-import { POPULAR_DESTINATIONS, codeForDestination, flagEmoji } from '../destinations.js'
+import { POPULAR_DESTINATIONS, codeForDestination } from '../destinations.js'
 import AppIcon from '../components/AppIcon.vue'
 import DoodleIcon from '../components/DoodleIcon.vue'
 import PassportBook from '../components/PassportBook.vue'
@@ -488,7 +488,7 @@ export default {
         for (const d of t.destinations) {
           if (!list.some((st) => st.place === d)) {
             const end = t.endDate || t.startDate || ''
-            list.push({ place: d, year: end.slice(0, 4), end, date: this.stampDate(end), flag: this.flagFor(d) })
+            list.push({ place: d, year: end.slice(0, 4), end, date: this.stampDate(end), flag: this.flagCode(d) })
           }
         }
       }
@@ -519,7 +519,7 @@ export default {
     countryCount() {
       const countries = []
       for (const st of this.stamps) {
-        const c = this.flagFor(st.place)
+        const c = st.flag || st.place
         if (!countries.includes(c)) countries.push(c)
       }
       return countries.length
@@ -617,7 +617,6 @@ export default {
         const at = label.toLowerCase().indexOf(q)
         options.push({
           label,
-          flag: flagEmoji(codes[label]),
           code: codes[label] || codeForDestination(label),
           before: at >= 0 ? label.slice(0, at) : label,
           match: at >= 0 ? label.slice(at, at + q.length) : '',
@@ -743,9 +742,6 @@ export default {
       this.newTrip.destinations.splice(index, 1)
     },
 
-    flagFor(label) {
-      return flagEmoji(codeForDestination(label))
-    },
     // Two-letter country code for a place (for the flag stamps), or '' if unknown
     flagCode(label) {
       return codeForDestination(label) || ''

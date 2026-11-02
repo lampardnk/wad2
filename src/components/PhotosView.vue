@@ -30,7 +30,7 @@
       </button>
       <button v-for="a in albums" :key="a.id" type="button" role="tab" class="ph-pill" :class="{ on: album === a.id }"
         :aria-selected="album === a.id" @click="album = a.id">
-        {{ a.icon }} {{ a.name }} <span class="ph-n">{{ countIn(a.id) }}</span>
+        {{ a.name }} <span class="ph-n">{{ countIn(a.id) }}</span>
       </button>
       <div class="ph-add-wrap">
         <button type="button" class="ph-pill ph-pill-add" :aria-expanded="addingAlbum" @click="addingAlbum = !addingAlbum">+ Add album</button>
@@ -42,7 +42,7 @@
         <p class="ph-small mb-2">From your wishlist</p>
         <div class="d-flex flex-wrap gap-2 mb-3">
           <button v-for="s in albumSuggestions" :key="s.name" type="button" class="ph-pill" @click="createAlbum(s.name, s.icon)">
-            {{ s.icon }} {{ s.name }}
+            {{ s.name }}
           </button>
           <span v-if="!albumSuggestions.length" class="ph-small">No wishlist places left to add.</span>
         </div>
@@ -134,9 +134,9 @@
         <div v-if="open" class="ph-lb" role="dialog" aria-modal="true" aria-label="Photo viewer" tabindex="-1" ref="lightbox"
           @keydown.esc="open = null" @keydown.left="step(-1)" @keydown.right="step(1)" @click.self="open = null">
           <button type="button" class="ph-lb-close" aria-label="Close" @click="open = null"><AppIcon name="x" :size="20" /></button>
-          <button v-if="shown.length > 1" type="button" class="ph-lb-nav prev" aria-label="Previous photo" @click="step(-1)">‹</button>
+          <button v-if="shown.length > 1" type="button" class="ph-lb-nav prev" aria-label="Previous photo" @click="step(-1)"><AppIcon name="chevron-left" :size="26" /></button>
           <img :src="fullUrl || thumbs[open.id]" class="ph-lb-img" :alt="'Photo by ' + open.uploadedBy">
-          <button v-if="shown.length > 1" type="button" class="ph-lb-nav next" aria-label="Next photo" @click="step(1)">›</button>
+          <button v-if="shown.length > 1" type="button" class="ph-lb-nav next" aria-label="Next photo" @click="step(1)"><AppIcon name="chevron" :size="26" /></button>
 
           <aside class="ph-lb-info">
             <div class="d-flex align-items-center gap-2">
@@ -219,7 +219,7 @@ export default {
   computed: {
     albumOptions() {
       const list = [{ value: '', label: 'Highlights', icon: '✨' }]
-      for (const a of this.albums) list.push({ value: a.id, label: a.name, icon: a.icon })
+      for (const a of this.albums) list.push({ value: a.id, label: a.name })
       return list
     },
     contributors() {
@@ -255,7 +255,7 @@ export default {
       return this.album === 'all' ? '' : this.album
     },
     targetLabel() {
-      return this.currentAlbum ? this.currentAlbum.icon + ' ' + this.currentAlbum.name : '✨ Highlights'
+      return this.currentAlbum ? this.currentAlbum.name : 'Highlights'
     },
     albumSuggestions() {
       const list = []

@@ -5,8 +5,9 @@
       :aria-label="ariaLabel || null" :data-testid="testid || null"
       @click="toggle" @keydown="onTriggerKey">
       <slot name="selected" :option="selected">
-        <span v-if="selected && selected.icon" class="dd-icon" aria-hidden="true">{{ selected.icon }}</span>
-        <span class="dd-value" :class="{ placeholder: !selected }">{{ selected ? (selected.short || selected.label) : placeholder }}</span>
+        <span v-if="selected && selected.flag" class="dd-icon" aria-hidden="true"><FlagImg :code="selected.flag" :size="12" /></span>
+        <span v-else-if="selected && lineIconFor(selected.icon)" class="dd-icon" aria-hidden="true"><AppIcon :name="lineIconFor(selected.icon)" :size="16" /></span>
+        <span class="dd-value" :class="{ 'dd-unset': !selected }">{{ selected ? (selected.short || selected.label) : placeholder }}</span>
       </slot>
       <svg class="dd-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
         <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -29,7 +30,8 @@
               :class="{ active: i === active, selected: isSelected(o), off: o.disabled }"
               @mousedown.prevent @click="choose(o)" @mousemove="active = i">
               <slot name="option" :option="o" :selected="isSelected(o)">
-                <span v-if="o.icon" class="dd-icon" aria-hidden="true">{{ o.icon }}</span>
+                <span v-if="o.flag" class="dd-icon" aria-hidden="true"><FlagImg :code="o.flag" :size="12" /></span>
+                <span v-else-if="lineIconFor(o.icon)" class="dd-icon" aria-hidden="true"><AppIcon :name="lineIconFor(o.icon)" :size="16" /></span>
                 <span class="dd-text">
                   <span class="dd-label">{{ o.label }}</span>
                   <span v-if="o.description" class="dd-desc">{{ o.description }}</span>
@@ -49,8 +51,12 @@
 <script setup>
 // One dropdown for the whole app (replaces native <select>).
 // <CustomDropdown v-model="currency" :options="['SGD', 'JPY']" />
-// Options can be plain values, or { value, label, icon, description, short, disabled }.
+// Options can be plain values, or { value, label, icon, flag, description, short, disabled }.
+// icon: a line icon name or an emoji (shown as its line icon); flag: a country code like 'JP'.
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
+import AppIcon from './AppIcon.vue'
+import FlagImg from './FlagImg.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 const props = defineProps({
   modelValue: { default: null }, // any value: string, number, null...
@@ -302,7 +308,7 @@ function onMenuKey(e) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.dd-value.placeholder {
+.dd-value.dd-unset {
   color: #7d8590;
 }
 .dd-chevron {
@@ -314,9 +320,11 @@ function onMenuKey(e) {
   color: var(--dd-mint);
 }
 .dd-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
   width: 18px;
-  text-align: center;
 }
 
 /* ----- Menu (on <body>, so not scoped by the trigger) ----- */

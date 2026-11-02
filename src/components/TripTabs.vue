@@ -35,7 +35,7 @@
         <CustomDropdown :model-value="null" :options="moreOptions" header-text="More sections" :aria-label="'More sections: ' + moreTabs.map((t) => t.label).join(', ')"
           :searchable="false" testid="trip-more" @update:model-value="select">
           <template #selected>
-            <span class="tt-more-dots" aria-hidden="true">⋯</span>
+            <AppIcon class="tt-more-dots" name="more" :size="16" />
             <span class="tt-label">More</span>
             <span v-if="moreHasAlert" class="tt-dot" aria-label="(warning)"></span>
           </template>
@@ -60,6 +60,7 @@
 // <TripTabs v-model="activeTab" :tabs="tabs" :alert-key="safetyWarning ? 'safety' : ''" />
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import TabIcon from './TabIcon.vue'
+import AppIcon from './AppIcon.vue'
 import CustomDropdown from './CustomDropdown.vue'
 
 const props = defineProps({

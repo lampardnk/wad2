@@ -3,13 +3,13 @@
 // Returns [{ id, category, name, qty, why }]
 
 export const CATEGORIES = [
-  { key: 'docs', icon: '📄', label: 'Documents & money' },
-  { key: 'clothes', icon: '👕', label: 'Clothes' },
-  { key: 'toiletries', icon: '🧴', label: 'Toiletries' },
-  { key: 'health', icon: '💊', label: 'Health' },
-  { key: 'tech', icon: '🔌', label: 'Electronics' },
-  { key: 'gear', icon: '🎒', label: 'Activity gear' },
-  { key: 'other', icon: '⭐', label: 'Other' }
+  { key: 'docs', icon: 'ticket', label: 'Documents & money' },
+  { key: 'clothes', icon: 'shirt', label: 'Clothes' },
+  { key: 'toiletries', icon: 'bottle', label: 'Toiletries' },
+  { key: 'health', icon: 'pill', label: 'Health' },
+  { key: 'tech', icon: 'plug', label: 'Electronics' },
+  { key: 'gear', icon: 'backpack', label: 'Activity gear' },
+  { key: 'other', icon: 'star', label: 'Other' }
 ]
 
 export function buildPackingList(trip) {

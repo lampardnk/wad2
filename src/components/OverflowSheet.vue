@@ -22,7 +22,7 @@
             <ul class="os-list">
               <li v-for="r in rows" :key="r.id" class="os-row">
                 <div class="os-thumb" :style="r.photo ? { backgroundImage: 'url(' + r.photo + ')' } : null" aria-hidden="true">
-                  <span v-if="!r.photo">{{ r.icon }}</span>
+                  <span v-if="!r.photo"><AppIcon :name="lineIconFor(r.icon)" :size="16" /></span>
                 </div>
                 <div class="os-main">
                   <label :for="'os-' + r.id" class="os-name">{{ r.name }}</label>
@@ -47,6 +47,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import AppIcon from './AppIcon.vue'
 import CustomDropdown from './CustomDropdown.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 const props = defineProps({
   open: { type: Boolean, default: false },

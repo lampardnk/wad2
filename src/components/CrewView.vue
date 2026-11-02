@@ -54,7 +54,7 @@
               <AppIcon name="plane" :size="14" /> {{ shortAirport(f.from.name) }} → {{ shortAirport(f.to.name) }} · {{ flightDay(f) }}<template v-if="f.number"> · {{ f.number }}</template>
             </span>
             <template v-if="p.diets.length">
-              <span v-for="d in p.diets" :key="d.key" class="cw-pill" :class="d.allergy ? 'allergy' : 'diet'">{{ d.icon }} {{ d.label }}</span>
+              <span v-for="d in p.diets" :key="d.key" class="cw-pill" :class="d.allergy ? 'allergy' : 'diet'"><AppIcon :name="lineIconFor(d.icon)" :size="16" /> {{ d.label }}</span>
             </template>
             <span v-else-if="p.hasProfile" class="cw-pill"><AppIcon name="check" :size="13" /> No restrictions</span>
             <span v-else class="cw-pill empty"><AppIcon name="utensils" :size="13" /> Food needs not added</span>
@@ -118,6 +118,7 @@ import { dietTag } from '../crewOptions.js'
 import CrewDetailsForm from './CrewDetailsForm.vue'
 import AppIcon from './AppIcon.vue'
 import InitialBadge from './InitialBadge.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 const COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
@@ -249,6 +250,7 @@ export default {
   },
 
   methods: {
+    lineIconFor,
     // "Cape Town International Airport" -> "Cape Town"
     shortAirport(name) {
       return name.replace(/ (International )?Airport.*$/i, '').split(',')[0]

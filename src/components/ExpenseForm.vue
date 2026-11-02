@@ -31,7 +31,7 @@
         <div class="ef-cats" role="radiogroup" aria-label="Category">
           <button v-for="c in CATEGORIES" :key="c.key" type="button" role="radio" class="ef-cat" :class="{ on: form.category === c.key }"
             :aria-checked="form.category === c.key" @click="form.category = c.key">
-            <span class="ef-cat-icon" aria-hidden="true">{{ c.icon }}</span>{{ c.label }}
+            <span class="ef-cat-icon" aria-hidden="true"><AppIcon :name="lineIconFor(c.icon)" :size="16" /></span>{{ c.label }}
           </button>
         </div>
 
@@ -101,9 +101,11 @@
 <script>
 import { CATEGORIES, CURRENCIES, currencyOptions, money, toHome } from '../expenses.js'
 import CustomDropdown from './CustomDropdown.vue'
+import { lineIconFor } from '../emojiIcons.js'
+import AppIcon from './AppIcon.vue'
 
 export default {
-  components: { CustomDropdown },
+  components: { AppIcon, CustomDropdown },
   props: {
     expense: { type: Object, default: null }, // null = new expense
     travellers: { type: Array, required: true },
@@ -158,6 +160,7 @@ export default {
   },
 
   methods: {
+    lineIconFor,
     money,
     toHome,
 

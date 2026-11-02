@@ -16,7 +16,7 @@
            on phones they become one menu button. -->
       <nav class="trip-nav" aria-label="Trip sections">
         <router-link to="/home" class="trip-back" data-testid="back-to-trips" title="Back to My Trips">
-          <span aria-hidden="true">‹</span><span class="trip-back-text">My Trips</span>
+          <AppIcon name="chevron-left" :size="16" /><span class="trip-back-text">My Trips</span>
         </router-link>
         <span class="trip-nav-name" :title="headerTitle">{{ headerTitle }}</span>
 
@@ -29,7 +29,7 @@
         <!-- The route, place to place with dotted lines (like a travel journal) -->
         <ol class="trip-route" :aria-label="'Route: ' + itineraryInfo.destinations.map((d) => d.split(', ')[0]).join(', then ')">
           <li v-for="d in itineraryInfo.destinations" :key="d" class="trip-route-stop">
-            <span class="trip-route-dot" aria-hidden="true"></span>{{ flagFor(d) }} {{ d.split(', ')[0] }}
+            <span class="trip-route-dot" aria-hidden="true"></span><FlagImg :code="flagFor(d)" :size="12" /> {{ d.split(', ')[0] }}
           </li>
         </ol>
         <div class="trip-toggle" aria-label="Trip details">
@@ -148,7 +148,7 @@
           <div v-if="returnTo && activeTab === 'places'" class="places-return" role="region" aria-label="Adding stops to your itinerary">
             <p class="places-return-text" aria-live="polite">{{ placesTab === 'vote' ? 'Vote yes on places so they become group picks.' : 'Save more places for your wishlist.' }}</p>
             <button type="button" class="places-return-btn" :class="{ ready: newSaved }" @click="backToItinerary">
-              <span aria-hidden="true">‹</span> {{ newSaved ? 'Done, back to ' + returnTo.day : 'Back to ' + returnTo.day }}
+              <AppIcon name="chevron-left" :size="16" /> {{ newSaved ? 'Done, back to ' + returnTo.day : 'Back to ' + returnTo.day }}
             </button>
           </div>
           <WishlistView v-if="placesTab === 'wishlist'" key="w" :destinations="itineraryInfo.destinations"
@@ -228,15 +228,16 @@ import TripTabs from '../components/TripTabs.vue'
 import TabIcon from '../components/TabIcon.vue'
 import { auth } from '../auth.js'
 import { trip as store } from '../itineraryStore.js'
-import { codeForDestination, flagEmoji } from '../destinations.js'
+import { codeForDestination } from '../destinations.js'
 import AppIcon from '../components/AppIcon.vue'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import TripRecap from '../components/TripRecap.vue'
 import TripEditModal from '../components/TripEditModal.vue'
 import { notify } from '../notify.js'
+import FlagImg from '../components/FlagImg.vue'
 
 export default {
-  components: { LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
+  components: { FlagImg, LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
   props: { id: { type: String, default: 'seoul' } }, // from the route /trip/:id
   data() {
     return {
@@ -513,7 +514,7 @@ export default {
       }
     },
     flagFor(d) {
-      return flagEmoji(codeForDestination(d))
+      return codeForDestination(d) // country code for <FlagImg>
     },
     openPlaces(tab) {
       this.activeTab = 'places'
@@ -661,7 +662,6 @@ export default {
   padding: 150px clamp(16px, 4vw, 48px) 0;
 }
 .trip-title {
-  color: #fff;
   font-family: var(--font-display);
   font-size: clamp(2.2rem, 5.4vw, 3.6rem);
   font-weight: 800;

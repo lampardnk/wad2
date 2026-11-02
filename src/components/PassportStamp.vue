@@ -2,7 +2,7 @@
   <!-- One inked passport stamp: a rough-edged shape (circle, scalloped badge, rounded octagon or pill)
        in a vintage ink, a little landmark, a short code, the city (full name, wraps instead of "…") and the date.
        It's a button: clicking it emits "select". -->
-  <button type="button" class="ps" :class="['ps-' + look.shape, { on: active, big }]"
+  <button type="button" class="ps" :class="['ps-' + look.shape, { on: active }]"
     :style="{ '--ink': look.ink, '--tilt': look.tilt + 'deg', '--w': w + 'px', '--h': h + 'px' }"
     :aria-pressed="active" :aria-label="'Trips to ' + place + (date ? ', ' + date : '')" @click="emit('select', place)">
     <svg class="ps-ink" :viewBox="'0 0 ' + vw + ' ' + vh" aria-hidden="true" focusable="false">
@@ -42,7 +42,7 @@
     <span class="ps-text">
       <span class="ps-code">{{ look.code }}</span>
       <span class="ps-city" :class="sizeClass">{{ look.city }}</span>
-      <span class="ps-date"><span class="ps-flag" aria-hidden="true">{{ flag }}</span>{{ date }}</span>
+      <span class="ps-date"><span class="ps-flag" aria-hidden="true"><FlagImg :code="flag" :size="10" /></span>{{ date }}</span>
     </span>
   </button>
 </template>
@@ -50,13 +50,13 @@
 <script setup>
 import { computed } from 'vue'
 import { stampStyle } from '../stampStyle.js'
+import FlagImg from './FlagImg.vue'
 
 const props = defineProps({
   place: { type: String, required: true }, // 'Kyoto, Japan'
   date: { type: String, default: '' },     // e.g. 'MAR 2025'
-  flag: { type: String, default: '' },     // flag emoji
+  flag: { type: String, default: '' },     // country code, e.g. 'JP'
   active: { type: Boolean, default: false }, // it's the filter being shown
-  big: { type: Boolean, default: false }     // the oversized one in the stamping ceremony
 })
 const emit = defineEmits(['select'])
 
@@ -66,9 +66,8 @@ const look = computed(() => stampStyle(props.place))
 const seed = computed(() => (look.value.code.charCodeAt(0) || 7) % 50)
 const vw = computed(() => (look.value.shape === 'pill' ? 160 : 120))
 const vh = computed(() => (look.value.shape === 'pill' ? 96 : 120))
-const scale = computed(() => (props.big ? 2.2 : 1))
-const w = computed(() => (look.value.shape === 'pill' ? 150 : 112) * scale.value)
-const h = computed(() => (look.value.shape === 'pill' ? 90 : 112) * scale.value)
+const w = computed(() => (look.value.shape === 'pill' ? 150 : 112))
+const h = computed(() => (look.value.shape === 'pill' ? 90 : 112))
 const sizeClass = computed(() => {
   const n = look.value.city.length
   return n > 14 ? 'xs' : n > 9 ? 'sm' : ''
@@ -189,20 +188,5 @@ const LANDMARKS = {
   font-size: 11px;
   mix-blend-mode: normal;
 }
-/* The big ceremony stamp */
-.ps.big {
-  cursor: default;
-  mix-blend-mode: normal;
-}
-.ps.big:hover,
-.ps.big:active {
-  transform: rotate(var(--tilt));
-}
-.ps.big .ps-code { font-size: 42px; }
-.ps.big .ps-city { font-size: 24px; }
-.ps.big .ps-city.sm { font-size: 20px; }
-.ps.big .ps-city.xs { font-size: 16px; }
-.ps.big .ps-date { font-size: 18px; gap: 6px; }
-.ps.big .ps-flag { font-size: 22px; }
 
 </style>

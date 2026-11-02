@@ -5,7 +5,7 @@
           <aside class="ed" role="dialog" aria-modal="true" aria-labelledby="ed-title">
             <header class="ed-head">
               <div class="ed-titles">
-                <h3 id="ed-title" class="ed-title">{{ context.icon }} {{ context.label }} ideas</h3>
+                <h3 id="ed-title" class="ed-title"><AppIcon :name="lineIconFor(context.icon)" :size="16" /> {{ context.label }} ideas</h3>
                 <p class="ed-sub">
                   Near <strong>{{ context.fromName || context.city || 'your day' }}</strong>
                   · open around <strong>{{ formatHour(context.start) }}</strong>
@@ -22,7 +22,7 @@
               </label>
               <div class="ed-chips" role="group" aria-label="Filter">
                 <button v-for="f in FILTERS" :key="f.key" type="button" class="ed-chip" :class="{ on: filter === f.key }"
-                  :aria-pressed="filter === f.key" @click="filter = filter === f.key ? '' : f.key">{{ f.icon }} {{ f.label }}</button>
+                  :aria-pressed="filter === f.key" @click="filter = filter === f.key ? '' : f.key"><AppIcon :name="lineIconFor(f.icon)" :size="16" /> {{ f.label }}</button>
               </div>
             </div>
 
@@ -35,7 +35,7 @@
               </p>
 
               <article v-for="p in shown" :key="p.id" class="ed-card">
-                <div class="ed-thumb" aria-hidden="true">{{ p.icon }}</div>
+                <div class="ed-thumb" aria-hidden="true"><AppIcon :name="lineIconFor(p.icon)" :size="16" /></div>
                 <div class="ed-info">
                   <h4 class="ed-name">{{ p.name }}<small v-if="p.nameLocal"> {{ p.nameLocal }}</small></h4>
                   <p class="ed-cuisine">{{ p.cuisineText }}</p>
@@ -70,6 +70,7 @@ import axios from 'axios'
 import { travelBetween } from '../dayOptimizer.js'
 import { openStatus } from '../services/safetyService.js'
 import AppIcon from './AppIcon.vue'
+import { lineIconFor } from '../emojiIcons.js'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
