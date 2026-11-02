@@ -8,6 +8,7 @@ import Trip from '../models/trip.js'
 import Group from '../models/Group.js'
 import Photo from '../models/Photo.js'
 import { mailReady, sendEmail } from '../mailer.js'
+import { passwordProblem } from '../passwordRules.js'
 
 const router = express.Router()
 
@@ -76,9 +77,8 @@ router.post('/register', async (req, res) => {
   if (!USERNAME_PATTERN.test(username)) {
     return res.status(400).json({ message: 'Username must be 3-20 characters: letters, numbers, . or _ only.' })
   }
-  if (password.length < 8) {
-    return res.status(400).json({ message: 'Password must be at least 8 characters.' })
-  }
+  const problem = passwordProblem(password, { username, email })
+  if (problem) return res.status(400).json({ message: problem })
 
   if (await User.findOne({ username })) {
     return res.status(409).json({ message: 'That username is already taken.' })
@@ -126,6 +126,7 @@ const SAME_ANSWER = { message: 'If an account uses that email, we\'ve sent it a 
 
 router.post('/forgot', async (req, res) => {
   const email = (req.body.email || '').trim().toLowerCase()
+  console.log('[forgot] request for:', email)          // 1
   if (!EMAIL_PATTERN.test(email)) {
     return res.status(400).json({ message: 'Please enter the email you signed up with.' })
   }
@@ -134,14 +135,17 @@ router.post('/forgot', async (req, res) => {
   }
 
   const user = await User.findOne({ email })
+  console.log('[forgot] user found:', !!user)           // 2
   if (!user) return res.json(SAME_ANSWER)
 
   // One email a minute per account, so the button can't be used to spam someone
   if (user.reset && user.reset.sentAt && Date.now() - user.reset.sentAt.getTime() < 60 * 1000) {
+    console.log('[forgot] skipped: sent less than 60s ago')   // 3
     return res.json(SAME_ANSWER)
   }
 
   const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0') // "042917"
+  if (process.env.NODE_ENV !== 'production') console.log('[DEV] reset code for', email, ':', code)
   try {
     await sendEmail({
       to: user.email,
@@ -158,7 +162,7 @@ router.post('/forgot', async (req, res) => {
     console.error('Could not send the reset email:', err.message)
     return res.status(502).json({ message: 'We couldn\'t send the email just now. Please try again in a minute.' })
   }
-
+  console.log('[forgot] Brevo accepted the email for:', user.email)   // 4
   user.reset = {
     codeHash: await bcrypt.hash(code, 10),
     expiresAt: new Date(Date.now() + RESET_MINUTES * 60 * 1000),
@@ -175,9 +179,12 @@ router.post('/reset', async (req, res) => {
   const password = req.body.password || ''
 
   if (code.length !== 6) return res.status(400).json({ message: 'The code is the 6 digits in the email.' })
-  if (password.length < 8) return res.status(400).json({ message: 'Password must be at least 8 characters.' })
 
   const user = await User.findOne({ email })
+
+  const problem = passwordProblem(password, { username: user && user.username, email })
+  if (problem) return res.status(400).json({ message: problem })
+
   const r = user && user.reset
   if (!r || !r.codeHash || !r.expiresAt || r.expiresAt.getTime() < Date.now()) {
     return res.status(400).json({ message: 'That code has expired. Tap "Send a new code" to get another.' })

@@ -207,7 +207,7 @@
         <OtherJourneys :key="'oj-' + id" :trip-id="id" :is-demo="isDemo" :destinations="itineraryInfo.destinations" :stops="safetyStops"
 :stays="isDemo ? [] : trip.stays || []" :my-airports="myAirports" :travellers="itineraryInfo.travellers" :me="myName"
           :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate"
-          :initial-journeys="isDemo ? [] : trip.journeys || []" :prefs="prefs" :flights="tripFlights" />
+          :initial-journeys="isDemo ? [] : trip.journeys || []" :prefs="prefs" :flights="tripFlights" :wishlist="trip.wishlist" />
       </div>
 
     </main>
