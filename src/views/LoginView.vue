@@ -23,7 +23,7 @@
 
       <button type="submit" class="as-btn" :disabled="loading" data-testid="login-submit">
         {{ loading ? 'Signing in…' : 'Sign In' }}
-        <DoodleIcon v-if="!loading" name="plane" :size="24" anim="" />
+        <DoodleIcon v-if="!loading" name="plane" :size="24" />
       </button>
     </form>
 

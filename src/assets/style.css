@@ -38,16 +38,6 @@ body {
   line-height: 1.55;
   letter-spacing: 0.005em;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.25s ease;
-}
-
-/* Dark pages (Settings): set on <body> by App.vue as soon as you navigate there */
-body.dark-page {
-  background:
-    radial-gradient(900px 420px at 50% -120px, rgba(215, 154, 43, 0.14), transparent 70%),
-    radial-gradient(600px 300px at 85% 10%, rgba(59, 54, 93, 0.18), transparent 70%),
-    #201e35 fixed;
-  background-color: #201e35;
 }
 
 h1, h2, h3, h4, h5, h6,
@@ -242,28 +232,6 @@ small, .small,
   border-width: 1px;
 }
 
-/* Page transition (see App.vue) */
-.page-enter-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.page-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(16px);
-}
-.page-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .page-enter-active,
-  .page-leave-active {
-    transition: none;
-  }
-}
-
 /* ============ Login & Sign-up pages ============ */
 :root {
   --auth-accent: #edae49;
@@ -312,7 +280,6 @@ small, .small,
     radial-gradient(ellipse 60% 14% at 45% 46%, rgba(34, 197, 120, 0.45), transparent 75%),
     radial-gradient(ellipse 30% 22% at 30% 30%, rgba(237, 174, 73, 0.25), transparent 75%);
   transform: rotate(-18deg);
-  animation: aurora-drift 16s ease-in-out infinite alternate;
 }
 
 .auth-page::after {
@@ -321,19 +288,6 @@ small, .small,
     radial-gradient(ellipse 45% 10% at 25% 72%, rgba(20, 184, 166, 0.5), transparent 72%),
     radial-gradient(ellipse 50% 25% at 70% 25%, rgba(45, 212, 191, 0.18), transparent 75%);
   transform: rotate(10deg);
-  animation: aurora-drift 22s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes aurora-drift {
-  from { translate: -4% 0; }
-  to   { translate: 4% -3%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-page::before,
-  .auth-page::after {
-    animation: none;
-  }
 }
 
 .auth-brand,
@@ -408,7 +362,6 @@ small, .small,
   font-size: 15px;
   color: var(--auth-text);
   outline: none;
-  transition: border-color 0.15s, background 0.15s;
 }
 
 .auth-input:-webkit-autofill,
@@ -417,7 +370,6 @@ small, .small,
   -webkit-text-fill-color: var(--auth-text);
   -webkit-box-shadow: 0 0 0 1000px #23262e inset;
   caret-color: var(--auth-text);
-  transition: background-color 9999s;
 }
 
 .auth-input::placeholder {
@@ -440,7 +392,6 @@ small, .small,
   color: var(--auth-accent-text);
   font-size: 15px;
   font-weight: 800;
-  transition: background 0.15s, transform 0.1s;
 }
 
 .auth-btn:hover {
@@ -529,7 +480,6 @@ small, .small,
   border-radius: 8px;
   background: linear-gradient(90deg, #e8ddc6 25%, #f8f0dc 50%, #e8ddc6 75%);
   background-size: 200% 100%;
-  animation: skel-shimmer 1.3s ease-in-out infinite;
 }
 
 .skel.dark {
@@ -537,10 +487,3 @@ small, .small,
   background-size: 200% 100%;
 }
 
-@keyframes skel-shimmer {
-  to { background-position: -200% 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skel { animation: none; }
-}

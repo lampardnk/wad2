@@ -161,7 +161,6 @@ export default {
   border-radius: 999px;
   padding: 4px 10px 4px 4px;
   font-size: 12px;
-  transition: opacity 0.15s, background 0.15s;
 }
 .sr-chip:hover {
   background: rgba(255, 255, 255, 0.09);
@@ -227,7 +226,6 @@ export default {
   fill: rgba(63, 184, 198, 0.08);
   transform-box: view-box;
   transform-origin: 160px 160px;
-  animation: sr-spin 6s linear infinite;
 }
 .sr-hit {
   fill: transparent;
@@ -261,7 +259,6 @@ export default {
   fill: rgba(63, 184, 198, 0.25);
   transform-box: fill-box;
   transform-origin: center;
-  animation: sr-pulse 2s ease-out infinite;
 }
 .sr-tip {
   position: absolute;
@@ -284,14 +281,5 @@ export default {
   color: rgba(241, 234, 222, 0.55);
   margin: 6px 0 0;
 }
-@keyframes sr-spin {
-  to { transform: rotate(360deg); }
-}
-@keyframes sr-pulse {
-  0% { transform: scale(0.6); opacity: 1; }
-  100% { transform: scale(1.6); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sr-sweep, .sr-home-pulse { animation: none; }
-}
+
 </style>

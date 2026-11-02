@@ -112,7 +112,6 @@ function onKey(e) {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   cursor: text;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .dt.focus {
   border-color: #edae49;
@@ -129,7 +128,6 @@ function onKey(e) {
   background: rgba(237, 174, 73, 0.12);
   border: 1px solid rgba(237, 174, 73, 0.3);
   color: #f8deb0;
-  animation: dt-pop 0.15s ease-out;
 }
 .dt-tag.allergy {
   background: rgba(209, 73, 91, 0.14);
@@ -185,7 +183,6 @@ function onKey(e) {
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   color: #e6edf3;
-  animation: dt-pop 0.12s ease-out;
 }
 .dt-menu li {
   padding: 7px 10px;
@@ -202,14 +199,5 @@ function onKey(e) {
   font-size: 11px;
   color: #8b949e;
 }
-@keyframes dt-pop {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .dt-tag,
-  .dt-menu {
-    animation: none;
-  }
-}
+
 </style>

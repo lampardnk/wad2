@@ -87,7 +87,6 @@ function costText(o) {
   border-radius: 18px;
   background: #fff;
   border: 1.5px solid #ece4d6;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .tc-row.picked {
   border-color: #edae49;
@@ -180,7 +179,6 @@ function costText(o) {
   font-weight: 700;
   font-size: 13px;
   padding: 7px 16px;
-  transition: transform 0.15s;
 }
 .tc-btn:hover {
   transform: translateY(-1px);
@@ -219,7 +217,5 @@ function costText(o) {
     align-items: center;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .tc-btn { transition: none; }
-}
+
 </style>

@@ -2,14 +2,12 @@
   <div class="home">
     <!-- ===== New account: a "campfire briefing" from our explorer, pointing them to Settings for their travel needs.
          A cream journal insert taped to the page, with stitching round the edge. ===== -->
-    <transition name="slide">
-      <section v-if="showSetup" class="setup" aria-labelledby="setup-title" data-testid="setup-prompt">
+    <section v-if="showSetup" class="setup" aria-labelledby="setup-title" data-testid="setup-prompt">
         <span class="setup-tape tl" aria-hidden="true"></span>
         <span class="setup-tape tr" aria-hidden="true"></span>
 
         <!-- the explorer in a round frame, with the greeting in his speech bubble -->
         <div class="setup-guide">
-          <span class="setup-avatar" aria-hidden="true"><ExplorerMascot :hands="false" :size="150" /></span>
           <div class="setup-bubble">
             <p class="setup-kicker">Campfire briefing</p>
             <h2 id="setup-title" class="setup-title">Ahoy, {{ firstName || 'explorer' }}! Before we hit the trail, let’s pack your field essentials.</h2>
@@ -20,10 +18,10 @@
           <p class="setup-sub">Your crew relies on your food preferences, currency, and pacing so we can plot the smoothest route together.</p>
           <!-- what to set up, as luggage tags -->
           <ul class="setup-list">
-            <li><span class="setup-tag"><span class="setup-stamp"><DoodleIcon name="bowl" :size="20" anim="" /></span> Food needs &amp; allergies</span></li>
-            <li><span class="setup-tag"><span class="setup-stamp"><DoodleIcon name="chat" :size="20" anim="" /></span> WhatsApp number</span></li>
-            <li><span class="setup-tag"><span class="setup-stamp"><DoodleIcon name="wallet" :size="20" anim="" /></span> Base currency</span></li>
-            <li><span class="setup-tag"><span class="setup-stamp"><DoodleIcon name="boot" :size="20" anim="" /></span> Trip pacing</span></li>
+            <li><span class="setup-tag"><span class="setup-stamp"><DoodleIcon name="bowl" :size="20" /></span> Food needs &amp; allergies</span></li>
+            <li><span class="setup-tag"><span class="setup-stamp"><DoodleIcon name="chat" :size="20" /></span> WhatsApp number</span></li>
+            <li><span class="setup-tag"><span class="setup-stamp"><DoodleIcon name="wallet" :size="20" /></span> Base currency</span></li>
+            <li><span class="setup-tag"><span class="setup-stamp"><DoodleIcon name="boot" :size="20" /></span> Trip pacing</span></li>
           </ul>
         </div>
 
@@ -31,32 +29,17 @@
           <button type="button" class="setup-go" @click="goSetup">Set up my needs <span aria-hidden="true">→</span></button>
           <button type="button" class="setup-later" @click="skipSetup">Later</button>
           <small class="setup-hint">
-            <DoodleIcon name="gear" :size="16" anim="" />
+            <DoodleIcon name="gear" :size="16" />
             <span>Find it anytime in <span class="setup-path">Profile › Settings</span></span>
           </small>
         </div>
-      </section>
-    </transition>
+    </section>
 
     <!-- ===== Hero: you, your travel map (dotted routes for every trip) and your numbers ===== -->
-    <section class="hero pl-pop-in" aria-labelledby="hero-title">
-      <!-- The sun peeks over the card's top-left corner, the plane cruises over the top-right one. Tap them:
-           the plane swoops down across the card on a new random route each time (always facing where
-           it's going) and comes home; the sun spins and glows. -->
-      <button type="button" class="hero-sun" :class="{ shine: sunShine }" aria-label="Make the sun shine" @click="shineSun">
-        <span class="hero-sun-glow" aria-hidden="true"></span>
-        <DoodleIcon name="sun" :size="62" anim="" />
-      </button>
-      <button ref="plane" type="button" class="hero-plane" :class="{ flying: planeFlying }" aria-label="Send the plane for a spin" @click="flyPlane">
-        <span class="hero-plane-body" :style="planeStyle"><DoodleIcon name="plane" :size="46" anim="" /></span>
-      </button>
+    <section class="hero" aria-labelledby="hero-title">
       <div class="hero-top">
         <div class="hero-me">
-          <!-- Your Travel Twin's face (or your initial) -->
-          <span class="hero-avatar" aria-hidden="true">
-            <img v-if="twin.picture" :src="twin.picture" alt="">
-            <template v-else>{{ (firstName || '?').charAt(0).toUpperCase() }}</template>
-          </span>
+          <span class="hero-avatar" aria-hidden="true">{{ (firstName || '?').charAt(0).toUpperCase() }}</span>
           <div>
             <p class="hero-hello">Hi{{ firstName ? ', ' + firstName : '' }}! Where to next?</p>
             <h1 id="hero-title" class="hero-title">Your travels</h1>
@@ -65,19 +48,14 @@
         <!-- Hidden while there are no trips: the "No trips yet" box below has the same two buttons -->
         <div v-if="!noTrips" class="hero-btns">
           <button class="pl-btn" @click="openForm" data-testid="new-trip-btn"><DoodleIcon name="plus" :size="22" tint="cream" /> Plan a new trip</button>
-          <router-link to="/discover" class="pl-btn ghost"><DoodleIcon name="compass" :size="22" /> Help me choose</router-link>
         </div>
       </div>
-      <div class="hero-grid">
-        <TravelMap class="hero-map" :trips="mapTrips" :active-id="mapActive" :hover-id="hoverTrip"
-          @hover="hoverTrip = $event" @open="(id) => $router.push('/trip/' + id)" />
-        <ul class="hero-stats" aria-label="Your travel numbers">
-          <li v-for="(st, i) in travelStats" :key="st.label" class="pl-hover-bounce" :class="'tint-' + i" :style="{ animationDelay: i * 0.06 + 's' }">
-            <DoodleIcon :name="STAT_ICONS[i]" :size="26" anim="bounce" />
-            <b>{{ st.value }}</b><span>{{ st.label }}</span>
-          </li>
-        </ul>
-      </div>
+      <ul class="hero-stats" aria-label="Your travel numbers">
+        <li v-for="(st, i) in travelStats" :key="st.label" :class="'tint-' + i">
+          <DoodleIcon :name="STAT_ICONS[i]" :size="26" />
+          <b>{{ st.value }}</b><span>{{ st.label }}</span>
+        </li>
+      </ul>
     </section>
 
     <!-- ===== Plan a new trip: the "Traveler's adventure notebook" pop-up ===== -->
@@ -85,19 +63,19 @@
       <form ref="form" class="nbf" novalidate aria-label="New trip" @submit.prevent="createTrip" @focusin="onNotebookFocus">
         <!-- Trip name -->
         <div class="nbf-row">
-          <label for="trip-name" class="nbf-label"><DoodleIcon name="ticket" :size="24" anim="" /> Trip name</label>
+          <label for="trip-name" class="nbf-label"><DoodleIcon name="ticket" :size="24" /> Trip name</label>
           <div class="nbf-field" :class="'is-' + states.name">
             <input id="trip-name" ref="nameInput" type="text" class="nbf-input" v-model="newTrip.name" maxlength="80"
               placeholder="e.g. Kyoto adventure" :aria-invalid="states.name === 'error'" aria-describedby="trip-name-msg"
               data-tip="name" @blur="touched.name = true" data-testid="trip-name">
-            <DoodleIcon v-if="states.name === 'success'" class="nbf-ok" name="check" :size="22" anim="" />
+            <DoodleIcon v-if="states.name === 'success'" class="nbf-ok" name="check" :size="22" />
           </div>
           <p id="trip-name-msg" class="nbf-msg" :class="'is-' + states.name">{{ messages.name }}</p>
         </div>
 
         <!-- Destinations: quick picks + type-ahead -->
         <div class="nbf-row">
-          <label for="trip-dest" class="nbf-label"><DoodleIcon name="pin" :size="24" anim="" /> Where to?</label>
+          <label for="trip-dest" class="nbf-label"><DoodleIcon name="pin" :size="24" /> Where to?</label>
           <div class="nbf-field" :class="'is-' + states.destination">
             <input id="trip-dest" type="text" class="nbf-input" v-model="newTrip.destination" maxlength="80"
               :placeholder="newTrip.destinations.length ? 'Add another stop…' : 'Type a city, e.g. Kyoto, Japan'" autocomplete="off"
@@ -141,7 +119,7 @@
 
         <!-- Dates + how long -->
         <div class="nbf-row">
-          <span class="nbf-label" id="nbf-dates"><DoodleIcon name="calendar" :size="24" anim="" /> When?</span>
+          <span class="nbf-label" id="nbf-dates"><DoodleIcon name="calendar" :size="24" /> When?</span>
           <div class="nbf-dates" role="group" aria-labelledby="nbf-dates">
             <div class="nbf-field" :class="'is-' + states.startDate">
               <label for="trip-start" class="nbf-mini">Leaving</label>
@@ -153,11 +131,9 @@
               <input id="trip-end" type="date" class="nbf-input" v-model="newTrip.endDate" :min="newTrip.startDate || todayStr" data-tip="dates" @click="openPicker"
                 :aria-invalid="states.endDate === 'error'" aria-describedby="trip-end-msg" @blur="touched.endDate = true">
             </div>
-            <transition name="nbf-pop">
-              <div v-if="formDays" :key="formDays" class="nbf-days" aria-live="polite">
-                <b>{{ formDays }}</b><span>-day itinerary</span>
-              </div>
-            </transition>
+            <div v-if="formDays" class="nbf-days" aria-live="polite">
+              <b>{{ formDays }}</b><span>-day itinerary</span>
+            </div>
           </div>
           <p class="nbf-msg" :class="'is-' + states.startDate">{{ messages.startDate }}</p>
           <p id="trip-end-msg" class="nbf-msg" :class="'is-' + states.endDate">{{ states.endDate === 'error' ? messages.endDate : '' }}</p>
@@ -165,11 +141,11 @@
 
         <!-- Travel vibe (also ticks the matching activities for the packing list) -->
         <div class="nbf-row">
-          <span class="nbf-label" id="nbf-vibe"><DoodleIcon name="sparkle" :size="24" anim="" /> Trip vibe <small>(pick any)</small></span>
+          <span class="nbf-label" id="nbf-vibe"><DoodleIcon name="sparkle" :size="24" /> Trip vibe <small>(pick any)</small></span>
           <div class="nbf-vibes" role="group" aria-labelledby="nbf-vibe">
             <button v-for="v in VIBES" :key="v.key" type="button" class="nbf-vibe" :class="{ on: newTrip.vibes.includes(v.key) }"
               :aria-pressed="newTrip.vibes.includes(v.key)" data-tip="vibe" @click="toggleVibe(v.key)">
-              <DoodleIcon :name="v.icon" :size="38" anim="bounce" />
+              <DoodleIcon :name="v.icon" :size="38" />
               <span>{{ v.label }}</span>
             </button>
           </div>
@@ -180,7 +156,7 @@
         <div class="nbf-actions">
           <button type="button" class="nbf-later" @click="closeForm">Maybe later</button>
           <button type="submit" class="nbf-go" :disabled="saving" data-testid="trip-save">
-            <DoodleIcon name="plane" :size="24" tint="cream" anim="" /> {{ saving ? 'Saving…' : 'Confirm Trip' }}
+            <DoodleIcon name="plane" :size="24" tint="cream" /> {{ saving ? 'Saving…' : 'Confirm Trip' }}
           </button>
         </div>
       </form>
@@ -190,7 +166,7 @@
     <div v-if="!noTrips" class="toolbar">
       <!-- Search: cream, chunky and soft, like Discover's (press "/" to jump here) -->
       <div class="search">
-        <span class="search-icon" aria-hidden="true"><DoodleIcon name="search" :size="24" anim="" /></span>
+        <span class="search-icon" aria-hidden="true"><DoodleIcon name="search" :size="24" /></span>
         <label for="trip-search" class="visually-hidden">Search trips</label>
         <input id="trip-search" ref="searchEl" v-model="search" type="text" class="search-input" placeholder="Search trips or destinations"
           autocomplete="off" spellcheck="false" data-testid="trip-search" @keydown.esc="search = ''">
@@ -210,27 +186,25 @@
           <span v-if="tripFilter !== 'all'" class="sort-badge">{{ tripFilter === 'group' ? 'Group' : 'Solo' }}</span>
           <svg class="sort-caret" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
-        <transition name="sort-pop">
-          <div v-if="sortOpen" class="sort-menu" role="menu" aria-label="Sort and filter trips" @click.stop>
+        <div v-if="sortOpen" class="sort-menu" role="menu" aria-label="Sort and filter trips" @click.stop>
             <p class="sort-head">Sort by</p>
             <button v-for="o in SORTS" :key="o.key" type="button" class="sort-item" :class="{ on: tripSort === o.key }"
               role="menuitemradio" :aria-checked="tripSort === o.key" @click="pickSort(o.key)">
-              <DoodleIcon :name="o.doodle" :size="20" anim="" /> {{ o.label }}
-              <span v-if="tripSort === o.key" class="sort-tick"><DoodleIcon name="check" :size="18" anim="" /></span>
+              <DoodleIcon :name="o.doodle" :size="20" /> {{ o.label }}
+              <span v-if="tripSort === o.key" class="sort-tick"><DoodleIcon name="check" :size="18" /></span>
             </button>
             <p class="sort-head">Show</p>
             <button v-for="o in TRIP_FILTERS" :key="o.key" type="button" class="sort-item" :class="{ on: tripFilter === o.key }"
               role="menuitemradio" :aria-checked="tripFilter === o.key" @click="pickFilter(o.key)">
-              <DoodleIcon :name="o.doodle" :size="20" anim="" /> {{ o.label }}
-              <span v-if="tripFilter === o.key" class="sort-tick"><DoodleIcon name="check" :size="18" anim="" /></span>
+              <DoodleIcon :name="o.doodle" :size="20" /> {{ o.label }}
+              <span v-if="tripFilter === o.key" class="sort-tick"><DoodleIcon name="check" :size="18" /></span>
             </button>
-          </div>
-        </transition>
+        </div>
       </div>
     </div>
 
     <!-- ===== Invites waiting for me ===== -->
-    <transition-group v-if="invites.length" name="list" tag="section" class="invites" aria-label="Trip invites">
+    <section v-if="invites.length" class="invites" aria-label="Trip invites">
       <article v-for="inv in invites" :key="inv.tripId" class="invite-card" data-testid="invite-card">
         <span class="invite-icon" aria-hidden="true"><AppIcon name="mail" :size="20" /></span>
         <div class="invite-text">
@@ -246,7 +220,7 @@
           <router-link :to="'/join/' + inv.code" class="btn invite-join" data-testid="invite-join">Join →</router-link>
         </div>
       </article>
-    </transition-group>
+    </section>
 
     <!-- ===== Trips ===== -->
     <div class="trips-head">
@@ -256,24 +230,19 @@
         <button v-for="st in STAGES" :key="st.key" type="button" role="tab" class="stage-tab"
           :class="{ on: stage === st.key }" :aria-selected="stage === st.key" :data-testid="'stage-' + st.key"
           @click="stage = st.key">
-          <DoodleIcon :name="st.doodle" :size="20" anim="" /> {{ st.label }} <span class="stage-count">{{ stageCounts[st.key] }}</span>
+          <DoodleIcon :name="st.doodle" :size="20" /> {{ st.label }} <span class="stage-count">{{ stageCounts[st.key] }}</span>
         </button>
       </div>
     </div>
 
     <!-- Passport book: an inked stamp for every place you've finished a trip to. Tap one to filter the trips below. -->
     <PassportBook v-if="stage === 'archive' && stamps.length" ref="passport" :stamps="stamps" :countries="countryCount"
-      :holder="holderName" :picture="twin.picture" :active="stampFilter"
-      :hide="ceremony ? ceremony.newPlaces : []" :landing="landing" @select="stampFilter = $event" />
+      :holder="holderName" :active="stampFilter"
+      @select="stampFilter = $event" />
     <p v-if="stampFilter && stage === 'archive'" class="stamp-filter" role="status">
-      <DoodleIcon name="pin" :size="20" anim="" /> Showing trips to <strong>{{ shortPlace(stampFilter) }}</strong>
+      <DoodleIcon name="pin" :size="20" /> Showing trips to <strong>{{ shortPlace(stampFilter) }}</strong>
       <button type="button" class="stamp-filter-x" @click="stampFilter = ''">Show all</button>
     </p>
-
-    <!-- "Trip complete!" stamping ceremony (once per finished trip) -->
-    <StampCeremony :open="!!ceremony" :place="ceremony ? ceremony.place : ''" :date="ceremony ? ceremony.date : ''"
-      :flag="ceremony ? ceremony.flag : ''" :trip-name="ceremony ? ceremony.name : ''" :more="ceremony ? ceremony.more : 0"
-      :target-rect="stampSlot" @stamped="showPassport" @done="ceremonyDone" @close="ceremonyLater" />
 
     <div v-if="loadError" class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
       <span>{{ loadError }}</span>
@@ -295,10 +264,9 @@
     <!-- No trips at all yet (new account) -->
     <div v-else-if="!trips.length" class="empty" data-testid="no-trips">
       <p v-if="showCreateForm" class="mb-0"><strong>No trips yet.</strong> Fill in the form above to plan your first one.</p>
-      <p v-else class="mb-2"><strong>No trips yet.</strong> Plan your first one, or let us suggest a place.</p>
+      <p v-else class="mb-2"><strong>No trips yet.</strong> Plan your first one.</p>
       <div v-if="!showCreateForm" class="d-flex gap-2 justify-content-center flex-wrap">
         <button type="button" class="pl-btn" @click="openForm"><DoodleIcon name="plus" :size="22" tint="cream" /> Plan your first trip</button>
-        <router-link to="/discover" class="pl-btn ghost"><DoodleIcon name="compass" :size="22" /> Help me choose</router-link>
       </div>
     </div>
 
@@ -312,15 +280,15 @@
       <p class="mb-0">No {{ stageName.toLowerCase() }} trips right now.</p>
     </div>
 
-    <transition-group v-else name="list" tag="div" class="trip-grid">
+    <div v-else class="trip-grid">
       <!-- Each trip is a postcard: the photo in a cream frame, a status sticker on its corner,
            the name, dates and route on the card below. Tilted a little; straightens on hover. -->
-      <article v-for="(t, i) in visibleTrips" :key="t.id" class="trip-card" :class="{ archived: stage === 'archive', lit: hoverTrip === t.id }" data-testid="trip-card"
+      <article v-for="(t, i) in visibleTrips" :key="t.id" class="trip-card" :class="{ archived: stage === 'archive' }" data-testid="trip-card"
         :style="{ '--tilt': CARD_TILT[i % CARD_TILT.length] }"
-        @click="openCard($event, t)" @mouseenter="hoverTrip = t.id" @mouseleave="hoverTrip = ''" @focusin="hoverTrip = t.id" @focusout="hoverTrip = ''">
+        @click="openCard($event, t)">
         <!-- status sticker over the photo's corner -->
         <span class="trip-status" :class="'status-' + statusFor(t).kind">
-          <DoodleIcon :name="STATUS_DOODLE[statusFor(t).kind]" :size="16" anim="" /> {{ statusFor(t).label }}
+          <DoodleIcon :name="STATUS_DOODLE[statusFor(t).kind]" :size="16" /> {{ statusFor(t).label }}
         </span>
         <!-- the photo (an illustrated scene until the photo loads) -->
         <router-link :to="'/trip/' + t.id" class="trip-art" :class="'theme-' + themeFor(t.destinations[0])" :aria-label="'Open ' + t.name" tabindex="-1">
@@ -330,17 +298,17 @@
             <path d="M0 120 Q60 80 120 100 T300 95 L300 120 Z" class="hill" />
           </svg>
           <img v-if="photos[t.destinations[0]]" :src="photos[t.destinations[0]]" class="trip-photo" alt="" loading="lazy">
-          <span v-if="t.members && t.members.length > 1" class="trip-demo"><DoodleIcon name="users" :size="15" anim="" /> {{ t.members.length }}</span>
+          <span v-if="t.members && t.members.length > 1" class="trip-demo"><DoodleIcon name="users" :size="15" /> {{ t.members.length }}</span>
         </router-link>
 
         <div class="trip-body">
           <h3 class="trip-name fun">{{ t.name }}</h3>
-          <p class="trip-dates"><DoodleIcon name="calendar" :size="16" anim="" /> {{ dateRange(t) }}<template v-if="tripLength(t)"> · {{ tripLength(t) }}</template></p>
+          <p class="trip-dates"><DoodleIcon name="calendar" :size="16" /> {{ dateRange(t) }}<template v-if="tripLength(t)"> · {{ tripLength(t) }}</template></p>
           <!-- The route: each place joined by a dotted line, with its flag as a little stamp -->
           <ol class="trip-route" :aria-label="'Route: ' + t.destinations.map(shortPlace).join(', then ')">
             <li v-for="d in t.destinations" :key="d" class="trip-stop">
               <span class="nowrap"><span v-if="flagCode(d)" class="trip-stamp"><FlagImg :code="flagCode(d)" :size="12" /></span>
-                <DoodleIcon v-else name="pin" :size="15" anim="" /> {{ shortPlace(d) }}</span>
+                <DoodleIcon v-else name="pin" :size="15" /> {{ shortPlace(d) }}</span>
             </li>
           </ol>
 
@@ -360,7 +328,7 @@
               <button type="button" class="trip-confirm-no" @click="confirmingId = null">No</button>
             </div>
             <button v-else-if="t.role === 'owner'" type="button" class="icon-btn" :aria-label="'Delete ' + t.name" title="Delete trip" @click="confirmingId = t.id"><AppIcon name="trash" :size="18" /></button>
-            <span v-else-if="t.role === 'member'" class="shared-tag" title="You joined this trip"><DoodleIcon name="users" :size="15" anim="" /> Shared with you</span>
+            <span v-else-if="t.role === 'member'" class="shared-tag" title="You joined this trip"><DoodleIcon name="users" :size="15" /> Shared with you</span>
           </div>
 
           <router-link :to="'/trip/' + t.id" class="open-btn" data-testid="open-trip">Open trip →</router-link>
@@ -393,7 +361,7 @@
           </span>
         </span>
       </button>
-    </transition-group>
+    </div>
   </div>
 </template>
 
@@ -402,25 +370,14 @@ import axios from 'axios'
 import { auth } from '../auth.js'
 import { POPULAR_DESTINATIONS, codeForDestination, flagEmoji } from '../destinations.js'
 import AppIcon from '../components/AppIcon.vue'
-import TravelMap from '../components/TravelMap.vue'
 import DoodleIcon from '../components/DoodleIcon.vue'
 import PassportBook from '../components/PassportBook.vue'
-import StampCeremony from '../components/StampCeremony.vue'
 import NotebookModal from '../components/NotebookModal.vue'
-import ExplorerMascot from '../components/ExplorerMascot.vue'
 import FlagImg from '../components/FlagImg.vue'
-import { avatar as twin, loadAvatar } from '../avatarStore.js'
 import { needsSetup, setupDone } from '../onboarding.js'
 import { friends } from '../friends.js'
 
 const DAY_MS = 86400000
-
-// Straight-line distance between two { lat, lon } points, in km
-function kmBetween(a, b) {
-  const r = Math.PI / 180
-  const h = Math.sin((b.lat - a.lat) * r / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin((b.lon - a.lon) * r / 2) ** 2
-  return 12742 * Math.asin(Math.sqrt(h))
-}
 
 const STAGES = [
   { key: 'planning', label: 'Planning', doodle: 'map' },
@@ -452,14 +409,10 @@ const CARD_TILT = ['-1deg', '1.2deg', '-0.6deg', '1.5deg']
 const STATUS_DOODLE = { none: 'map', upcoming: 'plane', ongoing: 'sun', past: 'check' }
 
 export default {
-  components: { AppIcon, TravelMap, DoodleIcon, PassportBook, StampCeremony, NotebookModal, FlagImg, ExplorerMascot },
+  components: { AppIcon, DoodleIcon, PassportBook, NotebookModal, FlagImg },
   data() {
     return {
-      planeStyle: {},      // where the plane is during its loop
-      planeFlying: false, // the hero's paper plane is doing its loop
-      sunShine: false,     // the hero's sun is spinning
-      twin, // Travel Twin picture for the hero
-      STAT_ICONS: ['suitcase', 'pin', 'map', 'calendar', 'plane'],
+      STAT_ICONS: ['suitcase', 'pin', 'map', 'calendar'],
       showSetup: needsSetup(auth.user && auth.user.id), // just signed up: "set up your needs" card
       trips: [],
       loading: true,
@@ -485,16 +438,12 @@ export default {
       SORTS,
       TRIP_FILTERS,
       stampFilter: '',   // a passport stamp that was tapped: only trips to that place
-      ceremony: null,    // the trip being stamped: { tripId, name, place, date, flag, more, newPlaces }
-      landing: '',       // the stamp that just landed in the passport
       STAGES,
       CARD_TILT,
       STATUS_DOODLE,
       stage: null, // 'planning' | 'upcoming' | 'archive' (picked once the trips load, see shownStage)
       // destination = what's being typed; destinations = the ones already added
       photos: {}, // destination -> photo url
-      places: {}, // destination -> { lat, lon } for the travel map
-      hoverTrip: '', // the trip being pointed at (its card and its route on the map light up together)
       invites: [], // trips I've been invited to by username
       friends, // shared numbers (new invites arrive here; see friends.js)
       newTrip: { name: '', destination: '', destinations: [], startDate: '', endDate: '', vibes: [] },
@@ -512,22 +461,8 @@ export default {
   async mounted() {
     document.addEventListener('click', this.closeSort) // a click anywhere else closes the sort menu
     document.addEventListener('keydown', this.slashToSearch)
-    loadAvatar()
-    // Coming from Discover ("Plan Tokyo"): open the form with the city and dates filled in
-    const q = this.$route.query
-    if (q.dest) {
-      // One place, or several (a trip across a country)
-      const dests = Array.isArray(q.dest) ? q.dest : [q.dest]
-      for (const d of dests) this.pickDestination(String(d))
-      this.newTrip.name = q.name ? String(q.name) : 'Trip to ' + String(dests[0]).split(', ')[0]
-      if (q.start) this.newTrip.startDate = String(q.start)
-      if (q.end) this.newTrip.endDate = String(q.end)
-      this.openForm()
-      this.$router.replace({ path: '/home' }) // so a refresh doesn't open it again
-    }
     await this.loadTrips()
   },
-
 
   beforeUnmount() {
     document.removeEventListener('click', this.closeSort)
@@ -560,30 +495,12 @@ export default {
       list.sort((a, b) => a.end.localeCompare(b.end))
       return list
     },
-    // ---------- travel map + numbers ----------
-    // Your trips as routes for the map. No trips yet: the whole world with a "plan a trip" note
-    mapTrips() {
-      const list = []
-      for (const t of this.allTrips) {
-        const points = []
-        for (const d of t.destinations) {
-          if (this.places[d]) points.push({ label: d, lat: this.places[d].lat, lon: this.places[d].lon })
-        }
-        list.push({ id: t.id, name: t.name, done: this.stageOf(t) === 'archive', points })
-      }
-      return list
-    },
-    // The trip that's highlighted: the next one coming up, else the newest
-    mapActive() {
-      const next = this.allTrips.find((t) => this.stageOf(t) !== 'archive')
-      return next ? next.id : (this.allTrips[0] ? this.allTrips[0].id : '')
-    },
+    // ---------- your numbers ----------
     travelStats() {
       const real = this.allTrips
       const cities = []
       const countries = []
       let days = 0
-      let km = 0
       for (const t of real) {
         for (const d of t.destinations) {
           if (!cities.includes(d)) cities.push(d)
@@ -591,19 +508,12 @@ export default {
           if (!countries.includes(c)) countries.push(c)
         }
         if (t.startDate && t.endDate) days += Math.round((new Date(t.endDate) - new Date(t.startDate)) / DAY_MS) + 1
-        // Distance along the route, place to place
-        for (let i = 1; i < t.destinations.length; i++) {
-          const a = this.places[t.destinations[i - 1]]
-          const b = this.places[t.destinations[i]]
-          if (a && b) km += kmBetween(a, b)
-        }
       }
       return [
         { value: real.length, label: real.length === 1 ? 'Trip' : 'Trips' },
         { value: countries.length, label: countries.length === 1 ? 'Country' : 'Countries' },
         { value: cities.length, label: cities.length === 1 ? 'Place' : 'Places' },
-        { value: days, label: 'Days away' },
-        { value: Math.round(km).toLocaleString(), label: 'km between places' }
+        { value: days, label: 'Days away' }
       ]
     },
     countryCount() {
@@ -896,69 +806,7 @@ export default {
       this.loading = false
       this.pickStartStage()
       this.loadPhotos()
-      this.loadPlaces()
       this.loadInvites()
-      this.checkCeremony()
-    },
-
-    // ---------- hero doodles ----------
-    // A new random flight every tap: from its spot the plane swoops DOWN over the card through a few
-    // random points, then curves back home. The route is a smooth curve (Catmull-Rom spline) and the
-    // plane always points the way it's going. Drawn frame by frame.
-    flyPlane() {
-      if (this.planeFlying || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      const hero = this.$refs.plane && this.$refs.plane.parentElement
-      if (!hero) return
-      this.planeFlying = true
-      const box = hero.getBoundingClientRect()
-      const me = this.$refs.plane.getBoundingClientRect()
-      // How far it can go from its spot and still stay over the card
-      const left = -(me.left - box.left) + 20
-      const right = box.right - me.right - 10
-      const bottom = Math.min(box.height - 70, 320)
-      const rand = (a, b) => a + Math.random() * (b - a)
-      // 3 or 4 random stops, each lower down the card and swinging left/right, then home
-      const pts = [{ x: 0, y: 0 }, { x: 0, y: 0 }]
-      const stops = 3 + Math.floor(Math.random() * 2)
-      for (let i = 1; i <= stops; i++) {
-        const depth = (i / stops) * bottom
-        pts.push({ x: rand(left, right), y: rand(depth * 0.5, depth) + 30 })
-      }
-      pts.push({ x: rand(left * 0.3, 0), y: rand(20, 60) }, { x: 0, y: 0 }, { x: 0, y: 0 })
-      const NOSE = 25        // the drawing's nose points 25° above "right"
-      const DURATION = 1100 + stops * 600
-      const segs = pts.length - 3
-      // point on the smooth curve through the points (t: 0 -> 1 over the whole route)
-      const at = (t) => {
-        const f = Math.min(t, 0.9999) * segs
-        const i = Math.floor(f)
-        const u = f - i
-        const p0 = pts[i], p1 = pts[i + 1], p2 = pts[i + 2], p3 = pts[i + 3]
-        const c = (a, b, cc, d) => 0.5 * (2 * b + (-a + cc) * u + (2 * a - 5 * b + 4 * cc - d) * u * u + (-a + 3 * b - 3 * cc + d) * u * u * u)
-        return { x: c(p0.x, p1.x, p2.x, p3.x), y: c(p0.y, p1.y, p2.y, p3.y) }
-      }
-      const t0 = performance.now()
-      let angle = 0
-      const step = (now) => {
-        const k = Math.min((now - t0) / DURATION, 1)
-        const eased = 0.5 - Math.cos(Math.PI * k) / 2 // gentle take-off and landing
-        const p = at(eased)
-        const ahead = at(Math.min(eased + 0.01, 1))
-        if (Math.hypot(ahead.x - p.x, ahead.y - p.y) > 0.3) angle = (Math.atan2(ahead.y - p.y, ahead.x - p.x) * 180) / Math.PI
-        const grow = 1 + Math.sin(Math.PI * k) * 0.2
-        this.planeStyle = { transform: 'translate(' + p.x.toFixed(1) + 'px, ' + p.y.toFixed(1) + 'px) rotate(' + (angle + NOSE).toFixed(1) + 'deg) scale(' + grow.toFixed(3) + ')' }
-        if (k < 1) requestAnimationFrame(step)
-        else {
-          this.planeStyle = {}
-          this.planeFlying = false
-        }
-      }
-      requestAnimationFrame(step)
-    },
-    shineSun() {
-      if (this.sunShine) return
-      this.sunShine = true
-      setTimeout(() => { this.sunShine = false }, 1300)
     },
 
     // ---------- passport stamps ----------
@@ -967,73 +815,6 @@ export default {
       if (!iso) return ''
       const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
       return MONTHS[Number(iso.slice(5, 7)) - 1] + ' ' + iso.slice(0, 4)
-    },
-    // Which finished trips have had their stamping ceremony (kept on this device)
-    stampedKey() {
-      return 'chuise-stamped-' + (auth.user ? auth.user.id : 'guest')
-    },
-    readStamped() {
-      try {
-        return JSON.parse(localStorage.getItem(this.stampedKey()))
-      } catch (err) {
-        return null
-      }
-    },
-    writeStamped(list) {
-      try {
-        localStorage.setItem(this.stampedKey(), JSON.stringify(list))
-      } catch (err) {
-        // private window: it may show again next time, which is harmless
-      }
-    },
-    // A trip that has just finished (and hasn't been stamped yet) gets the ceremony, one at a time
-    checkCeremony() {
-      if (this.ceremony) return
-      const finished = []
-      for (const t of this.allTrips) if (this.stageOf(t) === 'archive') finished.push(t)
-      let done = this.readStamped()
-      if (!done) {
-        // First time on this device: trips that were already over don't all celebrate at once
-        done = finished.map((t) => t.id)
-        this.writeStamped(done)
-        return
-      }
-      const next = finished.find((t) => !done.includes(t.id))
-      if (!next) return
-      // Places that only this trip has (their stamps wait in the passport until this one lands)
-      const older = []
-      for (const t of finished) if (t.id !== next.id && done.includes(t.id)) older.push(...t.destinations)
-      const newPlaces = next.destinations.filter((d) => !older.includes(d))
-      const place = newPlaces[0] || next.destinations[0]
-      const end = next.endDate || next.startDate || ''
-      this.stage = 'archive'
-      this.stampFilter = ''
-      this.ceremony = { tripId: next.id, name: next.name, place, date: this.stampDate(end), flag: this.flagFor(place), more: Math.max(0, newPlaces.length - 1), newPlaces }
-    },
-    // Where the big stamp should fly to: its slot in the passport
-    stampSlot() {
-      if (!this.ceremony) return null
-      const el = document.querySelector('.pb-slot[data-place="' + this.ceremony.place.replace(/"/g, '\\"') + '"]')
-      return el ? el.getBoundingClientRect() : null
-    },
-    // Once stamped, bring the passport into view (behind the overlay) so the stamp has somewhere to land
-    showPassport() {
-      const book = this.$refs.passport && this.$refs.passport.$el
-      if (book) book.scrollIntoView({ behavior: 'auto', block: 'center' })
-    },
-    ceremonyDone(place) {
-      const id = this.ceremony.tripId
-      this.ceremony = null
-      this.landing = place
-      setTimeout(() => { this.landing = '' }, 700)
-      const done = this.readStamped() || []
-      if (!done.includes(id)) done.push(id)
-      this.writeStamped(done)
-      setTimeout(() => this.checkCeremony(), 900) // another trip finished too? its turn next
-    },
-    // "Later": ask again next time Home opens
-    ceremonyLater() {
-      this.ceremony = null
     },
 
     async loadInvites() {
@@ -1051,25 +832,6 @@ export default {
         await axios.post('/api/invites/' + inv.tripId + '/decline')
       } catch (err) {
         this.loadInvites() // put it back if that failed
-      }
-    },
-
-    // Where each destination is, for the travel map (looked up 20 at a time)
-    async loadPlaces() {
-      const names = []
-      for (const t of this.allTrips) {
-        for (const d of t.destinations) if (!this.places[d] && !names.includes(d)) names.push(d)
-      }
-      for (let i = 0; i < names.length; i += 20) {
-        const batch = names.slice(i, i + 20)
-        const codes = []
-        for (const n of batch) codes.push(codeForDestination(n) || '')
-        try {
-          const res = await axios.get('/api/discover/cities', { params: { names: batch.join('|'), codes: codes.join('|') }, background: true })
-          for (const c of res.data) this.places[c.label] = { lat: c.lat, lon: c.lon }
-        } catch (err) {
-          // the map just shows fewer places
-        }
       }
     },
 
@@ -1225,10 +987,7 @@ export default {
         this.newTrip = { name: '', destination: '', destinations: [], startDate: '', endDate: '', vibes: [] }
         this.resetTouched()
         this.showCreateForm = false
-        // New trip: set it up step by step (invite, wishlist, then voting). "first" = this is their first trip.
-        // "new" = just made: going Back from the first setup step offers to discard it
-        const query = this.trips.length === 0 ? { first: '1', new: '1' } : { new: '1' }
-        this.$router.push({ path: '/trip/' + res.data.id + '/setup/invite', query })
+        this.$router.push('/trip/' + res.data.id) // new trip: straight to its page
       } catch (err) {
         this.formError = (err.response && err.response.data && err.response.data.message) || 'Could not save the trip. Is the server running?'
       }
@@ -1504,7 +1263,6 @@ export default {
   letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 4px 0 0 #d97706;
-  transition: transform 0.12s, box-shadow 0.12s;
 }
 .setup-go:hover {
   transform: translateY(-2px);
@@ -1528,7 +1286,6 @@ export default {
   line-height: 1.2;
   cursor: pointer;
   transform: rotate(-2deg);
-  transition: transform 0.2s, background 0.15s, color 0.15s;
 }
 .setup-later:hover {
   background: rgba(255, 255, 255, 0.7);
@@ -1625,7 +1382,6 @@ export default {
 .hero-sun .dz {
   width: 54px;
   height: 54px;
-  animation: hero-sun-bob 5s ease-in-out infinite;
 }
 .hero-sun-glow {
   position: absolute;
@@ -1636,27 +1392,7 @@ export default {
   transform: scale(1.4);
   pointer-events: none;
 }
-@keyframes hero-sun-bob {
-  0%, 100% { transform: rotate(0) translateY(0); }
-  50% { transform: rotate(10deg) translateY(-3px); }
-}
-/* tapped: spins once with a bounce, and the glow flares */
-.hero-sun.shine .dz {
-  animation: hero-sun-spin 1.2s cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-.hero-sun.shine .hero-sun-glow {
-  animation: hero-sun-flare 1.2s ease-out;
-}
-@keyframes hero-sun-spin {
-  0% { transform: rotate(0) scale(1); }
-  35% { transform: rotate(200deg) scale(1.3); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-@keyframes hero-sun-flare {
-  0% { opacity: 0.6; transform: scale(1.4); }
-  35% { opacity: 1; transform: scale(2.6); }
-  100% { opacity: 0.6; transform: scale(1.4); }
-}
+
 /* The plane cruises over the card's top-right corner */
 .hero-plane {
   top: -20px;
@@ -1664,23 +1400,18 @@ export default {
 }
 .hero-plane-body {
   display: inline-block;
-  animation: pl-float 3.4s ease-in-out infinite;
 }
 .hero-plane.flying {
   pointer-events: none;
   z-index: 5;
 }
-.hero-plane.flying .hero-plane-body {
-  animation: none; /* the loop (set frame by frame) takes over */
-}
+
 @media (max-width: 560px) {
   .hero-sun { top: -12px; left: -12px; }
   .hero-sun .dz { width: 38px; height: 38px; }
   .hero-plane { right: 14px; top: -18px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .hero-plane-body, .hero-sun .dz, .hero-sun.shine .dz, .hero-sun.shine .hero-sun-glow { animation: none; }
-}
+
 .hero-top {
   display: flex;
   flex-wrap: wrap;
@@ -1707,7 +1438,6 @@ export default {
   font-size: 24px;
   font-weight: 800;
   box-shadow: 0 0 0 4px #fff, 0 6px 16px rgba(0, 29, 44, 0.15);
-  animation: pl-float 3.6s ease-in-out infinite;
 }
 .hero-avatar img {
   width: 100%;
@@ -1734,7 +1464,6 @@ export default {
   background: #001d2c;
   color: #fff;
   padding: 10px 22px;
-  transition: transform 0.15s, background 0.15s;
 }
 .hero-btn:hover,
 .hero-btn:focus-visible {
@@ -1783,7 +1512,6 @@ export default {
   background: #fbf5ea;
   border: 0;
   box-shadow: 0 4px 0 rgba(18, 50, 74, 0.08);
-  animation: pl-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .hero-stats li.tint-0 { background: #fff1cf; }
 .hero-stats li.tint-1 { background: #ffe1e6; }
@@ -1822,11 +1550,6 @@ export default {
   .hero-stats span { font-size: 11px; }
 }
 
-
-@media (prefers-reduced-motion: reduce) {
-  .stamp { transition: none; }
-}
-
 /* ---------- Create form ---------- */
 .create-card {
   background: #fbf5ea;
@@ -1836,15 +1559,6 @@ export default {
   margin-bottom: 24px;
   box-shadow: 0 8px 24px rgba(0, 40, 62, 0.08);
   scroll-margin-top: 16px;
-}
-.slide-enter-active,
-.slide-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-.slide-enter-from,
-.slide-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
 }
 
 /* ---------- Form fields: pill inputs with the label on the border ---------- */
@@ -1876,7 +1590,6 @@ export default {
   color: var(--app-ink);
   background: var(--field-bg);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .field-input::placeholder {
   color: #9aa7b1;
@@ -1966,7 +1679,6 @@ export default {
   padding: 4px 6px 4px 12px;
   font-size: 14px;
   font-weight: 600;
-  animation: pop 0.12s ease-out;
 }
 .dest-chip::before {
   counter-increment: stop;
@@ -2012,7 +1724,6 @@ export default {
   box-shadow: 0 14px 30px rgba(0, 40, 62, 0.14);
   max-height: 300px;
   overflow-y: auto;
-  animation: pop 0.12s ease-out;
 }
 .suggest-item {
   display: flex;
@@ -2034,13 +1745,6 @@ export default {
   font-size: 18px;
   line-height: 1;
 }
-@keyframes pop {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .suggest { animation: none; }
-}
 
 /* ---------- Search + destination filter ---------- */
 .toolbar {
@@ -2055,7 +1759,6 @@ export default {
   position: relative;
   flex: 1 1 260px;
   max-width: 440px;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .search:focus-within {
   transform: scale(1.01);
@@ -2081,7 +1784,6 @@ export default {
   font-size: 15px;
   font-weight: 700;
   box-shadow: inset 0 3px 0 rgba(18, 50, 74, 0.04), 0 4px 0 #e2cfab, 0 12px 22px -16px rgba(18, 50, 74, 0.45);
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .search-input::placeholder {
   color: #8a99a5;
@@ -2217,7 +1919,6 @@ export default {
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 4px 0 #e2cfab;
-  transition: transform 0.12s, box-shadow 0.12s, border-color 0.15s;
 }
 .sort-btn:hover {
   transform: translateY(-2px);
@@ -2245,9 +1946,7 @@ export default {
   font-size: 12px;
   font-weight: 900;
 }
-.sort-caret {
-  transition: transform 0.2s;
-}
+
 .sort-btn.open .sort-caret {
   transform: rotate(180deg);
 }
@@ -2288,7 +1987,6 @@ export default {
   font-weight: 700;
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s, transform 0.12s;
 }
 .sort-item:hover,
 .sort-item:focus-visible {
@@ -2304,17 +2002,7 @@ export default {
   margin-left: auto;
   line-height: 0;
 }
-.sort-pop-enter-active {
-  transition: opacity 0.15s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.sort-pop-leave-active {
-  transition: opacity 0.12s, transform 0.12s;
-}
-.sort-pop-enter-from,
-.sort-pop-leave-to {
-  opacity: 0;
-  transform: translateY(-6px) scale(0.95);
-}
+
 @media (max-width: 480px) {
   .sortbox {
     flex: 1;
@@ -2367,7 +2055,6 @@ export default {
   white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 4px 0 #e2cfab;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s, background 0.15s, border-color 0.15s;
 }
 .stage-tab:hover {
   transform: translateY(-3px);
@@ -2382,11 +2069,8 @@ export default {
   background: #ffbf3c;
   transform: translateY(-3px) rotate(-1.5deg);
   box-shadow: 0 5px 0 #12324a;
-  animation: tab-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes tab-pop {
-  45% { transform: translateY(-6px) rotate(-4deg) scale(1.08); }
-}
+
 .stage-count {
   display: inline-block;
   min-width: 22px;
@@ -2443,7 +2127,6 @@ export default {
   color: #12324a;
   transform: rotate(var(--tilt, 0deg));
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.9), 0 5px 0 #e3cfa9, 0 20px 32px -18px rgba(18, 50, 74, 0.5);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s;
 }
 .trip-card[data-testid="trip-card"] {
   cursor: pointer;
@@ -2474,16 +2157,11 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  animation: photo-in 0.4s ease;
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .trip-card:hover .trip-photo {
   transform: scale(1.06);
 }
-@keyframes photo-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+
 .trip-art svg {
   width: 100%;
   height: 100%;
@@ -2515,7 +2193,6 @@ export default {
   white-space: nowrap;
   transform: rotate(-6deg);
   box-shadow: 0 4px 8px rgba(18, 50, 74, 0.3);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .trip-card:hover .trip-status {
   transform: rotate(-2deg) scale(1.05);
@@ -2525,12 +2202,8 @@ export default {
 .status-ongoing {
   background: #ff6b7a;
   color: #fff;
-  animation: status-pulse 1.8s ease-in-out infinite;
 }
-@keyframes status-pulse {
-  0%, 100% { box-shadow: 0 4px 8px rgba(18, 50, 74, 0.3), 0 0 0 0 rgba(255, 107, 122, 0.5); }
-  50% { box-shadow: 0 4px 8px rgba(18, 50, 74, 0.3), 0 0 0 8px rgba(255, 107, 122, 0); }
-}
+
 .status-past { background: #dde6ec; }
 /* how many people: a small cream chip in the photo's top-right */
 .trip-demo {
@@ -2663,7 +2336,6 @@ export default {
   border-radius: 10px;
   background: transparent;
   color: #5a6b78;
-  transition: background 0.15s, color 0.15s;
 }
 .icon-btn:hover {
   background: #ffe1e4;
@@ -2707,7 +2379,6 @@ export default {
   text-align: center;
   text-decoration: none;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 4px 0 #b9770f;
-  transition: transform 0.12s, box-shadow 0.12s;
 }
 .open-btn:hover {
   color: #12324a;
@@ -2726,7 +2397,6 @@ export default {
 .trip-card.archived .trip-photo,
 .trip-card.archived .trip-art svg {
   filter: grayscale(0.6);
-  transition: filter 0.2s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .trip-card.archived:hover .trip-photo,
 .trip-card.archived:hover .trip-art svg {
@@ -2756,7 +2426,6 @@ export default {
   background:
     radial-gradient(circle, rgba(18, 50, 74, 0.08) 1.1px, transparent 1.3px) 0 0 / 16px 16px,
     #fff3dc;
-  transition: border-color 0.2s;
 }
 .new-tile:hover .new-slot {
   border-color: #ffbf3c;
@@ -2841,7 +2510,6 @@ export default {
   /* a little uneven, like a real rubber stamp */
   -webkit-mask-image: radial-gradient(circle at 30% 40%, #000 60%, rgba(0, 0, 0, 0.82) 100%);
   mask-image: radial-gradient(circle at 30% 40%, #000 60%, rgba(0, 0, 0, 0.82) 100%);
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s;
 }
 .new-tile:hover .new-ink,
 .new-tile:focus-visible .new-ink {
@@ -2862,10 +2530,6 @@ export default {
   transform: none;
   background: linear-gradient(90deg, #efe9df 25%, #f9f6f0 50%, #efe9df 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.2s infinite;
-}
-@keyframes shimmer {
-  to { background-position: -200% 0; }
 }
 
 .empty {
@@ -2877,36 +2541,10 @@ export default {
   border-radius: 16px;
 }
 
-/* Cards fade in/out when filtering */
-.list-enter-active,
-.list-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.list-enter-from,
-.list-leave-to {
-  opacity: 0;
-  transform: scale(0.97);
-}
-
 /* Phones */
 @media (max-width: 576px) {
   .hero { min-height: 0; border-radius: 18px; }
   .hero-panel { max-width: none; padding: 28px 22px; }
-}
-
-/* Respect "reduce motion" */
-@media (prefers-reduced-motion: reduce) {
-  .trip-card,
-  .hero-btn,
-  .slide-enter-active,
-  .slide-leave-active,
-  .list-enter-active,
-  .list-leave-active {
-    transition: none;
-  }
-  .trip-card, .trip-card:hover, .trip-card.lit { transform: none; }
-  .stage-tab.on, .status-ongoing { animation: none; }
-  .skeleton { animation: none; }
 }
 
 /* "Showing trips to Kyoto" (after tapping a passport stamp) */
@@ -2985,7 +2623,6 @@ export default {
   font-size: 16px; /* 16px: phones don't zoom in */
   font-weight: 600;
   box-shadow: 0 4px 0 rgba(18, 50, 74, 0.18);
-  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
 .nbf-input::placeholder {
   color: #8a9aa6;
@@ -3082,7 +2719,6 @@ export default {
   border: 2px solid #12324a;
   font-size: 14px;
   font-weight: 700;
-  animation: pl-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .nbf-stop-n {
   display: grid;
@@ -3163,19 +2799,7 @@ export default {
   font-size: 13px;
   font-weight: 800;
 }
-.nbf-pop-enter-active {
-  transition: transform 0.4s cubic-bezier(0.34, 1.7, 0.64, 1), opacity 0.2s;
-}
-.nbf-pop-leave-active {
-  transition: opacity 0.12s;
-}
-.nbf-pop-enter-from {
-  opacity: 0;
-  transform: scale(0.6) rotate(-8deg);
-}
-.nbf-pop-leave-to {
-  opacity: 0;
-}
+
 .nbf-dates .nbf-input {
   padding: 12px 10px 12px 14px; /* no tick icon here: give the date the room */
   cursor: pointer;
@@ -3207,7 +2831,6 @@ export default {
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 4px 0 #12324a;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s, box-shadow 0.15s;
 }
 .nbf-vibe:hover {
   transform: translateY(-3px);
@@ -3257,7 +2880,6 @@ export default {
   font-weight: 900;
   cursor: pointer;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -3px 0 rgba(0, 0, 0, 0.08), 0 7px 0 #12324a, 0 16px 24px -10px rgba(18, 50, 74, 0.45);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .nbf-go:hover:not(:disabled) {
   transform: translateY(-2px);
@@ -3294,8 +2916,5 @@ export default {
     justify-content: center;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .nbf-stop, .nbf-spin { animation: none; }
-  .nbf-badge, .nbf-vibe, .nbf-go, .nbf-input { transition: none; }
-}
+
 </style>

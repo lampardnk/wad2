@@ -1,6 +1,6 @@
 /* ============ Playful design system (loaded after style.css) ============
    Brighter navy / amber / sunset / teal, pastel page gradients, chunky rounded shapes,
-   pillowy shadows and small bouncy animations. Utility classes start with pl-.
+   pillowy shadows. Utility classes start with pl-.
    Hand-drawn icons: components/DoodleIcon.vue. Tour guide: components/PlaneGuide.vue. */
 
 :root {
@@ -27,12 +27,11 @@
   --pl-radius-sm: 18px;
   --pl-shadow: 0 2px 0 rgba(18, 50, 74, 0.06), 0 18px 40px -14px rgba(18, 50, 74, 0.22);
   --pl-shadow-lift: 0 2px 0 rgba(18, 50, 74, 0.06), 0 26px 50px -16px rgba(18, 50, 74, 0.3);
-  --pl-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --app-bg: var(--pl-cream);
 }
 
 /* ---------- page ---------- */
-body:not(.dark-page) {
+body {
   background:
     radial-gradient(1100px 520px at 8% -10%, var(--pl-peach), transparent 60%),
     radial-gradient(900px 520px at 100% 0%, var(--pl-ice), transparent 60%),
@@ -93,7 +92,6 @@ body {
   border-radius: 14px;
   background: var(--pl-amber);
   box-shadow: 0 4px 0 var(--pl-amber-dark);
-  transition: transform 0.3s var(--pl-spring);
 }
 .pl-links {
   display: flex;
@@ -109,7 +107,6 @@ body {
   color: rgba(255, 255, 255, 0.82);
   font-weight: 700;
   text-decoration: none;
-  transition: background 0.2s, color 0.2s, transform 0.25s var(--pl-spring);
 }
 .pl-link:hover {
   color: #fff;
@@ -149,7 +146,6 @@ body {
   text-decoration: none;
   cursor: pointer;
   box-shadow: 0 5px 0 var(--b-dark);
-  transition: transform 0.2s var(--pl-spring), box-shadow 0.2s, filter 0.2s;
 }
 .pl-btn:hover {
   color: var(--b-text);
@@ -160,7 +156,6 @@ body {
 .pl-btn:active {
   transform: translateY(4px);
   box-shadow: 0 1px 0 var(--b-dark);
-  transition-duration: 0.06s;
 }
 .pl-btn:focus-visible {
   outline: 3px solid var(--pl-teal);
@@ -176,7 +171,6 @@ body {
   background: #fff;
   border-radius: var(--pl-radius);
   box-shadow: var(--pl-shadow);
-  transition: transform 0.3s var(--pl-spring), box-shadow 0.3s;
 }
 .pl-card.lift:hover {
   transform: translateY(-4px);
@@ -194,33 +188,5 @@ body {
   font-weight: 700;
 }
 
-/* ---------- small animations ---------- */
-@keyframes pl-pop-in {
-  0% { opacity: 0; transform: translateY(14px) scale(0.96); }
-  60% { opacity: 1; transform: translateY(-3px) scale(1.01); }
-  100% { transform: none; }
-}
-@keyframes pl-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-@keyframes pl-wiggle {
-  0%, 100% { transform: rotate(0); }
-  25% { transform: rotate(-4deg); }
-  60% { transform: rotate(3deg); }
-}
-.pl-pop-in { animation: pl-pop-in 0.55s var(--pl-spring) both; }
-.pl-float { animation: pl-float 3.4s ease-in-out infinite; }
-.pl-hover-wiggle:hover { animation: pl-wiggle 0.45s ease-in-out; }
-.pl-hover-bounce { transition: transform 0.3s var(--pl-spring); }
 .pl-hover-bounce:hover { transform: translateY(-3px) scale(1.03); }
 
-/* The page fade-in gets a little spring */
-.page-enter-active {
-  transition: opacity 0.35s ease, transform 0.45s var(--pl-spring);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pl-pop-in, .pl-float, .pl-hover-wiggle:hover { animation: none; }
-  .pl-btn, .pl-card, .pl-hover-bounce, .pl-link, .pl-brand-mark { transition: none; }
-}

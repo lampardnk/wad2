@@ -35,7 +35,7 @@
 
         <div class="jv-going">
           <span class="jv-faces" aria-hidden="true">
-            <TwinFace v-for="(m, i) in trip.members.slice(0, 5)" :key="m.name" class="jv-face" :style="{ zIndex: 10 - i }" :user-id="m.id || ''" :version="m.avatarV || 0" :name="m.name" />
+            <InitialBadge v-for="(m, i) in trip.members.slice(0, 5)" :key="m.name" class="jv-face" :style="{ zIndex: 10 - i }" :name="m.name" />
           </span>
           <span>{{ goingText }}</span>
         </div>
@@ -78,10 +78,10 @@ import axios from 'axios'
 import { auth } from '../auth.js'
 import { codeForDestination, flagEmoji } from '../destinations.js'
 import AppIcon from '../components/AppIcon.vue'
-import TwinFace from '../components/TwinFace.vue'
+import InitialBadge from '../components/InitialBadge.vue'
 
 export default {
-  components: { AppIcon, TwinFace },
+  components: { AppIcon, InitialBadge },
   props: { code: { type: String, required: true } },
 
   data() {
@@ -175,7 +175,6 @@ export default {
   border-radius: 28px;
   overflow: hidden;
   box-shadow: 0 24px 60px rgba(0, 40, 62, 0.15);
-  animation: jv-in 0.35s ease;
 }
 .jv-photo {
   position: relative;
@@ -285,7 +284,6 @@ export default {
   border: 1.5px solid #e6dfd2;
   border-radius: 14px;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
 }
 .jv-option input {
   position: absolute;
@@ -311,7 +309,6 @@ export default {
   font-size: 1.05rem;
   padding: 13px;
   text-decoration: none;
-  transition: background 0.15s, transform 0.15s;
 }
 .jv-btn:hover:not(:disabled) {
   background: #00798c;
@@ -342,16 +339,5 @@ export default {
 .jv-big-icon {
   font-size: 44px;
 }
-.jv-skel .jv-photo {
-  animation: jv-pulse 1.2s infinite;
-}
-@keyframes jv-in {
-  from { opacity: 0; transform: translateY(12px); }
-}
-@keyframes jv-pulse {
-  50% { opacity: 0.6; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .jv-card, .jv-skel .jv-photo { animation: none; }
-}
+
 </style>

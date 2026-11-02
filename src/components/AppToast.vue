@@ -1,14 +1,11 @@
 <template>
   <!-- App-wide messages: "can't reach the server" bar, and error / success toasts with an optional Try again -->
   <div class="at-wrap" aria-live="polite">
-    <transition name="at-slide">
       <div v-if="toast.offline" class="at-bar" role="status">
         <AppIcon name="alert" :size="16" />
         <span>Can't reach the server right now. Changes you make may not save until it's back.</span>
         <button type="button" class="at-btn" @click="retryNow">Retry now</button>
       </div>
-    </transition>
-    <transition name="at-slide">
       <div v-if="toast.text" class="at-toast" :class="toast.kind" :role="toast.kind === 'error' ? 'alert' : 'status'">
         <AppIcon :name="toast.kind === 'error' ? 'alert' : 'check-circle'" :size="18" />
         <span class="at-text">{{ toast.text }}</span>
@@ -17,7 +14,6 @@
           <AppIcon name="x" :size="16" />
         </button>
       </div>
-    </transition>
   </div>
 </template>
 
@@ -116,19 +112,5 @@ function retryNow() {
   outline: 3px solid #f3c26f;
   outline-offset: 2px;
 }
-.at-slide-enter-active,
-.at-slide-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.at-slide-enter-from,
-.at-slide-leave-to {
-  opacity: 0;
-  transform: translateY(12px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .at-slide-enter-active,
-  .at-slide-leave-active {
-    transition: none;
-  }
-}
+
 </style>

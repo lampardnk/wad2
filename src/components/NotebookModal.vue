@@ -4,7 +4,6 @@
        It flips open, and folds shut towards the spine when it closes.
        <NotebookModal :open="show" title="Plan a new trip" :tip="tipText" @close="show = false"> ...form... </NotebookModal> -->
   <Teleport to="body">
-    <transition name="nb">
       <div v-if="open" class="nb-overlay" @mousedown.self="emit('close')" @keydown.esc.stop="emit('close')">
         <section class="nb" role="dialog" aria-modal="true" :aria-labelledby="titleId">
           <!-- spiral binding -->
@@ -22,9 +21,7 @@
 
             <!-- Pip + speech bubble -->
             <div class="nb-guide" aria-live="polite">
-              <transition name="nb-tip" mode="out-in">
                 <p :key="tip" class="nb-bubble">{{ tip }}</p>
-              </transition>
               <PlaneGuide :size="78" :mood="mood" />
             </div>
 
@@ -36,7 +33,6 @@
           </div>
         </section>
       </div>
-    </transition>
   </Teleport>
 </template>
 
@@ -210,7 +206,6 @@ watch(() => props.open, (open) => { if (open) mood.value = 'wave' })
   color: #12324a;
   box-shadow: 0 3px 0 #12324a;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .nb-x:hover {
   transform: rotate(8deg);
@@ -222,44 +217,6 @@ watch(() => props.open, (open) => { if (open) mood.value = 'wave' })
 .nb-x:focus-visible {
   outline: 3px solid #19b3c4;
   outline-offset: 2px;
-}
-
-/* tip changes: the old bubble shrinks away, the new one pops */
-.nb-tip-enter-active {
-  transition: opacity 0.2s, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.nb-tip-leave-active {
-  transition: opacity 0.12s, transform 0.12s;
-}
-.nb-tip-enter-from,
-.nb-tip-leave-to {
-  opacity: 0;
-  transform: scale(0.85) translateX(8px);
-}
-
-/* Opening: the book swings open from the spine. Closing: it folds shut towards the spine and fades. */
-.nb-enter-active,
-.nb-leave-active {
-  transition: background 0.3s, backdrop-filter 0.3s;
-}
-.nb-enter-active .nb {
-  animation: nb-open 0.55s cubic-bezier(0.25, 1.2, 0.4, 1);
-}
-.nb-leave-active .nb {
-  animation: nb-fold 0.45s cubic-bezier(0.6, 0, 0.8, 0.4) forwards;
-}
-.nb-enter-from,
-.nb-leave-to {
-  background: rgba(8, 30, 48, 0);
-}
-@keyframes nb-open {
-  0% { opacity: 0; transform: rotateY(-75deg) scale(0.9); }
-  60% { opacity: 1; }
-  100% { transform: rotateY(0) scale(1); }
-}
-@keyframes nb-fold {
-  0% { transform: rotateY(0) scale(1); opacity: 1; }
-  100% { transform: rotateY(-88deg) scale(0.9); opacity: 0; }
 }
 
 @media (max-width: 720px) {
@@ -296,10 +253,5 @@ watch(() => props.open, (open) => { if (open) mood.value = 'wave' })
     transform: rotate(-135deg);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .nb-enter-active .nb,
-  .nb-leave-active .nb {
-    animation: none;
-  }
-}
+
 </style>

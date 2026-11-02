@@ -115,12 +115,10 @@ const LANDMARKS = {
   transform: rotate(var(--tilt));
   mix-blend-mode: multiply; /* ink soaks into the paper */
   opacity: 0.9;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s, filter 0.2s;
 }
 .ps:hover {
   opacity: 1;
   transform: rotate(var(--tilt)) translateY(-4px) scale(1.05);
-  animation: ps-wiggle 0.5s ease-in-out;
 }
 .ps:active {
   transform: rotate(var(--tilt)) scale(0.96);
@@ -135,11 +133,7 @@ const LANDMARKS = {
   outline-offset: 4px;
   border-radius: 50%;
 }
-@keyframes ps-wiggle {
-  0%, 100% { transform: rotate(var(--tilt)) translateY(-4px) scale(1.05); }
-  30% { transform: rotate(calc(var(--tilt) - 5deg)) translateY(-4px) scale(1.06); }
-  65% { transform: rotate(calc(var(--tilt) + 4deg)) translateY(-4px) scale(1.06); }
-}
+
 .ps-ink {
   position: absolute;
   inset: 0;
@@ -203,7 +197,6 @@ const LANDMARKS = {
 .ps.big:hover,
 .ps.big:active {
   transform: rotate(var(--tilt));
-  animation: none;
 }
 .ps.big .ps-code { font-size: 42px; }
 .ps.big .ps-city { font-size: 24px; }
@@ -211,7 +204,5 @@ const LANDMARKS = {
 .ps.big .ps-city.xs { font-size: 16px; }
 .ps.big .ps-date { font-size: 18px; gap: 6px; }
 .ps.big .ps-flag { font-size: 22px; }
-@media (prefers-reduced-motion: reduce) {
-  .ps, .ps:hover { transition: none; animation: none; }
-}
+
 </style>

@@ -1,9 +1,7 @@
 <template>
   <!-- Slide-over for one stop: its crowds, its weather, and moving it (time, day, or a swap) -->
   <Teleport to="body">
-    <transition name="ss-fade">
       <div v-if="open" class="ss-overlay" @click.self="emit('close')" @keydown.esc="emit('close')">
-        <transition name="ss-slide" appear>
           <aside ref="panel" class="ss" role="dialog" aria-modal="true" aria-labelledby="ss-title" tabindex="-1">
             <header class="ss-head">
               <div class="ss-titles">
@@ -30,7 +28,7 @@
                   <template v-else>
                     <span class="ss-badge" :class="crowd.tone">{{ crowd.text }}</span> 
                     at {{ formatHour(start) }} · about {{ crowd.value }}% of its busiest
-                    <span v-if="crowd.isSimulated" class="ss-sim-tag">⚡ Simulated</span>
+                    <span v-if="crowd.isSimulated" class="ss-sim-tag">Simulated</span>
                   </template>
                 </p>
                 <CrowdChart v-if="hasChart" :forecast="stop.forecast" :day-name="dayName"
@@ -70,7 +68,7 @@
                   </ol>
 
                   <div v-if="wet" class="ss-callout">
-                    <strong>🌧️ Rain is likely while you're here, and it's outdoors.</strong>
+                    <strong>Rain is likely while you're here, and it's outdoors.</strong>
                     <template v-if="dry.length">
                       <h4 class="ss-h">Move to a dry time</h4>
                       <div class="ss-picks">
@@ -132,9 +130,7 @@
               </section>
             </div>
           </aside>
-        </transition>
       </div>
-    </transition>
   </Teleport>
 </template>
 
@@ -317,7 +313,6 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
   font-weight: 600;
   color: #5a6b78;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
 }
 .ss-tabs button.on {
   background: #003d5b;
@@ -396,7 +391,6 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
   border-radius: 14px;
   padding: 8px 14px;
   color: #003d5b;
-  transition: border-color 0.15s, transform 0.15s;
 }
 .ss-pick small {
   color: #5a6b78;
@@ -586,26 +580,6 @@ watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoo
   outline-offset: 2px;
 }
 
-.ss-fade-enter-active,
-.ss-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.ss-fade-enter-from,
-.ss-fade-leave-to {
-  opacity: 0;
-}
-.ss-slide-enter-active {
-  transition: transform 0.25s ease-out;
-}
-.ss-slide-enter-from {
-  transform: translateX(100%);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ss-fade-enter-active,
-  .ss-fade-leave-active,
-  .ss-slide-enter-active,
-  .ss-pick { transition: none; }
-}
 .ss-muted {
   font-size: 13px;
   opacity: 0.75;

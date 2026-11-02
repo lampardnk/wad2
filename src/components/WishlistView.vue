@@ -9,7 +9,7 @@
     <!-- ===== Your wishlist ===== -->
     <h3 class="wl-heading">Your wishlist <span class="wl-count">{{ wishlist.length }}</span></h3>
 
-    <transition-group v-if="shownWishlist.length" name="card" tag="div" class="wl-grid" data-testid="wishlist">
+    <div v-if="shownWishlist.length" class="wl-grid" data-testid="wishlist">
       <article v-for="w in shownWishlist" :key="w.id" :data-wish="w.id" class="wl-card mine" :class="{ 'has-photo': photoOf(w), editing: editId === w.id }" :style="{ '--tint': tintFor(w.type) }">
         <!-- A real photo of the place when Wikipedia has one, otherwise a simple icon -->
         <div class="wl-photo" :class="{ loading: photos[photoTitle(w)] === '' }" :style="photoOf(w) ? { backgroundImage: 'url(' + photoOf(w) + ')' } : null" aria-hidden="true">
@@ -32,13 +32,12 @@
           <span v-if="w.votes && w.votes.length" class="wl-votes" :title="w.votes.join(', ') + ' want to go'"><AppIcon name="thumbs-up" :size="12" /> {{ w.votes.length }} want to go</span>
         </div>
       </article>
-    </transition-group>
+    </div>
     <p v-else class="wl-empty">
       {{ wishlist.length ? 'No saved places match this filter.' : 'No places yet. Tap the heart on a popular place below, or add your own.' }}
     </p>
 
     <!-- Edit panel -->
-    <transition name="fade">
       <!-- Opening it scrolls here; Save or Cancel scrolls back to the card -->
       <form v-if="editId" ref="editPanel" class="wl-panel" aria-labelledby="wl-edit-title" @submit.prevent="saveEdit" @keydown.esc="cancelEdit">
         <strong id="wl-edit-title" class="d-block mb-2">Edit place</strong>
@@ -61,7 +60,6 @@
           </div>
         </div>
       </form>
-    </transition>
 
     <!-- Find a place (any shop, restaurant, temple...) or add your own -->
     <form class="wl-add" @submit.prevent="chooseActive">
@@ -108,7 +106,6 @@
     </form>
 
     <!-- A tour or activity that isn't on the map (eagle hunting, a GetYourGuide day trip...) -->
-    <transition name="fade">
       <form v-if="tourOpen" class="wl-tour" @submit.prevent="saveTour" aria-labelledby="wl-tour-title">
         <div class="wl-tour-head">
           <strong id="wl-tour-title"><AppIcon name="ticket" :size="17" /> Add a tour or activity</strong>
@@ -169,7 +166,6 @@
           </button>
         </div>
       </form>
-    </transition>
 
     <!-- ===== Popular places: one section per destination ===== -->
     <section v-for="sec in sections" :key="sec.dest" class="mt-5" :aria-label="'Popular in ' + sec.city">
@@ -207,7 +203,7 @@
           <CustomDropdown :model-value="kindFilter[sec.dest] || ''" :options="kindOptions(sec.dest)" header-text="Kind of place"
             :aria-label="'Kind of places to show in ' + sec.city" @update:model-value="kindFilter[sec.dest] = $event" />
         </div>
-        <transition-group name="card" tag="div" class="wl-grid" data-testid="popular-list">
+        <div class="wl-grid" data-testid="popular-list">
           <!-- The whole card is the button: tap to save, tap again to un-save -->
           <article v-for="p in sec.list.slice(0, sec.shown)" :key="p.name" class="wl-card wl-tap" :class="{ saved: isAdded(p), 'has-photo': photoOf(p) }" :style="{ '--tint': tintFor(p.type) }"
             role="button" tabindex="0" :aria-pressed="isAdded(p)" :aria-label="(isAdded(p) ? 'Remove ' : 'Add ') + p.name + (isAdded(p) ? ' from' : ' to') + ' wishlist'"
@@ -222,7 +218,7 @@
               <span class="wl-sub">{{ isAdded(p) ? '✓ In your wishlist' : 'Tap to save' }}</span>
             </div>
           </article>
-        </transition-group>
+        </div>
         <div v-if="sec.shown < sec.list.length" class="text-end mt-3">
           <button type="button" class="btn btn-sm btn-outline-secondary wl-pill-btn" @click="showMore(sec.dest)">
             Show more in {{ sec.city }}
@@ -906,7 +902,6 @@ export default {
   border-radius: 999px;
   padding: 7px 16px;
   font-size: 14px;
-  transition: background 0.15s, color 0.15s;
 }
 .wl-chip.active {
   background: var(--app-ink, #003d5b);
@@ -956,7 +951,6 @@ export default {
     linear-gradient(160deg, #0b3550, #001d2c);
   color: #fff;
   box-shadow: 0 6px 18px rgba(0, 29, 44, 0.12);
-  transition: transform 0.25s cubic-bezier(.2, .8, .2, 1), box-shadow 0.25s;
 }
 .wl-card:hover {
   transform: translateY(-4px);
@@ -968,7 +962,6 @@ export default {
   display: grid;
   place-items: center;
   background: center / cover no-repeat;
-  transition: transform 0.6s cubic-bezier(.2, .8, .2, 1);
 }
 .wl-card:hover .wl-photo {
   transform: scale(1.07);
@@ -1003,14 +996,11 @@ export default {
 .wl-photo.loading {
   background-image: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.12) 50%, transparent 70%);
   background-size: 200% 100%;
-  animation: wl-shimmer 1.3s linear infinite;
 }
 .wl-photo.loading .wl-ph-icon {
   opacity: 0.4;
 }
-@keyframes wl-shimmer {
-  to { background-position: -200% 0; }
-}
+
 .wl-type,
 .wl-actions,
 .wl-heart,
@@ -1094,7 +1084,6 @@ export default {
   background: rgba(255, 255, 255, 0.92);
   color: #d1495b;
   text-decoration: none;
-  transition: transform 0.15s, background 0.15s;
 }
 .wl-round {
   color: #001d2c;
@@ -1117,11 +1106,8 @@ export default {
 /* Saving: the heart pops and the card gets a gold ring */
 .wl-tap .wl-heart.filled {
   color: #d1495b;
-  animation: wl-pop 0.4s cubic-bezier(.2, .8, .2, 1);
 }
-@keyframes wl-pop {
-  40% { transform: scale(1.35); }
-}
+
 .wl-card.saved {
   box-shadow: 0 0 0 3px #edae49, 0 12px 26px rgba(0, 29, 44, 0.2);
 }
@@ -1207,11 +1193,8 @@ export default {
   height: 8px;
   border-radius: 50%;
   background: #edae49;
-  animation: wl-blink 1.2s ease-in-out infinite alternate;
 }
-@keyframes wl-blink {
-  from { opacity: 0.35; }
-}
+
 .wl-partial-btn {
   margin-left: auto;
   border: 0;
@@ -1221,9 +1204,7 @@ export default {
   font-weight: 700;
   text-decoration: underline;
 }
-@media (prefers-reduced-motion: reduce) {
-  .wl-partial-dot { animation: none; }
-}
+
 .wl-card.editing {
   outline: 3px solid #edae49;
   outline-offset: 3px;
@@ -1347,25 +1328,6 @@ export default {
 .skeleton {
   background: linear-gradient(90deg, #efe9df 25%, #f9f6f0 50%, #efe9df 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.2s infinite;
-}
-@keyframes shimmer {
-  to { background-position: -200% 0; }
-}
-.card-enter-active,
-.card-leave-active,
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-.card-enter-from,
-.card-leave-to {
-  opacity: 0;
-  transform: scale(0.94);
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 
 /* ---------- Tour / activity ---------- */
@@ -1445,7 +1407,6 @@ export default {
   font-size: 13px;
   font-weight: 600;
   color: #5a6b78;
-  transition: background 0.15s, color 0.15s;
 }
 .wl-seg button.on {
   background: #003d5b;
@@ -1468,14 +1429,5 @@ export default {
   .wl-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .wl-name { font-size: 0.95rem; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .wl-card,
-  .card-enter-active,
-  .card-leave-active,
-  .fade-enter-active,
-  .fade-leave-active { transition: none; }
-  .wl-card:hover, .wl-card:hover .wl-photo { transform: none; }
-  .wl-photo, .wl-photo.loading, .wl-tap .wl-heart.filled { transition: none; animation: none; }
-  .skeleton { animation: none; }
-}
+
 </style>

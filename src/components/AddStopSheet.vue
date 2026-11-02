@@ -2,7 +2,6 @@
   <!-- "Add stop": everything that can go on this day in one place: your saved places, your hotels,
        a flight (e.g. Cape Town -> Kruger midway through the trip), or finding new places -->
   <Teleport to="body">
-    <transition name="ad-fade">
       <div v-if="open" class="ad-overlay" @click.self="emit('close')" @keydown.esc="emit('close')">
         <aside ref="panel" class="ad" role="dialog" aria-modal="true" aria-labelledby="ad-title" tabindex="-1">
           <header class="ad-head">
@@ -103,7 +102,6 @@
           </div>
         </aside>
       </div>
-    </transition>
   </Teleport>
 </template>
 
@@ -213,11 +211,8 @@ function saveFlight() {
   color: #003d5b;
   box-shadow: -18px 0 40px rgba(0, 40, 62, 0.18);
   outline: none;
-  animation: ad-in 0.22s ease-out;
 }
-@keyframes ad-in {
-  from { transform: translateX(30px); opacity: 0; }
-}
+
 .ad-head {
   display: flex;
   justify-content: space-between;
@@ -268,7 +263,6 @@ function saveFlight() {
   background: #fbf5ea;
   text-align: left;
   color: #001d2c;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ad-tile span:last-child {
   display: flex;
@@ -329,7 +323,6 @@ function saveFlight() {
   background: #fbf5ea;
   text-align: left;
   color: #001d2c;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ad-item-text {
   flex: 1;
@@ -522,14 +515,7 @@ function saveFlight() {
   outline: 3px solid rgba(237, 174, 73, 0.7);
   outline-offset: 2px;
 }
-.ad-fade-enter-active,
-.ad-fade-leave-active {
-  transition: opacity 0.2s;
-}
-.ad-fade-enter-from,
-.ad-fade-leave-to {
-  opacity: 0;
-}
+
 @media (max-width: 640px) {
   .ad {
     top: auto;
@@ -537,11 +523,8 @@ function saveFlight() {
     width: 100%;
     max-height: 88vh;
     border-radius: 24px 24px 0 0;
-    animation-name: ad-up;
   }
-  @keyframes ad-up {
-    from { transform: translateY(40px); opacity: 0; }
-  }
+
   .ad-row {
     flex-wrap: wrap;
   }
@@ -551,7 +534,5 @@ function saveFlight() {
     grid-template-columns: 1fr;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ad { animation: none; }
-}
+
 </style>

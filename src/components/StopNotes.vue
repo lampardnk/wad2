@@ -277,7 +277,6 @@ watch(() => props.stopId, () => {
   font: inherit;
   font-size: 14px;
   color: #003d5b;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .sn-input:focus {
   outline: none;
@@ -316,7 +315,6 @@ watch(() => props.stopId, () => {
   padding: 6px 16px;
   font-size: 13px;
   font-weight: 700;
-  transition: transform 0.15s, opacity 0.15s;
 }
 .sn-btn.primary {
   border-color: #003d5b;
@@ -354,9 +352,5 @@ watch(() => props.stopId, () => {
   font-weight: 600;
   text-decoration: underline;
 }
-@media (prefers-reduced-motion: reduce) {
-  .sn-btn {
-    transition: none;
-  }
-}
+
 </style>

@@ -2,7 +2,6 @@
   <!-- Slide-over for one leg of the day (from one stop to the next): the suggestion and why,
        every other way with its time and cost, and choosing one (the rest of the day re-times) -->
   <Teleport to="body">
-    <transition name="ls-fade">
       <div v-if="leg" class="ls-overlay" @click.self="emit('close')" @keydown.esc="emit('close')">
         <aside ref="panel" class="ls" role="dialog" aria-modal="true" aria-labelledby="ls-title" tabindex="-1">
           <header class="ls-head">
@@ -46,7 +45,6 @@
           </div>
         </aside>
       </div>
-    </transition>
   </Teleport>
 </template>
 
@@ -101,11 +99,8 @@ watch(() => !!props.leg, (open) => {
   color: #003d5b;
   box-shadow: -18px 0 40px rgba(0, 40, 62, 0.18);
   outline: none;
-  animation: ls-in 0.22s ease-out;
 }
-@keyframes ls-in {
-  from { transform: translateX(30px); opacity: 0; }
-}
+
 .ls-head {
   display: flex;
   justify-content: space-between;
@@ -171,11 +166,8 @@ watch(() => !!props.leg, (open) => {
   height: 8px;
   border-radius: 50%;
   background: #edae49;
-  animation: ls-blink 1.1s ease-in-out infinite alternate;
 }
-@keyframes ls-blink {
-  from { opacity: 0.3; }
-}
+
 .ls-note {
   margin: 12px 0 0;
   font-size: 12.5px;
@@ -212,14 +204,7 @@ watch(() => !!props.leg, (open) => {
   outline: 3px solid rgba(237, 174, 73, 0.7);
   outline-offset: 2px;
 }
-.ls-fade-enter-active,
-.ls-fade-leave-active {
-  transition: opacity 0.2s;
-}
-.ls-fade-enter-from,
-.ls-fade-leave-to {
-  opacity: 0;
-}
+
 /* Phones: slides up from the bottom instead */
 @media (max-width: 640px) {
   .ls {
@@ -228,13 +213,7 @@ watch(() => !!props.leg, (open) => {
     width: 100%;
     max-height: 88vh;
     border-radius: 24px 24px 0 0;
-    animation-name: ls-up;
-  }
-  @keyframes ls-up {
-    from { transform: translateY(40px); opacity: 0; }
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ls, .ls-dot { animation: none; }
-}
+
 </style>

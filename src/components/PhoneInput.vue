@@ -54,7 +54,6 @@ watch(() => props.modelValue, (value) => {
   border-radius: 10px;
   background: #00283c;
   overflow: hidden;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .pi:focus-within {
   border-color: #edae49;

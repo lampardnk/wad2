@@ -54,64 +54,18 @@ defineProps({
 .pg-fly {
   transform-box: fill-box;
   transform-origin: 50% 50%;
-  animation: pg-float 3s ease-in-out infinite;
 }
 .pg-tail {
   transform-box: fill-box;
   transform-origin: 100% 30%;
-  animation: pg-flutter 0.5s ease-in-out infinite alternate;
 }
 .pg-eyes {
   transform-box: fill-box;
   transform-origin: 50% 50%;
-  animation: pg-blink 4.2s infinite;
 }
-.pg-trail {
-  animation: pg-trail 1.2s linear infinite;
-}
-.pg-talk .pg-fly {
-  animation: pg-talk 0.6s cubic-bezier(0.3, 1.6, 0.5, 1), pg-float 3s ease-in-out 0.6s infinite;
-}
-.pg-wave .pg-fly {
-  animation: pg-wave 1s ease-in-out 2, pg-float 3s ease-in-out 2s infinite;
-}
+
 .pg-loop .pg-fly {
   transform-origin: 50% 140%;
-  animation: pg-loop 1.1s cubic-bezier(0.45, 0, 0.25, 1) 1, pg-float 3s ease-in-out 1.1s infinite;
 }
-@keyframes pg-float {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-6px) rotate(2deg); }
-}
-@keyframes pg-flutter {
-  from { transform: rotate(-6deg) scaleY(0.92); }
-  to { transform: rotate(8deg) scaleY(1.06); }
-}
-@keyframes pg-blink {
-  0%, 92%, 100% { transform: scaleY(1); }
-  95% { transform: scaleY(0.1); }
-}
-@keyframes pg-trail {
-  to { stroke-dashoffset: -16; }
-}
-@keyframes pg-talk {
-  0% { transform: translateY(0) scale(1); }
-  35% { transform: translateY(-8px) scale(1.06, 0.95) rotate(-4deg); }
-  70% { transform: translateY(0) scale(0.96, 1.04); }
-  100% { transform: translateY(0) scale(1); }
-}
-@keyframes pg-wave {
-  0%, 100% { transform: rotate(0); }
-  20% { transform: rotate(-14deg); }
-  45% { transform: rotate(12deg); }
-  70% { transform: rotate(-8deg); }
-}
-@keyframes pg-loop {
-  0% { transform: rotate(0) scale(1); }
-  50% { transform: rotate(-200deg) scale(1.1); }
-  100% { transform: rotate(-360deg) scale(1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .pg-fly, .pg-tail, .pg-eyes, .pg-trail { animation: none !important; }
-}
+
 </style>

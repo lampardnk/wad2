@@ -100,12 +100,8 @@ const emit = defineEmits(['select'])
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: pb-shine 6s ease-in-out infinite;
 }
-@keyframes pb-shine {
-  0%, 100% { background-position: 100% 0; }
-  50% { background-position: 0 0; }
-}
+
 .pb-kicker {
   margin: 0;
   font-size: 11px;
@@ -194,20 +190,11 @@ h2.pb-foil {
   padding: 4px;
   list-style: none;
 }
-.pb-slot {
-  transition: opacity 0.3s;
-}
+
 .pb-slot.pending {
   opacity: 0; /* its stamp is still flying in */
 }
-.pb-slot.landing {
-  animation: pb-land 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes pb-land {
-  0% { transform: scale(1.3); }
-  45% { transform: scale(0.92); }
-  100% { transform: scale(1); }
-}
+
 .pb-empty {
   margin: 40px 0;
   text-align: center;
@@ -235,7 +222,5 @@ h2.pb-foil {
     justify-content: center;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .pb-foil, .pb-slot.landing { animation: none; }
-}
+
 </style>

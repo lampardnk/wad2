@@ -2,7 +2,6 @@
   <!-- Friends drawer (opened from the profile menu): add friends by username, answer requests,
        see who's online, invite a friend to one of your trips, or remove them. -->
   <Teleport to="body">
-    <transition name="fd-fade">
       <div v-if="friends.open" class="fd-backdrop" @click.self="close">
         <aside ref="panelEl" class="fd" role="dialog" aria-modal="true" aria-labelledby="fd-title" @keydown="onKey">
           <header class="fd-head">
@@ -27,7 +26,7 @@
             </div>
             <ul v-if="results.length" class="fd-list fd-results" aria-label="Search results">
               <li v-for="u in results" :key="u.id" class="fd-row">
-                <TwinFace class="fd-avatar sm" :style="{ background: colourFor(u.name) }" :user-id="u.id" :version="u.avatarV || 0" :name="u.name" :text="initials(u.name)" />
+                <InitialBadge class="fd-avatar sm" :style="{ background: colourFor(u.name) }" :name="u.name" :text="initials(u.name)" />
                 <span class="fd-who">
                   <strong class="fd-name">{{ u.name }}</strong>
                   <span class="fd-muted">@{{ u.username }}</span>
@@ -68,9 +67,9 @@
               <ul v-else class="fd-list" aria-label="Your friends">
                 <li v-for="f in list" :key="f.id" class="fd-friend">
                   <div class="fd-row">
-                    <TwinFace class="fd-avatar" :style="{ background: colourFor(f.name) }" :user-id="f.id" :version="f.avatarV || 0" :name="f.name" :text="initials(f.name)">
+                    <InitialBadge class="fd-avatar" :style="{ background: colourFor(f.name) }" :name="f.name" :text="initials(f.name)">
                       <span v-if="f.online" class="fd-dot"></span>
-                    </TwinFace>
+                    </InitialBadge>
                     <span class="fd-who">
                       <strong class="fd-name">{{ f.name }}</strong>
                       <span class="fd-muted">
@@ -124,7 +123,7 @@
                 <h3 class="fd-group">Waiting for you</h3>
                 <ul class="fd-list">
                   <li v-for="u in incoming" :key="u.id" class="fd-row">
-                    <TwinFace class="fd-avatar" :style="{ background: colourFor(u.name) }" :user-id="u.id" :version="u.avatarV || 0" :name="u.name" :text="initials(u.name)" />
+                    <InitialBadge class="fd-avatar" :style="{ background: colourFor(u.name) }" :name="u.name" :text="initials(u.name)" />
                     <span class="fd-who">
                       <strong class="fd-name">{{ u.name }}</strong>
                       <span class="fd-muted">@{{ u.username }}</span>
@@ -138,7 +137,7 @@
                 <h3 class="fd-group">Sent</h3>
                 <ul class="fd-list">
                   <li v-for="u in outgoing" :key="u.id" class="fd-row">
-                    <TwinFace class="fd-avatar" :style="{ background: colourFor(u.name) }" :user-id="u.id" :version="u.avatarV || 0" :name="u.name" :text="initials(u.name)" />
+                    <InitialBadge class="fd-avatar" :style="{ background: colourFor(u.name) }" :name="u.name" :text="initials(u.name)" />
                     <span class="fd-who">
                       <strong class="fd-name">{{ u.name }}</strong>
                       <span class="fd-muted">@{{ u.username }} · waiting</span>
@@ -160,7 +159,6 @@
           </footer>
         </aside>
       </div>
-    </transition>
   </Teleport>
 </template>
 
@@ -170,7 +168,7 @@ import axios from 'axios'
 import { auth } from '../auth.js'
 import { friends, lastActiveText, copyText } from '../friends.js'
 import AppIcon from './AppIcon.vue'
-import TwinFace from './TwinFace.vue'
+import InitialBadge from './InitialBadge.vue'
 import LoadingSkeleton from './LoadingSkeleton.vue'
 
 const panelEl = ref(null)
@@ -724,7 +722,6 @@ onBeforeUnmount(() => {
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 .fd-btn:hover:not(:disabled),
 .fd-btn:focus-visible,
@@ -864,23 +861,6 @@ onBeforeUnmount(() => {
   background: none;
 }
 
-/* Slide in from the right */
-.fd-fade-enter-active,
-.fd-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fd-fade-enter-active .fd,
-.fd-fade-leave-active .fd {
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.fd-fade-enter-from,
-.fd-fade-leave-to {
-  opacity: 0;
-}
-.fd-fade-enter-from .fd,
-.fd-fade-leave-to .fd {
-  transform: translateX(100%);
-}
 @media (max-width: 480px) {
   .fd-head,
   .fd-body,
@@ -892,12 +872,5 @@ onBeforeUnmount(() => {
     margin-left: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .fd-fade-enter-active,
-  .fd-fade-leave-active,
-  .fd-fade-enter-active .fd,
-  .fd-fade-leave-active .fd {
-    transition: none;
-  }
-}
+
 </style>

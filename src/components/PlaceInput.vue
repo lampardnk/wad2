@@ -13,7 +13,6 @@
       </button>
     </div>
 
-    <transition name="pi-pop">
       <div v-if="showList" :id="id + '-list'" class="pi-list" role="listbox" :aria-label="label + ' suggestions'">
         <template v-for="g in shownGroups" :key="g.label">
           <p class="pi-group" role="presentation">{{ g.label }}</p>
@@ -29,7 +28,6 @@
         </template>
         <p v-if="modelValue.trim() && !flat.length" class="pi-none">Press Enter to search for “{{ modelValue.trim() }}”</p>
       </div>
-    </transition>
   </div>
 </template>
 
@@ -156,7 +154,6 @@ function onKey(e) {
   font: inherit;
   font-size: 14px;
   color: #001d2c;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .pi-input:focus {
   outline: none;
@@ -175,7 +172,6 @@ function onKey(e) {
   place-items: center;
   background: #e6dfd2;
   color: #003d5b;
-  transition: background 0.15s;
 }
 .pi-clear:hover {
   background: #d9cfbd;
@@ -265,16 +261,5 @@ function onKey(e) {
   font-size: 13px;
   color: #5a6b78;
 }
-.pi-pop-enter-active,
-.pi-pop-leave-active {
-  transition: opacity 0.12s, transform 0.12s;
-}
-.pi-pop-enter-from,
-.pi-pop-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .pi-pop-enter-active, .pi-pop-leave-active { transition: none; }
-}
+
 </style>

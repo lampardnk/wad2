@@ -64,21 +64,21 @@
         <!-- The card for the open section grows and gets a tick, so you can see which one is picked -->
         <button type="button" class="trip-card" :class="{ selected: activeTab === 'itinerary' }" :aria-pressed="activeTab === 'itinerary'"
           @click="activeTab = 'itinerary'">
-          <transition name="badge-pop"><span v-if="activeTab === 'itinerary'" class="trip-card-badge" aria-hidden="true">✓</span></transition>
+          <span v-if="activeTab === 'itinerary'" class="trip-card-badge" aria-hidden="true">✓</span>
           <span class="trip-card-label">Trip length</span>
           <span class="trip-card-big">{{ dayCount || '–' }}<small> / day{{ dayCount === 1 ? '' : 's' }}</small></span>
           <span class="trip-card-sub">{{ stopCount }} stop{{ stopCount === 1 ? '' : 's' }} planned</span>
         </button>
         <button type="button" class="trip-card" :class="{ selected: activeTab === 'places' }" :aria-pressed="activeTab === 'places'"
           @click="openPlaces('vote')">
-          <transition name="badge-pop"><span v-if="activeTab === 'places'" class="trip-card-badge" aria-hidden="true">✓</span></transition>
+          <span v-if="activeTab === 'places'" class="trip-card-badge" aria-hidden="true">✓</span>
           <span class="trip-card-label">Group picks</span>
           <span class="trip-card-big">{{ pickCount }}<small> / {{ wishCount }} places</small></span>
           <span class="trip-card-sub">{{ wishCount ? 'Vote in Places → Group decisions' : 'Save places to your wishlist first' }}</span>
         </button>
         <button type="button" class="trip-card" :class="{ selected: activeTab === 'crew' }" :aria-pressed="activeTab === 'crew'"
           @click="activeTab = 'crew'">
-          <transition name="badge-pop"><span v-if="activeTab === 'crew'" class="trip-card-badge" aria-hidden="true">✓</span></transition>
+          <span v-if="activeTab === 'crew'" class="trip-card-badge" aria-hidden="true">✓</span>
           <span class="trip-card-label">Travellers</span>
           <span class="trip-card-big">{{ itineraryInfo.travellers.length }}<small> / people</small></span>
           <span class="trip-card-sub text-truncate">{{ itineraryInfo.travellers.join(', ') || 'Just you' }}</span>
@@ -99,7 +99,6 @@
         </div>
 
         <!-- First trip only: a short guide to the trip page -->
-        <transition name="guide">
           <section v-if="showGuide" class="guide mb-4" aria-labelledby="guide-title" data-testid="trip-guide">
             <div class="d-flex justify-content-between align-items-start gap-2">
               <h2 id="guide-title" class="h5 mb-2"><AppIcon name="sparkles" :size="18" /> Your trip is ready! Here's how it works</h2>
@@ -119,7 +118,6 @@
             </ol>
             <button type="button" class="btn btn-primary btn-sm" @click="showGuide = false">Got it</button>
           </section>
-        </transition>
 
       <!-- Group decisions and expenses are still built around the Seoul demo data -->
       <div v-show="activeTab === 'itinerary'" :id="'pane-itinerary'" role="tabpanel">
@@ -147,19 +145,15 @@
             @click="placesTab = 'vote'" data-testid="places-vote"><AppIcon name="thumbs-up" :size="15" /> Group decisions</button>
         </div>
         <!-- Came here from the itinerary's "Add stop": a clear way back, always in view -->
-        <transition name="return-bar">
           <div v-if="returnTo && activeTab === 'places'" class="places-return" role="region" aria-label="Adding stops to your itinerary">
             <p class="places-return-text" aria-live="polite">{{ placesTab === 'vote' ? 'Vote yes on places so they become group picks.' : 'Save more places for your wishlist.' }}</p>
             <button type="button" class="places-return-btn" :class="{ ready: newSaved }" @click="backToItinerary">
               <span aria-hidden="true">‹</span> {{ newSaved ? 'Done, back to ' + returnTo.day : 'Back to ' + returnTo.day }}
             </button>
           </div>
-        </transition>
-        <transition name="guide" mode="out-in">
           <WishlistView v-if="placesTab === 'wishlist'" key="w" :destinations="itineraryInfo.destinations"
             :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate" />
           <PlacesVoting v-else key="v" :trip-id="id" :travellers="itineraryInfo.travellers" :me="myName" :can-vote-for="canVoteFor" @go-wishlist="placesTab = 'wishlist'" />
-        </transition>
       </div>
       <div v-show="activeTab === 'packing'" :id="'pane-packing'" role="tabpanel">
         <PackingView :key="'pack-' + id" :trip-id="id" :days="dayCount || 3"
@@ -240,7 +234,6 @@ import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import TripRecap from '../components/TripRecap.vue'
 import TripEditModal from '../components/TripEditModal.vue'
 import { notify } from '../notify.js'
-
 
 export default {
   components: { LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
@@ -667,7 +660,6 @@ export default {
   flex: 0 0 auto;
 }
 
-
 /* Title */
 .trip-head {
   position: relative;
@@ -788,7 +780,6 @@ export default {
   font-weight: 700;
   padding: 7px 16px;
   box-shadow: 0 6px 18px rgba(237, 174, 73, 0.3);
-  transition: transform 0.15s;
 }
 .trip-invite:hover {
   transform: translateY(-1px);
@@ -807,7 +798,6 @@ export default {
   color: #fff;
   font-weight: 700;
   padding: 6px 14px;
-  transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 .trip-edit:hover {
   background: rgba(255, 255, 255, 0.16);
@@ -840,7 +830,6 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 22px;
   /* springy grow when picked */
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
   position: relative;
 }
 .trip-card:hover {
@@ -860,18 +849,7 @@ export default {
 .trip-card.selected:hover {
   transform: translateY(-16px) scale(1.06);
 }
-/* The tick pops in */
-.badge-pop-enter-active {
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
-}
-.badge-pop-leave-active {
-  transition: transform 0.15s, opacity 0.15s;
-}
-.badge-pop-enter-from,
-.badge-pop-leave-to {
-  transform: scale(0.4);
-  opacity: 0;
-}
+
 .trip-card-badge {
   position: absolute;
   top: 18px;
@@ -980,7 +958,6 @@ export default {
   color: #fff;
   font-weight: 700;
   white-space: nowrap;
-  transition: background 0.15s, transform 0.15s;
 }
 .places-return-btn:hover {
   background: rgba(255, 255, 255, 0.12);
@@ -997,15 +974,7 @@ export default {
   outline: 3px solid #edae49;
   outline-offset: 2px;
 }
-.return-bar-enter-active,
-.return-bar-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.return-bar-enter-from,
-.return-bar-leave-to {
-  opacity: 0;
-  transform: translate(-50%, 16px);
-}
+
 @media (max-width: 560px) {
   .places-return {
     flex-direction: column;
@@ -1018,12 +987,7 @@ export default {
     text-align: center;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .return-bar-enter-active,
-  .return-bar-leave-active {
-    transition: none;
-  }
-}
+
 .places-switch {
   display: inline-flex;
   gap: 4px;
@@ -1038,7 +1002,6 @@ export default {
   padding: 8px 18px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.72);
-  transition: background 0.2s, color 0.2s;
 }
 .places-switch button.active {
   background: rgba(255, 255, 255, 0.16);
@@ -1129,20 +1092,4 @@ export default {
   }
 }
 
-.guide-enter-active,
-.guide-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-.guide-enter-from,
-.guide-leave-to {
-  opacity: 0;
-  transform: translateY(6px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .guide-enter-active,
-  .guide-leave-active,
-  .trip-card,
-  .places-switch button { transition: none; }
-  .trip-card:hover { transform: none; }
-}
 </style>

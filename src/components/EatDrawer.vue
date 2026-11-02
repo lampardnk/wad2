@@ -1,9 +1,7 @@
 <template>
   <!-- Slide-over: places to eat near the previous stop, open around the meal time -->
   <Teleport to="body">
-    <transition name="ed-fade">
       <div v-if="open" class="ed-overlay" @click.self="emit('close')" @keydown.esc="emit('close')">
-        <transition name="ed-slide" appear>
           <aside class="ed" role="dialog" aria-modal="true" aria-labelledby="ed-title">
             <header class="ed-head">
               <div class="ed-titles">
@@ -60,9 +58,7 @@
 
             <p class="ed-foot">From OpenStreetMap. Ratings and prices aren't available there, so check Google Maps for reviews.</p>
           </aside>
-        </transition>
       </div>
-    </transition>
   </Teleport>
 </template>
 
@@ -310,7 +306,6 @@ function formatHour(h) {
   font-size: 12px;
   font-weight: 600;
   padding: 5px 11px;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .ed-chip:hover {
   color: #fff;
@@ -362,7 +357,6 @@ function formatHour(h) {
   border-radius: 16px;
   background: #0a3550;
   border: 1px solid var(--line);
-  transition: border-color 0.15s, transform 0.15s;
 }
 .ed-card:hover {
   border-color: rgba(255, 255, 255, 0.16);
@@ -441,7 +435,6 @@ function formatHour(h) {
   font-weight: 700;
   background: var(--mint);
   color: #00283c;
-  transition: transform 0.15s, filter 0.15s;
 }
 .ed-add:hover {
   transform: translateY(-1px);
@@ -469,32 +462,8 @@ function formatHour(h) {
   outline-offset: 2px;
 }
 
-/* Slide in from the right */
-.ed-fade-enter-active,
-.ed-fade-leave-active {
-  transition: opacity 0.2s;
-}
-.ed-fade-enter-from,
-.ed-fade-leave-to {
-  opacity: 0;
-}
-.ed-slide-enter-active {
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.ed-slide-enter-from {
-  transform: translateX(100%);
-}
 @keyframes ed-spin {
   to { transform: rotate(360deg); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ed-slide-enter-active,
-  .ed-fade-enter-active,
-  .ed-fade-leave-active {
-    transition: none;
-  }
-  .ed-spin {
-    animation: none;
-  }
-}
+
 </style>

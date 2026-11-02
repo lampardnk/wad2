@@ -380,7 +380,6 @@ export default {
   border-radius: 16px;
   background: #fbf5ea;
   color: #003d5b;
-  transition: border-color 0.15s, background 0.15s, transform 0.12s, box-shadow 0.15s;
 }
 .pk-tile:hover {
   border-color: #cdbfa6;
@@ -402,9 +401,7 @@ export default {
   font-weight: 700;
   color: #00798c;
 }
-.pk-tile-icon {
-  transition: transform 0.25s cubic-bezier(.2, .8, .2, 1);
-}
+
 /* The 3D icon bounces up a little on hover and when picked */
 .pk-tile:hover .pk-tile-icon,
 .pk-tile.on .pk-tile-icon {
@@ -442,7 +439,6 @@ export default {
   font-weight: 600;
   color: #4f5f5b;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 .pk-seg button:hover {
   color: #003d5b;
@@ -481,7 +477,6 @@ export default {
   color: #003d5b;
   font-size: 14px;
   text-align: left;
-  transition: background 0.15s;
 }
 .pk-switch-row:nth-child(odd) {
   border-right: 1px solid #efe9df;
@@ -499,7 +494,6 @@ export default {
   height: 22px;
   border-radius: 999px;
   background: #dcd3c4;
-  transition: background 0.2s;
 }
 .pk-knob {
   position: absolute;
@@ -510,7 +504,6 @@ export default {
   border-radius: 50%;
   background: #fbf5ea;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .pk-switch-row[aria-checked='true'] .pk-switch {
   background: #00798c;
@@ -552,12 +545,7 @@ export default {
     border-bottom: 1px solid #efe9df;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .pk-tile,
-  .pk-knob {
-    transition: none;
-  }
-}
+
 .pk-btn-dark {
   background: #003d5b;
   color: #edae49;
@@ -594,7 +582,6 @@ export default {
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, #00798c, #f3c26f);
-  transition: width 0.3s ease;
 }
 .pk-profile {
   display: flex;
@@ -691,7 +678,6 @@ export default {
   gap: 10px;
   padding: 8px;
   border-radius: 14px;
-  transition: opacity 0.2s;
 }
 .pk-item:hover {
   background: #f8f4ed;
@@ -728,7 +714,6 @@ export default {
   justify-content: center;
   color: transparent;
   font-weight: 700;
-  transition: background 0.15s, border-color 0.15s;
 }
 .pk-check input:checked + .pk-box {
   background: #00798c;
@@ -794,10 +779,7 @@ export default {
   outline: 3px solid rgba(0, 121, 140, 0.45);
   outline-offset: 2px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .pk-bar-fill,
-  .pk-item { transition: none; }
-}
+
 /* Wide screens: all 10 activities in one row; weather + extras side by side */
 @media (min-width: 1200px) {
   .pk-tiles {

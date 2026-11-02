@@ -33,12 +33,9 @@ router.get('/:code/preview', async (req, res) => {
   })
 })
 
-// Members with their Travel Twin picture version (0 = no picture, show the initial)
-async function membersWithFaces(trip) {
-  const users = await User.find({ _id: { $in: trip.members.map((m) => m.user) } }).select('avatarVersion')
-  const v = {}
-  for (const u of users) v[String(u._id)] = u.avatarVersion || 0
-  return trip.members.map((m) => ({ id: m.user, name: m.name, role: m.role, avatarV: v[String(m.user)] || 0 }))
+// Members as shown on the join preview
+function membersWithFaces(trip) {
+  return trip.members.map((m) => ({ id: m.user, name: m.name, role: m.role }))
 }
 
 // GET /api/join/:code -> a preview of the trip before joining

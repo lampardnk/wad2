@@ -88,29 +88,8 @@
       <div v-else class="st-cols">
         <!-- Left column on wide screens -->
         <div class="st-col">
-        <!-- ===== Travel Twin (3D avatar; new clothes and gear unlock as trips are finished) ===== -->
-        <h2 id="avatar" class="st-group-title"><span class="st-num">01</span>Travel Twin</h2>
-        <div class="st-group st-pass">
-          <button type="button" class="st-twin" @click="studioOpen = true">
-            <span class="st-twin-pic">
-              <img v-if="avatar.picture" :src="avatar.picture" alt="">
-              <AppIcon v-else name="smile" :size="26" />
-            </span>
-            <span class="st-twin-text">
-              <span class="st-pass-kicker">Explorer pass</span>
-              <strong>
-                {{ avatar.picture ? 'Your travel twin' : 'Create your travel twin' }}
-                <span v-if="twinNew" class="st-twin-new">New gear</span>
-              </strong>
-              <small>Tier {{ avatar.progress.tier }} · {{ avatar.progress.tierName }} · {{ avatar.progress.xp }} XP · {{ twinNextText }}</small>
-              <span class="st-twin-bar" aria-hidden="true"><span :style="{ width: twinProgress + '%' }"></span></span>
-            </span>
-            <span class="st-twin-cta">Customise <AppIcon name="chevron" :size="14" /></span>
-          </button>
-        </div>
-
         <!-- ===== My information ===== -->
-        <h2 class="st-group-title"><span class="st-num">02</span>My Information</h2>
+        <h2 class="st-group-title"><span class="st-num">01</span>My Information</h2>
         <div class="st-group" :class="{ 'st-spot': welcome }">
           <div class="st-row">
             <label class="st-row-label" for="st-email">Email</label>
@@ -129,11 +108,11 @@
         </div>
 
         <!-- ===== Session & account ===== -->
-        <h2 class="st-group-title"><span class="st-num">03</span>Session &amp; Account</h2>
+        <h2 class="st-group-title"><span class="st-num">02</span>Session &amp; Account</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-who">
-              <span class="st-avatar" aria-hidden="true"><img v-if="avatar.picture" :src="avatar.picture" alt="" class="st-avatar-img"><template v-else>{{ initial }}</template></span>
+              <span class="st-avatar" aria-hidden="true">{{ initial }}</span>
               <span class="st-row-text">
                 <span class="st-row-label">@{{ user.username }}</span>
                 <span class="st-row-hint">{{ savedEmail }}</span>
@@ -170,7 +149,7 @@
         </div>
 
         <!-- ===== Delete account (asks for the password first) ===== -->
-        <h2 class="st-group-title"><span class="st-num">04</span>Delete Account</h2>
+        <h2 class="st-group-title"><span class="st-num">03</span>Delete Account</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-row-text">
@@ -200,7 +179,7 @@
         <!-- Right column on wide screens -->
         <div class="st-col">
         <!-- ===== Trip preferences ===== -->
-        <h2 class="st-group-title"><span class="st-num">05</span>Trip Preferences</h2>
+        <h2 class="st-group-title"><span class="st-num">04</span>Trip Preferences</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-row-text">
@@ -224,7 +203,7 @@
         </div>
 
         <!-- ===== Pacing: how the itinerary planner times your days ===== -->
-        <h2 id="pacing" class="st-group-title"><span class="st-num">06</span>Trip Pacing</h2>
+        <h2 id="pacing" class="st-group-title"><span class="st-num">05</span>Trip Pacing</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-row-text">
@@ -258,7 +237,7 @@
         </div>
 
         <!-- ===== Transport: how the itinerary suggests travelling between stops ===== -->
-        <h2 id="getting-around" class="st-group-title"><span class="st-num">07</span>Transport</h2>
+        <h2 id="getting-around" class="st-group-title"><span class="st-num">06</span>Transport</h2>
         <div class="st-group">
           <div class="st-row stack">
             <span class="st-row-text">
@@ -296,7 +275,7 @@
         </div>
 
         <!-- ===== Safety & notifications ===== -->
-        <h2 class="st-group-title"><span class="st-num">08</span>Safety &amp; Notifications</h2>
+        <h2 class="st-group-title"><span class="st-num">07</span>Safety &amp; Notifications</h2>
         <div class="st-group">
           <div class="st-row">
             <span class="st-row-text">
@@ -320,7 +299,6 @@
       </div>
     </section>
 
-    <AvatarStudio :open="studioOpen" @close="studioOpen = false" />
   </div>
 </template>
 
@@ -337,9 +315,6 @@ import DietTagsInput from '../components/DietTagsInput.vue'
 import PhoneInput from '../components/PhoneInput.vue'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import AppIcon from '../components/AppIcon.vue'
-import AvatarStudio from '../components/AvatarStudio.vue'
-import { avatar, loadAvatar, loadProgress, newUnlocks } from '../avatarStore.js'
-import { loadThree } from '../services/three.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -374,26 +349,6 @@ const settings = reactive({ currency: 'SGD', units: 'metric', hazardAlerts: true
 
 const user = computed(() => auth.user || { name: '', username: '' })
 const initial = computed(() => (user.value.name || '?').charAt(0).toUpperCase())
-
-// ----- Travel Twin card -----
-const studioOpen = ref(false)
-const twinNew = computed(() => newUnlocks().length > 0)
-const twinProgress = computed(() => {
-  const P = avatar.progress
-  if (!P.next) return 100
-  const from = P.tier === 1 ? 0 : P.tier === 2 ? 40 : 120
-  return Math.round(((P.xp - from) / (P.next.min - from)) * 100)
-})
-const twinNextText = computed(() => {
-  const P = avatar.progress
-  return P.next ? P.next.min - P.xp + ' XP to ' + P.next.name : 'all gear unlocked'
-})
-loadAvatar()
-loadProgress()
-// Start loading the 3D engine in the background, so the studio opens straight away
-setTimeout(() => loadThree().catch(() => {}), 1500)
-if (route.hash === '#avatar') studioOpen.value = true
-watch(() => route.hash, (h) => { if (h === '#avatar') studioOpen.value = true }) // menu link while already here
 
 // ----- Auto-save -----
 // Changes are collected for a moment, then sent together (fewer requests while typing)
@@ -724,11 +679,8 @@ async function deleteAccount() {
   font-weight: 700;
   font-size: 14px;
   box-shadow: 0 2px 0 #3a4a57;
-  transition: transform 0.12s, box-shadow 0.12s;
 }
-.st-back svg {
-  transition: transform 0.15s;
-}
+
 .st-back:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 0 #3a4a57;
@@ -862,9 +814,7 @@ async function deleteAccount() {
 .st-status.saving {
   color: var(--muted);
 }
-.st-status.saving .st-status-dot {
-  animation: st-blink 0.8s infinite alternate;
-}
+
 .st-status.error {
   color: var(--oxblood);
 }
@@ -961,7 +911,6 @@ async function deleteAccount() {
   font-weight: 600;
   text-align: right;
   color-scheme: dark;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .st-input:focus {
   outline: none;
@@ -994,7 +943,6 @@ async function deleteAccount() {
   font-size: 13.5px;
   font-weight: 700;
   box-shadow: 0 2px 0 var(--ink-2);
-  transition: transform 0.12s, box-shadow 0.12s, border-color 0.15s;
 }
 .st-page .st :deep(.dd-trigger:hover:not(:disabled)) {
   transform: translateY(-1px);
@@ -1111,7 +1059,6 @@ async function deleteAccount() {
   border-radius: 4px;
   background: linear-gradient(180deg, #e8b24f, var(--amber));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 0 var(--amber-dark);
-  transition: transform 0.25s cubic-bezier(0.3, 1.2, 0.5, 1);
 }
 .st-seg.right .st-seg-thumb {
   transform: translateX(100%);
@@ -1126,7 +1073,6 @@ async function deleteAccount() {
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
-  transition: color 0.2s;
 }
 .st-seg button.on {
   color: var(--on-amber);
@@ -1143,7 +1089,6 @@ async function deleteAccount() {
   border-radius: 999px;
   background: var(--field);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
-  transition: background 0.2s, border-color 0.2s;
 }
 .st-knob {
   position: absolute;
@@ -1155,7 +1100,6 @@ async function deleteAccount() {
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #f6e6c4, var(--brass));
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  transition: transform 0.25s cubic-bezier(0.3, 1.2, 0.5, 1);
 }
 .st-switch[aria-checked='true'] {
   background: var(--teal);
@@ -1205,7 +1149,6 @@ async function deleteAccount() {
   font-size: 13px;
   font-weight: 700;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 0 var(--teal-dark);
-  transition: transform 0.12s, box-shadow 0.12s;
 }
 .st-logout.amber {
   border-color: var(--amber-dark);
@@ -1302,7 +1245,6 @@ async function deleteAccount() {
   filter:
     drop-shadow(1.2px 0 0 var(--tk-edge, #475569)) drop-shadow(-1.2px 0 0 var(--tk-edge, #475569))
     drop-shadow(0 1.2px 0 var(--tk-edge, #475569)) drop-shadow(0 -1.2px 0 var(--tk-edge, #475569));
-  transition: transform 0.12s, color 0.15s;
 }
 .st-mode:hover:not(:disabled) {
   transform: translateY(-1px);
@@ -1358,7 +1300,6 @@ async function deleteAccount() {
   border-radius: 6px;
   font-weight: 800;
   font-size: 14px;
-  transition: transform 0.12s, box-shadow 0.12s, opacity 0.15s;
 }
 .st-primary {
   border: 1.5px solid var(--amber-dark);
@@ -1389,7 +1330,6 @@ async function deleteAccount() {
   font-size: 13px;
   font-weight: 700;
   box-shadow: 0 2px 0 #7f1d1d;
-  transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
 }
 .st-danger:hover:not(:disabled) {
   background: rgba(248, 113, 113, 0.16);
@@ -1426,10 +1366,6 @@ async function deleteAccount() {
   outline: 2px solid var(--teal-hi);
   outline-offset: 3px;
 }
-@keyframes st-blink {
-  from { opacity: 0.3; }
-  to { opacity: 1; }
-}
 
 /* Travel Twin: an embossed explorer pass with a perforated edge */
 .st-pass {
@@ -1459,7 +1395,6 @@ async function deleteAccount() {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.15s;
 }
 .st-twin:hover {
   transform: translateY(-1px);
@@ -1584,12 +1519,7 @@ async function deleteAccount() {
     padding: 6px 8px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .st-status-dot, .st-seg-thumb, .st-knob, .st-switch, .st-back, .st-back svg {
-    animation: none;
-    transition: none;
-  }
-}
+
 /* Phones and touch screens: every control is at least 40px to tap */
 @media (pointer: coarse), (max-width: 560px) {
   .st-seg button {

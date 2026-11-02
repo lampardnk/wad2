@@ -55,7 +55,6 @@
     </div>
 
     <!-- Confirm before adding or removing a day (says exactly what will happen) -->
-    <transition name="ip-fade">
       <div v-if="confirm" class="ip-overlay" @click.self="confirm = null" @keydown.esc="confirm = null">
         <div ref="dialogEl" class="ip-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ip-dialog-title" :aria-describedby="confirm.lines.length ? 'ip-dialog-body' : null" tabindex="-1">
           <span class="ip-dialog-icon" :class="{ danger: confirm.danger }" aria-hidden="true"><AppIcon :name="confirm.danger ? 'trash' : confirm.kind === 'city' ? 'compass' : confirm.kind === 'full' ? 'clock' : 'calendar'" :size="22" /></span>
@@ -70,16 +69,13 @@
           </div>
         </div>
       </div>
-    </transition>
 
     <!-- Done message with Undo -->
-    <transition name="ip-fade">
       <div v-if="toast" class="ip-toast" role="status">
         <span>{{ toast.text }}</span>
         <button v-if="toast.undo" type="button" class="ip-toast-undo" @click="runUndo">Undo</button>
         <button type="button" class="ip-toast-x" aria-label="Close" @click="toast = null"><AppIcon name="x" :size="16" /></button>
       </div>
-    </transition>
 
     <!-- ===== Actions ===== -->
     <div class="ip-bar">
@@ -132,7 +128,6 @@
     <p class="visually-hidden" role="status" aria-live="polite">{{ phase ? phaseText : liveText }}</p>
 
     <!-- ===== Optimize preview ===== -->
-    <transition name="ip-pop">
       <div v-if="preview" class="ip-preview" :class="{ same: !preview.better }">
         <p class="mb-0 fw-semibold">
           {{
@@ -148,7 +143,6 @@
           <button type="button" class="ip-outline small" @click="preview = null">{{ preview.better ? 'Dismiss' : 'OK' }}</button>
         </div>
       </div>
-    </transition>
 
     <div class="ip-body" :class="{ 'drawer-closed': !drawerOpen }">
       <div class="ip-main">
@@ -430,7 +424,7 @@
             </div>
 
             <div v-if="weatherSimulation" class="ip-sim-active">
-              🧪 Simulating
+              Simulating
               <strong>{{ weatherSimulation.condition === 'Rain' ? 'rainy' : 'sunny' }}</strong>
               weather at
               <strong>{{ weatherSimulation.stopName }}</strong>.
@@ -439,7 +433,7 @@
                 class="ip-weather-alternatives"
               >
                 <div class="ip-alt-heading">
-                  <strong>☀️ Try a clearer time</strong>
+                  <strong>Try a clearer time</strong>
                   <span>
                     Move this stop to a time without simulated rain.
                   </span>
@@ -465,14 +459,14 @@
                       </span>
 
                       <span>
-                        ☀️ {{ option.temp }}°
+                        {{ option.temp }}°
                       </span>
 
                       <span
                         v-if="option.requiresAdjustment"
                         class="ip-alt-conflict"
                       >
-                        ⚠️ Requires itinerary adjustment:
+                        Requires itinerary adjustment:
                         {{ option.conflicts.join(', ') }}
                       </span>
 
@@ -515,7 +509,7 @@
                   </p>
 
                   <p>
-                    ☀️ Expected weather:
+                    Expected weather:
                     {{ weatherMovePreview.temp }}°
                   </p>
 
@@ -523,7 +517,7 @@
                     v-if="weatherMovePreview.requiresAdjustment"
                     class="ip-preview-warning"
                   >
-                    ⚠️ This would affect:
+                    This would affect:
                     <strong>
                       {{ weatherMovePreview.conflicts.join(', ') }}
                     </strong>
@@ -572,7 +566,7 @@
                     "
                     class="ip-preview-impossible"
                   >
-                    ⚠️ <strong>This replan cannot be completed safely.</strong>
+                    <strong>This replan cannot be completed safely.</strong>
                     At least one affected stop has no available time today.
                   </div>
 
@@ -1312,8 +1306,6 @@ const simulationCondition = ref('Rain')
 const weatherSimulation = ref(null)
 const weatherMovePreview = ref(null)
 
-
-
 function originalWeatherForStop(stopId) {
   const it = stopRows.value.find(
     (row) => row.stop.id === stopId
@@ -1446,7 +1438,6 @@ const effectiveWeatherBlocks = computed(() => {
     }
   })
 })
-
 
 const rain = computed(() =>
   (effectiveWeatherBlocks.value.length && !sampleMode.value
@@ -2829,7 +2820,6 @@ const clearTimeOptions = computed(() => {
   return variedOptions
 })
 
-
 // ---------- things to check (the ⚠ pill next to Optimize Route) ----------
 const issues = computed(() => {
   const list = []
@@ -3400,7 +3390,6 @@ watch(
   width: calc(50% - 3px);
   border-radius: var(--bs-border-radius, 0.375rem);
   background: var(--primary);
-  transition: transform 0.2s ease;
 }
 .ip-views.right .ip-views-thumb { transform: translateX(100%); }
 .ip-views button {
@@ -3881,10 +3870,6 @@ watch(
 .ip-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 1250; display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 12px 10px 16px; border-radius: var(--bs-border-radius, 0.375rem); background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); }
 .ip-toast-undo { border: 0; border-radius: var(--bs-border-radius, 0.375rem); padding: 5px 12px; background: rgba(255, 255, 255, 0.15); color: #fff; font-weight: 700; }
 .ip-toast-x { border: 0; background: none; color: rgba(255, 255, 255, 0.7); font-size: 12px; }
-.ip-fade-enter-active, .ip-fade-leave-active { transition: opacity 0.18s; }
-.ip-fade-enter-from, .ip-fade-leave-to { opacity: 0; }
-.ip-pop-enter-active, .ip-pop-leave-active { transition: opacity 0.15s, transform 0.15s; }
-.ip-pop-enter-from, .ip-pop-leave-to { opacity: 0; transform: translateY(-6px); }
 
 /* Rain warning on a stop card */
 .ip-card.rain-warning-card { border: 2px solid var(--active) !important; background-color: var(--danger-tint) !important; }
@@ -3909,8 +3894,5 @@ watch(
 @media (pointer: coarse), (max-width: 560px) {
   .ip-arrow { min-width: 40px; min-height: 40px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ip-spin { animation: none; }
-  .ip-views-thumb, .ip-fade-enter-active, .ip-fade-leave-active, .ip-pop-enter-active, .ip-pop-leave-active { transition: none; }
-}
+
 </style>

@@ -1,7 +1,6 @@
 <template>
   <!-- Where a day starts or ends: your hotel in a city, or your airport (arriving / flying home) -->
   <Teleport to="body">
-    <transition name="as-fade">
       <div v-if="anchor" class="an-overlay" @click.self="emit('close')" @keydown.esc="emit('close')">
         <form ref="panel" class="an" role="dialog" aria-modal="true" aria-labelledby="an-title" tabindex="-1" @submit.prevent="save">
           <header class="an-head">
@@ -73,7 +72,6 @@
           </footer>
         </form>
       </div>
-    </transition>
   </Teleport>
 </template>
 
@@ -192,11 +190,8 @@ function save() {
   color: #003d5b;
   box-shadow: -18px 0 40px rgba(0, 40, 62, 0.18);
   outline: none;
-  animation: an-in 0.22s ease-out;
 }
-@keyframes an-in {
-  from { transform: translateX(30px); opacity: 0; }
-}
+
 .an-head {
   display: flex;
   justify-content: space-between;
@@ -439,14 +434,7 @@ function save() {
   outline: 3px solid rgba(237, 174, 73, 0.7);
   outline-offset: 2px;
 }
-.as-fade-enter-active,
-.as-fade-leave-active {
-  transition: opacity 0.2s;
-}
-.as-fade-enter-from,
-.as-fade-leave-to {
-  opacity: 0;
-}
+
 @media (max-width: 640px) {
   .an {
     top: auto;
@@ -456,7 +444,5 @@ function save() {
     border-radius: 24px 24px 0 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .an { animation: none; }
-}
+
 </style>

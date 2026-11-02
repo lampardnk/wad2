@@ -222,12 +222,12 @@
 
     <!-- What others just changed (shown for a few seconds) -->
     <Teleport to="body">
-      <transition-group name="xp-toast" tag="div" class="xp-toasts" aria-live="polite">
+      <div class="xp-toasts" aria-live="polite">
         <div v-for="t in toasts" :key="t.id" class="xp-toast">
           <span class="xp-avatar sm" aria-hidden="true">{{ t.who.charAt(0).toUpperCase() }}</span>
           <span>{{ t.text }}</span>
         </div>
-      </transition-group>
+      </div>
     </Teleport>
   </div>
 </template>
@@ -717,12 +717,8 @@ export default {
   border-radius: 50%;
   background: #edae49;
   box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.6);
-  animation: xp-pulse 2s infinite;
 }
-@keyframes xp-pulse {
-  70% { box-shadow: 0 0 0 8px rgba(237, 174, 73, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0); }
-}
+
 .xp-toasts {
   position: fixed;
   right: 20px;
@@ -749,15 +745,7 @@ export default {
   height: 24px;
   font-size: 11px;
 }
-.xp-toast-enter-active,
-.xp-toast-leave-active {
-  transition: opacity 0.25s, transform 0.25s;
-}
-.xp-toast-enter-from,
-.xp-toast-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
+
 .xp-rates {
   font-size: 12px;
   color: var(--muted);
@@ -991,7 +979,6 @@ export default {
   text-align: left;
   padding: 10px 6px;
   border-radius: 14px;
-  transition: background 0.15s;
 }
 .xp-row:hover {
   background: var(--soft);
@@ -1258,10 +1245,6 @@ export default {
   .xp-add {
     width: 100%;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .xp-row { transition: none; }
-  .xp-live-dot { animation: none; }
 }
 
 /* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */

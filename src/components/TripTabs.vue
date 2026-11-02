@@ -216,7 +216,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   scroll-snap-align: center;
   -webkit-tap-highlight-color: transparent;
-  transition: color 0.18s, background 0.18s, border-color 0.18s, transform 0.12s;
 }
 .tt-tab:hover {
   color: #e2e8f0;
@@ -232,10 +231,7 @@ onBeforeUnmount(() => {
   font-weight: 800;
   box-shadow: 0 3px 0 #d99a1c;
 }
-/* hand-drawn icons bounce a little when you hover a tab */
-.tt-tab {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s, color 0.2s;
-}
+
 .tt-tab:hover:not(.active) {
   transform: translateY(-2px);
 }
@@ -301,12 +297,4 @@ onBeforeUnmount(() => {
   flex: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .tt-tab {
-    transition: none;
-  }
-  .tt-tab:active {
-    transform: none;
-  }
-}
 </style>

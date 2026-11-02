@@ -364,7 +364,6 @@ function showToast(message, level = 'advisory') {
   setTimeout(() => { toasts.value = toasts.value.filter((t) => t.id !== id) }, 8000)
 }
 
-
 /* ---------- demo scenarios (for presenting) ----------
    One tap sets up a believable situation where you're looking, and the page reacts as it would for
    real: banner, score, pop-up alert, the right guide, and (via risk-change) the itinerary's outdoor stops.
@@ -694,7 +693,7 @@ onUnmounted(() => {
     <div class="sf-areas" role="group" aria-label="Check safety for">
       <button v-for="o in areaOptions" :key="o.key" type="button" class="sf-pill" :class="{ on: area === o.key }"
         :aria-pressed="area === o.key" @click="useArea(o.key)">{{ o.label }}</button>
-      <span v-if="area.startsWith('demo-')" class="sf-pill on">🎬 {{ DEMO_LOCATIONS[area.slice(5)].label }}</span>
+      <span v-if="area.startsWith('demo-')" class="sf-pill on">{{ DEMO_LOCATIONS[area.slice(5)].label }}</span>
     </div>
     <p v-if="notice" class="sf-notice" role="status">{{ notice }}</p>
 
@@ -729,9 +728,9 @@ onUnmounted(() => {
       <ul v-if="allAlerts.length" class="sf-alerts" data-testid="alert-list">
         <li v-for="a in allAlerts" :key="a.id" class="sf-alert" :class="'lv-' + a.level">
           <span class="sf-alert-what">{{ a.what }}<span v-if="a.simulated" class="sf-tag">demo</span></span>
-          <span class="sf-alert-where">📍 {{ a.where }}</span>
-          <span class="sf-alert-sev">⚠ {{ a.severity }}</span>
-          <span class="sf-alert-when">🕒 {{ timeAgo(a.time) }}</span>
+          <span class="sf-alert-where">{{ a.where }}</span>
+          <span class="sf-alert-sev">{{ a.severity }}</span>
+          <span class="sf-alert-when">{{ timeAgo(a.time) }}</span>
           <a v-if="a.url" :href="a.url" target="_blank" rel="noopener" class="sf-alert-link">Details ↗</a>
         </li>
       </ul>
@@ -797,7 +796,7 @@ onUnmounted(() => {
                     <span v-if="o.emergency" class="sf-badge er">24h emergency</span>
                     <span v-if="showNow && o.status.open === true" class="sf-badge open">{{ o.status.text }}</span>
                     <span v-else-if="showNow && o.status.open === false" class="sf-badge shut">{{ o.status.text }}</span>
-                    <span v-else-if="o.openingHours" class="sf-badge hours" :title="o.openingHours">🕒 {{ o.status.text === 'Open 24 hours' ? 'Open 24 hours' : o.openingHours }}</span>
+                    <span v-else-if="o.openingHours" class="sf-badge hours" :title="o.openingHours">{{ o.status.text === 'Open 24 hours' ? 'Open 24 hours' : o.openingHours }}</span>
                   </span>
                 </span>
                 <span class="sf-nearest-dist">{{ o.dist.toFixed(1) }} km</span>
@@ -860,7 +859,7 @@ onUnmounted(() => {
       <section class="sf-card" :class="{ 'sf-flash': highlight === 'guides' || highlight === 'offline' }" aria-labelledby="sf-guides-title">
         <h3 id="sf-guides-title" class="sf-h">If something happens</h3>
         <details class="sf-guide" :open="openGuide === 'quake'">
-          <summary>🫨 Earthquake</summary>
+          <summary>Earthquake</summary>
           <ol>
             <li><strong>Drop, cover, hold on:</strong> get under a sturdy table, protect your head.</li>
             <li>Stay away from windows and things that can fall. Don't run outside while it shakes.</li>
@@ -869,35 +868,35 @@ onUnmounted(() => {
           </ol>
         </details>
         <details class="sf-guide" :open="openGuide === 'tsunami'">
-          <summary>🌊 Tsunami warning</summary>
+          <summary>Tsunami warning</summary>
           <ol>
             <li>Move to high ground or the 3rd floor or higher of a solid building now.</li>
             <li>Don't wait to see the wave and don't go back until the warning is lifted.</li>
           </ol>
         </details>
         <details class="sf-guide" :open="openGuide === 'storm'">
-          <summary>🌀 Typhoon / heavy rain</summary>
+          <summary>Typhoon / heavy rain</summary>
           <ol>
             <li>Stay indoors, away from rivers and slopes. Charge your phone and power bank.</li>
             <li>Check train status before heading out; swap outdoor stops for indoor ones.</li>
           </ol>
         </details>
         <details class="sf-guide">
-          <summary>🔥 Fire</summary>
+          <summary>Fire</summary>
           <ol>
             <li>Leave by the stairs, never the lift. Stay low under smoke.</li>
             <li>Call the fire number above once you're outside.</li>
           </ol>
         </details>
         <details class="sf-guide">
-          <summary>🛂 Lost passport</summary>
+          <summary>Lost passport</summary>
           <ol>
             <li>Report it to the local police and get a police report.</li>
             <li>Call the Singapore MFA duty office (above) or visit the nearest embassy for a Document of Identity.</li>
           </ol>
         </details>
         <details class="sf-guide">
-          <summary>🚑 Medical emergency</summary>
+          <summary>Medical emergency</summary>
           <ol>
             <li>Call the ambulance number above; the nearest hospital is in "Help nearby".</li>
             <li>Keep your insurance details and medication list with you.</li>
@@ -924,7 +923,7 @@ onUnmounted(() => {
 
     <!-- Demo tools for the presentation: set up a situation on cue (everything simulated says "demo") -->
     <details v-if="showDemo" class="sf-demo">
-      <summary>🎬 Demo tools</summary>
+      <summary>Demo tools</summary>
       <!-- Pick a situation (earthquakes: also how far away), then play the story -->
       <div class="sf-demo-row">
         <span class="sf-demo-label">Situation</span>
@@ -938,7 +937,7 @@ onUnmounted(() => {
       <div class="sf-demo-row">
         <label class="sf-demo-check" :class="{ off: demoPick === 'storm' }"
           :title="demoPick === 'storm' ? 'The typhoon is already the situation picked' : 'Add a typhoon warning on top of the situation'">
-          <input v-model="alsoStorm" type="checkbox" :disabled="demoPick === 'storm'"> 🌀 Add a typhoon
+          <input v-model="alsoStorm" type="checkbox" :disabled="demoPick === 'storm'"> Add a typhoon
         </label>
       </div>
       <div class="sf-demo-row">
@@ -955,7 +954,7 @@ onUnmounted(() => {
     <!-- Pop-up alerts -->
     <Teleport to="body">
       <div class="sf-toasts" aria-live="assertive">
-        <div v-for="t in toasts" :key="t.id" class="sf-toast" :class="'lv-' + t.level" role="alert">⚠️ {{ t.message }}</div>
+        <div v-for="t in toasts" :key="t.id" class="sf-toast" :class="'lv-' + t.level" role="alert">{{ t.message }}</div>
       </div>
     </Teleport>
   </div>
@@ -1057,7 +1056,6 @@ onUnmounted(() => {
   border-radius: 50%;
   background: var(--tone);
   box-shadow: 0 0 0 0 var(--tone);
-  animation: sf-beat 2s infinite;
   flex-shrink: 0;
 }
 .sf-kicker {
@@ -1177,7 +1175,6 @@ onUnmounted(() => {
   border: 1px solid var(--glass);
   color: var(--text);
   text-decoration: none;
-  transition: transform 0.15s, background 0.15s;
 }
 .sf-call.primary {
   background: #c2312f;
@@ -1605,17 +1602,12 @@ onUnmounted(() => {
 /* (demo) a section lights up for a few seconds when a scenario points at it */
 .sf-flash {
   border-color: #edae49;
-  animation: sf-flash 1.2s ease-out 3;
 }
-@keyframes sf-flash {
-  0% { box-shadow: 0 0 0 0 rgba(237, 174, 73, 0.55); }
-  100% { box-shadow: 0 0 0 14px rgba(237, 174, 73, 0); }
-}
+
 /* (demo) offline: live sections fade, with a "Needs internet" tag */
 .sf-dim {
   opacity: 0.45;
   filter: grayscale(0.7);
-  transition: opacity 0.3s, filter 0.3s;
 }
 .sf-needs-net {
   margin-left: 8px;
@@ -1630,9 +1622,6 @@ onUnmounted(() => {
 .sf-banner.offline {
   --tone: #8a9aa6;
   filter: grayscale(0.6);
-}
-@media (prefers-reduced-motion: reduce) {
-  .sf-flash { animation: none; box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.5); }
 }
 
 /* Toasts */
@@ -1673,12 +1662,6 @@ onUnmounted(() => {
   outline-offset: 2px;
 }
 
-@keyframes sf-beat {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tone) 60%, transparent); }
-  70% { box-shadow: 0 0 0 10px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
-}
-
 @media (max-width: 900px) {
   .sf-grid { grid-template-columns: 1fr; }
   .sf-alert {
@@ -1691,10 +1674,7 @@ onUnmounted(() => {
   .sf-calls { grid-template-columns: 1fr; }
   .sf-banner-main { flex-wrap: wrap; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .sf-state-dot { animation: none; }
-  .sf-call { transition: none; }
-}
+
 .sf-spin {
   display: inline-block;
   width: 12px;
@@ -1709,7 +1689,5 @@ onUnmounted(() => {
 @keyframes sf-spin {
   to { transform: rotate(360deg); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .sf-spin { animation: none; }
-}
+
 </style>

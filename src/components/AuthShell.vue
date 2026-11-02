@@ -5,7 +5,7 @@
     <header class="as-bar">
       <!-- Back to the landing page -->
       <router-link to="/" class="as-logo" title="Back to the home page" aria-label="Back to the Chui-se Your Trip home page">
-        <span class="as-logo-mark"><DoodleIcon name="plane" :size="28" tint="cream" anim="" /></span>
+        <span class="as-logo-mark"><DoodleIcon name="plane" :size="28" tint="cream" /></span>
         <span class="as-logo-name">Chui-se Your Trip</span>
       </router-link>
       <router-link :to="switchTo" class="as-switch">{{ switchLabel }}</router-link>
@@ -23,9 +23,7 @@
             </button>
             <!-- (the bob is on the wrapper, so it doesn't hold up the bubble's swap transition) -->
             <div class="as-bubble-wrap">
-              <transition name="as-bubble" mode="out-in">
                 <p :key="bubbleText" class="as-bubble" aria-live="polite">{{ bubbleText }}</p>
-              </transition>
             </div>
           </div>
           <div class="as-card-inner">
@@ -129,7 +127,6 @@ const bubbleText = computed(() => {
   border-radius: 15px;
   background: #ffbf3c;
   box-shadow: inset 0 0 0 2.5px var(--ink), 0 4px 0 var(--ink);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .as-logo:hover .as-logo-mark {
   transform: rotate(-8deg) scale(1.06);
@@ -148,7 +145,6 @@ const bubbleText = computed(() => {
   font-weight: 800;
   text-decoration: none;
   box-shadow: 0 4px 0 var(--ink);
-  transition: transform 0.12s, box-shadow 0.12s;
 }
 .as-switch:hover {
   color: var(--ink);
@@ -237,11 +233,8 @@ const bubbleText = computed(() => {
 }
 .as-bubble-wrap {
   margin-top: 4px;
-  animation: as-bubble-bob 3.4s ease-in-out infinite;
 }
-@keyframes as-bubble-bob {
-  50% { transform: translateY(-3px) rotate(-1deg); }
-}
+
 .as-bubble {
   position: relative;
   max-width: 230px;
@@ -269,17 +262,7 @@ const bubbleText = computed(() => {
   border-bottom: 2.5px solid var(--ink);
   transform: rotate(45deg);
 }
-.as-bubble-enter-active {
-  transition: opacity 0.2s, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.as-bubble-leave-active {
-  transition: opacity 0.12s, transform 0.12s;
-}
-.as-bubble-enter-from,
-.as-bubble-leave-to {
-  opacity: 0;
-  transform: scale(0.9) translateX(-6px);
-}
+
 /* ---------- the postcard on the right ---------- */
 .as-desk {
   display: flex;
@@ -307,9 +290,7 @@ const bubbleText = computed(() => {
   .as-bubble { max-width: 170px; font-size: 13px; }
   .as-pip { left: -8px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .as-bubble-wrap { animation: none; }
-}
+
 </style>
 
 <!-- Form pieces used inside the slot by the Log in, Sign up and Forgot password pages -->
@@ -336,7 +317,6 @@ const bubbleText = computed(() => {
   background: #fff3dc;
   box-shadow: inset 0 3px 0 rgba(18, 50, 74, 0.04);
   overflow: hidden;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .as-field:focus-within {
   border-color: #ffbf3c;
@@ -388,7 +368,6 @@ const bubbleText = computed(() => {
   letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 5px 0 #12324a;
-  transition: transform 0.12s, box-shadow 0.12s;
 }
 .as-btn:hover:not(:disabled) {
   transform: translateY(-2px);
@@ -422,7 +401,6 @@ const bubbleText = computed(() => {
   letter-spacing: 0.02em;
   text-decoration: none;
   box-shadow: 0 5px 0 #12324a;
-  transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
 }
 .as-btn2:hover {
   color: #12324a;

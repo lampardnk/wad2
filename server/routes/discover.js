@@ -5,41 +5,9 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { requireAuth } from './auth.js'
-import { warmPhotos, warmFlags } from '../images.js'
 import { wikiGalleryPhoto } from './places.js'
 
 const router = express.Router()
-const cache = {} // 'JP-2026' -> { at, list }
-
-async function holidaysFor(cc, year) {
-  const key = cc + '-' + year
-  if (cache[key] && Date.now() - cache[key].at < 24 * 3600 * 1000) return cache[key].list
-  let list = []
-  try {
-    const res = await fetch('https://date.nager.at/api/v3/PublicHolidays/' + year + '/' + cc, { signal: AbortSignal.timeout(8000) })
-    if (res.ok && res.status === 200) {
-      const data = await res.json()
-      for (const h of data) list.push({ date: h.date, name: h.localName && h.localName !== h.name ? h.name + ' (' + h.localName + ')' : h.name })
-    }
-  } catch (err) {
-    list = null // unknown, try again next time
-  }
-  if (list) cache[key] = { at: Date.now(), list }
-  return list || []
-}
-
-// GET /api/discover/holidays?countries=JP,TH&years=2026,2027 -> { JP: [{ date, name }], TH: [...] }
-router.get('/holidays', requireAuth, async (req, res) => {
-  const countries = String(req.query.countries || '').split(',').filter((c) => /^[A-Z]{2}$/.test(c)).slice(0, 30)
-  const years = String(req.query.years || '').split(',').map(Number).filter((y) => y >= 2024 && y <= 2035).slice(0, 2)
-  const out = {}
-  await Promise.all(countries.map(async (cc) => {
-    out[cc] = []
-    for (const y of years) out[cc] = out[cc].concat(await holidaysFor(cc, y))
-  }))
-  res.json(out)
-})
-
 // ---------- climate for any city (Open-Meteo, free, no key) ----------
 // Saved to a file, so each city is only looked up once ever
 const CACHE_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'discover-climate.json')
@@ -309,14 +277,6 @@ function keep(title, found) {
   return found
 }
 
-router.get('/about', async (req, res) => {
-  const title = String(req.query.title || '').trim().slice(0, 100)
-  if (!title) return res.status(400).json({ message: 'Which city?' })
-  // Never keep the page waiting more than 1.5 s: "pending" = ask again in a moment
-  const found = await lookupWithin(title, 1500, 'first')
-  res.json(found || { text: '', photo: null, page: null, pending: true })
-})
-
 // GET /api/discover/photos?titles=Kyoto, Japan|Osaka, Japan  -> { "Kyoto, Japan": "https://...jpg", ... }
 // Many photos in one request (Discover needs ~200), looked up a few at a time to be kind to Wikipedia.
 router.get('/photos', async (req, res) => {
@@ -330,30 +290,5 @@ router.get('/photos', async (req, res) => {
   }))
   res.json(out)
 })
-
-// ---------- warm-up ----------
-// A little after the server starts: look up every Discover city's (and country's) photo and download
-// it into the disk cache, so the first person to open Discover gets them all at once.
-// Already-cached ones are skipped in a moment, so after the first run this costs nothing.
-setTimeout(async () => {
-  try {
-    const file = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'data', 'discoverCities.json')
-    const data = JSON.parse(fs.readFileSync(file, 'utf8'))
-    const cityTitles = []
-    for (const c of data.cities) if (!c.heroImage) cityTitles.push(c.cityName + ', ' + c.country)
-    const photoOfTitle = (t) => (about[t] && about[t].photo) || null
-    // 0) Every country's flag (the country banners): tiny, so first
-    await warmFlags()
-    // 1) Photos we already know: download them first (no lookups needed)
-    await warmPhotos(cityTitles.map(photoOfTitle).filter(Boolean), 500)
-    // 2) Then look up the cities we don't know yet, and download those
-    const cards = []
-    for (const t of cityTitles) if (!photoOfTitle(t)) cards.push((await lookupAbout(t, 'later')).photo)
-    await warmPhotos(cards.filter(Boolean), 500)
-    console.log('Discover photos ready')
-  } catch (err) {
-    console.warn('Discover photo warm-up skipped:', err.message)
-  }
-}, 4000)
 
 export default router

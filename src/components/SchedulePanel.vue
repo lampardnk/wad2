@@ -230,7 +230,6 @@ const saveText = computed(() => saving.value || props.saveStatus)
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 .sp-seg button:hover {
   color: var(--text);
@@ -285,11 +284,6 @@ const saveText = computed(() => saving.value || props.saveStatus)
     margin-left: 0;
     width: 100%;
     justify-content: space-between;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sp-seg button {
-    transition: none;
   }
 }
 

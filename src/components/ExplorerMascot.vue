@@ -79,92 +79,26 @@ defineProps({
 /* idle: the head breathes, the eyes blink, the scarf flutters */
 .em-head {
   transform-box: view-box;
-  animation: em-breathe 3.4s ease-in-out infinite;
 }
-@keyframes em-breathe {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  50% { transform: translateY(-3px) rotate(-1.5deg); }
-}
+
 .em-eyes {
   transform-origin: center;
-  animation: em-blink 4.5s infinite;
 }
-@keyframes em-blink {
-  0%, 93%, 100% { transform: scaleY(1); }
-  96% { transform: scaleY(0.1); }
-}
+
 .em-scarf-tail {
   transform-origin: 100% 0;
-  animation: em-flutter 0.6s ease-in-out infinite alternate;
 }
-@keyframes em-flutter {
-  from { transform: rotate(-6deg); }
-  to { transform: rotate(8deg); }
-}
-/* goggles: slide down over the eyes when peeking */
-.em-goggles {
-  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+
 .em.peek .em-goggles {
   transform: translateY(30px);
 }
-.em-lens {
-  transition: fill 0.3s;
-}
+
 .em.peek .em-lens {
   fill: #eef6fb; /* frosted: can't see a thing */
 }
-/* ...except the left lens clears for a quick peek every couple of seconds */
-.em.peek .em-lens.left {
-  animation: em-peek 2.4s ease-in-out 0.6s infinite;
-}
-@keyframes em-peek {
-  0%, 55%, 100% { fill: #eef6fb; }
-  65%, 85% { fill: rgba(191, 230, 255, 0.15); }
-}
-/* the right hand comes up to hold the goggles */
-.em-hand {
-  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+
 .em.peek .em-hand.right {
   transform: translate(-22px, -40px) rotate(-25deg);
 }
-/* tapped: a happy jump (squash, stretch, land), a wave, and the goggles bounce */
-.em.cheer .em-head {
-  animation: em-jump 0.8s cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-@keyframes em-jump {
-  0% { transform: translateY(0) scale(1, 1); }
-  20% { transform: translateY(4px) scale(1.06, 0.92); }
-  45% { transform: translateY(-18px) scale(0.95, 1.06) rotate(-4deg); }
-  70% { transform: translateY(0) scale(1.05, 0.95) rotate(2deg); }
-  100% { transform: translateY(0) scale(1, 1); }
-}
-.em.cheer .em-goggles {
-  animation: em-goggle-bounce 0.8s ease-out;
-}
-@keyframes em-goggle-bounce {
-  30% { transform: translateY(-6px) rotate(-6deg); }
-  60% { transform: translateY(2px) rotate(4deg); }
-}
-.em.cheer:not(.peek) .em-hand.right {
-  animation: em-wave 1s ease-in-out;
-}
-@keyframes em-wave {
-  0% { transform: translate(0, 0) rotate(0); }
-  20% { transform: translate(8px, -46px) rotate(18deg); }
-  40% { transform: translate(8px, -46px) rotate(-14deg); }
-  60% { transform: translate(8px, -46px) rotate(18deg); }
-  80% { transform: translate(8px, -46px) rotate(-8deg); }
-  100% { transform: translate(0, 0) rotate(0); }
-}
-.em.cheer .em-eyes {
-  animation: em-happy 0.8s ease-out; /* happy squint */
-}
-@keyframes em-happy {
-  20%, 70% { transform: scaleY(0.35); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .em-head, .em-eyes, .em-scarf-tail, .em.peek .em-lens.left, .em.cheer .em-head, .em.cheer .em-goggles, .em.cheer .em-hand.right, .em.cheer .em-eyes { animation: none; }
-}
+
 </style>

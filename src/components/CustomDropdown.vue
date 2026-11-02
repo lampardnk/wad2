@@ -15,7 +15,6 @@
 
     <!-- The menu sits on <body> so cards with overflow:hidden can't cut it off -->
     <Teleport to="body">
-      <transition name="dd-pop">
         <div v-if="open" ref="menu" class="dd-menu" :class="{ up: openUp }" :style="menuStyle" @keydown="onMenuKey">
           <p v-if="headerText" class="dd-header">{{ headerText }}</p>
           <div v-if="canSearch" class="dd-search">
@@ -43,7 +42,6 @@
             <li v-if="!shown.length" class="dd-empty" role="presentation">No matches</li>
           </ul>
         </div>
-      </transition>
     </Teleport>
   </div>
 </template>
@@ -273,7 +271,6 @@ function onMenuKey(e) {
   text-align: left;
   white-space: nowrap;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 1px 2px rgba(0, 0, 0, 0.25);
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .dd-sm .dd-trigger {
   height: 32px;
@@ -311,7 +308,6 @@ function onMenuKey(e) {
 .dd-chevron {
   flex: none;
   color: #7d8590;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s;
 }
 .dd.open .dd-chevron {
   transform: rotate(180deg);
@@ -391,7 +387,6 @@ function onMenuKey(e) {
   border-radius: 9px;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.12s, transform 0.15s ease;
 }
 .dd-list li.active {
   background: rgba(255, 255, 255, 0.06);
@@ -433,29 +428,4 @@ function onMenuKey(e) {
   justify-content: center;
 }
 
-/* Spring-like entrance */
-.dd-pop-enter-active {
-  transition: opacity 0.16s ease-out, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.dd-pop-leave-active {
-  transition: opacity 0.1s ease-in, transform 0.1s ease-in;
-}
-.dd-pop-enter-from,
-.dd-pop-leave-to {
-  opacity: 0;
-  transform: scale(0.96) translateY(-8px);
-}
-.dd-menu.up.dd-pop-enter-from,
-.dd-menu.up.dd-pop-leave-to {
-  transform: scale(0.96) translateY(8px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dd-chevron,
-  .dd-list li,
-  .dd-pop-enter-active,
-  .dd-pop-leave-active {
-    transition: none;
-  }
-}
 </style>

@@ -200,7 +200,6 @@ export default {
   backdrop-filter: blur(2px);
   display: flex;
   justify-content: flex-end;
-  animation: ef-fade 0.2s ease;
 }
 .ef {
   width: min(460px, 100%);
@@ -209,7 +208,6 @@ export default {
   display: flex;
   flex-direction: column;
   box-shadow: -20px 0 40px rgba(0, 0, 0, 0.18);
-  animation: ef-slide 0.25s ease;
 }
 .ef-head {
   display: flex;
@@ -422,15 +420,5 @@ export default {
   outline: 3px solid rgba(0, 121, 140, 0.45);
   outline-offset: 2px;
 }
-@keyframes ef-slide {
-  from { transform: translateX(40px); opacity: 0; }
-  to { transform: none; opacity: 1; }
-}
-@keyframes ef-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ef, .ef-backdrop { animation: none; }
-}
+
 </style>

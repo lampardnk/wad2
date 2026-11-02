@@ -87,7 +87,6 @@
       </div>
       <p v-if="error" class="ts-error" role="alert">{{ error }}</p>
 
-
       <!-- Quick share -->
       <div class="ts-share">
         <a class="ts-app wa" :href="'https://wa.me/?text=' + encodeURIComponent(message)" target="_blank" rel="noopener">
@@ -431,7 +430,6 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  animation: ts-fade 0.2s ease;
 }
 .ts {
   width: min(520px, 100%);
@@ -442,7 +440,6 @@ export default {
   padding: 24px;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
   outline: none;
-  animation: ts-pop 0.22s ease;
 }
 .ts-inline .ts.flat {
   width: 100%;
@@ -452,7 +449,6 @@ export default {
   background: transparent;
   border-radius: 0;
   box-shadow: none;
-  animation: none;
 }
 .ts-guest-form {
   display: flex;
@@ -469,7 +465,6 @@ export default {
   border: 2px solid #efdcbc;
   border-radius: 16px;
   background: #fff6e6;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .ts-guest-input:focus {
   border-color: #ffbf3c;
@@ -499,7 +494,6 @@ export default {
   border: 2px solid #efdcbc;
   border-radius: 16px;
   background: #fff6e6;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .ts-link.copied {
   border-color: #19b3c4;
@@ -525,7 +519,6 @@ export default {
   border-radius: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s;
 }
 .ts-link.copied .ts-copy {
   background: #19b3c4;
@@ -613,7 +606,6 @@ export default {
   border: 2px solid #efdcbc;
   border-radius: 16px;
   background: #fff6e6;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .ts-search:focus-within {
   border-color: #ffbf3c;
@@ -656,7 +648,6 @@ export default {
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s;
 }
 .ts-result.clickable:hover {
   background: #fff6e6;
@@ -681,7 +672,6 @@ export default {
   border-radius: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s;
 }
 .ts-result.clickable:disabled .ts-invite {
   opacity: 0.6;
@@ -739,7 +729,6 @@ export default {
   text-decoration: none;
   cursor: pointer;
   box-shadow: 0 5px 0 var(--edge), 0 12px 22px -14px rgba(18, 50, 74, 0.4);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .ts-app:hover {
   color: #12324a;
@@ -851,12 +840,7 @@ export default {
   outline: 3px solid #19b3c4;
   outline-offset: 2px;
 }
-@keyframes ts-fade {
-  from { opacity: 0; }
-}
-@keyframes ts-pop {
-  from { opacity: 0; transform: scale(0.97) translateY(8px); }
-}
+
 @media (max-width: 480px) {
   .ts {
     padding: 18px;
@@ -868,7 +852,5 @@ export default {
     flex: 1 1 40%;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ts, .ts-backdrop { animation: none; }
-}
+
 </style>

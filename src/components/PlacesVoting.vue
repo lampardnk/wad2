@@ -58,7 +58,7 @@
     <section v-for="g in groups" :key="g.key" class="pv-section" :aria-labelledby="'pv-h-' + g.key">
     <h3 :id="'pv-h-' + g.key" class="pv-heading">{{ g.title }} <span class="pv-count-pill">{{ g.list.length }}</span></h3>
     <p v-if="!g.list.length" class="pv-empty">{{ g.empty }}</p>
-    <transition-group name="pv" tag="div" class="pv-list" data-testid="vote-list">
+    <div class="pv-list" data-testid="vote-list">
       <article v-for="w in g.list" :key="w.id" class="pv-card" :class="{ picked: isPick(w) }">
         <span class="pv-icon" :style="{ background: placeStyle(w.type).color }" aria-hidden="true">{{ placeStyle(w.type).icon }}</span>
 
@@ -94,7 +94,7 @@
 
         <span class="pv-count" :aria-hidden="true">{{ w.votes.length }}/{{ travellers.length }}</span>
       </article>
-    </transition-group>
+    </div>
     </section>
     </template>
   </div>
@@ -280,7 +280,6 @@ export default {
   color: #8a1f1f;
   border-radius: 20px;
   padding: 18px 20px;
-  animation: pv-shake 0.4s ease;
 }
 .pv-error-icon {
   width: 34px;
@@ -294,11 +293,7 @@ export default {
   justify-content: center;
   flex-shrink: 0;
 }
-@keyframes pv-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
-}
+
 .pv-pill {
   border-radius: 999px;
   padding: 8px 20px;
@@ -341,7 +336,6 @@ export default {
   border: 1.5px solid #e6dfd2;
   border-radius: 22px;
   padding: 14px 18px;
-  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .pv-card.picked {
   border-color: #f1c47a;
@@ -390,7 +384,6 @@ export default {
   height: 100%;
   background: #edae49;
   border-radius: 999px;
-  transition: width 0.3s ease;
 }
 .pv-voters {
   display: flex;
@@ -460,7 +453,6 @@ export default {
   font-weight: 800;
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 40, 62, 0.15);
-  transition: transform 0.15s, box-shadow 0.15s;
 }
 .pv-quick-btn:hover {
   transform: translateY(-1px);
@@ -507,11 +499,7 @@ export default {
     width: 100%;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .pv-quick-btn {
-    transition: none;
-  }
-}
+
 .pv-voter {
   border: 1.5px solid #e2dacb;
   background: #fbf5ea;
@@ -519,7 +507,6 @@ export default {
   padding: 4px 12px;
   font-size: 13px;
   font-weight: 600;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .pv-voter.yes {
   background: #fbefd9;
@@ -535,23 +522,12 @@ export default {
   font-size: 1.4rem;
   color: var(--app-muted, #5a6b78);
 }
-.pv-move,
-.pv-enter-active,
-.pv-leave-active {
-  transition: all 0.3s ease;
-}
-.pv-enter-from,
-.pv-leave-to {
-  opacity: 0;
-  transform: translateY(8px);
-}
+
 @media (max-width: 576px) {
   .pv-icon { width: 48px; height: 48px; font-size: 26px; }
   .pv-count { display: none; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .pv-move, .pv-enter-active, .pv-leave-active, .pv-progress-fill { transition: none; }
-}
+
 .pv-voter.mine {
   border-width: 2px;
 }

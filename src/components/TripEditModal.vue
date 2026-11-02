@@ -262,7 +262,6 @@ async function removeTrip() {
   padding: 16px;
   background: rgba(0, 29, 44, 0.55);
   backdrop-filter: blur(3px);
-  animation: te-fade 0.18s ease-out;
 }
 .te {
   width: min(520px, 100%);
@@ -274,7 +273,6 @@ async function removeTrip() {
   border-radius: 28px;
   box-shadow: 0 30px 80px rgba(0, 29, 44, 0.35);
   outline: none;
-  animation: te-rise 0.22s ease-out;
 }
 .te-head {
   display: flex;
@@ -331,7 +329,6 @@ async function removeTrip() {
   font: inherit;
   font-size: 15px;
   color: #001d2c;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .te-input:focus {
   outline: none;
@@ -393,7 +390,6 @@ async function removeTrip() {
   background: #f6f2eb;
   color: #003d5b;
   font-weight: 700;
-  transition: background 0.15s;
 }
 .te-icon:hover:not(:disabled) {
   background: #ece4d6;
@@ -495,7 +491,6 @@ async function removeTrip() {
   padding: 10px 20px;
   font-weight: 700;
   font-size: 14px;
-  transition: transform 0.15s, opacity 0.15s;
 }
 .te-btn.primary {
   border-color: #edae49;
@@ -523,12 +518,7 @@ async function removeTrip() {
   outline: 3px solid rgba(237, 174, 73, 0.7);
   outline-offset: 2px;
 }
-@keyframes te-fade {
-  from { opacity: 0; }
-}
-@keyframes te-rise {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
-}
+
 @media (max-width: 560px) {
   .te-overlay {
     place-items: end center;
@@ -545,10 +535,5 @@ async function removeTrip() {
     padding-right: 18px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .te-overlay,
-  .te {
-    animation: none;
-  }
-}
+
 </style>

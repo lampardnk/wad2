@@ -171,7 +171,6 @@ function submit() {
   padding: 7px 10px;
   font-size: 14px;
   color-scheme: dark;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .cd-input.upper {
   text-transform: uppercase;
@@ -195,7 +194,6 @@ function submit() {
   border-radius: 999px;
   padding: 3px 10px;
   font-size: 12px;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .cd-pick:hover {
   color: var(--text);
@@ -226,7 +224,6 @@ function submit() {
   padding: 5px 10px;
   font-size: 12px;
   font-weight: 600;
-  transition: background 0.15s, color 0.15s;
 }
 .cd-seg button:hover {
   color: var(--text);
@@ -294,7 +291,6 @@ function submit() {
   border-radius: 999px;
   padding: 7px 16px;
   font-weight: 600;
-  transition: color 0.15s, border-color 0.15s;
 }
 .cd-cancel:hover {
   color: var(--text);
@@ -308,7 +304,6 @@ function submit() {
   padding: 7px 20px;
   font-weight: 700;
   box-shadow: 0 6px 18px rgba(237, 174, 73, 0.25);
-  transition: transform 0.15s, filter 0.15s;
 }
 .cd-save:hover:not(:disabled) {
   transform: translateY(-1px);

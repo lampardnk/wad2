@@ -3,7 +3,7 @@
        so it looks the same on every device. Unknown country: a little map pin instead. -->
   <img v-if="code && !failed" class="fl" :src="'/api/flag/' + code.toLowerCase() + '.svg'" :width="size * 1.4" :height="size"
     alt="" loading="lazy" @error="failed = true">
-  <DoodleIcon v-else name="pin" :size="size + 2" anim="" />
+  <DoodleIcon v-else name="pin" :size="size + 2" />
 </template>
 
 <script setup>

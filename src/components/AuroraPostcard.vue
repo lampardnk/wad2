@@ -48,9 +48,7 @@
       </span>
 
       <!-- "Beep beep!" -->
-      <transition name="apc-beep">
         <span v-if="honking" class="apc-beep" aria-hidden="true">Beep beep!</span>
-      </transition>
 
       <!-- the van: tap it -->
       <button type="button" class="apc-van" aria-label="Honk the campervan" title="Beep beep!" @click="honk"></button>
@@ -94,12 +92,8 @@ function snowStyle(n) {
   position: relative;
   width: min(640px, 100%);
   aspect-ratio: 1.16;
-  animation: apc-float 6s ease-in-out infinite;
 }
-@keyframes apc-float {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  50% { transform: translateY(-10px) rotate(0.6deg); }
-}
+
 /* ---------- back of the postcard, behind and to the right ---------- */
 .apc-back {
   position: absolute;
@@ -228,23 +222,16 @@ function snowStyle(n) {
 .apc-aurora .g1 {
   left: 8%; top: 20%; width: 45%; height: 50%;
   background: radial-gradient(closest-side, rgba(90, 255, 190, 0.9), transparent);
-  animation: apc-sway 7s ease-in-out infinite alternate;
 }
 .apc-aurora .g2 {
   left: 45%; top: 5%; width: 40%; height: 60%;
   background: radial-gradient(closest-side, rgba(60, 230, 220, 0.85), transparent);
-  animation: apc-sway 9s ease-in-out -3s infinite alternate-reverse;
 }
 .apc-aurora .g3 {
   left: 20%; top: 45%; width: 60%; height: 40%;
   background: radial-gradient(closest-side, rgba(150, 255, 170, 0.7), transparent);
-  animation: apc-sway 11s ease-in-out -6s infinite alternate;
 }
-@keyframes apc-sway {
-  0% { transform: translate(-6%, 4%) scale(1, 0.9); opacity: 0.2; }
-  50% { opacity: 0.5; }
-  100% { transform: translate(8%, -6%) scale(1.15, 1.1); opacity: 0.3; }
-}
+
 /* vertical light curtains drifting sideways */
 .apc-aurora .rays {
   position: absolute;
@@ -252,12 +239,8 @@ function snowStyle(n) {
   background: repeating-linear-gradient(95deg, transparent 0 22px, rgba(140, 255, 210, 0.22) 30px, transparent 42px 70px);
   filter: blur(3px);
   opacity: 0.6;
-  animation: apc-rays 14s linear infinite;
 }
-@keyframes apc-rays {
-  from { transform: translateX(0) skewX(-6deg); }
-  to { transform: translateX(140px) skewX(6deg); }
-}
+
 /* headlights: a soft glow that brightens on hover and flashes on a honk */
 .apc-light {
   position: absolute;
@@ -269,20 +252,13 @@ function snowStyle(n) {
   mix-blend-mode: screen;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s;
 }
 .apc-light.l1 { left: 58.2%; top: 63.6%; }
 .apc-light.l2 { left: 66.9%; top: 62.3%; }
 .apc-front:has(.apc-van:hover) .apc-light {
   opacity: 0.6;
 }
-.apc-front.hop .apc-light {
-  animation: apc-flash 0.35s ease-in-out 3;
-}
-@keyframes apc-flash {
-  0%, 100% { opacity: 0.2; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.6); }
-}
+
 /* the invisible tap area over the van */
 .apc-van {
   position: absolute;
@@ -300,29 +276,16 @@ function snowStyle(n) {
   outline: 3px solid #19b3c4;
   outline-offset: 2px;
 }
-/* the whole card hops when the van honks */
-.apc-front.hop .apc-card,
-.apc-front.hop .apc-pin {
-  animation: apc-hop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes apc-hop {
-  0%, 100% { translate: 0 0; }
-  30% { translate: 0 -10px; }
-  55% { translate: 0 2px; }
-}
+
 /* snow puffs flying back from the wheels */
 .apc-snow i {
   position: absolute;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 0 0 1.5px rgba(18, 50, 74, 0.25);
-  animation: apc-puff 0.8s ease-out forwards;
   pointer-events: none;
 }
-@keyframes apc-puff {
-  0% { transform: translate(0, 0) scale(0.4); opacity: 1; }
-  100% { transform: translate(var(--dx), var(--dy)) scale(1.3); opacity: 0; }
-}
+
 /* "Beep beep!" */
 .apc-beep {
   position: absolute;
@@ -352,18 +315,5 @@ function snowStyle(n) {
   border-bottom: 2.5px solid #12324a;
   transform: rotate(45deg);
 }
-.apc-beep-enter-active {
-  transition: opacity 0.15s, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.apc-beep-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
-.apc-beep-enter-from,
-.apc-beep-leave-to {
-  opacity: 0;
-  transform: rotate(-6deg) scale(0.5) translateY(10px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .apc, .apc-aurora .glow, .apc-aurora .rays, .apc-front.hop .apc-card, .apc-front.hop .apc-pin, .apc-snow i { animation: none; }
-}
+
 </style>

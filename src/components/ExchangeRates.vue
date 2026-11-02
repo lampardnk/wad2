@@ -10,7 +10,6 @@
       <span class="er-caret" aria-hidden="true">▾</span>
     </button>
 
-    <transition name="er-pop">
       <div v-if="open" class="er-panel" role="dialog" aria-labelledby="er-title" @click.stop>
         <header class="er-head">
           <div>
@@ -76,7 +75,6 @@
         </div>
         <p class="er-foot">Tip: use the rate on your money-changer receipt so everyone's split matches what was really paid.</p>
       </div>
-    </transition>
   </div>
 </template>
 
@@ -228,7 +226,6 @@ function shortDate(d) {
   font-size: 12px;
   font-weight: 600;
   padding: 5px 12px;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .er-trigger:hover,
 .er-trigger[aria-expanded='true'] {
@@ -309,7 +306,6 @@ function shortDate(d) {
   padding: 10px 12px;
   border-radius: 14px;
   border: 1px solid var(--line);
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .er-row.editing {
   border-color: var(--primary);
@@ -446,23 +442,6 @@ function shortDate(d) {
 .er input:focus-visible {
   outline: 3px solid rgba(0, 121, 140, 0.35);
   outline-offset: 2px;
-}
-.er-pop-enter-active {
-  transition: opacity 0.15s ease-out, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.er-pop-leave-active {
-  transition: opacity 0.1s;
-}
-.er-pop-enter-from,
-.er-pop-leave-to {
-  opacity: 0;
-  transform: translateY(-6px) scale(0.98);
-}
-@media (prefers-reduced-motion: reduce) {
-  .er-pop-enter-active,
-  .er-pop-leave-active {
-    transition: none;
-  }
 }
 
 /* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */

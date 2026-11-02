@@ -38,7 +38,6 @@
     </div>
 
     <!-- New spot album: pick from the wishlist or type a name -->
-    <transition name="ph-drop">
       <form v-if="addingAlbum" class="ph-newalbum" @submit.prevent="createAlbum(newAlbumName, '📍')">
         <p class="ph-small mb-2">From your wishlist</p>
         <div class="d-flex flex-wrap gap-2 mb-3">
@@ -54,7 +53,6 @@
           <button type="button" class="ph-ghost" @click="addingAlbum = false">Cancel</button>
         </div>
       </form>
-    </transition>
 
     <!-- ===== Contributor filter ===== -->
     <div v-if="photos.length" class="ph-people" role="group" aria-label="Uploaded by">
@@ -68,7 +66,6 @@
     </div>
 
     <!-- ===== Upload staging tray ===== -->
-    <transition name="ph-drop">
       <section v-if="uploads.length" class="ph-tray" aria-label="Uploading">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <strong>{{ uploadsLeft ? 'Adding ' + uploadsLeft + ' photo' + (uploadsLeft === 1 ? '' : 's') + '…' : 'Added ✓' }}</strong>
@@ -84,7 +81,6 @@
         </div>
         <p v-for="u in failedUploads" :key="'e' + u.key" class="ph-err" role="alert">{{ u.name }}: {{ u.error }}</p>
       </section>
-    </transition>
 
     <p v-if="loadError" class="ph-err" role="alert">{{ loadError }} <button type="button" class="ph-link" @click="loadPhotos">Try again</button></p>
 
@@ -125,19 +121,16 @@
 
     <!-- ===== Whole-page drop overlay ===== -->
     <Teleport to="body">
-      <transition name="ph-fade">
         <div v-if="dragging" class="ph-dropzone" @dragover.prevent @dragleave.self="dragging = false" @drop.prevent="onDrop">
           <div class="ph-dropzone-card">
             <span class="ph-dropzone-icon" aria-hidden="true"><AppIcon name="upload" :size="34" /></span>
             <strong>Drop to add to {{ targetLabel }}</strong>
           </div>
         </div>
-      </transition>
     </Teleport>
 
     <!-- ===== Lightbox ===== -->
     <Teleport to="body">
-      <transition name="ph-fade">
         <div v-if="open" class="ph-lb" role="dialog" aria-modal="true" aria-label="Photo viewer" tabindex="-1" ref="lightbox"
           @keydown.esc="open = null" @keydown.left="step(-1)" @keydown.right="step(1)" @click.self="open = null">
           <button type="button" class="ph-lb-close" aria-label="Close" @click="open = null"><AppIcon name="x" :size="20" /></button>
@@ -173,7 +166,6 @@
             </div>
           </aside>
         </div>
-      </transition>
     </Teleport>
   </div>
 </template>
@@ -708,7 +700,6 @@ export default {
   padding: 9px 18px;
   font-weight: 700;
   box-shadow: 0 6px 20px rgba(237, 174, 73, 0.25);
-  transition: transform 0.15s, box-shadow 0.15s;
 }
 .ph-primary:hover:not(:disabled) {
   transform: translateY(-1px);
@@ -760,7 +751,6 @@ export default {
   padding: 8px 14px;
   font-size: 14px;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
 }
 .ph-pill:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -872,7 +862,6 @@ export default {
   bottom: 0;
   height: 4px;
   background: var(--mint);
-  transition: width 0.2s;
 }
 .ph-tray-badge {
   position: absolute;
@@ -912,7 +901,6 @@ export default {
   color: var(--text);
   border: 2px dashed rgba(237, 174, 73, 0.35);
   border-radius: 20px;
-  transition: background 0.2s, border-color 0.2s;
 }
 .ph-empty:hover {
   background: rgba(237, 174, 73, 0.05);
@@ -965,7 +953,6 @@ export default {
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.35s ease;
 }
 .ph-tile:hover img {
   transform: scale(1.03);
@@ -975,7 +962,6 @@ export default {
   inset: 0;
   background: linear-gradient(90deg, #0b3048, #22302c, #0b3048);
   background-size: 200% 100%;
-  animation: ph-shimmer 1.2s infinite;
 }
 /* Darken edges on hover so the controls stay readable */
 .ph-tile::after {
@@ -984,7 +970,6 @@ export default {
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 30%, transparent 60%, rgba(0, 0, 0, 0.5));
   opacity: 0;
-  transition: opacity 0.2s;
   pointer-events: none;
 }
 .ph-tile:hover::after,
@@ -1020,7 +1005,6 @@ export default {
   max-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  transition: max-width 0.25s;
 }
 .ph-by {
   padding-right: 2px;
@@ -1045,7 +1029,6 @@ export default {
   background: rgba(0, 30, 46, 0.55);
   color: #fff;
   opacity: 0;
-  transition: opacity 0.2s;
 }
 .ph-tile:hover .ph-expand,
 .ph-expand:focus-visible {
@@ -1077,7 +1060,6 @@ export default {
   color: #fff;
   font-size: 13px;
   padding: 3px 9px;
-  transition: transform 0.15s, opacity 0.2s;
 }
 .ph-react:hover {
   transform: scale(1.08);
@@ -1120,7 +1102,6 @@ export default {
   align-items: center;
   gap: 6px;
   font-size: 1.1rem;
-  animation: ph-pulse 1.4s ease-in-out infinite;
 }
 .ph-dropzone-icon {
   font-size: 44px;
@@ -1195,29 +1176,6 @@ export default {
   outline-offset: 2px;
 }
 
-/* Transitions */
-.ph-fade-enter-active,
-.ph-fade-leave-active,
-.ph-drop-enter-active,
-.ph-drop-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
-.ph-fade-enter-from,
-.ph-fade-leave-to {
-  opacity: 0;
-}
-.ph-drop-enter-from,
-.ph-drop-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-@keyframes ph-shimmer {
-  to { background-position: -200% 0; }
-}
-@keyframes ph-pulse {
-  50% { border-color: rgba(237, 174, 73, 0.4); }
-}
-
 @media (max-width: 768px) {
   .ph {
     padding: 16px;
@@ -1249,12 +1207,5 @@ export default {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .ph-tile img,
-  .ph-primary,
-  .ph-react,
-  .ph-by-name { transition: none; }
-  .ph-dropzone-card,
-  .ph-tile-skel { animation: none; }
-}
+
 </style>

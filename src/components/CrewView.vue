@@ -26,9 +26,9 @@
         <template v-if="editing !== p.name">
           <div class="cw-id">
             <!-- Their Travel Twin (this trip's outfit if they made one), or their initial -->
-            <TwinFace class="cw-avatar" :style="{ background: colorFor(p.name) }" :user-id="p.id" :version="p.avatarV" :name="p.name" :trip="tripId">
+            <InitialBadge class="cw-avatar" :style="{ background: colorFor(p.name) }" :name="p.name">
               <span v-if="p.kind !== 'guest'" class="cw-dot" :class="{ on: p.activeNow }"></span>
-            </TwinFace>
+            </InitialBadge>
             <div class="cw-who">
               <span class="cw-name">{{ p.name }}<span v-if="p.name === me" class="cw-you"> (you)</span></span>
               <span class="cw-status">{{ p.statusText }}</span>
@@ -117,7 +117,7 @@ import axios from 'axios'
 import { dietTag } from '../crewOptions.js'
 import CrewDetailsForm from './CrewDetailsForm.vue'
 import AppIcon from './AppIcon.vue'
-import TwinFace from './TwinFace.vue'
+import InitialBadge from './InitialBadge.vue'
 
 const COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
@@ -137,7 +137,7 @@ const DEMO = {
 }
 
 export default {
-  components: { AppIcon, CrewDetailsForm, TwinFace },
+  components: { AppIcon, CrewDetailsForm, InitialBadge },
   props: {
     tripId: { type: String, required: true },
     city: { type: String, default: 'Trip' },
@@ -438,7 +438,6 @@ export default {
   font-weight: 700;
   padding: 9px 18px;
   box-shadow: 0 6px 20px rgba(237, 174, 73, 0.25);
-  transition: transform 0.15s, background 0.15s;
 }
 .cw-primary:hover:not(:disabled) {
   transform: translateY(-1px);
@@ -481,7 +480,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .cw-card.clickable {
   cursor: pointer;
@@ -704,7 +702,6 @@ export default {
   padding: 10px 18px;
   font-size: 14px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-  animation: cw-in 0.2s ease;
 }
 
 /* Keyboard focus */
@@ -715,9 +712,7 @@ export default {
   outline: 3px solid var(--mint);
   outline-offset: 2px;
 }
-@keyframes cw-in {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-}
+
 @media (max-width: 720px) {
   .cw {
     padding: 16px;
@@ -734,10 +729,6 @@ export default {
   .cw-actions > * {
     flex: 1;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cw-card, .cw-primary { transition: none; }
-  .cw-card:hover { transform: none; }
 }
 
 /* Phones and touch screens: every control is at least 40px to tap (WCAG / Apple guidance) */

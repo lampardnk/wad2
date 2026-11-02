@@ -237,7 +237,6 @@ onBeforeUnmount(() => {
   fill: #134a66;
   stroke: #0b3550;
   stroke-width: 0.4;
-  transition: fill 0.4s;
 }
 .tm-land path.been {
   fill: #2c6b7a;
@@ -253,9 +252,7 @@ onBeforeUnmount(() => {
 .tm-route.on {
   stroke: #edae49;
 }
-.tm-route {
-  transition: stroke 0.25s, opacity 0.25s;
-}
+
 /* Pointing at one trip: the others fade back */
 .tm-routes.focusing .tm-route:not(.on) {
   opacity: 0.25;
@@ -263,9 +260,7 @@ onBeforeUnmount(() => {
 .tm-dot.dim {
   opacity: 0.35;
 }
-.tm-dot {
-  transition: opacity 0.25s;
-}
+
 .tm-hit {
   fill: none;
   stroke: transparent;
@@ -278,11 +273,8 @@ onBeforeUnmount(() => {
   stroke-linecap: round;
   stroke-dasharray: 1 1;
   stroke-dashoffset: 1;
-  animation: tm-draw 1.3s cubic-bezier(.4, 0, .2, 1) forwards;
 }
-@keyframes tm-draw {
-  to { stroke-dashoffset: 0; }
-}
+
 .tm-dot {
   cursor: pointer;
 }
@@ -291,9 +283,7 @@ onBeforeUnmount(() => {
   transform-box: fill-box;
   transform-origin: center;
 }
-.tm-dot.on .tm-halo {
-  animation: tm-pulse 2.4s ease-out infinite;
-}
+
 .tm-pin {
   fill: #edae49;
   stroke: #001d2c;
@@ -321,12 +311,5 @@ onBeforeUnmount(() => {
   color: rgba(255, 255, 255, 0.75);
   font-size: 14px;
 }
-@keyframes tm-pulse {
-  0% { transform: scale(0.6); opacity: 1; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tm-dot.on .tm-halo { animation: none; }
-  .tm-reveal { animation: none; stroke-dashoffset: 0; }
-}
+
 </style>

@@ -3,16 +3,14 @@
   <div ref="rootEl" class="upm">
     <button ref="btnEl" type="button" class="upm-avatar" :aria-expanded="open" aria-haspopup="menu" aria-controls="upm-menu"
       :aria-label="'Account menu for ' + user.name" :title="user.name" data-testid="nav-user" @click="toggle">
-      <img v-if="avatar.picture" :src="avatar.picture" alt="" class="upm-twin">
-      <template v-else>{{ initial }}</template>
+      {{ initial }}
       <span v-if="friends.requests" class="upm-avatar-dot" aria-hidden="true"></span>
     </button>
 
-    <transition name="upm-pop">
       <div v-if="open" id="upm-menu" ref="menuEl" class="upm-menu" role="menu" :aria-label="'Account: ' + user.name" @keydown="onMenuKey">
         <!-- Who's signed in -->
         <header class="upm-head">
-          <span class="upm-avatar big" aria-hidden="true"><img v-if="avatar.picture" :src="avatar.picture" alt="" class="upm-twin"><template v-else>{{ initial }}</template></span>
+          <span class="upm-avatar big" aria-hidden="true">{{ initial }}</span>
           <div class="upm-who">
             <strong class="upm-name">{{ user.name }}</strong>
             <span class="upm-handle">@{{ user.username }}<template v-if="user.email"> · {{ user.email }}</template></span>
@@ -35,11 +33,6 @@
         <!-- Preferences -->
         <div class="upm-section" role="group" aria-label="Preferences">
           <p class="upm-label">Preferences</p>
-          <router-link to="/avatar" class="upm-item" role="menuitem" @click="open = false">
-            <AppIcon name="smile" />
-            <span class="upm-text">Travel twin<small class="upm-hint">Your 3D avatar and gear</small></span>
-            <AppIcon name="chevron" :size="15" class="upm-chev" />
-          </router-link>
           <!-- (trip pacing lives in Settings too, so it's not a separate item) -->
           <router-link to="/settings" class="upm-item" role="menuitem" data-testid="settings-link" @click="open = false">
             <AppIcon name="settings" />
@@ -55,7 +48,6 @@
           </button>
         </footer>
       </div>
-    </transition>
   </div>
 </template>
 
@@ -65,7 +57,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { auth, logout } from '../auth.js'
 import { friends, pingFriends } from '../friends.js'
 import AppIcon from './AppIcon.vue'
-import { avatar, loadAvatar } from '../avatarStore.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -78,8 +69,6 @@ const menuEl = ref(null)
 const user = computed(() => auth.user || { name: '?', username: '' })
 const initial = computed(() => (user.value.name || '?').charAt(0).toUpperCase())
 
-
-
 async function toggle() {
   open.value = !open.value
   if (!open.value) return
@@ -87,7 +76,6 @@ async function toggle() {
   await nextTick()
   focusItem(0)
 }
-
 
 function openFriends() {
   open.value = false
@@ -125,9 +113,7 @@ function onDocClick(e) {
 }
 onMounted(() => {
   document.addEventListener('click', onDocClick)
-  loadAvatar() // the twin's picture for the button
 })
-watch(() => auth.user && auth.user.id, () => loadAvatar()) // someone else logged in
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocClick)
 })
@@ -168,7 +154,6 @@ watch(() => route.fullPath, () => { open.value = false })
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.15s, transform 0.15s;
 }
 .upm-twin {
   width: 100%;
@@ -296,11 +281,9 @@ watch(() => route.fullPath, () => { open.value = false })
   font-weight: 600;
   text-align: left;
   text-decoration: none;
-  transition: background 0.12s, color 0.12s;
 }
 .upm-item > .app-icon {
   color: var(--upm-muted);
-  transition: color 0.12s;
 }
 a.upm-item:hover,
 button.upm-item:hover,
@@ -364,7 +347,6 @@ button.upm-item:hover > .app-icon,
   background: currentColor;
 }
 
-
 /* Log out */
 .upm-foot {
   padding-top: 6px;
@@ -385,50 +367,11 @@ button.upm-item.danger:hover > .app-icon {
   box-shadow: inset 0 0 0 2px rgba(251, 113, 133, 0.6);
 }
 
-
 /* Open / close */
 /* Opening: the menu unrolls downwards from the profile button (with a little spring),
    then its rows drop in one after another. Closing: it rolls back up, quickly. */
 .upm-menu {
   transform-origin: calc(100% - 20px) 0;
 }
-.upm-pop-enter-active {
-  animation: upm-unroll 0.42s cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-.upm-pop-leave-active {
-  animation: upm-unroll 0.18s ease-in reverse;
-}
-@keyframes upm-unroll {
-  0% { opacity: 0; transform: translateY(-8px) scale(0.9, 0.4); clip-path: inset(0 0 100% 0 round 18px); }
-  60% { opacity: 1; clip-path: inset(0 0 0 0 round 18px); }
-  100% { opacity: 1; transform: none; clip-path: inset(0 0 0 0 round 18px); }
-}
-/* the rows cascade in */
-.upm-pop-enter-active .upm-head,
-.upm-pop-enter-active .upm-item,
-.upm-pop-enter-active .upm-label {
-  animation: upm-drop 0.38s cubic-bezier(0.34, 1.5, 0.64, 1) both;
-}
-.upm-pop-enter-active .upm-head { animation-delay: 0.05s; }
-.upm-pop-enter-active .upm-section:nth-of-type(1) .upm-item { animation-delay: 0.1s; }
-.upm-pop-enter-active .upm-section:nth-of-type(2) .upm-label { animation-delay: 0.13s; }
-.upm-pop-enter-active .upm-section:nth-of-type(2) .upm-item:nth-of-type(1) { animation-delay: 0.16s; }
-.upm-pop-enter-active .upm-section:nth-of-type(2) .upm-item:nth-of-type(2) { animation-delay: 0.2s; }
-.upm-pop-enter-active .upm-foot .upm-item { animation-delay: 0.28s; }
-@keyframes upm-drop {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .upm-pop-enter-active,
-  .upm-pop-leave-active,
-  .upm-pop-enter-active .upm-head,
-  .upm-pop-enter-active .upm-item,
-  .upm-pop-enter-active .upm-label {
-    animation: none;
-  }
-  .upm-avatar {
-    transition: none;
-  }
-}
+
 </style>

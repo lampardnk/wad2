@@ -2,7 +2,6 @@
   <!-- "Day is too full": the stops that don't fit, each with its own day picker (set to our suggestion).
        Each day shows how much time it has left, and that updates as you choose. -->
   <Teleport to="body">
-    <transition name="os-fade">
       <div v-if="open" class="os-overlay" @click.self="emit('close')" @keydown.esc="emit('close')">
         <aside ref="panel" class="os" role="dialog" aria-modal="true" aria-labelledby="os-title" tabindex="-1">
           <header class="os-head">
@@ -41,7 +40,6 @@
           </footer>
         </aside>
       </div>
-    </transition>
   </Teleport>
 </template>
 
@@ -143,11 +141,8 @@ function apply() {
   color: #003d5b;
   box-shadow: -18px 0 40px rgba(0, 40, 62, 0.18);
   outline: none;
-  animation: os-in 0.22s ease-out;
 }
-@keyframes os-in {
-  from { transform: translateX(30px); opacity: 0; }
-}
+
 .os-head {
   display: flex;
   justify-content: space-between;
@@ -286,14 +281,7 @@ function apply() {
   outline: 3px solid rgba(237, 174, 73, 0.7);
   outline-offset: 2px;
 }
-.os-fade-enter-active,
-.os-fade-leave-active {
-  transition: opacity 0.2s;
-}
-.os-fade-enter-from,
-.os-fade-leave-to {
-  opacity: 0;
-}
+
 @media (max-width: 640px) {
   .os {
     top: auto;
@@ -301,13 +289,7 @@ function apply() {
     width: 100%;
     max-height: 88vh;
     border-radius: 24px 24px 0 0;
-    animation-name: os-up;
-  }
-  @keyframes os-up {
-    from { transform: translateY(40px); opacity: 0; }
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .os { animation: none; }
-}
+
 </style>
