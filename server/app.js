@@ -38,7 +38,8 @@ app.use(express.json())
 let connecting = null
 export function connectDb() {
   if (!connecting) {
-    connecting = mongoose.connect(process.env.MONGODB_URI).catch((err) => {
+    // Give up after 8 s (instead of Mongoose's 30 s) so a request gets a clear answer, not a timeout
+    connecting = mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 8000 }).catch((err) => {
       connecting = null // try again on the next request
       throw err
     })
