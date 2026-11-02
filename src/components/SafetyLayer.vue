@@ -1352,32 +1352,6 @@ onUnmounted(() => {
   outline: 3px solid var(--mint);
   outline-offset: 2px;
 }
-.sf-nearest {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 0;
-}
-.sf-nearest li {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  gap: 8px;
-  align-items: center;
-  padding: 7px 0;
-  border-top: 1px solid var(--glass);
-  font-size: 13px;
-}
-.sf-nearest-label {
-  color: var(--muted);
-  white-space: nowrap;
-}
-.sf-nearest-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sf-nearest-name small {
-  color: var(--muted);
-}
 .sf-nearest-dist {
   font-variant-numeric: tabular-nums;
 }

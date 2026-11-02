@@ -358,7 +358,4 @@ function removeJourney(j) {
 </script>
 
 <style scoped>
-.oj-open {
-  min-width: 0;
-}
 </style>

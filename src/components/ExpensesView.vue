@@ -745,11 +745,6 @@ export default {
   height: 24px;
   font-size: 11px;
 }
-
-.xp-rates {
-  font-size: 12px;
-  color: var(--muted);
-}
 .xp-add {
   margin-left: auto;
   background: var(--ink);

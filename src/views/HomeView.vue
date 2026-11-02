@@ -1112,23 +1112,6 @@ export default {
   align-items: center;
   gap: 16px;
 }
-.setup-avatar {
-  position: relative;
-  flex: none;
-  width: 96px;
-  height: 96px;
-  overflow: hidden;
-  border: 3px solid #12324a;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, #e8f6ff, #bfe3f5);
-  box-shadow: 0 4px 0 #12324a;
-}
-/* his face centred in the circle (the drawing is 150 x 140; his face is at about 62, 76) */
-.setup-avatar :deep(.em) {
-  position: absolute;
-  left: -14px;
-  top: -24px;
-}
 .setup-bubble {
   position: relative;
   min-width: 0;
@@ -1333,16 +1316,6 @@ export default {
   .setup-guide {
     align-items: flex-start;
   }
-  .setup-avatar {
-    width: 70px;
-    height: 70px;
-  }
-  .setup-avatar :deep(.em) {
-    width: 110px;
-    height: 103px;
-    left: -10px;
-    top: -18px;
-  }
   .setup-bubble::before {
     top: 30px;
   }
@@ -1358,60 +1331,6 @@ export default {
     #fffaf0;
   box-shadow: 0 2px 0 rgba(18, 50, 74, 0.06), 0 22px 50px -18px rgba(18, 50, 74, 0.28);
 }
-.hero-sun,
-.hero-plane {
-  position: absolute;
-  z-index: 2;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  line-height: 0;
-}
-.hero-sun:focus-visible,
-.hero-plane:focus-visible {
-  outline: 3px solid #19b3c4;
-  outline-offset: 4px;
-  border-radius: 50%;
-}
-/* The sun sits on the card's top-left corner (low enough to be seen whole, clear of your avatar) */
-.hero-sun {
-  top: -16px;
-  left: -18px;
-}
-.hero-sun .dz {
-  width: 54px;
-  height: 54px;
-}
-.hero-sun-glow {
-  position: absolute;
-  inset: 8px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 201, 77, 0.55), transparent 70%);
-  opacity: 0.6;
-  transform: scale(1.4);
-  pointer-events: none;
-}
-
-/* The plane cruises over the card's top-right corner */
-.hero-plane {
-  top: -20px;
-  right: 34px;
-}
-.hero-plane-body {
-  display: inline-block;
-}
-.hero-plane.flying {
-  pointer-events: none;
-  z-index: 5;
-}
-
-@media (max-width: 560px) {
-  .hero-sun { top: -12px; left: -12px; }
-  .hero-sun .dz { width: 38px; height: 38px; }
-  .hero-plane { right: 14px; top: -18px; }
-}
-
 .hero-top {
   display: flex;
   flex-wrap: wrap;
@@ -1460,43 +1379,10 @@ export default {
   flex-wrap: wrap;
   gap: 10px;
 }
-.hero-btn {
-  background: #001d2c;
-  color: #fff;
-  padding: 10px 22px;
-}
-.hero-btn:hover,
-.hero-btn:focus-visible {
-  background: #003d5b;
-  color: #fff;
-  transform: translateY(-1px);
-}
-.hero-btn.ghost {
-  background: #fbf5ea;
-  color: #001d2c;
-  border: 1.5px solid #e2dacb;
-}
-.hero-btn.ghost:hover,
-.hero-btn.ghost:focus-visible {
-  background: #fbf5ea;
-  border-color: #edae49;
-  color: #001d2c;
-}
-.hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  gap: 14px;
-}
-.hero-map {
-  border-radius: 24px;
-  overflow: hidden;
-  height: 300px;
-  box-shadow: 0 16px 36px rgba(0, 29, 44, 0.18);
-}
-/* Big friendly numbers */
+/* Your numbers: one row of four tiles (two by two on phones) */
 .hero-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
   padding: 0;
@@ -1505,60 +1391,28 @@ export default {
 .hero-stats li {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 2px;
   padding: 12px 14px;
   border-radius: 20px;
-  background: #fbf5ea;
-  border: 0;
   box-shadow: 0 4px 0 rgba(18, 50, 74, 0.08);
 }
 .hero-stats li.tint-0 { background: #fff1cf; }
 .hero-stats li.tint-1 { background: #ffe1e6; }
 .hero-stats li.tint-2 { background: #dff6f3; }
 .hero-stats li.tint-3 { background: #e3f1ff; }
-.hero-stats li:last-child {
-  grid-column: 1 / -1;
-  background: #001d2c;
-  border-color: #001d2c;
-  color: #fff;
-}
 .hero-stats b {
   font-size: 1.7rem;
   font-weight: 800;
   line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-.hero-stats li:last-child b {
-  color: #edae49;
 }
 .hero-stats span {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--app-muted);
 }
-.hero-stats li:last-child span {
-  color: rgba(255, 255, 255, 0.75);
-}
-@media (max-width: 760px) {
-  .hero-grid { grid-template-columns: minmax(0, 1fr); }
-  .hero-map { height: 220px; }
-  .hero-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-  .hero-stats li { padding: 10px; }
-  .hero-stats li:last-child { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .hero-stats b { font-size: 1.3rem; }
-  .hero-stats span { font-size: 11px; }
-}
-
-/* ---------- Create form ---------- */
-.create-card {
-  background: #fbf5ea;
-  border: 1px solid var(--app-border);
-  border-radius: 16px;
-  padding: 20px 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 24px rgba(0, 40, 62, 0.08);
-  scroll-margin-top: 16px;
 }
 
 /* ---------- Form fields: pill inputs with the label on the border ---------- */
@@ -1567,96 +1421,8 @@ export default {
   --field-bg: #fff;
   position: relative;
 }
-.field-label {
-  position: absolute;
-  top: 0;
-  left: 18px;
-  transform: translateY(-50%);
-  padding: 0 6px;
-  background: var(--field-bg);
-  font-size: 13px;
-  color: var(--app-ink);
-  line-height: 1;
-  pointer-events: none;
-}
-.field-input {
-  width: 100%;
-  height: 54px;
-  border: 1.5px solid var(--field-color);
-  border-radius: 999px;
-  padding: 0 46px 0 22px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--app-ink);
-  background: var(--field-bg);
-  outline: none;
-}
-.field-input::placeholder {
-  color: #9aa7b1;
-  font-weight: 500;
-}
-.field-input:focus {
-  border-color: var(--app-primary);
-  box-shadow: 0 0 0 4px rgba(0, 121, 140, 0.15);
-}
-.field-input:disabled {
-  background: #f1f3f3;
-  color: #9aa7b1;
-}
-.field-icon {
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-weight: 700;
-  pointer-events: none;
-}
 .field.is-success { --field-color: #f1c47a; }
-.field.is-success .field-icon { color: #1f9d6b; }
 .field.is-error { --field-color: #ef9a8a; }
-.field.is-error .field-input:focus { box-shadow: 0 0 0 4px rgba(214, 69, 46, 0.15); }
-.field.is-error .field-icon {
-  color: #d6452e;
-  border: 2px solid #d6452e;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-}
-.field-msg {
-  font-size: 13px;
-  margin: 6px 0 0 22px;
-  min-height: 18px; /* keeps the layout still when a message appears */
-  color: var(--app-muted);
-}
-.field-msg.is-success { color: #1f9d6b; }
-.field-msg.is-error { color: #d6452e; }
-
-.pill-btn {
-  border-radius: 999px;
-  padding: 10px 24px;
-  font-weight: 600;
-}
-.pill-primary {
-  background: var(--app-primary);
-  color: #fff;
-}
-.pill-primary:hover,
-.pill-primary:focus-visible {
-  background: var(--app-primary-dark);
-  color: #fff;
-}
-.pill-ghost {
-  border: 1.5px solid var(--field-color, #d6ccbb);
-  color: var(--app-ink);
-  background: #fbf5ea;
-}
-.pill-ghost:hover {
-  border-color: var(--app-ink);
-}
 
 /* ---------- Chosen destinations ---------- */
 .dest-chips {
@@ -1667,45 +1433,6 @@ export default {
   margin: 10px 0 0;
   padding: 0 0 0 10px;
   counter-reset: stop;
-}
-.dest-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #fbefd9;
-  color: #004e5a;
-  border: 1px solid #f3d9a8;
-  border-radius: 999px;
-  padding: 4px 6px 4px 12px;
-  font-size: 14px;
-  font-weight: 600;
-}
-.dest-chip::before {
-  counter-increment: stop;
-  content: counter(stop);
-  font-size: 11px;
-  background: var(--app-primary);
-  color: #fff;
-  border-radius: 999px;
-  width: 18px;
-  height: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.dest-chip-x {
-  border: 0;
-  background: transparent;
-  color: #004e5a;
-  font-size: 18px;
-  line-height: 1;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-}
-.dest-chip-x:hover,
-.dest-chip-x:focus-visible {
-  background: #c9ecdd;
 }
 
 /* ---------- Destination suggestions ---------- */
@@ -1724,26 +1451,6 @@ export default {
   box-shadow: 0 14px 30px rgba(0, 40, 62, 0.14);
   max-height: 300px;
   overflow-y: auto;
-}
-.suggest-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 15px;
-  color: var(--app-ink);
-}
-.suggest-item strong {
-  color: var(--app-primary);
-}
-.suggest-item.active {
-  background: #fbefd9;
-}
-.suggest-icon {
-  font-size: 18px;
-  line-height: 1;
 }
 
 /* ---------- Search + destination filter ---------- */
@@ -2135,11 +1842,6 @@ export default {
 .trip-card:focus-within {
   transform: rotate(0deg) translateY(-8px);
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.9), 0 7px 0 #e3cfa9, 0 30px 36px -18px rgba(18, 50, 74, 0.55);
-}
-/* pointed at on the map: lifts with a gold ring */
-.trip-card.lit {
-  transform: rotate(0deg) translateY(-8px);
-  box-shadow: 0 0 0 3px #ffbf3c, 0 7px 0 #e3cfa9, 0 30px 36px -18px rgba(18, 50, 74, 0.55);
 }
 /* the photo window */
 .trip-art {
@@ -2544,7 +2246,6 @@ export default {
 /* Phones */
 @media (max-width: 576px) {
   .hero { min-height: 0; border-radius: 18px; }
-  .hero-panel { max-width: none; padding: 28px 22px; }
 }
 
 /* "Showing trips to Kyoto" (after tapping a passport stamp) */

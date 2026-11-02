@@ -591,16 +591,6 @@ export default {
     var(--trip-photo, none) center 35% / cover no-repeat, /* cover: fills any width without stretching */
     #003d5b;
 }
-.trip-loading {
-  position: relative;
-  color: rgba(255, 255, 255, 0.7);
-  text-align: center;
-  padding-top: 160px;
-}
-.skeleton-bar {
-  height: 62px;
-  opacity: 0.6;
-}
 
 /* Top bar */
 .trip-nav {
@@ -671,6 +661,7 @@ export default {
   padding: 150px clamp(16px, 4vw, 48px) 0;
 }
 .trip-title {
+  color: #fff;
   font-family: var(--font-display);
   font-size: clamp(2.2rem, 5.4vw, 3.6rem);
   font-weight: 800;
@@ -915,10 +906,6 @@ export default {
   border-radius: 10px;
   background: rgba(237, 174, 73, 0.14);
   color: #00798c;
-}
-.trip-panel-desc {
-  color: var(--app-muted, #5a6b78);
-  margin: 0;
 }
 
 /* Wishlist | Group decisions: same pill style as the header switch */

@@ -303,7 +303,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { auth, logout, saveLogin } from '../auth.js'
@@ -500,10 +500,7 @@ function saveEmail() {
 }
 
 // Save anything still waiting when leaving the page
-// Dropdown menus open on <body>: this class lets them match the paper look while Settings is open
-onMounted(() => document.body.classList.add('st-paper'))
 onBeforeUnmount(() => {
-  document.body.classList.remove('st-paper')
   clearTimeout(timer)
   if (paceTimer) {
     clearTimeout(paceTimer)
@@ -591,30 +588,30 @@ async function deleteAccount() {
 </script>
 
 <style scoped>
-/* ===== Explorer's Field Guide, night edition =====
-   A deep navy-slate card on the cream page. One clean font throughout. */
+/* ===== Settings: a cream card like Home's, one clean font throughout ===== */
 .st-page {
   position: relative;
   max-width: 1152px; /* about max-w-6xl */
   margin: 0 auto;
   padding-bottom: 48px;
-  --paper: #0f172a; /* the card */
-  --slip: #132238; /* subsection cards */
-  --field: #0b131d; /* inputs and dropdowns */
-  --ink: #f8fafc; /* main text */
-  --ink-2: #334155; /* borders */
-  --soft: #cbd5e1;
-  --muted: #94a3b8;
-  --rule: rgba(148, 163, 184, 0.16);
-  --brass: #c9a46a;
-  --brass-dark: #d9b97e;
-  --teal: #2f8f94;
-  --teal-dark: #1f5f63;
-  --teal-hi: #5fbfc4;
-  --amber: #e0a43a;
-  --amber-dark: #8a5a17;
-  --on-amber: #1a1408;
-  --oxblood: #f87171;
+  /* Same palette as Home: cream paper, navy ink, amber accents */
+  --paper: #fffaf0; /* the card */
+  --slip: #fbf5ea; /* subsection cards */
+  --field: #fff; /* inputs and dropdowns */
+  --ink: #12324a; /* main text */
+  --ink-2: #e2dacb; /* borders */
+  --soft: #3a4a57;
+  --muted: #5a6b78;
+  --rule: rgba(18, 50, 74, 0.1);
+  --brass: #edae49;
+  --brass-dark: #c98a1f;
+  --teal: #19b3c4;
+  --teal-dark: #0e7f8c;
+  --teal-hi: #0e7f8c;
+  --amber: #edae49;
+  --amber-dark: #c98a1f;
+  --on-amber: #001d2c;
+  --oxblood: #d1495b;
   color: #1f2f3d;
 }
 
@@ -698,21 +695,21 @@ async function deleteAccount() {
   position: relative;
   overflow: hidden;
   padding: 22px;
-  border: 1px solid #1e293b;
-  border-radius: 14px;
+  border: 1px solid var(--ink-2);
+  border-radius: 32px;
   background:
-    linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
-    linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(rgba(18, 50, 74, 0.03) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, rgba(18, 50, 74, 0.03) 1px, transparent 1px) 0 0 / 24px 24px,
     var(--paper);
   color: var(--ink);
-  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 2px 0 rgba(18, 50, 74, 0.06), 0 22px 50px -18px rgba(18, 50, 74, 0.28);
 }
 .st-motif {
   position: absolute;
   pointer-events: none;
   color: rgba(148, 163, 184, 0.1);
   /* debossed: a dark edge below the line */
-  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 1px 0 rgba(18, 50, 74, 0.1));
 }
 .st-motif.rose {
   top: 14px;
@@ -749,7 +746,7 @@ async function deleteAccount() {
     bottom: 0;
     width: 1px;
     background: linear-gradient(180deg, transparent, var(--rule) 8%, var(--rule) 92%, transparent);
-    box-shadow: 1px 0 0 rgba(0, 0, 0, 0.35);
+    box-shadow: 1px 0 0 rgba(18, 50, 74, 0.08);
   }
 }
 /* wide screens: a little more room around and between the two columns */
@@ -984,9 +981,9 @@ async function deleteAccount() {
   color: #64748b;
 }
 .st-page .st :deep(.dt-tag) {
-  border: 1px solid #475569;
+  border: 1px solid var(--ink-2);
   border-radius: 3px;
-  background: #1e293b;
+  background: var(--ink-2);
   color: var(--ink);
 }
 .st-page .st :deep(.dt-tag.allergy) {
@@ -1003,11 +1000,11 @@ async function deleteAccount() {
   border-radius: 5px;
   background: var(--field);
   color: var(--ink);
-  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 14px 30px -12px rgba(18, 50, 74, 0.12);
   backdrop-filter: none;
 }
 .st-page .st :deep(.dt-menu li.active) {
-  background: #1e293b;
+  background: var(--ink-2);
   color: var(--ink);
 }
 .st-page .st :deep(.dt-hint) {
@@ -1048,7 +1045,7 @@ async function deleteAccount() {
   border: 1.5px solid var(--ink-2);
   border-radius: 6px;
   background: var(--field);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 2px rgba(18, 50, 74, 0.08);
 }
 .st-seg-thumb {
   position: absolute;
@@ -1088,7 +1085,7 @@ async function deleteAccount() {
   border: 1.5px solid var(--ink-2);
   border-radius: 999px;
   background: var(--field);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 2px rgba(18, 50, 74, 0.08);
 }
 .st-knob {
   position: absolute;
@@ -1099,7 +1096,7 @@ async function deleteAccount() {
   border: 1.5px solid var(--ink-2);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #f6e6c4, var(--brass));
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1px 2px rgba(18, 50, 74, 0.1);
 }
 .st-switch[aria-checked='true'] {
   background: var(--teal);
@@ -1126,17 +1123,10 @@ async function deleteAccount() {
   border-radius: 50%;
   outline: 1px solid var(--rule);
   outline-offset: 2px;
-  background: repeating-linear-gradient(45deg, #1e293b 0 3px, #172033 3px 4px);
+  background: #edae49;
   color: var(--ink);
   font-size: 1rem;
   font-weight: 800;
-}
-.st-avatar-img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  filter: sepia(0.25) contrast(1.05);
 }
 /* tactile buttons: brass-teal (Log out) and burnished amber (Change) */
 .st-logout {
@@ -1145,23 +1135,23 @@ async function deleteAccount() {
   border: 1.5px solid var(--teal-dark);
   border-radius: 6px;
   background: linear-gradient(180deg, #3aa3a8, var(--teal));
-  color: #f8fafc;
+  color: var(--ink);
   font-size: 13px;
   font-weight: 700;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 0 var(--teal-dark);
+  box-shadow: inset 0 1px 0 rgba(18, 50, 74, 0.1), 0 3px 0 var(--teal-dark);
 }
 .st-logout.amber {
   border-color: var(--amber-dark);
   background: linear-gradient(180deg, #e8b24f, var(--amber));
   color: var(--on-amber);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 3px 0 var(--amber-dark);
+  box-shadow: inset 0 1px 0 rgba(18, 50, 74, 0.15), 0 3px 0 var(--amber-dark);
 }
 .st-logout:hover {
   transform: translateY(-1px);
 }
 .st-logout:active {
   transform: translateY(3px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 var(--teal-dark);
+  box-shadow: inset 0 1px 0 rgba(18, 50, 74, 0.1), 0 0 0 var(--teal-dark);
 }
 
 /* Welcome: a ruled field note held by a brass clip */
@@ -1179,7 +1169,7 @@ async function deleteAccount() {
     linear-gradient(90deg, transparent 0 30px, rgba(156, 58, 58, 0.25) 30px 31px, transparent 31px),
     repeating-linear-gradient(180deg, transparent 0 23px, rgba(47, 111, 115, 0.12) 23px 24px),
     #fffdf7;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), 0 14px 24px -16px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 0 rgba(18, 50, 74, 0.08), 0 14px 24px -16px rgba(18, 50, 74, 0.12);
   transform: rotate(-0.4deg);
   font-size: 14px;
 }
@@ -1210,7 +1200,7 @@ async function deleteAccount() {
   margin-left: auto;
 }
 .st-spot {
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(224, 164, 58, 0.55);
+  box-shadow: 0 2px 0 rgba(18, 50, 74, 0.08), 0 0 0 3px rgba(224, 164, 58, 0.55);
 }
 @media (max-width: 640px) {
   .st-welcome {
@@ -1243,8 +1233,8 @@ async function deleteAccount() {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   filter:
-    drop-shadow(1.2px 0 0 var(--tk-edge, #475569)) drop-shadow(-1.2px 0 0 var(--tk-edge, #475569))
-    drop-shadow(0 1.2px 0 var(--tk-edge, #475569)) drop-shadow(0 -1.2px 0 var(--tk-edge, #475569));
+    drop-shadow(1.2px 0 0 var(--tk-edge, var(--ink-2))) drop-shadow(-1.2px 0 0 var(--tk-edge, var(--ink-2)))
+    drop-shadow(0 1.2px 0 var(--tk-edge, var(--ink-2))) drop-shadow(0 -1.2px 0 var(--tk-edge, var(--ink-2)));
 }
 .st-mode:hover:not(:disabled) {
   transform: translateY(-1px);
@@ -1305,7 +1295,7 @@ async function deleteAccount() {
   border: 1.5px solid var(--amber-dark);
   background: linear-gradient(180deg, #e8b24f, var(--amber));
   color: var(--on-amber);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 0 var(--amber-dark);
+  box-shadow: inset 0 1px 0 rgba(18, 50, 74, 0.15), 0 4px 0 var(--amber-dark);
 }
 .st-primary:hover:not(:disabled),
 .st-danger.solid:hover:not(:disabled) {
@@ -1313,7 +1303,7 @@ async function deleteAccount() {
 }
 .st-primary:active:not(:disabled) {
   transform: translateY(4px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 var(--amber-dark);
+  box-shadow: inset 0 1px 0 rgba(18, 50, 74, 0.15), 0 0 0 var(--amber-dark);
 }
 .st-primary:disabled,
 .st-danger:disabled {
@@ -1329,7 +1319,7 @@ async function deleteAccount() {
   color: var(--oxblood);
   font-size: 13px;
   font-weight: 700;
-  box-shadow: 0 2px 0 #7f1d1d;
+  box-shadow: 0 2px 0 #fbe7ea;
 }
 .st-danger:hover:not(:disabled) {
   background: rgba(248, 113, 113, 0.16);
@@ -1339,10 +1329,10 @@ async function deleteAccount() {
   box-shadow: 0 0 0 var(--oxblood);
 }
 .st-danger.solid {
-  border: 1.5px solid #7f1d1d;
+  border: 1.5px solid #fbe7ea;
   background: #dc2626;
   color: #fff;
-  box-shadow: 0 4px 0 #7f1d1d;
+  box-shadow: 0 4px 0 #fbe7ea;
 }
 .st-warn {
   margin: 0;
@@ -1367,132 +1357,6 @@ async function deleteAccount() {
   outline-offset: 3px;
 }
 
-/* Travel Twin: an embossed explorer pass with a perforated edge */
-.st-pass {
-  padding: 5px;
-  border: 0;
-  border-radius: 8px;
-  background: radial-gradient(circle, transparent 2.2px, #1e293b 2.6px) -4px -4px / 9px 9px;
-  box-shadow: none;
-}
-.st-pass::before {
-  display: none;
-}
-.st-twin {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 18px;
-  border: 1.5px solid var(--ink-2);
-  border-radius: 4px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 40%),
-    var(--slip);
-  /* embossed */
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.06), inset -1px -1px 0 rgba(0, 0, 0, 0.35);
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.st-twin:hover {
-  transform: translateY(-1px);
-}
-.st-twin:focus-visible {
-  outline: 2px solid var(--teal-hi);
-  outline-offset: 3px;
-}
-/* the portrait: an etched medallion (double ring, fine hatching, a little sepia) */
-.st-twin-pic {
-  flex: none;
-  width: 60px;
-  height: 60px;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1.5px solid var(--ink-2);
-  border-radius: 50%;
-  outline: 1px solid var(--ink-2);
-  outline-offset: 3px;
-  background: repeating-linear-gradient(45deg, #1e293b 0 3px, #172033 3px 4px);
-  color: var(--muted);
-}
-.st-twin-pic img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: sepia(0.3) contrast(1.05) saturate(0.9);
-}
-.st-twin-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.st-pass-kicker {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--brass-dark);
-}
-.st-twin-text strong {
-  font-size: 1.05rem;
-  font-weight: 800;
-  line-height: 1.25;
-}
-.st-twin-text small {
-  font-size: 12.5px;
-  color: var(--muted);
-}
-.st-twin-new {
-  margin-left: 6px;
-  padding: 1px 6px;
-  border: 1px solid var(--oxblood);
-  border-radius: 3px;
-  color: var(--oxblood);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  vertical-align: 4px;
-}
-.st-twin-bar {
-  display: block;
-  height: 4px;
-  margin-top: 5px;
-  max-width: 220px;
-  border: 1px solid var(--ink-2);
-  border-radius: 2px;
-  background: var(--field);
-  overflow: hidden;
-}
-.st-twin-bar span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--brass), #d9b97e);
-}
-.st-twin-cta {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1.5px solid var(--amber-dark);
-  border-radius: 6px;
-  background: linear-gradient(180deg, #e8b24f, var(--amber));
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--on-amber);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 0 var(--amber-dark);
-}
-.st-twin:active .st-twin-cta {
-  transform: translateY(2px);
-  box-shadow: 0 0 0 var(--amber-dark);
-}
-
 @media (max-width: 480px) {
   .st {
     padding: 16px;
@@ -1514,10 +1378,6 @@ async function deleteAccount() {
   .st-input {
     max-width: 60%;
   }
-  .st-twin-cta {
-    font-size: 0;
-    padding: 6px 8px;
-  }
 }
 
 /* Phones and touch screens: every control is at least 40px to tap */
@@ -1530,48 +1390,5 @@ async function deleteAccount() {
     position: absolute;
     inset: -9px -4px;
   }
-}
-</style>
-
-<!-- The dropdown menus open on <body>; while Settings is open they match the dark card -->
-<style>
-body.st-paper .dd-menu.dd-menu {
-  border: 1px solid #334155;
-  border-radius: 6px;
-  background: #0b131d;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: 0 18px 34px -14px rgba(0, 0, 0, 0.6);
-  color: #f8fafc;
-}
-body.st-paper .dd-menu.dd-menu .dd-header {
-  color: #c9a46a;
-}
-body.st-paper .dd-menu.dd-menu .dd-search {
-  border: 1px solid #334155;
-  border-radius: 4px;
-  background: #132238;
-  color: #94a3b8;
-}
-body.st-paper .dd-menu.dd-menu .dd-search input {
-  color: #f8fafc;
-}
-body.st-paper .dd-menu.dd-menu .dd-list li.active {
-  background: #1e293b;
-}
-body.st-paper .dd-menu.dd-menu .dd-list li.selected {
-  color: #f2c16b;
-  font-weight: 800;
-}
-body.st-paper .dd-menu.dd-menu .dd-list li.selected.active {
-  background: #1e293b;
-}
-body.st-paper .dd-menu.dd-menu .dd-desc,
-body.st-paper .dd-menu.dd-menu .dd-empty {
-  color: #94a3b8;
-}
-body.st-paper .dd-menu.dd-menu .dd-check {
-  color: #e0a43a;
-  filter: none;
 }
 </style>

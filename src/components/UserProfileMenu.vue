@@ -155,12 +155,6 @@ watch(() => route.fullPath, () => { open.value = false })
   align-items: center;
   justify-content: center;
 }
-.upm-twin {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
 .upm-avatar:hover {
   border-color: var(--upm-accent);
   transform: scale(1.05);
@@ -326,10 +320,6 @@ button.upm-item:hover > .app-icon,
   font-weight: 800;
   background: var(--upm-accent);
   color: #001d2c;
-}
-.upm-badge.muted {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--upm-text);
 }
 .upm-online {
   display: inline-flex;

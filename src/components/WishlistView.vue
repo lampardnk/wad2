@@ -849,48 +849,6 @@ export default {
 </script>
 
 <style scoped>
-/* ---------- Toolbar ---------- */
-.wl-toolbar {
-  margin-bottom: 24px;
-}
-.wl-search {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: #fbf5ea;
-  border: 1.5px solid #e2dacb;
-  border-radius: 999px;
-  height: 52px;
-  padding: 0 8px 0 18px;
-}
-.wl-search:focus-within {
-  border-color: var(--app-primary, #00798c);
-  box-shadow: 0 0 0 4px rgba(0, 121, 140, 0.12);
-}
-.wl-search-icon {
-  opacity: 0.6;
-  margin-right: 10px;
-}
-.wl-search input {
-  flex: 1;
-  border: 0;
-  outline: none;
-  background: transparent;
-  font-size: 16px;
-}
-.wl-filter-btn {
-  border: 0;
-  background: transparent;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 20px;
-  color: #3b6fd4;
-}
-.wl-filter-btn.on,
-.wl-filter-btn:hover {
-  background: #eef3ff;
-}
 .wl-filters {
   display: flex;
   gap: 8px;
@@ -1328,15 +1286,6 @@ export default {
 .skeleton {
   background: linear-gradient(90deg, #efe9df 25%, #f9f6f0 50%, #efe9df 75%);
   background-size: 200% 100%;
-}
-
-/* ---------- Tour / activity ---------- */
-.wl-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  margin-right: 6px;
 }
 .wl-tour-btn {
   border: 1.5px solid #003d5b;

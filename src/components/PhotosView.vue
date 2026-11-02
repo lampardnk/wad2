@@ -667,14 +667,6 @@ export default {
   align-items: center;
   gap: 8px;
 }
-.ph-as {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--muted);
-  margin: 0;
-}
 .ph-as select,
 .ph-input {
   background: rgba(255, 255, 255, 0.06);

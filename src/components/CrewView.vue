@@ -720,9 +720,6 @@ export default {
   .cw-summary {
     grid-template-columns: 1fr;
   }
-  .cw-row {
-    grid-template-columns: 1fr;
-  }
   .cw-actions {
     width: 100%;
   }
