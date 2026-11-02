@@ -3,6 +3,8 @@
     :switch-to="{ path: '/signup', query: $route.query.redirect ? { redirect: $route.query.redirect } : {} }" switch-label="Sign Up">
     <p v-if="$route.query.registered" class="as-success" data-testid="login-registered">Account created! Sign in to start planning.</p>
     <p v-if="$route.query.reset" class="as-success" role="status">Password updated! Sign in with your new password.</p>
+    <p v-if="$route.query.reason === 'signed-out'" class="as-error" role="alert">You signed out in another tab.</p>
+    <p v-if="$route.query.reason === 'other-tab'" class="as-error" role="alert">You're signed in on another tab, so this tab was signed out. Sign in here to use this tab instead.</p>
 
     <form class="as-form" @submit.prevent="login" novalidate>
       <label for="username" class="as-label">Username or email</label>

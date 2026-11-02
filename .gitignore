@@ -18,3 +18,4 @@ test-results/
 playwright-report/
 # Vercel CLI link (project id), made by 'vercel link'
 .vercel
+.env*

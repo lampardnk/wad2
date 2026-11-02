@@ -3,16 +3,8 @@ import App from './App.vue'
 import router from './router'
 import axios from 'axios'
 import { setOffline, notify } from './notify.js'
-import { tab } from './singleTab.js'
 import './assets/style.css'
 import './assets/playful.css' // the playful look: colours, chunky buttons, cards
-
-// ---------- Only the active tab talks to the server ----------
-// (another tab of the app in this browser took over: see singleTab.js)
-axios.interceptors.request.use((config) => {
-  if (!tab.active) return Promise.reject(new axios.CanceledError('This tab is paused'))
-  return config
-})
 
 // ---------- A "background lane" for slow lookups ----------
 // Photos, map positions, crowd forecasts and popular places can take seconds each, and a trip page asks
