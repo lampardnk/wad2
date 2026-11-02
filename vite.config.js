@@ -16,6 +16,10 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
+  // Unit tests only (the Playwright browser tests in e2e/ run separately)
+  test: {
+    exclude: ['e2e/**', 'node_modules/**', 'server/**']
+  },
   server: {
     host: true, // listen on all addresses, IPv4 and IPv6
     proxy: {

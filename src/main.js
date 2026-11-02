@@ -1,11 +1,18 @@
-import { warmDiscover } from './photoCache.js'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import axios from 'axios'
-import { setOffline } from './notify.js'
+import { setOffline, notify } from './notify.js'
+import { tab } from './singleTab.js'
 import './assets/style.css'
 import './assets/playful.css' // the playful look: colours, chunky buttons, cards
+
+// ---------- Only the active tab talks to the server ----------
+// (another tab of the app in this browser took over: see singleTab.js)
+axios.interceptors.request.use((config) => {
+  if (!tab.active) return Promise.reject(new axios.CanceledError('This tab is paused'))
+  return config
+})
 
 // ---------- A "background lane" for slow lookups ----------
 // Photos, map positions, crowd forecasts and popular places can take seconds each, and a trip page asks
@@ -77,6 +84,12 @@ axios.interceptors.response.use(
     const down = !r || (r.status >= 500 && !(r.data && typeof r.data === 'object' && r.data.message))
     if (down) setOffline(true)
     else setOffline(false)
+    // 409 = someone on another device changed the same thing first. Say so, and let the open trip
+    // page load their version (TripView listens for 'trip-conflict').
+    if (r && r.status === 409) {
+      notify((r.data && r.data.message) || 'Someone else changed this at the same time. The latest version is loaded: please try again.')
+      window.dispatchEvent(new CustomEvent('trip-conflict'))
+    }
     return Promise.reject(err)
   }
 )
@@ -89,8 +102,3 @@ app.config.errorHandler = (err, instance, info) => {
 }
 app.mount('#app')
 
-// Get Discover's photos ready in the background, so the page opens with them all there
-setTimeout(() => {
-  if (window.requestIdleCallback) window.requestIdleCallback(warmDiscover)
-  else warmDiscover()
-}, 2500)

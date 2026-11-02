@@ -11,7 +11,7 @@ import path from 'path'
 import crypto from 'crypto'
 import { fileURLToPath } from 'url'
 
-const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data', 'cache', 'img')
+const DIR = process.env.VERCEL ? '/tmp/cache/img' : path.join(path.dirname(fileURLToPath(import.meta.url)), 'data', 'cache', 'img') // only /tmp is writable on Vercel
 const SIZES = [330, 500, 960] // Wikimedia's standard widths (other widths are slow or refused)
 const TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' }
 const AT_ONCE = 4 // downloads from Wikimedia at the same time

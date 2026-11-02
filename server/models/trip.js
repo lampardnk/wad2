@@ -63,7 +63,7 @@ const tripSchema = new mongoose.Schema({
     text: { type: String, trim: true, maxlength: 500 },
     editedAt: Date
   }, { timestamps: true })]
-}, { timestamps: true })
+}, { timestamps: true, optimisticConcurrency: true }) // a save based on an old copy fails (see VersionError in app.js)
 
 // Indexes for the lookups the app makes often (without them MongoDB reads every trip)
 tripSchema.index({ 'members.user': 1 })        // "trips I'm on"

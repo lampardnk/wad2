@@ -422,10 +422,12 @@ export default {
     this.loading = false
     this.loadPhoto()
     window.addEventListener('resize', this.fitStage)
+    window.addEventListener('trip-conflict', this.reloadTrip) // a save clashed with another device's
     this.$nextTick(this.fitStage)
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.fitStage)
+    window.removeEventListener('trip-conflict', this.reloadTrip)
   },
   methods: {
     // On small screens the header is shorter than 610px, so stop the dark background
