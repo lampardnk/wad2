@@ -1,71 +1,86 @@
 <template>
-  <!-- Transport → Other journeys: trips that aren't between two stops on the plan
-       (airport → hotel, a day trip to another city). Between-stop travel lives in the itinerary. -->
-  <section class="oj" aria-labelledby="oj-title">
-    <header class="oj-head">
-      <h2 id="oj-title" class="oj-title">Other journeys</h2>
-    </header>
-
+  <!-- Transport > Other journeys: trips that aren't between two stops on the plan
+       (airport to hotel, a day trip to another city). Between-stop travel lives in the itinerary. -->
+  <section class="mb-4" aria-labelledby="oj-title">
+    <h2 id="oj-title" class="h4 mb-3">Plan Journeys</h2>
+ 
     <!-- Plan a journey (or change a saved one) -->
-    <p v-if="editing" class="oj-editing" role="status">
-      <AppIcon name="pencil" :size="15" /> Changing <strong>{{ editing.from }} → {{ editing.to }}</strong>
-      <button type="button" class="oj-link" @click="cancelEdit">Cancel</button>
-    </p>
-    <form ref="formEl" class="oj-form" :class="{ editing: !!editing }" @submit.prevent="findWays">
-      <PlaceInput id="oj-from" v-model="fromText" label="From" :placeholder="fromHint" :groups="placeGroups" class="oj-field" />
-      <button type="button" class="oj-swap" aria-label="Swap from and to" title="Swap" @click="swap"><AppIcon name="swap" :size="16" /></button>
-      <PlaceInput id="oj-to" v-model="toText" label="To" :placeholder="toHint" :groups="placeGroups" class="oj-field" />
-      <div v-if="dayOptions.length" class="oj-field small">
-        <label for="oj-day">Day</label>
-        <CustomDropdown id="oj-day" v-model="day" :options="[{ value: '', label: 'Any day' }].concat(dayOptions)" block aria-label="Day" />
+    <div v-if="editing" class="alert alert-warning d-flex align-items-center py-2" role="status">
+      <AppIcon name="pencil" :size="15" class="me-2" />
+      <span>Changing <strong>{{ editing.from }} → {{ editing.to }}</strong></span>
+      <button type="button" class="btn btn-link btn-sm ms-auto p-0" @click="cancelEdit">Cancel</button>
+    </div>
+ 
+    <form ref="formEl" class="card card-body mb-3" :class="{ 'border-warning': !!editing }" @submit.prevent="findWays">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md">
+          <PlaceInput id="oj-from" v-model="fromText" label="From" :placeholder="fromHint" :groups="placeGroups" />
+        </div>
+        <div class="col-auto">
+          <button type="button" class="btn btn-outline-secondary" aria-label="Swap from and to" title="Swap" @click="swap">
+            <AppIcon name="swap" :size="16" />
+          </button>
+        </div>
+        <div class="col-12 col-md">
+          <PlaceInput id="oj-to" v-model="toText" label="To" :placeholder="toHint" :groups="placeGroups" />
+        </div>
+        <div v-if="dayOptions.length" class="col-12 col-md-3">
+          <label for="oj-day" class="form-label mb-1">Day</label>
+          <CustomDropdown id="oj-day" v-model="day" :options="[{ value: '', label: 'Any day' }].concat(dayOptions)" block aria-label="Day" />
+        </div>
+        <div class="col-12 col-md-auto">
+          <button type="submit" class="btn btn-primary w-100" :disabled="busy || !fromText.trim() || !toText.trim()">
+            {{ busy ? 'Finding…' : 'Find ways' }}
+          </button>
+        </div>
       </div>
-      <button type="submit" class="oj-go" :disabled="busy || !fromText.trim() || !toText.trim()">{{ busy ? 'Finding…' : 'Find ways' }}</button>
     </form>
-
-    <p v-if="error" class="oj-error" role="alert">{{ error }}</p>
-
+ 
+    <div v-if="error" class="alert alert-danger py-2" role="alert">{{ error }}</div>
+ 
     <!-- Ways to make this journey -->
-    <div v-if="result" class="oj-result">
-      <p class="oj-why">
+    <div v-if="result" class="mb-4">
+      <div class="alert alert-info">
         <strong>{{ result.fromName }} → {{ result.toName }}</strong><br>
         We suggest <strong>{{ label(result.recommended) }}</strong>: {{ result.reason }}.
         <span v-if="result.checking"> Checking live routes…</span>
-      </p>
+      </div>
       <TravelChoices :options="result.options" :recommended="result.recommended" :group="group" :maps-url="mapsUrl"
         :chosen="editing ? editing.mode : ''" :chosen-by="editing ? editing.by : ''"
         action-label="Save" :mark-in-use="false" @choose="saveJourney" />
-      <p class="oj-note">{{ editing ? 'Save replaces the saved journey.' : 'Save the way you\'ll go, so everyone on the trip can see it.' }}</p>
+      <p class="form-text mt-2">{{ editing ? 'Save replaces the saved journey.' : 'Save the way you\'ll go, so everyone on the trip can see it.' }}</p>
     </div>
-
+ 
     <!-- Flights between cities, added on itinerary days (read-only here: change them on their day) -->
     <template v-if="flights.length">
-      <h3 class="oj-h">Flights on the plan <span class="oj-count">{{ flights.length }}</span></h3>
-      <ul class="oj-list">
-        <li v-for="f in flights" :key="f.id" class="oj-item">
-          <span class="oj-item-icon sun" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
-          <span class="oj-item-main">
-            <strong>{{ shortAirport(f.from.name) }} → {{ shortAirport(f.to.name) }}</strong>
-            <small>{{ dayLabel(f.date) }} · takes off {{ f.dep }} · lands {{ f.arr }}<template v-if="f.number"> · {{ f.number }}</template> · on the itinerary</small>
-          </span>
+      <h3 class="h5 mt-4">Flights on the plan <span class="badge bg-secondary">{{ flights.length }}</span></h3>
+      <ul class="list-group mb-3">
+        <li v-for="f in flights" :key="f.id" class="list-group-item d-flex align-items-center">
+          <AppIcon name="plane" :size="18" class="me-3" />
+          <div>
+            <strong>{{ shortAirport(f.from.name) }} → {{ shortAirport(f.to.name) }}</strong><br>
+            <small class="text-muted">{{ dayLabel(f.date) }}, takes off {{ f.dep }}, lands {{ f.arr }}<template v-if="f.number">, flight {{ f.number }}</template>. Edit it on the itinerary.</small>
+          </div>
         </li>
       </ul>
     </template>
-
+ 
     <!-- Saved journeys -->
-    <h3 class="oj-h">Saved journeys <span class="oj-count">{{ journeys.length }}</span></h3>
-    <p v-if="!journeys.length" class="oj-empty">Nothing saved yet. Airport transfers and day trips you plan above appear here.</p>
-    <ul v-else class="oj-list">
-      <li v-for="j in journeys" :key="j.id" class="oj-item" :class="{ editing: editing && editing.id === j.id }">
-        <!-- Tap a saved journey to change it (it opens in the form above) -->
-        <button type="button" class="oj-item-open" :aria-label="'Change ' + j.from + ' to ' + j.to" @click="editJourney(j)">
-          <span class="oj-item-icon" aria-hidden="true"><AppIcon :name="MODES[j.mode].icon" :size="18" /></span>
-          <span class="oj-item-main">
-            <strong>{{ j.from }} → {{ j.to }}</strong>
-            <small>{{ MODES[j.mode].label }} · {{ durationText(j.min) }}<template v-if="j.date"> · {{ dayLabel(j.date) }}</template><template v-if="j.by"> · added by {{ j.by }}</template></small>
-          </span>
-          <span class="oj-item-edit" aria-hidden="true"><AppIcon name="pencil" :size="14" /> Change</span>
+    <h3 class="h5 mt-4">Saved Journeys <span class="badge bg-secondary">{{ journeys.length }}</span></h3>
+    <p v-if="!journeys.length" class="text-muted">Nothing saved yet. Airport transfers and day trips you plan above appear here.</p>
+    <ul v-else class="list-group">
+      <li v-for="j in journeys" :key="j.id" class="list-group-item d-flex align-items-center" :class="{ 'list-group-item-warning': editing && editing.id === j.id }">
+        <AppIcon :name="MODES[j.mode].icon" :size="18" class="me-3" />
+        <div class="flex-grow-1">
+          <strong>{{ j.from }} → {{ j.to }}</strong><br>
+          <small class="text-muted">{{ MODES[j.mode].label }}, {{ durationText(j.min) }}<template v-if="j.date">, {{ dayLabel(j.date) }}</template><template v-if="j.by">, added by {{ j.by }}</template></small>
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm me-2" :aria-label="'Change ' + j.from + ' to ' + j.to" @click="editJourney(j)">
+          <AppIcon name="pencil" :size="16" /> Change
         </button>
-        <button type="button" class="oj-del" :aria-label="'Delete ' + j.from + ' to ' + j.to" @click="removeJourney(j)"><AppIcon name="trash" :size="16" /></button>
+        <button type="button" class="btn btn-outline-danger btn-sm" :aria-label="'Delete ' + j.from + ' to ' + j.to" @click="removeJourney(j)">
+          <AppIcon name="trash" :size="16" /> Delete
+        </button>
       </li>
     </ul>
   </section>
@@ -94,7 +109,8 @@ const props = defineProps({
   endDate: { type: String, default: '' },
   initialJourneys: { type: Array, default: () => [] },
   prefs: { type: Object, default: () => ({}) },
-  flights: { type: Array, default: () => [] } // flights on itinerary days: [{ id, date, from, to, dep, arr, number }]
+  flights: { type: Array, default: () => [] }, // flights on itinerary days: [{ id, date, from, to, dep, arr, number }]
+  wishlist: { type: Array, default: () => [] }
 })
 function shortAirport(name) {
   return name.replace(/ (International )?Airport.*$/i, '').split(',')[0]
@@ -122,18 +138,39 @@ function durationText(min) {
 // Places to pick from, in groups: your hotel, the stops on your plan, the trip's cities and their airports
 const placeGroups = computed(() => {
   const groups = []
+  // hotels
   const hotels = []
   for (const st of props.stays) {
     if (hotels.some((h) => h.label === st.name)) continue
     hotels.push({ label: st.name, sub: st.from ? 'From ' + dayLabel(st.from) : st.city ? st.city.split(', ')[0] : '' })
   }
   if (hotels.length) groups.push({ label: hotels.length === 1 ? 'Your hotel' : 'Your hotels', icon: 'door', items: hotels })
+  // wishlist places (excludes places already on the plan)
+  const wishlistItems = []
+  for (const w of props.wishlist) {
+    if (!w.name) continue
+    
+    // check if place is already listed on the itinerary stops
+    const isOnPlan = props.stops.some((s) => s.name && s.name.trim().toLowerCase() === w.name.trim().toLowerCase())
+    
+    if (!isOnPlan && !wishlistItems.some((x) => x.label === w.name)) {
+      wishlistItems.push({
+        label: w.name,
+        sub: w.city ? w.city.split(', ')[0] + ' · Wishlist' : 'Wishlist item'
+      })
+    }
+  }
+  if (wishlistItems.length) {
+    groups.push({ label: 'Wishlist', icon: 'bookmark', items: wishlistItems })
+  }
+  // plan stops
   const stops = []
   for (const s of props.stops) {
     if (!s.name || stops.some((x) => x.label === s.name)) continue
     stops.push({ label: s.name, sub: s.date ? dayLabel(s.date) : '' })
   }
   if (stops.length) groups.push({ label: 'On your plan', icon: 'map-pin', items: stops })
+  // airports & cities
   const cities = []
   const airports = []
   for (const a of props.myAirports) airports.push({ label: a.name, sub: 'Your flight' })
@@ -151,15 +188,22 @@ const toHint = computed(() => (props.stays.length ? 'e.g. ' + props.stays[0].nam
 // What to look a typed place up by: a stop's address or the hotel's, when it's one of those
 function lookupText(text) {
   const t = text.trim()
+  // check wishlist
+  const wish = props.wishlist.find((x) => x.name === t)
+  if (wish && wish.address) return wish.address
+  // check hotel
   const hotel = props.stays.find((x) => x.name === t)
   if (hotel && hotel.address) return hotel.address
+  // check stops
   const stop = props.stops.find((s) => s.name === t)
   return stop && stop.address ? stop.address : t
 }
 // Hotels and my airports already have a map position: no lookup needed
 function knownPlace(text) {
   const t = text.trim()
-  const p = props.stays.find((x) => x.name === t) || props.myAirports.find((x) => x.name === t)
+  const p = props.wishlist.find((x) => x.name === t) || props.stays.find((x) => x.name === t) || 
+    props.myAirports.find((x) => x.name === t)
+            
   return p && p.lat != null ? { lat: p.lat, lon: p.lon } : null
 }
 
@@ -314,255 +358,7 @@ function removeJourney(j) {
 </script>
 
 <style scoped>
-.oj {
-  color: #001d2c;
-}
-.oj-title {
-  margin: 0 0 6px;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.25rem;
-  color: #003d5b;
-}
-.oj-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 10px;
-  padding: 16px;
-  border-radius: 22px;
-  background: #fbf5ea;
-  border: 1px solid #ece4d6;
-}
-.oj-field {
-  flex: 1 1 200px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.oj-field.small {
-  flex: 0 1 190px;
-}
-.oj-field label {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #003d5b;
-}
-.oj-input {
-  border: 1.5px solid transparent;
-  border-radius: 14px;
-  background: #f6f2eb;
-  padding: 10px 12px;
-  font: inherit;
-  font-size: 14px;
-  color: #001d2c;
-}
-.oj-input:focus {
-  outline: none;
-  background: #fbf5ea;
-  border-color: #edae49;
-  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.2);
-}
-.oj-swap {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border: 0;
-  border-radius: 50%;
-  background: #f6f2eb;
-  color: #003d5b;
-}
-.oj-go {
-  flex: none;
-  border: 0;
-  border-radius: 999px;
-  background: #edae49;
-  color: #001d2c;
-  font-weight: 700;
-  padding: 11px 22px;
-  box-shadow: 0 6px 18px rgba(237, 174, 73, 0.3);
-}
-.oj-go:disabled {
-  opacity: 0.5;
-  box-shadow: none;
-}
-.oj-error {
-  margin: 10px 0 0;
-  color: #d1495b;
-  font-weight: 600;
-  font-size: 14px;
-}
-.oj-result {
-  margin-top: 16px;
-}
-.oj-why {
-  margin: 0 0 12px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: #fbefd9;
-  font-size: 14px;
-  line-height: 1.45;
-}
-.oj-note {
-  margin: 10px 0 0;
-  font-size: 12.5px;
-  color: #5a6b78;
-}
-.oj-h {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 26px 0 10px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #003d5b;
-}
-.oj-count {
-  padding: 1px 9px;
-  border-radius: 999px;
-  background: #fbefd9;
-  font-size: 12px;
-}
-.oj-empty {
-  margin: 0;
-  font-size: 14px;
-  color: #5a6b78;
-}
-.oj-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.oj-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: #fbf5ea;
-  border: 1px solid #ece4d6;
-}
-.oj-item-icon {
-  flex: none;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: #003d5b;
-  color: #fff;
-}
-.oj-item {
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.oj-item:hover,
-.oj-item.editing {
-  border-color: #edae49;
-  box-shadow: 0 6px 16px rgba(0, 61, 91, 0.08);
-}
-.oj-item.editing {
-  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.3);
-}
-/* The card's main part is one big button (the delete button sits beside it) */
-.oj-item-open {
-  flex: 1;
+.oj-open {
   min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: -12px 0 -12px -14px;
-  padding: 12px 0 12px 14px;
-  border: 0;
-  border-radius: 18px 0 0 18px;
-  background: none;
-  text-align: left;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.oj-item-open:focus-visible {
-  outline: 3px solid rgba(237, 174, 73, 0.7);
-  outline-offset: -3px;
-}
-.oj-item-edit {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #00798c;
-}
-.oj-item-open:hover .oj-item-edit {
-  background: #e6f2f4;
-}
-.oj-editing {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 8px;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: #fbefd9;
-  color: #7a4b00;
-  font-size: 13.5px;
-}
-.oj-link {
-  margin-left: auto;
-  border: 0;
-  background: none;
-  padding: 0;
-  color: #00798c;
-  font-weight: 700;
-  text-decoration: underline;
-}
-.oj-form.editing {
-  border-color: #edae49;
-}
-.oj-item-icon.sun {
-  background: #edae49;
-  color: #001d2c;
-}
-.oj-item-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.oj-item-main small {
-  color: #5a6b78;
-}
-.oj-del {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 50%;
-  background: #f6f2eb;
-  color: #5a6b78;
-}
-.oj-del:hover {
-  background: #fbe7ea;
-  color: #d1495b;
-}
-.oj-swap:focus-visible,
-.oj-go:focus-visible,
-.oj-del:focus-visible {
-  outline: 3px solid rgba(237, 174, 73, 0.7);
-  outline-offset: 2px;
-}
-@media (max-width: 640px) {
-  .oj-swap {
-    align-self: center;
-  }
-  .oj-go {
-    width: 100%;
-  }
 }
 </style>
