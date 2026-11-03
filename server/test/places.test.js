@@ -5,9 +5,6 @@ import assert from 'node:assert/strict'
 import mongoose from 'mongoose'
 import request from 'supertest'
 import { MongoMemoryServer } from 'mongodb-memory-server'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
 import { pointFromMapsLink, isGoogleMapsLink } from '../mapsLink.js'
 
 let db, app, auth, tripId
@@ -18,7 +15,6 @@ before(async () => {
   process.env.MONGODB_URI = db.getUri()
   process.env.JWT_SECRET = 'test-secret'
   process.env.GEOAPIFY_KEY = 'test-key'
-  process.env.CACHE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'places-test-'))
   // Fake Geoapify: knows only "Kinkaku-ji"; anything else matches nothing
   globalThis.fetch = async (url, opts) => {
     const u = new URL(String(url))

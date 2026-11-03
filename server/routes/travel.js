@@ -2,14 +2,14 @@
 // GET /api/travel/leg?from=34.6937,135.5023&to=34.6650,135.4320
 //   -> { walk: { min, km }, bike: {...}, taxi: {...}, transit: {...} }  (only the ones we could look up)
 // Real routes come from Geoapify (needs GEOAPIFY_KEY). Without it, or if a lookup fails, the answer
-// has fewer modes (or none) and the app shows its own estimate instead. Answers are kept on disk.
+// has fewer modes (or none) and the app shows its own estimate instead. Answers are kept in the database.
 import express from 'express'
 import { requireAuth } from './auth.js'
 import { geoapifyReady, geoapifyRoute } from '../geoapify.js'
-import { diskMap } from '../diskCache.js'
+import { sharedCache } from '../sharedCache.js'
 
 const router = express.Router()
-const legs = diskMap('travel-legs', 8000)
+const legs = sharedCache('travel-legs', { keepDays: 90 }) // roads rarely change
 const running = new Map() // the same leg asked for twice at once is looked up once
 
 // Our names -> Geoapify's
@@ -39,14 +39,15 @@ router.get('/leg', requireAuth, async (req, res) => {
   if (!from || !to) return res.status(400).json({ message: 'Where from and to?' })
   if (!geoapifyReady()) return res.json({}) // the app estimates by itself
   const key = from.lat + ',' + from.lon + '>' + to.lat + ',' + to.lon
-  if (legs.has(key)) return res.json(legs.get(key))
+  const saved = await legs.get(key)
+  if (saved) return res.json(saved.value)
   let job = running.get(key)
   if (!job) {
     job = lookUp(from, to).finally(() => running.delete(key))
     running.set(key, job)
   }
   const found = await job
-  if (Object.keys(found).length) legs.set(key, found) // nothing found = try again next time
+  if (Object.keys(found).length) await legs.set(key, found) // nothing found = try again next time
   res.json(found)
 })
 

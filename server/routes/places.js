@@ -1,7 +1,7 @@
 import express from 'express'
 import { wikiFetch, overpassInTurn, serverIsResting, restServer } from '../politeFetch.js'
 import { geoapifyReady, geoapifySearch, geoapifyAttractions } from '../geoapify.js'
-import { diskMap } from '../diskCache.js'
+import { sharedCache } from '../sharedCache.js'
 import { requireAuth } from './auth.js'
 import Attraction from '../models/Attraction.js'
 import fs from 'fs'
@@ -19,9 +19,8 @@ try {
 
 const router = express.Router()
 
-// Remember recent searches so typing the same letters again is instant and free
-const cache = new Map()
-const CACHE_LIMIT = 300
+// Remember searches so typing the same letters again is instant and free (kept in the database)
+const cache = sharedCache('destination-search', { keepDays: 30 })
 
 // Place types we want to suggest (cities, towns, regions, countries...)
 
@@ -32,7 +31,8 @@ router.get('/', requireAuth, async (req, res) => {
   if (q.length < 2 || q.length > 60) return res.json([])
 
   const key = q.toLowerCase()
-  if (cache.has(key)) return res.json(cache.get(key))
+  const known = await cache.get(key)
+  if (known) return res.json(known.value)
 
   let data
   try {
@@ -74,8 +74,7 @@ router.get('/', requireAuth, async (req, res) => {
     results.push({ label: r.label, name: r.name, country: r.country, countryCode: r.countryCode, type: r.type })
   }
 
-  if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value) // forget the oldest
-  cache.set(key, results)
+  await cache.set(key, results)
   res.json(results)
 })
 
@@ -483,9 +482,9 @@ async function locatePlace(destination) {
 // A photo for each place, trying (in order):
 //   1. the Wikipedia article OpenStreetMap links to   2. the Wikidata entry's main image
 //   3. a Wikipedia search for "name city"              4. a Wikimedia Commons photo search
-// Answers are kept in memory (photos for a day, "no photo" for an hour).
+// Answers are kept in the database (photos for a day, "no photo" for an hour).
 // ---------------------------------------------------------------------
-const placePhotos = diskMap('place-photos') // 'name|city' -> { url, at } (kept on disk, survives restarts)
+const placePhotos = sharedCache('place-photos', { keepDays: 7 }) // 'name|city' -> url (null = no photo found)
 
 function plainWords(text) {
   return plain(text).split(/[^a-z0-9]+/).filter((w) => w.length > 2)
@@ -549,8 +548,8 @@ async function photoFromCommons(name, city) {
 }
 async function photoForPlace(name, city, item) {
   const key = plain(name) + '|' + plain(city)
-  const known = placePhotos.get(key)
-  if (known && Date.now() - known.at < (known.url ? 86400000 : 3600000)) return known.url
+  const known = await placePhotos.get(key)
+  if (known && Date.now() - known.at < (known.value ? 86400000 : 3600000)) return known.value
   const steps = []
   if (item && item.wiki) steps.push(() => photoFromArticle(item.wiki))
   if (item && item.wikidata) steps.push(() => photoFromWikidata(item.wikidata))
@@ -565,7 +564,7 @@ async function photoForPlace(name, city, item) {
     }
     if (url) break
   }
-  placePhotos.set(key, { url, at: Date.now() })
+  await placePhotos.set(key, url)
   return url
 }
 
@@ -625,7 +624,7 @@ function plain(text) {
 // Tries the city's article, then "Tourism in <country>", then the country.
 // Flags and maps (usually .svg) are skipped so we get a real photo.
 // ---------------------------------------------------------------------
-const photos = diskMap('destination-photos', 1000) // destination -> result (kept on disk)
+const photos = sharedCache('destination-photos', { keepDays: 90 }) // destination -> result (kept in the database)
 
 async function wikiPhoto(title, width) {
   const url = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_'))
@@ -674,7 +673,8 @@ router.get('/photo', requireAuth, async (req, res) => {
   // Wikimedia's standard widths: 330 for little thumbnails (itinerary stops), 960 for cards, 1920 for banners
   const width = req.query.size === 'thumb' ? 330 : req.query.size === 'small' ? 960 : 1920
   const key = width + '|' + destination.toLowerCase()
-  if (photos.has(key)) return res.json(photos.get(key))
+  const known = await photos.get(key)
+  if (known) return res.json(known.value)
 
   const parts = destination.split(',').map((x) => x.trim()).filter(Boolean)
   const place = parts[0]
@@ -709,10 +709,7 @@ router.get('/photo', requireAuth, async (req, res) => {
     }
   }
   // Only remember found photos, so a miss (or a network hiccup) is tried again next time
-  if (result.url) {
-    if (photos.size >= CACHE_LIMIT) photos.delete(photos.keys().next().value)
-    photos.set(key, result)
-  }
+  if (result.url) await photos.set(key, result)
   res.json(result)
 })
 

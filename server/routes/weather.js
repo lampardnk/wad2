@@ -1,11 +1,13 @@
 import express from 'express'
 import { requireAuth } from './auth.js'
+import { sharedCache } from '../sharedCache.js'
 
 const router = express.Router()
 
 const CACHE_MINUTES = 15
-const weatherCache = {} // "lat,lon" -> { time, data }
-const placeCache = {}   // "kyoto, japan" -> { lat, lon }
+// (kept in the database: see sharedCache.js)
+const weatherCache = sharedCache('weather', { keepDays: 1 })        // "lat,lon" -> forecast
+const placeCache = sharedCache('weather-places', { keepDays: 365 }) // "kyoto, japan" -> { lat, lon }
 
 // GET /api/weather?lat=37.56&lon=126.97   OR   /api/weather?q=Kyoto, Japan
 router.get('/', requireAuth, async (req, res) => {
@@ -21,9 +23,10 @@ router.get('/', requireAuth, async (req, res) => {
   if (req.query.q) {
     const q = String(req.query.q).slice(0, 100)
     const placeKey = q.toLowerCase()
-    if (placeCache[placeKey]) {
-      lat = placeCache[placeKey].lat
-      lon = placeCache[placeKey].lon
+    const known = await placeCache.get(placeKey)
+    if (known) {
+      lat = known.value.lat
+      lon = known.value.lon
     } else {
       const geoParams = new URLSearchParams({ q, limit: '1', appid: key })
       const geoRes = await fetch('https://api.openweathermap.org/geo/1.0/direct?' + geoParams, { signal: AbortSignal.timeout(10000) })
@@ -35,7 +38,7 @@ router.get('/', requireAuth, async (req, res) => {
       if (!geo.length) return res.status(404).json({ message: 'Could not find that destination for weather.' })
       lat = geo[0].lat
       lon = geo[0].lon
-      placeCache[placeKey] = { lat, lon }
+      await placeCache.set(placeKey, { lat, lon })
     }
   }
 
@@ -45,9 +48,9 @@ router.get('/', requireAuth, async (req, res) => {
 
   // Same area asked for again within 15 minutes? Answer from memory (free)
   const cacheKey = lat.toFixed(2) + ',' + lon.toFixed(2)
-  const saved = weatherCache[cacheKey]
-  if (saved && Date.now() - saved.time < CACHE_MINUTES * 60 * 1000) {
-    return res.json(saved.data)
+  const saved = await weatherCache.get(cacheKey)
+  if (saved && Date.now() - saved.at < CACHE_MINUTES * 60 * 1000) {
+    return res.json(saved.value)
   }
 
   console.log('Calling OpenWeather for', cacheKey)
@@ -60,7 +63,7 @@ router.get('/', requireAuth, async (req, res) => {
   }
   const data = await response.json()
   const result = { city: { timezone: data.city.timezone }, list: data.list }
-  weatherCache[cacheKey] = { time: Date.now(), data: result }
+  await weatherCache.set(cacheKey, result)
   res.json(result)
 })
 

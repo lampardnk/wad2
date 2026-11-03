@@ -2,7 +2,7 @@ import express from 'express'
 import { requireAuth } from './auth.js'
 import { askOverpassFast } from './places.js'
 import { geoapifyReady, geoapifySearch } from '../geoapify.js'
-import { diskMap } from '../diskCache.js'
+import { sharedCache } from '../sharedCache.js'
 
 // Safety tab helpers. These run on our server (not in the browser) so that:
 //  - busy OpenStreetMap servers are retried and results are cached (no more 504s in the browser)
@@ -11,14 +11,9 @@ const router = express.Router()
 const HEADERS = { 'User-Agent': 'ChuiseYourTrip/1.0 (SMU IS216 student project)' }
 const DAY = 24 * 60 * 60 * 1000
 
-const nearbyCache = new Map() // 'lat,lon,home' -> { time, data }
-const placeCache = diskMap('located-places') // 'kyoto, japan' -> place (kept on disk, survives restarts)
-const LIMIT = 2000 // entries kept per cache
-
-function remember(map, key, value) {
-  if (map.size >= LIMIT) map.delete(map.keys().next().value)
-  map.set(key, value)
-}
+// (kept in the database: see sharedCache.js)
+const nearbyCache = sharedCache('safety-nearby', { keepDays: 2 }) // 'lat,lon,home' -> { until, data }
+const placeCache = sharedCache('located-places', { keepDays: 180 }) // 'kyoto, japan|' -> place
 
 // Round to 3 decimals (about 100 m): enough for safety info, kinder to privacy, and cache-friendly
 const round = (n) => Math.round(Number(n) * 1000) / 1000
@@ -119,18 +114,20 @@ router.get('/locate', requireAuth, async (req, res) => {
   const near = String(req.query.near || '').trim().slice(0, 120)
   if (!place) return res.status(400).json({ message: 'Which place?' })
   const key = (place + '|' + near).toLowerCase()
-  if (placeCache.has(key)) return res.json(placeCache.get(key))
+  const known = await placeCache.get(key)
+  if (known) return res.json(known.value)
   try {
     let found = null
     if (near) {
       // Where the city is (cached like any other lookup)
       const cityKey = (near + '|').toLowerCase()
-      let city = placeCache.get(cityKey)
+      const knownCity = await placeCache.get(cityKey)
+      let city = knownCity ? knownCity.value : null
       if (!city) {
         const f = await locateOne(near)
         if (f) {
           city = toResult(f, near)
-          remember(placeCache, cityKey, city)
+          await placeCache.set(cityKey, city)
         }
       }
       if (city) {
@@ -163,7 +160,7 @@ router.get('/locate', requireAuth, async (req, res) => {
       if (!f) return res.status(404).json({ message: 'Could not find that place.' })
       found = toResult(f, place)
     }
-    remember(placeCache, key, found)
+    await placeCache.set(key, found)
     res.json(found)
   } catch (err) {
     res.status(502).json({ message: 'Place lookup is unavailable right now.' })
@@ -282,7 +279,8 @@ router.get('/nearby', requireAuth, async (req, res) => {
     return res.status(400).json({ message: 'Invalid location.' })
   }
   const key = lat + ',' + lon + ',' + home
-  const saved = nearbyCache.get(key)
+  const known = await nearbyCache.get(key)
+  const saved = known ? known.value : null
   if (saved && Date.now() < saved.until) return res.json(saved.data)
 
   const at = lat + ',' + lon
@@ -319,7 +317,7 @@ router.get('/nearby', requireAuth, async (req, res) => {
 
   const data = { lat, lon, places, partial: !complete }
   // A full answer is kept for a day; a partial one (backup source / no embassy) only for 10 minutes
-  remember(nearbyCache, key, { until: Date.now() + (complete ? DAY : 10 * 60 * 1000), data })
+  await nearbyCache.set(key, { until: Date.now() + (complete ? DAY : 10 * 60 * 1000), data })
   res.json(data)
 })
 

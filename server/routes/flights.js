@@ -1,10 +1,12 @@
 import express from 'express'
 import { requireAuth } from './auth.js'
+import { sharedCache } from '../sharedCache.js'
 
 const router = express.Router()
 
 // The free plan only allows about 100 requests a month, so remember answers for 15 minutes
-const cache = {}
+// (in the database, so every server instance shares them)
+const cache = sharedCache('flights', { keepDays: 2 })
 const CACHE_MINUTES = 15
 
 // GET /api/flights?flight=KE621
@@ -17,9 +19,9 @@ router.get('/', requireAuth, async (req, res) => {
     return res.status(503).json({ message: 'Flights are not set up yet (AVIATIONSTACK_API_KEY missing in server/.env).' })
   }
 
-  const saved = cache[flight]
-  if (saved && Date.now() - saved.time < CACHE_MINUTES * 60 * 1000) {
-    return res.json(saved.data)
+  const saved = await cache.get(flight)
+  if (saved && Date.now() - saved.at < CACHE_MINUTES * 60 * 1000) {
+    return res.json(saved.value)
   }
 
   const params = new URLSearchParams({ access_key: process.env.AVIATIONSTACK_API_KEY, flight_iata: flight })
@@ -51,7 +53,7 @@ router.get('/', requireAuth, async (req, res) => {
     originalArrival: arr.scheduled,
     newArrival: arrivedAt
   }
-  cache[flight] = { time: Date.now(), data }
+  await cache.set(flight, data)
   res.json(data)
 })
 

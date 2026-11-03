@@ -4,34 +4,21 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { requireAuth } from './auth.js'
+import { sharedCache } from '../sharedCache.js'
 
 const router = express.Router()
 
 // ---------- climate for any city (Open-Meteo, free, no key) ----------
-// Saved to a file, so each city is only looked up once ever
-// (the file in the repo is read first; on Vercel new lookups are saved to /tmp, the only writable folder)
+// Each city is only looked up once: the cities in the repo file come ready, new ones are kept in the
+// database (see sharedCache.js), so every server instance shares them
 const REPO_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'discover-climate.json')
-const CACHE_FILE = process.env.VERCEL ? '/tmp/discover-climate.json' : REPO_FILE
 let climate = {}
-for (const file of [REPO_FILE, CACHE_FILE]) {
-  try {
-    Object.assign(climate, JSON.parse(fs.readFileSync(file, 'utf8')))
-  } catch (err) {
-    // no file yet
-  }
+try {
+  climate = JSON.parse(fs.readFileSync(REPO_FILE, 'utf8'))
+} catch (err) {
+  // no file: everything is looked up
 }
-let saveTimer = null
-function saveClimate() {
-  clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    try {
-      fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true })
-      fs.writeFileSync(CACHE_FILE, JSON.stringify(climate))
-    } catch (err) {
-      console.warn('Could not save the climate cache:', err.message)
-    }
-  }, 1000)
-}
+const climateCache = sharedCache('climate', { keepDays: 365 }) // last year's weather doesn't change
 
 async function getJson(url) {
   const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
@@ -44,6 +31,8 @@ async function climateFor(label, want) {
   // want = the country code the browser expects, e.g. 'TR' for "Cappadocia, Turkey"
   // A saved answer in the wrong country (an older lookup picked a same-named town) is looked up again
   if (climate[label] && (!want || climate[label].cc === want)) return climate[label]
+  const known = await climateCache.get(label)
+  if (known && (!want || known.value.cc === want)) return known.value
   const name = label.split(', ')[0]
   const geo = await getJson('https://geocoding-api.open-meteo.com/v1/search?' + new URLSearchParams({ name, count: '10', language: 'en' }))
   const results = geo.results || []
@@ -72,8 +61,7 @@ async function climateFor(label, want) {
   const temp = []
   for (let m = 0; m < 12; m++) temp.push(days[m] ? Math.round(sum[m] / days[m]) : null)
   const info = { label, lat: place.latitude, lon: place.longitude, cc: place.country_code, temp, rain }
-  climate[label] = info
-  saveClimate()
+  await climateCache.set(label, info)
   return info
 }
 

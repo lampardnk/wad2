@@ -1,6 +1,7 @@
 import express from 'express'
 import { requireAuth } from './auth.js'
 import { askOverpassFast } from './places.js'
+import { sharedCache } from '../sharedCache.js'
 
 // GET /api/eat?lat=30.66&lon=104.06
 // -> places to eat within about 1.2 km (OpenStreetMap):
@@ -9,7 +10,7 @@ import { askOverpassFast } from './places.js'
 const router = express.Router()
 const HEADERS = { 'User-Agent': 'ChuiseYourTrip/1.0 (SMU IS216 student project)' }
 const DAY = 24 * 60 * 60 * 1000
-const cache = new Map()
+const cache = sharedCache('eat', { keepDays: 7 }) // kept in the database (see sharedCache.js)
 
 const round3 = (n) => Math.round(Number(n) * 1000) / 1000
 const yes = (v) => v === 'yes' || v === 'only'
@@ -78,7 +79,8 @@ router.get('/', requireAuth, async (req, res) => {
     return res.status(400).json({ message: 'Invalid location.' })
   }
   const key = lat + ',' + lon
-  const saved = cache.get(key)
+  const known = await cache.get(key)
+  const saved = known ? { time: known.at, places: known.value } : null
   if (saved && Date.now() - saved.time < DAY) return res.json(saved.places)
   let places = []
   try {
@@ -88,8 +90,7 @@ router.get('/', requireAuth, async (req, res) => {
     places = await fromPhoton(lat, lon)
   }
   if (!places.length && saved) return res.json(saved.places)
-  if (cache.size > 300) cache.delete(cache.keys().next().value)
-  if (places.length) cache.set(key, { time: Date.now(), places })
+  if (places.length) await cache.set(key, places)
   res.json(places)
 })
 

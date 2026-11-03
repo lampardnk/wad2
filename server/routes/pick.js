@@ -7,10 +7,10 @@ import express from 'express'
 import { requireAuth } from './auth.js'
 import { geoapifyReady, geoapifyAutocomplete, geoapifyReverse } from '../geoapify.js'
 import { isGoogleMapsLink, isShortLink, pointFromMapsLink } from '../mapsLink.js'
-import { diskMap } from '../diskCache.js'
+import { sharedCache } from '../sharedCache.js'
 
 const router = express.Router()
-const suggestions = diskMap('place-suggest', 3000)
+const suggestions = sharedCache('place-suggest', { keepDays: 30 })
 const NOT_READY = 'Place search is not set up on this server (GEOAPIFY_KEY is missing).'
 
 function point(lat, lon) {
@@ -26,10 +26,11 @@ router.get('/suggest', requireAuth, async (req, res) => {
   const [lat, lon] = String(req.query.near || '').split(',')
   const near = point(lat, lon)
   const key = q.toLowerCase() + '|' + (near ? near.lat.toFixed(2) + ',' + near.lon.toFixed(2) : '')
-  if (suggestions.has(key)) return res.json(suggestions.get(key))
+  const saved = await suggestions.get(key)
+  if (saved) return res.json(saved.value)
   try {
     const list = await geoapifyAutocomplete({ q, near })
-    suggestions.set(key, list)
+    await suggestions.set(key, list)
     res.json(list)
   } catch (err) {
     console.error('Place suggest failed:', err.message)
