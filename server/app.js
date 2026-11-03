@@ -21,7 +21,6 @@ import inviteRoutes from './routes/invites.js'
 import friendRoutes from './routes/friends.js'
 import safetyRoutes from './routes/safety.js'
 import groupRoutes from './routes/groups.js'
-import mapRoutes from './routes/maps.js'
 import eatRoutes from './routes/eat.js'
 import discoverRoutes from './routes/discover.js'
 import { imageRoute, flagRoute } from './images.js'
@@ -89,7 +88,6 @@ app.use('/api/places', placeRoutes)
 app.use('/api/travel', travelRoutes) // travel times between stops (itinerary, Other journeys)
 app.use('/api/rates', rateRoutes)
 app.use('/api/safety', safetyRoutes)
-app.use('/api/maps', mapRoutes)
 app.use('/api/eat', eatRoutes)
 app.use('/api/discover', discoverRoutes)
 app.get('/api/flag/:code', flagRoute) // country flags from our disk (Discover's country banners)

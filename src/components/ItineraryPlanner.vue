@@ -2966,19 +2966,9 @@ function stepSelected(step) {
   if (i >= 0 && i < stopRows.value.length) selectedId.value = stopRows.value[i].stop.id
 }
 
-// Which map tiles to use (asked once)
-let tilesPromise = null
-function tileConfig() {
-  if (!tilesPromise) {
-    tilesPromise = axios.get('/api/maps/config', { keep: true, timeout: 4000 }) // quick: the map shouldn't wait
-      .then((res) => res.data)
-      .catch(() => ({
-        tiles: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
-      }))
-  }
-  return tilesPromise
-}
+// Map tiles: OpenStreetMap (free, no key)
+const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+const TILES_CREDIT = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
 
 async function drawMap() {
   if (view.value !== 'map') return
@@ -2995,9 +2985,7 @@ async function drawMap() {
   if (!map || map.getContainer() !== mapEl.value) {
     if (map) map.remove()
     map = L.map(mapEl.value, { zoomControl: true, attributionControl: true })
-    // Tiles: MapTiler if the server has a key (MAPTILER_KEY in server/.env), otherwise OpenStreetMap
-    const tiles = await tileConfig()
-    L.tileLayer(tiles.tiles, { maxZoom: 19, attribution: tiles.attribution }).addTo(map)
+    L.tileLayer(TILES, { maxZoom: 19, attribution: TILES_CREDIT }).addTo(map)
   }
   if (layer) layer.remove()
   layer = L.layerGroup().addTo(map)
