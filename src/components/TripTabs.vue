@@ -166,6 +166,8 @@ onBeforeUnmount(() => {
 .tt-track {
   display: flex;
   gap: 2px;
+  /* room above and below so the open tab's raised edge and the hover lift aren't cut off */
+  padding: 2px 0 4px;
   border-radius: 9999px;
   overflow: hidden;
 }

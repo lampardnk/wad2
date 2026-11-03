@@ -215,7 +215,7 @@
               </li>
 
               <!-- Lunch / dinner break (kept free when no meal is planned) -->
-              <li v-if="it.stop.virtual" class="ip-stop ip-meal-row">
+              <li v-if="it.stop.virtual" class="ip-stop ip-meal-row" :class="{ first: i === 0, last: i === timeline.length - 1 }">
                 <span class="ip-num meal" aria-hidden="true"><AppIcon :name="lineIconFor(it.stop.icon)" :size="16" /></span>
                 <div class="ip-meal">
                   <span class="ip-when">{{ formatHour(it.start) }} <small>· {{ durationText(it.stop.duration) }}</small></span>
@@ -224,7 +224,7 @@
                 </div>
               </li>
 
-              <li v-else class="ip-stop" :data-i="i" :class="{ moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
+              <li v-else class="ip-stop" :data-i="i" :class="{ first: i === 0, last: i === timeline.length - 1, moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
                 <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }"
@@ -3392,14 +3392,18 @@ watch(
 
 /* ---------- Timeline ---------- */
 .ip-list { position: relative; list-style: none; margin: 0; padding: 0; }
-.ip-list::before {
+/* The dotted line: each row draws its own piece, so it always runs from the first number to the last */
+.ip-stop::before, .ip-gap::before {
   content: '';
   position: absolute;
-  top: 30px;
-  bottom: 40px;
+  top: 0;
+  bottom: 0;
   left: 15px;
   border-left: 2px dashed var(--edge-strong);
 }
+.ip-stop.first::before { top: 50%; }
+.ip-stop.last::before { bottom: 50%; }
+.ip-stop.first.last::before, .ip-gap.first::before, .ip-gap.end::before { display: none; }
 .ip-stop { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: center; }
 .ip-stop.moving { opacity: 0.4; }
 .ip-stop.menu-open { z-index: 20; }
@@ -3418,7 +3422,7 @@ watch(
 }
 .ip-num.sm { position: absolute; top: 8px; left: 8px; width: 26px; height: 26px; font-size: 12px; box-shadow: none; }
 .ip-num.meal { background: #fff; border: 2px dashed var(--edge-strong); font-size: 15px; }
-.ip-gap { min-height: 12px; padding-left: 44px; display: flex; align-items: center; }
+.ip-gap { position: relative; min-height: 12px; padding-left: 44px; display: flex; align-items: center; }
 .ip-gap.end:not(.show) { min-height: 0; }
 .ip-list.dragging .ip-gap { min-height: 40px; }
 .ip-drop {
