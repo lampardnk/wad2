@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mongo:
-        image: mongo:8
+        image: mongo:7 # mongo 8 refuses to start on the runner's Linux 6.19+ kernel (SERVER-121912)
         ports: ['27017:27017']
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mongo:
-        image: mongo:8
+        image: mongo:7 # mongo 8 refuses to start on the runner's Linux 6.19+ kernel (SERVER-121912)
         ports: ['27017:27017']
     steps:
       - uses: actions/checkout@v4
