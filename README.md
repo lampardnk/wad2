@@ -25,6 +25,44 @@ Any other branch also gets its own preview address: `chuise-your-trip-git-<branc
 2. Put the settings in `server/.env` (`MONGODB_URI`, `JWT_SECRET`, and the API keys)
 3. `pnpm dev:api` (server on port 3000) and `pnpm dev` (app on port 5173)
 
+## Folder structure
+
+```
+src/                    Vue app (Vite)
+  main.js, App.vue      entry point and app shell
+  auth.js, friends.js, onboarding.js, preferences.js   app-wide state
+  router/               page routes
+  views/                one file per page (Home, Trip, Settings, Join, Login, Signup, Forgot password)
+  components/           grouped by feature
+    common/             shared widgets: icons, CustomDropdown, toast, flag, place / phone / diet inputs
+    auth/               login and signup page parts
+    home/               home page parts (new-trip notebook, passport)
+    account/            profile menu, friends drawer
+    trip/               trip page shell: tabs, share, edit, recap, map, packing, photos, flight delay
+    itinerary/          planner, stop / leg sheets, schedule, crowd chart, other journeys
+    places/             wishlist and voting
+    expenses/           expenses, expense form, exchange rates
+    crew/               crew cards and the details form
+    safety/             safety tab and radar
+  lib/                  plain JavaScript (no Vue), grouped by feature
+    itinerary/          day optimizer, crowds, itinerary store, shortlist
+    trip/               expenses maths, packing list, trip and crew options, destinations, delay cascade
+    ui/                 doodles, icons, stamps, map shapes, notifications, zip
+  services/             calls to the server and outside APIs (weather, safety, map)
+  data/                 static JSON and catalogs (attractions, cities, avatars)
+  assets/               CSS and images
+server/                 Express API (MongoDB)
+  index.js, app.js      start-up and route wiring
+  routes/               one file per API area (/api/trips, /api/auth, ...)
+  models/               Mongoose models
+  scripts/              admin scripts (reset a password)
+  data/                 static data (Discover climate)
+  *.js                  helpers: access checks, caching, rate limits, mail, Geoapify
+api/index.js            Vercel entry: runs the same Express app
+public/                 files served as-is
+docs/                   feature specs and the project proposal
+```
+
 ## Editing at the same time
 
 - Different devices: a save made from an out-of-date copy of the trip is refused (409). The app says so
