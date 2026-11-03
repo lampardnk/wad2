@@ -32,8 +32,8 @@ test('user can add a photo, react to it, and delete it', async ({ page }) => {
   await openTab(page, 'Photos')
   await expect(page.getByText(/^1 photo/)).toBeVisible()
 
-  // React with a heart, then take it back (the reaction buttons show when you point at the photo)
-  await page.getByRole('img', { name: /^Photo by / }).hover()
+  // React with a heart, then take it back (the reaction buttons show when you point at the photo's tile)
+  await page.getByRole('figure').first().hover()
   const heart = page.getByRole('button', { name: /^❤️/ }).first()
   await heart.click()
   await expect(heart).toHaveAttribute('aria-pressed', 'true')

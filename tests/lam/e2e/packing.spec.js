@@ -18,12 +18,12 @@ test.afterEach(async ({ page }) => {
 
 test('user can tick items and add their own, and it is all still there after a reload', async ({ page }) => {
   const progress = page.getByTestId('packing-progress')
-  await expect(progress).toHaveText(/^0 of \d+ packed$/)
+  await expect(progress).toHaveText(/^0 of \d+ packed\s*$/)
   await expect(page.getByText('Swimwear')).toBeVisible() // from "beach"
 
   // Tick the passport, add a travel pillow
   await page.getByRole('checkbox', { name: /Passport/ }).check()
-  await expect(progress).toHaveText(/^1 of \d+ packed$/)
+  await expect(progress).toHaveText(/^1 of \d+ packed\s*$/)
   await page.getByPlaceholder('+ Add to other').fill('Travel pillow')
   await page.getByPlaceholder('+ Add to other').press('Enter')
   await expect(page.getByText('Travel pillow')).toBeVisible()
@@ -32,7 +32,7 @@ test('user can tick items and add their own, and it is all still there after a r
   // Reload: the server kept both
   await page.reload()
   await openTab(page, 'Packing')
-  await expect(progress).toHaveText(/^1 of \d+ packed$/)
+  await expect(progress).toHaveText(/^1 of \d+ packed\s*$/)
   await expect(page.getByRole('checkbox', { name: /Passport/ })).toBeChecked()
   await expect(page.getByText('Travel pillow')).toBeVisible()
 })
