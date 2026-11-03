@@ -20,3 +20,4 @@ dist/
 # Playwright output
 test-results/
 playwright-report/
+server.log
