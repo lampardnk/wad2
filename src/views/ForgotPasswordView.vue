@@ -57,8 +57,8 @@
 
 <script>
 import axios from 'axios'
-import AuthShell from '../components/AuthShell.vue'
-import AuthIcon from '../components/AuthIcon.vue'
+import AuthShell from '../components/auth/AuthShell.vue'
+import AuthIcon from '../components/auth/AuthIcon.vue'
 import { passwordProblem } from '../../server/passwordRules.js'
 
 export default {

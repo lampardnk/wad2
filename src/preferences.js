@@ -2,7 +2,7 @@
 // reactive() = any component showing prefs updates when they change.
 import { reactive } from 'vue'
 import axios from 'axios'
-import { DEFAULT_PREFS } from './crowd.js'
+import { DEFAULT_PREFS } from './lib/itinerary/crowd.js'
 
 export const prefs = reactive({ ...DEFAULT_PREFS })
 

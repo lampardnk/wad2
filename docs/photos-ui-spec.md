@@ -28,8 +28,8 @@ Lightbox: photo + ‹ › arrows · side panel: uploader, date, reactions, move 
 
 | Part | Where |
 |---|---|
-| Whole view (header, albums, filter, tray, grid, drop overlay, lightbox) | `src/components/PhotosView.vue` |
-| .zip builder for "Download all" (no library, files stored as-is) | `src/zip.js` |
+| Whole view (header, albums, filter, tray, grid, drop overlay, lightbox) | `src/components/trip/PhotosView.vue` |
+| .zip builder for "Download all" (no library, files stored as-is) | `src/lib/ui/zip.js` |
 | Photo records + image bytes (original + 480px thumbnail) | `server/models/Photo.js` |
 | Photo API: `GET /`, `POST /` (raw image body), `PUT /:photoId/thumb`, `GET /:photoId/file?size=thumb`, `PATCH /:photoId` (move), `POST /:photoId/react`, `DELETE /:photoId` | `server/routes/photos.js` at `/api/trips/:tripId/photos` |
 | Spot albums saved on the trip | `PUT /api/trips/:id/albums`, `trip.photoAlbums` |

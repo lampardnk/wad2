@@ -1,6 +1,6 @@
 # CustomDropdown: the app's one dropdown
 
-`src/components/CustomDropdown.vue` replaces every native `<select>`. Dark navy trigger (`#0a3550` → `#00283c`), frosted menu (blur 16px), gold `#edae49` focus ring and checkmark, chevron rotates 180°, spring scale+fade entrance, hover nudge. Opens upwards when there is no room below. Closes on click outside, Esc, Tab, page scroll or resize. Arrow keys, Home and End move through the options.
+`src/components/common/CustomDropdown.vue` replaces every native `<select>`. Dark navy trigger (`#0a3550` → `#00283c`), frosted menu (blur 16px), gold `#edae49` focus ring and checkmark, chevron rotates 180°, spring scale+fade entrance, hover nudge. Opens upwards when there is no room below. Closes on click outside, Esc, Tab, page scroll or resize. Arrow keys, Home and End move through the options.
 
 ## Props
 | Prop | Default | Notes |

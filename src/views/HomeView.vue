@@ -360,12 +360,12 @@
 <script>
 import axios from 'axios'
 import { auth } from '../auth.js'
-import { POPULAR_DESTINATIONS, codeForDestination } from '../destinations.js'
-import AppIcon from '../components/AppIcon.vue'
-import DoodleIcon from '../components/DoodleIcon.vue'
-import PassportBook from '../components/PassportBook.vue'
-import NotebookModal from '../components/NotebookModal.vue'
-import FlagImg from '../components/FlagImg.vue'
+import { POPULAR_DESTINATIONS, codeForDestination } from '../lib/trip/destinations.js'
+import AppIcon from '../components/common/AppIcon.vue'
+import DoodleIcon from '../components/common/DoodleIcon.vue'
+import PassportBook from '../components/home/PassportBook.vue'
+import NotebookModal from '../components/home/NotebookModal.vue'
+import FlagImg from '../components/common/FlagImg.vue'
 import { needsSetup, setupDone } from '../onboarding.js'
 import { friends } from '../friends.js'
 

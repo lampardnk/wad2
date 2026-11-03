@@ -24,10 +24,10 @@
 
 <script>
 import { auth } from './auth.js'
-import UserProfileMenu from './components/UserProfileMenu.vue'
-import FriendsDrawer from './components/FriendsDrawer.vue'
-import AppToast from './components/AppToast.vue'
-import DoodleIcon from './components/DoodleIcon.vue'
+import UserProfileMenu from './components/account/UserProfileMenu.vue'
+import FriendsDrawer from './components/account/FriendsDrawer.vue'
+import AppToast from './components/common/AppToast.vue'
+import DoodleIcon from './components/common/DoodleIcon.vue'
 import { startFriends, stopFriends } from './friends.js'
 
 export default {

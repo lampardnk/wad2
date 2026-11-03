@@ -1,6 +1,6 @@
 # Day optimizer (Itinerary tab)
 
-Files: `src/dayOptimizer.js` (algorithm, no Vue), `src/components/ItineraryPlanner.vue` (UI: Optimize Route, preview, lock, drag), `src/dayOptimizerSample.js` (`PLANNER_SAMPLE`, the sample Kyoto day; `KYOTO_SAMPLE` is no longer used). Tests: `src/dayOptimizer.spec.js`.
+Files: `src/lib/itinerary/dayOptimizer.js` (algorithm, no Vue), `src/components/itinerary/ItineraryPlanner.vue` (UI: Optimize Route, preview, lock, drag), `src/lib/itinerary/dayOptimizerSample.js` (`PLANNER_SAMPLE`, the sample Kyoto day). Tests: `src/lib/itinerary/dayOptimizer.spec.js`.
 
 ## Algorithm (`optimizeDay(stops, rainByHour, { dayStart, dayEnd, buffer, crowdWeight, travel, from, end })`)
 1. Travel matrix (`travelMatrix`): every pair of stops, using `travelBetween` (see Getting around). Without travel preferences: walk up to 1.3 km, otherwise transit. No location → 15 min.
@@ -16,13 +16,13 @@ Files: `src/dayOptimizer.js` (algorithm, no Vue), `src/components/ItineraryPlann
 4. Search: every order for ≤7 flexible stops (5040), otherwise nearest-neighbour + 2-opt.
 5. `reasonsFor` writes the pills (morning slot, rain, walk time…); `warningsFor` flags problems in the current plan.
 
-Crowd data comes from the stop's BestTime forecast (`src/crowd.js`, `server/routes/crowd.js`) when available, else a typical curve (outdoor sights peak 11 AM–3 PM). Rain comes from the 3-hour forecast blocks (`rainFromBlocks`). Day start/end, travel buffer and crowd sensitivity come from the user's preferences (Settings); they guide Optimize and the warnings but never re-time saved stops by themselves. Flight days are the exception: stops are re-timed around the flight.
+Crowd data comes from the stop's BestTime forecast (`src/lib/itinerary/crowd.js`, `server/routes/crowd.js`) when available, else a typical curve (outdoor sights peak 11 AM–3 PM). Rain comes from the 3-hour forecast blocks (`rainFromBlocks`). Day start/end, travel buffer and crowd sensitivity come from the user's preferences (Settings); they guide Optimize and the warnings but never re-time saved stops by themselves. Flight days are the exception: stops are re-timed around the flight.
 
 ## UI
 **Optimize Route** (Analyzing route… → Checking forecast… → Reordering…) → preview with the summary + **Apply** / **Dismiss**. If nothing better is found: "Your day is already in a good order." (or a note that warnings remain) + **OK**. Lock per stop; drag (or arrow keys on the handle) re-times the day in the new order. The sample Kyoto day ("Sample Kyoto day · not saved · Back to my trip") runs on mock data and is never saved.
 
 ## Getting around (travel between stops)
-Files: `src/dayOptimizer.js` (travel model), `src/components/LegSheet.vue` (panel), `TravelChoices.vue` (option list),
+Files: `src/lib/itinerary/dayOptimizer.js` (travel model), `src/components/itinerary/LegSheet.vue` (panel), `TravelChoices.vue` (option list),
 `OtherJourneys.vue` (Transport tab), `server/routes/travel.js` (live routes, Geoapify), Settings → Transport.
 
 1. `travelOptions(a, b, tp)`: walk / transit / taxi / bike times (`TRAVEL_MODES`). Live routes from `GET /api/travel/leg?from=lat,lon&to=lat,lon` when the server has `GEOAPIFY_KEY` (walk, bicycle, drive, approximated transit; transit is always labelled an estimate). Otherwise straight-line estimates. Transit is skipped under 0.6 km. Answers are kept in MongoDB for 90 days (`sharedCache('travel-legs')`, `server/sharedCache.js`).

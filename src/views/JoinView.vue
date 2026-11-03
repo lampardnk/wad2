@@ -82,10 +82,10 @@
 <script>
 import axios from 'axios'
 import { auth } from '../auth.js'
-import { codeForDestination } from '../destinations.js'
-import AppIcon from '../components/AppIcon.vue'
-import InitialBadge from '../components/InitialBadge.vue'
-import FlagImg from '../components/FlagImg.vue'
+import { codeForDestination } from '../lib/trip/destinations.js'
+import AppIcon from '../components/common/AppIcon.vue'
+import InitialBadge from '../components/common/InitialBadge.vue'
+import FlagImg from '../components/common/FlagImg.vue'
 
 export default {
   components: { FlagImg, AppIcon, InitialBadge },

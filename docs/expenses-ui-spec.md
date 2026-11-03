@@ -32,10 +32,10 @@ Below 992px the side column moves under the feed and the tiles become 2×2. Belo
 
 | File | Role |
 |---|---|
-| `src/expenses.js` | Pure logic: `CATEGORIES`, `CURRENCIES`, `money()`, `toHome()`, `sharesOf()`, `balances()`, `settleUp()`, `demoExpenses()`, `currencyOptions()` |
-| `src/components/ExpensesView.vue` | Container: state, saving, polling, rates, toolbar, tiles, feed, balances, charts |
-| `src/components/ExpenseForm.vue` | Slide-over editor for one expense (add / edit / delete) |
-| `src/components/ExchangeRates.vue` | "Live rates" popover: shows rates, lets the group set its own rate for a currency |
+| `src/lib/trip/expenses.js` | Pure logic: `CATEGORIES`, `CURRENCIES`, `money()`, `toHome()`, `sharesOf()`, `balances()`, `settleUp()`, `demoExpenses()`, `currencyOptions()` |
+| `src/components/expenses/ExpensesView.vue` | Container: state, saving, polling, rates, toolbar, tiles, feed, balances, charts |
+| `src/components/expenses/ExpenseForm.vue` | Slide-over editor for one expense (add / edit / delete) |
+| `src/components/expenses/ExchangeRates.vue` | "Live rates" popover: shows rates, lets the group set its own rate for a currency |
 | `server/routes/rates.js` | `GET /api/rates?base=SGD` — ECB rates via Frankfurter (free, no key), cached 6 h in MongoDB |
 | `server/routes/expenses.js` | Mounted at `/api/trips/:tripId/expenses`; one change per request (see below) |
 

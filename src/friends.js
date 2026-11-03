@@ -2,7 +2,7 @@
 // While you're logged in the app pings the server every 20 seconds, which is also what shows you as "Online" to your friends.
 import { reactive } from 'vue'
 import axios from 'axios'
-import { notify } from './notify.js'
+import { notify } from './lib/ui/notify.js'
 
 export const friends = reactive({
   requests: 0, // friend requests waiting for my answer

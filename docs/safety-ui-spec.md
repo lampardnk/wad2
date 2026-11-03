@@ -37,8 +37,8 @@ Dark surface (gradient `#121b19` → `#022538`), teal accent `#3fb8c6`, glass bo
 ## Components
 | Part | File |
 |---|---|
-| Tab (banner, calls, I'm safe, stay card, guides, advice, demo tools) | `src/components/SafetyLayer.vue` |
-| Radar (SVG, bearing + distance, legend filters, tooltips) | `src/components/SafetyRadar.vue` |
+| Tab (banner, calls, I'm safe, stay card, guides, advice, demo tools) | `src/components/safety/SafetyLayer.vue` |
+| Radar (SVG, bearing + distance, legend filters, tooltips) | `src/components/safety/SafetyRadar.vue` |
 | Data + risk score | `src/services/safetyService.js` |
 | Server: `GET /api/safety/locate`, `/nearby` (OpenStreetMap via Overpass, cached 2 days), `/stay-search` (hotel search with local script, Geoapify when configured) | `server/routes/safety.js` |
 | Saving the stay | `PUT /api/trips/:id/stay`, `trip.stay` |

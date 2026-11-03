@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import axios from 'axios'
-import { setOffline, notify } from './notify.js'
+import { setOffline, notify } from './lib/ui/notify.js'
 import './assets/style.css'
 import './assets/playful.css' // the playful look: colours, chunky buttons, cards
 

@@ -51,9 +51,9 @@
 
 <script>
 import axios from 'axios'
-import AuthShell from '../components/AuthShell.vue'
-import AuthIcon from '../components/AuthIcon.vue'
-import DoodleIcon from '../components/DoodleIcon.vue'
+import AuthShell from '../components/auth/AuthShell.vue'
+import AuthIcon from '../components/auth/AuthIcon.vue'
+import DoodleIcon from '../components/common/DoodleIcon.vue'
 import { saveLogin } from '../auth.js'
 import { markNewAccount } from '../onboarding.js'
 

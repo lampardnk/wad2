@@ -2,7 +2,7 @@
 // reactive() means any component showing auth.user updates automatically.
 import { reactive } from 'vue'
 import axios from 'axios'
-import { shortlist, syncShortlist } from './shortlist.js'
+import { shortlist, syncShortlist } from './lib/itinerary/shortlist.js'
 
 // A corrupted value in localStorage shouldn't crash the whole app on load
 function readSavedUser() {
