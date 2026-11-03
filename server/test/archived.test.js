@@ -71,6 +71,28 @@ test('an ended trip says so on its invite link, and nobody new can join', async 
   assert.equal(join.body.archived, true)
 })
 
+test('a trip cannot be created or edited to end in the past (it would lock straight away)', async () => {
+  const created = await request(app).post('/api/trips').set(auth)
+    .send({ name: 'Too late', destinations: ['Kyoto, Japan'], startDate: '2020-01-01', endDate: '2020-01-03' })
+  assert.equal(created.status, 400)
+  const edited = await request(app).put('/api/trips/' + liveId).set(auth)
+    .send({ name: 'Next trip', destinations: ['Kyoto, Japan'], startDate: '2020-01-10', endDate: '2020-01-12' })
+  assert.equal(edited.status, 400)
+})
+
+test('moving the whole trip moves its expenses too; amounts are kept to the cent', async () => {
+  const added = await request(app).post('/api/trips/' + liveId + '/expenses/items').set(auth)
+    .send({ title: 'Taxi', amount: 12.345, currency: 'SGD', paidBy: 'Ann Tan', date: '2099-01-11', people: ['Ann Tan'], splitType: 'equal' })
+  assert.equal(added.status, 201)
+  const moved = await request(app).put('/api/trips/' + liveId).set(auth)
+    .send({ name: 'Next trip', destinations: ['Kyoto, Japan'], startDate: '2099-01-17', endDate: '2099-01-19' })
+  assert.equal(moved.status, 200)
+  const list = await request(app).get('/api/trips/' + liveId + '/expenses').set(auth)
+  const taxi = list.body.items.find((e) => e.title === 'Taxi')
+  assert.equal(taxi.date, '2099-01-18')
+  assert.equal(taxi.amount, 12.35)
+})
+
 test('an ended trip can still be deleted', async () => {
   const res = await request(app).delete('/api/trips/' + endedId).set(auth)
   assert.equal(res.status, 200)

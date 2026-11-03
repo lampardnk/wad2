@@ -4,7 +4,10 @@
     <LoadingSkeleton v-if="loading" variant="page" :count="3" label="Loading your trip…" />
 
     <div v-else-if="loadError" class="alert alert-warning">
-      {{ loadError }} <router-link to="/home">Back to your trips</router-link>
+      {{ loadError }}
+      <button v-if="loadRetry" type="button" class="btn btn-link p-0 align-baseline" @click="$router.go(0)">Try again</button>
+      <span v-if="loadRetry"> · </span>
+      <router-link to="/home">Back to your trips</router-link>
     </div>
 
     <template v-else>
@@ -243,6 +246,7 @@ export default {
       trip: null,
       loading: true,
       loadError: '',
+      loadRetry: false, // the load failed in a way trying again could fix
       showShare: false,
       showEdit: false, // Edit trip dialog
       editRev: 0,      // goes up after each edit, to reload the itinerary
@@ -384,10 +388,15 @@ export default {
     if (this.showGuide) this.$router.replace({ query: {} })
     if (!this.isDemo) {
       try {
-        const res = await axios.get('/api/trips/' + this.id)
+        // (a time limit, so a server that doesn't answer shows a message instead of loading forever)
+        const res = await axios.get('/api/trips/' + this.id, { timeout: 30000 })
         this.trip = res.data
       } catch (err) {
-        this.loadError = err.response && err.response.status === 404 ? 'That trip could not be found.' : 'Could not load this trip. Is the server running?'
+        const notFound = err.response && err.response.status === 404
+        this.loadError = notFound ? 'That trip could not be found.'
+          : err.code === 'ECONNABORTED' ? 'The server is taking too long to answer (it may be starting up).'
+            : 'Could not load this trip. Is the server running?'
+        this.loadRetry = !notFound
       }
     }
     this.loading = false

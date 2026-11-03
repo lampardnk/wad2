@@ -75,7 +75,7 @@ export async function addGroupMember(trip, userId) {
   if (listed) name = listed
   else {
     let n = 2
-    while (trip.travellers.includes(name)) name = user.name.slice(0, 36) + ' ' + n++
+    while (trip.travellers.some((t) => t.toLowerCase() === name.toLowerCase())) name = user.name.slice(0, 36) + ' ' + n++
     trip.travellers.push(name)
   }
   trip.members.push({ user: userId, name, role: 'member' })

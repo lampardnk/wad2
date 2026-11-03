@@ -54,7 +54,7 @@
             </div>
             <div>
               <label class="te-label" for="te-end">End</label>
-              <input id="te-end" v-model="endDate" type="date" class="te-input" :min="startDate || null">
+              <input id="te-end" v-model="endDate" type="date" class="te-input" :min="startDate && startDate > today ? startDate : today">
             </div>
           </div>
           <p v-if="shiftText" class="te-hint">{{ shiftText }}</p>
@@ -104,6 +104,9 @@ const destinations = ref((props.trip.destinations || []).slice())
 const startDate = ref(props.trip.startDate || '')
 const endDate = ref(props.trip.endDate || '')
 const error = ref('')
+// Today on this device, as YYYY-MM-DD (the earliest end date allowed)
+const now = new Date()
+const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
 const busy = ref(false)
 const confirmDelete = ref(false)
 const sheet = ref(null)
@@ -224,6 +227,11 @@ async function save() {
   }
   if (endDate.value && startDate.value && endDate.value < startDate.value) {
     error.value = 'The end date must be on or after the start date.'
+    return
+  }
+  // Ending in the past would archive the trip straight away, and an archived trip can't be changed back
+  if ((endDate.value || startDate.value) && (endDate.value || startDate.value) < today) {
+    error.value = 'The trip can\'t end in the past: ended trips are archived and can\'t be changed.'
     return
   }
   busy.value = true

@@ -56,6 +56,15 @@ router.beforeEach((to, from) => {
   pending.clear()
 })
 
+// ---------- Saves give up after 30 s ----------
+// So a server that doesn't answer shows "could not save" instead of a save that never finishes.
+// (Photo uploads are left alone: big files on a slow connection can take longer.)
+axios.interceptors.request.use((config) => {
+  const method = (config.method || 'get').toLowerCase()
+  if (method !== 'get' && !config.timeout && !(config.data instanceof FormData)) config.timeout = 30000
+  return config
+})
+
 // Can we reach the server? Any proper answer means yes; no answer means no.
 // AppToast shows a bar while it's down, so failed background refreshes aren't silent.
 axios.interceptors.response.use(

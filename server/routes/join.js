@@ -77,7 +77,7 @@ router.post('/:code', requireAuth, async (req, res) => {
     // Join under your own name; add a number if someone on the trip already has it
     name = user.name.slice(0, 36)
     let n = 2
-    while (trip.travellers.includes(name)) name = user.name.slice(0, 36) + ' ' + n++
+    while (trip.travellers.some((t) => t.toLowerCase() === name.toLowerCase())) name = user.name.slice(0, 36) + ' ' + n++
     trip.travellers.push(name)
   }
   trip.members.push({ user: req.userId, name, role: 'member' })

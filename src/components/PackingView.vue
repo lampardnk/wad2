@@ -49,6 +49,9 @@
       </div>
     </section>
 
+    <!-- Archived, and nobody ever used the list: don't show a made-up one -->
+    <p v-else-if="readOnly && !initialPacking" class="pk-empty" data-testid="packing-none">No packing list was used on this trip.</p>
+
     <template v-else>
       <!-- ===== Progress ===== -->
       <div class="pk-top">
@@ -323,6 +326,11 @@ export default {
 </script>
 
 <style scoped>
+.pk-empty {
+  margin: 0;
+  padding: 24px 0;
+  color: var(--app-muted, #5a6b78);
+}
 .pk-muted {
   color: var(--app-muted, #5a6b78);
 }

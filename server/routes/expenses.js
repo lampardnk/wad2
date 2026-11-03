@@ -15,19 +15,20 @@ const EMPTY = { homeCurrency: 'SGD', budget: null, items: [], settlements: [], g
 
 const code = (c) => (typeof c === 'string' && /^[A-Z]{3}$/.test(c) ? c : null)
 const amountOk = (n) => Number.isFinite(n) && n > 0 && n <= 1e9
+const cents = (v) => Math.round(Number(v) * 100) / 100 // money is kept to the cent: 12.345 -> 12.35
 
 // One expense from the browser -> a clean copy, or null if something is wrong
 function cleanItem(x, travellers, id, addedBy) {
   if (!x || typeof x !== 'object') return null
   const isPerson = (n) => typeof n === 'string' && travellers.includes(n)
   const title = typeof x.title === 'string' ? x.title.trim().slice(0, 80) : ''
-  const amount = Number(x.amount)
+  const amount = cents(x.amount)
   if (!title || !amountOk(amount) || !code(x.currency) || !isPerson(x.paidBy) || !DATE_PATTERN.test(x.date || '')) return null
   const people = Array.isArray(x.people) ? x.people.filter(isPerson) : []
   const exact = {}
   if (x.exact && typeof x.exact === 'object') {
     for (const name in x.exact) {
-      const n = Number(x.exact[name])
+      const n = cents(x.exact[name])
       if (isPerson(name) && amountOk(n)) exact[name] = n
     }
   }
@@ -100,7 +101,7 @@ router.post('/settlements', requireAuth, async (req, res) => {
   const trip = await loadTrip(req, res)
   if (!trip) return
   const { from, to } = req.body
-  const amount = Number(req.body.amount)
+  const amount = cents(req.body.amount)
   if (!trip.travellers.includes(from) || !trip.travellers.includes(to) || from === to || !amountOk(amount)) {
     return res.status(400).json({ message: 'Invalid payment.' })
   }

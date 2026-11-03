@@ -20,7 +20,8 @@
           <template v-if="rates[form.currency]">≈ {{ money(toHome(form.amount, form.currency, rates), homeCurrency) }}</template>
           <template v-else>No {{ form.currency }} rate yet, so this won't count in the totals until one is set.</template>
         </p>
-        <p v-if="tried && !(form.amount > 0)" class="ef-error" role="alert">Enter an amount above 0</p>
+        <p v-if="tried && !(cents(form.amount) > 0)" class="ef-error" role="alert">Enter an amount above 0</p>
+        <p v-else-if="tried && cents(form.amount) > MAX_AMOUNT" class="ef-error" role="alert">Amounts up to 1,000,000,000 only</p>
 
         <label for="ef-what" class="ef-label">What was it for?</label>
         <input id="ef-what" v-model="form.title" class="form-control ef-input" maxlength="80" placeholder="e.g. Korean BBQ dinner"
@@ -91,7 +92,7 @@
         </template>
         <span class="ms-auto d-flex gap-2">
           <button type="button" class="btn ef-ghost" @click="$emit('close')">Cancel</button>
-          <button type="submit" class="btn ef-save" data-testid="expense-save">{{ expense ? 'Save changes' : 'Add expense' }}</button>
+          <button type="submit" class="btn ef-save" :disabled="saving" data-testid="expense-save">{{ saving ? 'Saving…' : expense ? 'Save changes' : 'Add expense' }}</button>
         </span>
       </footer>
     </form>
@@ -104,6 +105,8 @@ import CustomDropdown from './CustomDropdown.vue'
 import { lineIconFor } from '../emojiIcons.js'
 import AppIcon from './AppIcon.vue'
 
+const MAX_AMOUNT = 1e9 // the server's limit too (server/routes/expenses.js)
+
 export default {
   components: { AppIcon, CustomDropdown },
   props: {
@@ -113,7 +116,8 @@ export default {
     homeCurrency: { type: String, default: 'SGD' },
     lastCurrency: { type: String, default: '' },
     rates: { type: Object, default: () => ({}) },
-    defaultDate: { type: String, default: '' }
+    defaultDate: { type: String, default: '' },
+    saving: { type: Boolean, default: false } // a save is on its way: don't send it twice
   },
   emits: ['save', 'delete', 'close'],
 
@@ -124,6 +128,7 @@ export default {
     return {
       CATEGORIES,
       CURRENCIES,
+      MAX_AMOUNT,
       currencyOptions: currencyOptions(),
       tried: false,
       confirmDelete: false,
@@ -164,23 +169,29 @@ export default {
     money,
     toHome,
 
+    // Money is kept to the cent: 12.345 -> 12.35
+    cents(n) {
+      return Math.round((Number(n) || 0) * 100) / 100
+    },
+
     submit() {
+      if (this.saving) return
       this.tried = true
       const f = this.form
-      if (!(f.amount > 0) || !f.title.trim() || !f.date) return
+      if (!(this.cents(f.amount) > 0) || this.cents(f.amount) > MAX_AMOUNT || !f.title.trim() || !f.date) return
       if (f.splitType === 'equal' && !f.people.length) return
       if (f.splitType === 'exact' && Math.abs(this.remaining) >= 0.01) return
 
       const exact = {}
       if (f.splitType === 'exact') {
         for (const p of this.travellers) {
-          if (Number(f.exact[p]) > 0) exact[p] = Number(f.exact[p])
+          if (this.cents(f.exact[p]) > 0) exact[p] = this.cents(f.exact[p])
         }
       }
       this.$emit('save', {
         id: this.expense ? this.expense.id : 'e' + Date.now(),
         title: f.title.trim(),
-        amount: Number(f.amount),
+        amount: this.cents(f.amount),
         currency: f.currency,
         category: f.category,
         paidBy: f.paidBy,
