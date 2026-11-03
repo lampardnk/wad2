@@ -16,6 +16,11 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
+  // Unit + integration tests (Vitest). The Playwright E2E tests in tests/*/e2e run separately.
+  test: {
+    include: ['tests/**/unit/*.spec.js', 'tests/**/integration/*.spec.js'],
+    environment: 'jsdom'
+  },
   server: {
     host: true, // listen on all addresses, IPv4 and IPv6
     proxy: {
