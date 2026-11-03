@@ -33,9 +33,9 @@ Use a test account, not your own.
 
 1. Start the server: `pnpm dev:api`
 2. Set the test account: `export TEST_USERNAME=... TEST_PASSWORD=...`
-3. `pnpm test` (unit + integration; or `pnpm test:unit` / `pnpm test:integration`), `pnpm test:e2e` (E2E in a real browser; first time: `pnpm exec playwright install chromium`)
+3. `pnpm test` (unit + integration), `pnpm test:e2e` (E2E in a real browser; first time: `pnpm exec playwright install chromium`)
 
-GitHub Actions (`.github/workflows/tests.yml`) runs all three on every push to main and every pull request, with its own empty database and test account.
+GitHub Actions: **Lam tests** (`.github/workflows/lam-tests.yml`) runs `tests/lam` (1 unit, 2 integration, 2 E2E) on every push, with its own empty database and test account.
 
 ## Folder structure
 
