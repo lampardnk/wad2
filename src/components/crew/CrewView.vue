@@ -14,7 +14,7 @@
         <button type="button" class="cw-primary" :class="{ done: copied }" @click="copyLink" data-testid="crew-copy">
           <AppIcon :name="copied ? 'check' : 'link'" :size="15" /> {{ copied ? 'Link copied' : 'Copy invite link' }}
         </button>
-        <button v-if="!demo" type="button" class="cw-ghost" @click="$emit('invite')">+ Add member</button>
+        <button type="button" class="cw-ghost" @click="$emit('invite')">+ Add member</button>
       </div>
     </header>
 
@@ -71,7 +71,7 @@
 
         <!-- Editing a card -->
         <CrewDetailsForm v-else :title="p.name === me ? 'Your details' : 'Details for ' + p.name" :profile="p.profile"
-          :flight-buddies="flightBuddies(p.name)" :show-contact="!p.fromSettings && (demo ? p.name !== me : true)"
+          :flight-buddies="flightBuddies(p.name)" :show-contact="!p.fromSettings"
           :settings-note="p.name === me" :saving="saving" :error="error"
           @save="saveEdit(p, $event)" @cancel="editing = null" />
       </article>
@@ -122,21 +122,6 @@ import { lineIconFor } from '../../lib/ui/emojiIcons.js'
 
 const COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#2b8c99']
 
-// Example crew for the Seoul demo trip: 3 active travellers and 1 pending invite
-const DEMO = {
-  members: [
-    { id: 'd1', name: 'Sarah', role: 'owner', lastSeenAt: new Date().toISOString() },
-    { id: 'd2', name: 'John', role: 'member', lastSeenAt: new Date(Date.now() - 3 * 3600000).toISOString() },
-    { id: 'd3', name: 'Amy', role: 'member', lastSeenAt: new Date(Date.now() - 20 * 60000).toISOString() }
-  ],
-  pending: [{ id: 'd4', name: 'Ben Lim', username: 'benlim', invitedBy: 'Sarah' }],
-  crew: {
-    Sarah: { persona: 'Chief Foodie', flight: 'SQ600', arrival: '2026-10-12T07:55', diet: ['shellfish-allergy'], phone: '+65 9123 4567' },
-    John: { persona: 'Navigator', flight: 'KE644', arrival: '2026-10-12T14:00', diet: [], phone: '' },
-    Amy: { persona: 'Photographer', sameFlightAs: 'Sarah', diet: ['vegetarian', 'No spicy food'], phone: '+65 9876 5432' }
-  }
-}
-
 export default {
   components: { AppIcon, CrewDetailsForm, InitialBadge },
   inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
@@ -155,11 +140,9 @@ export default {
   emits: ['invite', 'go', 'changed'],
 
   data() {
-    const demo = this.tripId === 'seoul'
     return {
-      demo,
-      profiles: demo ? { ...DEMO.crew } : { ...this.crew },
-      pending: demo ? DEMO.pending.slice() : this.pendingInvites.slice(),
+      profiles: { ...this.crew },
+      pending: this.pendingInvites.slice(),
       copied: false,
       toast: '',
       editing: null,
@@ -177,15 +160,12 @@ export default {
   },
 
   computed: {
-    memberList() {
-      return this.demo ? DEMO.members : this.members
-    },
     // One entry per traveller, with everything the card shows
     people() {
-      const names = this.demo ? DEMO.members.map((m) => m.name) : this.travellers
+      const names = this.travellers
       const list = []
       for (const name of names) {
-        const m = this.memberList.find((x) => x.name === name)
+        const m = this.members.find((x) => x.name === name)
         const kind = m ? (m.role === 'owner' ? 'owner' : 'member') : 'guest'
         const seen = m && m.lastSeenAt ? new Date(m.lastSeenAt).getTime() : 0
         const activeNow = !!seen && Date.now() - seen < 5 * 60 * 1000
@@ -214,7 +194,7 @@ export default {
           id: m ? m.id : '', avatarV: m ? m.avatarV || 0 : 0,
           hasProfile: fromSettings ? !!m.contactSaved : !!this.profiles[name],
           fromSettings,
-          canEdit: !this.readOnly && (name === this.me || (kind === 'guest' && this.role === 'owner') || this.demo)
+          canEdit: !this.readOnly && (name === this.me || (kind === 'guest' && this.role === 'owner'))
         })
       }
       // You first, then active people, then the rest
@@ -222,7 +202,7 @@ export default {
       return list
     },
     activeCount() {
-      return this.memberList.length
+      return this.members.length
     },
     // "1 shellfish allergy · 1 vegetarian"
     dietSummary() {
@@ -243,10 +223,10 @@ export default {
 
   watch: {
     crew(c) {
-      if (!this.demo) this.profiles = { ...c }
+      this.profiles = { ...c }
     },
     pendingInvites(list) {
-      if (!this.demo) this.pending = list.slice()
+      this.pending = list.slice()
     }
   },
 
@@ -286,11 +266,8 @@ export default {
 
     async copyLink() {
       try {
-        let link = window.location.origin + '/trip/seoul'
-        if (!this.demo) {
-          const res = await axios.post('/api/trips/' + this.tripId + '/invite', {})
-          link = window.location.origin + '/join/' + res.data.code
-        }
+        const res = await axios.post('/api/trips/' + this.tripId + '/invite', {})
+        const link = window.location.origin + '/join/' + res.data.code
         await navigator.clipboard.writeText(link)
         this.copied = true
         this.showToast('Invite link copied. Paste it in your group chat.')
@@ -336,11 +313,6 @@ export default {
     },
 
     async saveEdit(p, form) {
-      if (this.demo) {
-        this.profiles = { ...this.profiles, [p.name]: { ...this.profiles[p.name], ...form } }
-        this.editing = null
-        return
-      }
       this.saving = true
       this.error = ''
       try {
@@ -356,14 +328,10 @@ export default {
 
     canManage(inv) {
       if (this.readOnly) return false
-      return this.demo || this.role === 'owner' || String(inv.invitedById) === String(this.myId)
+      return this.role === 'owner' || String(inv.invitedById) === String(this.myId)
     },
 
     async resend(inv) {
-      if (this.demo) {
-        this.resent = inv.id
-        return
-      }
       this.busy = inv.id
       try {
         await axios.post('/api/trips/' + this.tripId + '/invites/' + inv.id + '/resend')
@@ -376,10 +344,6 @@ export default {
     },
 
     async revoke(inv) {
-      if (this.demo) {
-        this.pending = this.pending.filter((x) => x !== inv)
-        return
-      }
       this.busy = inv.id
       try {
         const res = await axios.delete('/api/trips/' + this.tripId + '/invites/' + inv.id)

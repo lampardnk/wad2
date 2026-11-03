@@ -104,7 +104,6 @@ import { cityCentre } from '../../services/cityCentre.js'
 const readOnly = inject('readOnly', ref(false)) // an archived trip: saved journeys can be seen, not changed
 const props = defineProps({
   tripId: { type: String, default: '' },
-  isDemo: { type: Boolean, default: false },
   destinations: { type: Array, default: () => [] },
   stops: { type: Array, default: () => [] },          // the itinerary's stops (names + addresses as suggestions)
   stays: { type: Array, default: () => [] },         // hotels (set in the itinerary): { from: date, name, ... } (older ones: { city, ... })
@@ -274,7 +273,6 @@ function mapsUrl(mode) {
 async function store(list, done) {
   const before = journeys.value
   journeys.value = list
-  if (props.isDemo) return done && done()
   try {
     const res = await axios.put('/api/trips/' + props.tripId + '/journeys', list)
     journeys.value = res.data

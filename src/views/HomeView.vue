@@ -290,7 +290,7 @@
             <path d="M0 120 Q60 80 120 100 T300 95 L300 120 Z" class="hill" />
           </svg>
           <img v-if="photos[t.destinations[0]]" :src="photos[t.destinations[0]]" class="trip-photo" alt="" loading="lazy">
-          <span v-if="t.members && t.members.length > 1" class="trip-demo"><DoodleIcon name="users" :size="15" /> {{ t.members.length }}</span>
+          <span v-if="t.members && t.members.length > 1" class="trip-group"><DoodleIcon name="users" :size="15" /> {{ t.members.length }}</span>
         </router-link>
 
         <div class="trip-body">
@@ -1865,7 +1865,7 @@ export default {
 
 .status-past { background: #dde6ec; }
 /* how many people: a small cream chip in the photo's top-right */
-.trip-demo {
+.trip-group {
   position: absolute;
   top: 8px;
   right: 8px;

@@ -116,7 +116,7 @@ export default {
     travellers: { type: Array, default: () => [] },
     me: { type: String, default: '' },                 // my name on this trip
     canVoteFor: { type: Array, default: () => [] },    // whose votes I may change (me, + guests if organiser)
-    tripId: { type: String, default: '' }              // where votes are saved ('' or 'seoul' = not saved)
+    tripId: { type: String, required: true }           // where votes are saved
   },
   emits: ['go-wishlist'],
 
@@ -227,7 +227,6 @@ export default {
     async setVotes(ids, person, yes) {
       if (!ids.length) return
       this.applyVotes(ids, person, yes)
-      if (!this.tripId || this.tripId === 'seoul') return // the demo trip isn't saved
       try {
         const res = await axios.post('/api/trips/' + this.tripId + '/votes', { wishIds: ids, person, yes })
         // Everyone's latest votes come back, so new votes from the group show up too

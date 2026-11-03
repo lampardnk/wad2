@@ -4,7 +4,7 @@ Opened from the 👥 **Crew** tab in the trip nav. Shows everyone on the trip, t
 
 ## Structure
 - `TripView.vue` → `CrewView.vue` (props: tripId, city, travellers, members, pendingInvites, crew, role, me, myId, flights; emits `invite`, `go(tab, name)`, `changed`). `go` is still declared and handled by `TripView.goFromCrew`, but no card emits it any more.
-- Header: "<City> Crew", "N travellers · X active · Y pending", **Copy invite link** (button turns into "Link copied"), **+ Add member** (opens TripShare; hidden on the demo trip).
+- Header: "<City> Crew", "N travellers · X active · Y pending", **Copy invite link** (button turns into "Link copied"), **+ Add member** (opens TripShare).
 - Profile cards: avatar + online dot (seen < 5 min, not shown for guests), name + "(you)", status ("Active now", "Active 3 h ago", "Joined", "No account yet"), role badge (Admin / Editor / Guest), crew title ("Chief Foodie").
 - Pills: arrival flight + landing time + airport, "Flies home …", "Same flight as …", the group's flights between cities on the itinerary, diet/allergy tags (allergies first), or "No restrictions" / "Food needs not added".
 - Card footer: **Message** (WhatsApp link) and **Edit**. Clicking anywhere on a card you can edit opens `CrewDetailsForm.vue` in place.
@@ -20,7 +20,6 @@ Opened from the 👥 **Crew** tab in the trip nav. Shows everyone on the trip, t
 - Edit: `PUT /api/trips/:id/crew/:name`. You can edit your own card; the organiser can edit guests. Max 8 diet tags.
 - Online: `members[].lastSeenAt`, updated by `server/tripAccess.js` when a member loads the trip (at most every 2 min).
 - Resend: `POST /api/trips/:id/invites/:userId/resend` (moves it back to the top of their home page). Revoke: `DELETE /api/trips/:id/invites/:userId`.
-- Demo trip (`/trip/seoul`): mock data, 3 travellers (Sarah, John, Amy). Edits stay in the browser.
 
 ## Style
 Scoped tokens on `.cw`: background `#00283c`, cards `#0a3550`, borders `rgba(255,255,255,0.08)`, accent `#edae49`, 24px radius. One-column summary below 720px; tap targets at least 40px on touch screens.

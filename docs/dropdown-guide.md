@@ -40,6 +40,6 @@ The menu is teleported to `<body>`, so cards with `overflow: hidden` and modals 
    - `<option :value="null">Auto</option>` becomes `{ value: null, label: 'Auto' }`.
 
 ## Where it is used
-Expenses home currency + category filter · Expense form currency + paid by · Exchange rates currency · Photos "move to album" · Wishlist kind of place, day, "booked on" · Places vote sort · Phone country code (Crew, Settings) · Itinerary stop picker + crowd simulator · Stop sheet "move to" · Overflow sheet · Schedule panel and Settings day start/end, crowds, travel buffer, longest walk · Trip tabs (sections + "more") · Flight delay demo · Safety demo tools · Transport (Other journeys) day.
+Expenses home currency + category filter · Expense form currency + paid by · Exchange rates currency · Photos "move to album" · Wishlist kind of place, day, "booked on" · Places vote sort · Phone country code (Crew, Settings) · Itinerary what-if panels (stop, weather, crowd level) · Stop sheet "move to" · Overflow sheet · Schedule panel and Settings day start/end, crowds, travel buffer, longest walk · Trip tabs (sections + "more") · Transport (Other journeys) day.
 
 The only `<select>` left in `src/` is the comment in `CustomDropdown.vue` itself.

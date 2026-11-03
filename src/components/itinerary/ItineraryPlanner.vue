@@ -27,8 +27,8 @@
               </button>
             </div>
           </div>
-          <button v-if="(sampleMode || canAddDay) && !readOnly" type="button" class="ip-small add" title="Add a day at the end of the trip" @click="askAddDay">+ Add day</button>
-          <button v-if="(sampleMode || canAddDay) && !readOnly && dayList.length > 1" type="button" class="ip-small remove"
+          <button v-if="canAddDay && !readOnly" type="button" class="ip-small add" title="Add a day at the end of the trip" @click="askAddDay">+ Add day</button>
+          <button v-if="canAddDay && !readOnly && dayList.length > 1" type="button" class="ip-small remove"
             :title="'Remove the last day (Day ' + dayList.length + ')'" :aria-label="'Remove the last day, Day ' + dayList.length" @click="askRemoveDay">− Day {{ dayList.length }}</button>
         </div>
       </div>
@@ -124,7 +124,6 @@
         </button>
       </div>
     </div>
-    <p v-if="sampleMode" class="ip-sample">Sample Kyoto day · not saved · <button type="button" class="ip-link" @click="leaveSample">Back to my trip</button></p>
     <p class="visually-hidden" role="status" aria-live="polite">{{ phase ? phaseText : liveText }}</p>
 
     <!-- ===== Optimize preview ===== -->
@@ -179,7 +178,7 @@
           </div>
           <ol class="ip-list" :class="{ dragging: !!drag }">
             <!-- Where the day starts: your hotel, or the airport on the day you land -->
-            <li v-if="!sampleMode" class="ip-anchor-row start">
+            <li class="ip-anchor-row start">
               <!-- Day 1: landing comes first, so the flight goes above the hotel -->
               <button v-if="dayIndex === 0 && !arrivalToday && !readOnly" type="button" class="ip-flight-card" @click="editAnchor('arrive')">
                 <span class="ip-flight-icon" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
@@ -297,7 +296,7 @@
                           <AppIcon name="users" :size="14" /> {{ crowdOf(it).text }}
                         </button>
                         <!-- Notes the crew left on this stop -->
-                        <button v-if="!sampleMode" type="button" class="ip-sig" :aria-label="'Notes on ' + it.stop.name" @click="openSheet(it, 'notes')">
+                        <button type="button" class="ip-sig" :aria-label="'Notes on ' + it.stop.name" @click="openSheet(it, 'notes')">
                           <AppIcon name="message" :size="14" /> Notes
                         </button>
                       </template>
@@ -336,7 +335,7 @@
               <span v-if="drag" class="ip-drop">Drop here</span>
             </li>
             <!-- Where the day ends: back to the hotel, or the airport on the day you fly home -->
-            <li v-if="!sampleMode && stopRows.length" class="ip-anchor-row end">
+            <li v-if="stopRows.length" class="ip-anchor-row end">
               <button v-if="endLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly }" :disabled="readOnly" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
                 <AppIcon :name="modeIcon(endLeg.mode)" :size="13" /> {{ anchorLegText(endLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
@@ -381,14 +380,14 @@
             <span aria-hidden="true">⊕</span> Add stop
           </button>
 
-          <!-- ===== Demo: simulate weather conditions ===== -->
+          <!-- ===== What if: weather. Assume rain or sun during one stop; Optimize Route,
+               the warnings and the suggestions plan around it until it's reset (nothing is saved) ===== -->
           <section v-if="stopRows.length && !readOnly" class="ip-weather-sim">
             <div class="ip-sim-heading">
               <div>
                 <h4>Simulate weather conditions</h4>
-                <p>Test how the itinerary responds to a change in weather.</p>
+                <p>Forecast looks unsure? Assume rain or sun during a stop, and Optimize Route plans around it. Only you see this, and nothing is saved until you apply a change.</p>
               </div>
-              <span class="ip-sim-badge">Demo</span>
             </div>
 
             <div class="ip-sim-fields">
@@ -428,7 +427,9 @@
               Simulating
               <strong>{{ weatherSimulation.condition === 'Rain' ? 'rainy' : 'sunny' }}</strong>
               weather at
-              <strong>{{ weatherSimulation.stopName }}</strong>.
+              <strong>{{ weatherSimulation.stopName }}</strong>
+              ({{ formatHour(weatherSimulation.start) }}–{{ formatHour(weatherSimulation.start + weatherSimulation.duration) }}).
+              <button type="button" class="ip-sim-button ip-sim-optimize" @click="optimizeWithAssumptions">Optimize Route with this</button>
               <div
                 v-if="weatherSimulation?.condition === 'Rain'"
                 class="ip-weather-alternatives"
@@ -601,22 +602,21 @@
             </div>
           </section>
 
-          <!-- demo for crowd status -->
+          <!-- ===== What if: crowds. Assume a stop is quieter or busier than the crowd data says;
+               Optimize Route, the warnings and "quieter times" use it until it's reset (nothing is saved) ===== -->
           <section v-if="stopRows.length && !readOnly" class="ip-weather-sim">
-            <!-- Heading & Demo Badge -->
             <div class="ip-sim-heading">
               <div>
                 <h4>Simulate crowd conditions</h4>
-                <p>Test how the itinerary responds to live crowd level changes.</p>
+                <p>Heard it's packed (or empty) today? Assume a crowd level at a stop's planned time, and Optimize Route plans around it. Only you see this, and nothing is saved until you apply a change.</p>
               </div>
-              <span class="ip-sim-badge">Demo</span>
             </div>
 
             <!-- Form Controls -->
             <div class="ip-sim-fields">
               <div class="ip-sim-field">
                 <label for="ip-crowd-stop">Itinerary stop</label>
-                <CustomDropdown id="ip-crowd-stop" v-model="demoStopId" :options="simStopOptions" block placeholder="Choose a stop" aria-label="Itinerary stop" />
+                <CustomDropdown id="ip-crowd-stop" v-model="crowdStopId" :options="simStopOptions" block placeholder="Choose a stop" aria-label="Itinerary stop" />
               </div>
 
               <div class="ip-sim-field">
@@ -634,6 +634,12 @@
               <button v-if="crowdSimulation" type="button" class="ip-sim-reset" @click="resetCrowdSimulation">
                 Reset
               </button>
+            </div>
+
+            <div v-if="crowdSimulation" class="ip-sim-active">
+              Simulating <strong>{{ crowdSimulation.level.toLowerCase() }}</strong> crowds at
+              <strong>{{ crowdSimulation.stopName }}</strong> around {{ formatHour(crowdSimulation.hour) }}.
+              <button type="button" class="ip-sim-button ip-sim-optimize" @click="optimizeWithAssumptions">Optimize Route with this</button>
             </div>
           </section>
         </template>
@@ -734,7 +740,7 @@
       :day-options="dayOptions" :weather="dayBlocks" :typical="typical" :crowd="sheetItem ? crowdOf(sheetItem) : {}"
       :wet="sheetItem ? weatherOf(sheetItem).tone === 'bad' : false"
       :quieter="sheetItem ? quieterTimes(sheetItem) : []" :dry="sheetItem ? dryTimes(sheetItem) : []"
-      :indoor-picks="indoorPicks" :can-change-day="!sampleMode" :near="sheetNear"
+      :indoor-picks="indoorPicks" :near="sheetNear"
       @close="closeSheet" @move-time="sheetMoveTime" @move-day="sheetMoveDay" @swap="sheetSwap" @edit="sheetEdit" />
     <!-- Getting from one stop to the next: every way, and choosing one -->
     <LegSheet :leg="legView" @close="closeLeg" @choose="chooseTravel" />
@@ -758,7 +764,6 @@ import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, inject } fr
 import axios from 'axios'
 import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, addMealBreaks, defaultDuration, crowdAt, rainDuring,
   travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf } from '../../lib/itinerary/dayOptimizer.js'
-import { PLANNER_SAMPLE } from '../../lib/itinerary/dayOptimizerSample.js'
 import { loadLeaflet } from '../../services/leaflet.js'
 import EatDrawer from './EatDrawer.vue'
 import StopSheet from './StopSheet.vue'
@@ -798,30 +803,11 @@ const props = defineProps({
   myFlight: { type: Object, default: () => ({}) }       // { arrival: { date, time, flight, place }, departure: {...} } (mine, from Crew)
 })
 const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote', 'travel', 'save-stay', 'save-flight', 'move-stops', 'notice'])
-// ---------- sample Kyoto day (local only) ----------
-const sampleMode = ref(false)
-const sample = ref({ days: [], day: '', stops: [], wishlist: [] })
-function startSample() {
-  sample.value = {
-    days: PLANNER_SAMPLE.days.slice(),
-    day: PLANNER_SAMPLE.days[0],
-    stops: PLANNER_SAMPLE.stops.map((s) => ({ ...s })),
-    wishlist: PLANNER_SAMPLE.wishlist.map((w) => ({ ...w }))
-  }
-  sampleMode.value = true
-  preview.value = null
-}
-function leaveSample() {
-  sampleMode.value = false
-  preview.value = null
-}
-
-const dayList = computed(() => (sampleMode.value ? sample.value.days : props.days))
-const dayShown = computed(() => (sampleMode.value ? sample.value.day : props.selectedDate))
+const dayList = computed(() => props.days)
+const dayShown = computed(() => props.selectedDate)
 function pickDay(d) {
   preview.value = null
-  if (sampleMode.value) sample.value.day = d
-  else emit('select-day', d)
+  emit('select-day', d)
 }
 // ---------- day navigator ----------
 const stripEl = ref(null)
@@ -880,11 +866,6 @@ function onDayKey(e) {
 }
 
 function countFor(d) {
-  if (sampleMode.value) {
-    let n = 0
-    for (const st of sample.value.stops) if (st.date === d) n++
-    return n
-  }
   return props.dayCounts[d] || 0
 }
 const weekday = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-SG', { weekday: 'short' })
@@ -902,7 +883,6 @@ const toast = ref(null)     // { text, undo }
 const dialogEl = ref(null)
 const confirmBtn = ref(null)
 let toastTimer = null
-let sampleUndo = null
 
 function shiftDate(d, days) {
   const date = new Date(d + 'T00:00:00Z')
@@ -936,9 +916,7 @@ function askRemoveDay() {
   const date = dayList.value[n - 1]
 
   // Get the stops on the day being removed.
-  const stopsOnDay = sampleMode.value
-    ? sample.value.stops.filter((s) => s.date === date)
-    : props.stops.filter((s) => s.date === date)
+  const stopsOnDay = props.stops.filter((s) => s.date === date)
 
   // A day containing a locked booking cannot be removed.
   const lockedStops = stopsOnDay.filter((s) => s.locked)
@@ -1003,21 +981,11 @@ function doConfirm() {
   preview.value = null
   if (c.kind === 'add') {
     const n = dayList.value.length + 1
-    if (sampleMode.value) {
-      sampleUndo = JSON.stringify(sample.value)
-      sample.value.days.push(shiftDate(dayList.value[dayList.value.length - 1], 1))
-    } else {
-      emit('add-day')
-    }
+    emit('add-day')
     showToast('Day ' + n + ' added')
   } else {
     const n = dayList.value.length
-    if (sampleMode.value) {
-      sampleUndo = JSON.stringify(sample.value)
-      removeSampleDay(c.date)
-    } else {
-      emit('remove-day', c.date)
-    }
+    emit('remove-day', c.date)
     showToast('Day ' + n + ' removed')
   }
 }
@@ -1027,18 +995,6 @@ function doConfirmAlt() {
   const c = confirm.value
   confirm.value = null
   if (c.kind === 'full') scheduleWish(c.wish, c.slot, true, true)
-}
-
-function removeSampleDay(date) {
-  const s = sample.value
-  const keep = []
-  for (const stop of s.stops) {
-    if (stop.date === date) s.wishlist.push({ id: 'pw-' + stop.id, name: stop.name, outdoor: stop.outdoor, lat: stop.lat, lon: stop.lon, address: stop.address })
-    else keep.push(stop.date > date ? { ...stop, date: shiftDate(stop.date, -1) } : stop)
-  }
-  s.stops = keep
-  s.days.pop()
-  if (!s.days.includes(s.day)) s.day = s.days[s.days.length - 1]
 }
 
 function showToast(text, undo = true) {
@@ -1060,12 +1016,7 @@ function runUndo() {
 
 function undoDay() {
   toast.value = null
-  if (sampleMode.value) {
-    if (sampleUndo) sample.value = JSON.parse(sampleUndo)
-    sampleUndo = null
-  } else {
-    emit('undo-day')
-  }
+  emit('undo-day')
   liveText.value = 'Undone'
 }
 // "Choose from saved places" on an empty day: open the panel and bring it into view (it's below the day on phones)
@@ -1094,7 +1045,6 @@ function showSaved() {
 // ---------- Add stop (the sheet) ----------
 const addOpen = ref(false)
 function openAddSheet() {
-  if (sampleMode.value) return addPlace()
   addOpen.value = true
 }
 // Your hotels (each once), e.g. back to the hotel for your bags before an evening flight
@@ -1142,8 +1092,7 @@ function addFlight(f) {
 }
 
 function addPlace() {
-  if (sampleMode.value) drawerOpen.value = true
-  else emit('add-place')
+  emit('add-place')
 }
 
 // ---------- photos (fetched once per place, shared by every planner) ----------
@@ -1153,8 +1102,7 @@ const photoKey = (s) => (s.name || '').toLowerCase()
 // The trip city a place belongs to, so the lookup searches there (not another place with the same name)
 function nearFor(s) {
   if (s.city) return s.city
-  const list = sampleMode.value ? sample.value.wishlist : props.wishlist
-  const match = list.find((w) => w.name.toLowerCase() === (s.name || '').toLowerCase())
+  const match = props.wishlist.find((w) => w.name.toLowerCase() === (s.name || '').toLowerCase())
   if (match && match.city) return match.city
   return props.destinations.length === 1 ? props.destinations[0] : ''
 }
@@ -1170,6 +1118,21 @@ function loadPhotos(list) {
       .then((res) => { if (res.data.url) photos.value = { ...photos.value, [key]: res.data.url } })
       .catch(() => {})
   }
+}
+
+// ---------- what if: crowds ----------
+// { stopId: { level: 0-100, hour } }: "this stop is about <level>% busy at <hour>" (the time it was planned for).
+// Kept here, before the stops below, because they are built with it.
+const crowdOverrides = ref({})
+// That stop's crowd curve for the day, scaled so <hour> is <level>%: the other hours keep their shape,
+// so a quieter time still shows up as quieter. Without a curve to scale, every hour is <level>%.
+function assumedCurve(stop, a) {
+  const base = []
+  for (let h = 0; h < 24; h++) base.push(crowdAt({ ...stop, duration: 1 }, h))
+  const atHour = crowdAt(stop, a.hour)
+  if (atHour < 1) return base.map(() => a.level)
+  const k = a.level / atHour
+  return base.map((v) => Math.min(100, Math.round(v * k)))
 }
 
 // ---------- the day's stops, in the shape the optimizer wants ----------
@@ -1203,11 +1166,13 @@ function toWork(s) {
   }
 }
 const work = computed(() => {
-  const list = sampleMode.value ? sample.value.stops.filter((s) => s.date === sample.value.day) : props.stops
-  return list.map(toWork)
+  return props.stops.map((s) => {
+    const w = toWork(s)
+    const a = crowdOverrides.value[s.id]
+    return a ? { ...w, crowd: assumedCurve(w, a), crowdAssumed: true } : w
+  })
 })
 const unscheduled = computed(() => {
-  if (sampleMode.value) return sample.value.wishlist
   const taken = props.scheduledNames.map((n) => n.toLowerCase())
   return props.wishlist.filter((w) => !taken.includes(w.name.toLowerCase()))
 })
@@ -1216,7 +1181,7 @@ const unscheduled = computed(() => {
 // ---------- majority vote rule ----------
 // On a group trip (2+ travellers), a saved place can only go on a day once more than half voted for it.
 // Solo trips skip voting: everything saved can be added.
-const votingOn = computed(() => !sampleMode.value && props.travellers.length >= 2)
+const votingOn = computed(() => props.travellers.length >= 2)
 const needed = computed(() => Math.floor(props.travellers.length / 2) + 1) // 3 travellers -> 2, 4 -> 3
 function isPick(w) {
   return !votingOn.value || (w.votes || []).length >= needed.value
@@ -1255,10 +1220,10 @@ const savedGroups = computed(() => {
 
 watch([work, unscheduled], () => {
   const all = props.stops.concat(unscheduled.value)
-  loadPhotos(sampleMode.value ? sample.value.stops.concat(sample.value.wishlist) : all)
+  loadPhotos(all)
 }, { immediate: true })
 
-// ---------- demo weather simulation ----------
+// ---------- what if: weather (see the panel under the timeline) ----------
 const simulationStopId = ref('')
 // For the two dropdowns (the app's own CustomDropdown, like everywhere else)
 const SIM_WEATHER = [{ value: 'Rain', label: 'Rainy', icon: '🌧️' }, { value: 'Clear', label: 'Sunny', icon: '☀️' }]
@@ -1308,6 +1273,7 @@ function applyWeatherSimulation() {
   if (!it) return
 
   weatherSimulation.value = {
+    date: dayShown.value,
     stopId: it.stop.id,
     stopName: it.stop.name,
     start: it.start,
@@ -1383,6 +1349,7 @@ const effectiveWeatherBlocks = computed(() => {
   }
 
   const sim = weatherSimulation.value
+  if (sim.date !== dayShown.value) return props.weatherBlocks
 
   return props.weatherBlocks.map((block) => {
     const overlaps =
@@ -1399,13 +1366,13 @@ const effectiveWeatherBlocks = computed(() => {
       ...block,
       condition: rainy ? 'Rain' : 'Clear',
       rain: rainy,
-      demoSimulation: true
+      simulated: true
     }
   })
 })
 
 const rain = computed(() =>
-  (effectiveWeatherBlocks.value.length && !sampleMode.value
+  (effectiveWeatherBlocks.value.length
     ? rainFromBlocks(effectiveWeatherBlocks.value)
     : null)
 )
@@ -1423,7 +1390,7 @@ const travelPrefs = computed(() => ({
 // Real travel times for one leg (in the background lane; kept by the server, so it's quick next time)
 function fetchLeg(a, b) {
   a = exitOf(a) // after a flight: from the airport it lands at
-  if (!a || !b || a.lat == null || b.lat == null || sampleMode.value) return
+  if (!a || !b || a.lat == null || b.lat == null) return
   const key = legKey(a, b)
   if (realLegs.value[key] || asking.value[key]) return
   asking.value = { ...asking.value, [key]: true }
@@ -1448,22 +1415,22 @@ const opts = computed(() => ({
 // ---------- where the day starts and ends (hotel or airport) ----------
 const cityName = computed(() => (props.dayCity ? props.dayCity.split(', ')[0] : ''))
 // Tonight's hotel and last night's (they differ on the day you change hotel)
-const dayStay = computed(() => (sampleMode.value ? null : props.dayStay))
-const morningStay = computed(() => (sampleMode.value ? null : props.morningStay || props.dayStay))
+const dayStay = computed(() => props.dayStay)
+const morningStay = computed(() => props.morningStay || props.dayStay)
 const changingHotel = computed(() => !!(dayStay.value && morningStay.value && dayStay.value.from === dayShown.value && morningStay.value.from !== dayStay.value.from))
 const arrivalToday = computed(() => {
   const a = props.myFlight && props.myFlight.arrival
-  return !sampleMode.value && a && a.date === dayShown.value ? a : null
+  return a && a.date === dayShown.value ? a : null
 })
 const departureToday = computed(() => {
   const d = props.myFlight && props.myFlight.departure
-  return !sampleMode.value && d && d.date === dayShown.value ? d : null
+  return d && d.date === dayShown.value ? d : null
 })
 // A flight home in the small hours of tomorrow (e.g. 3:50 AM): you go to the airport tonight
 const departureTonight = computed(() => {
   const d = props.myFlight && props.myFlight.departure
   const next = dayList.value[dayIndex.value + 1]
-  if (sampleMode.value || !d || !next || d.date !== next || !d.place) return null
+  if (!d || !next || d.date !== next || !d.place) return null
   return hourOf(d.time) - 2.5 < opts.value.dayStart ? d : null
 })
 function hourOf(hhmm) {
@@ -1574,7 +1541,7 @@ function stopToMove(items) {
 }
 // The stops that don't fit, and the day each one could go to
 const overflow = computed(() => {
-  if (previewing.value || sampleMode.value || !endsLate(current.value)) return null
+  if (previewing.value || !endsLate(current.value)) return null
   let keep = current.value.map((it) => it.stop)
   const out = []
   for (let n = 0; n < 20; n++) {
@@ -1756,7 +1723,7 @@ function slotOf(i) {
   for (let k = 0; k < i; k++) if (!timeline.value[k].stop.virtual) n++
   return n
 }
-watch(() => dayShown.value + '|' + props.stops.map((s) => s.id + s.hour + s.locked).join(), () => { if (!sampleMode.value) preview.value = null })
+watch(() => dayShown.value + '|' + props.stops.map((s) => s.id + s.hour + s.locked).join(), () => { preview.value = null })
 
 const phase = ref('')
 const phaseText = computed(() => ({ route: 'Analyzing route…', forecast: 'Checking forecast…', reorder: 'Reordering…' })[phase.value] || 'Optimize Route')
@@ -1887,13 +1854,7 @@ function setDuration(stop, hours) {
 
 function saveDuration(id, hours, changes) {
   changes = changes.map((c) => ({ ...c, hour: Math.min(c.hour, 23.75) }))
-  if (sampleMode.value) {
-    const s = sample.value.stops.find((x) => x.id === id)
-    if (s) s.duration = hours
-    save(changes)
-  } else {
-    emit('duration', id, hours, changes)
-  }
+  emit('duration', id, hours, changes)
 }
 
 // After a change: say what moved, or warn if a locked plan / the end of the day is now tight
@@ -1915,7 +1876,6 @@ function lastFlexible(items) {
 }
 
 // ---------- on the day: what's happening now ----------
-// The sample day pretends it's 10:30 AM on its first day, so you can try this any time.
 const clock = ref(Date.now())
 const ticker = setInterval(() => { clock.value = Date.now() }, 60000)
 onBeforeUnmount(() => clearInterval(ticker))
@@ -1925,11 +1885,10 @@ function todayStr() {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 }
 const nowHour = computed(() => {
-  if (sampleMode.value) return 10.5
   const d = new Date(clock.value)
   return d.getHours() + d.getMinutes() / 60
 })
-const isToday = computed(() => (sampleMode.value ? dayShown.value === sample.value.days[0] : dayShown.value === todayStr()))
+const isToday = computed(() => dayShown.value === todayStr())
 // { id, state: 'now' | 'next' } for the stop you're at (or heading to next)
 const live = computed(() => {
   if (!isToday.value) return null
@@ -1998,28 +1957,16 @@ const status = computed(() => {
 })
 watch(status, (s) => emit('status', s), { immediate: true })
 
-// Write new times (sample: locally, real trip: parent saves)
+// Write new times (the parent saves them)
 const liveText = ref('')
 function save(changes) {
   // A day can't run past midnight: anything that would is kept at 11:45 PM (and flagged as after your day)
   changes = changes.map((c) => ({ ...c, hour: Math.min(c.hour, 23.75) }))
-  if (sampleMode.value) {
-    for (const c of changes) {
-      const s = sample.value.stops.find((x) => x.id === c.id)
-      if (s) s.hour = c.hour
-    }
-  } else {
-    emit('apply', changes)
-  }
+  emit('apply', changes)
   liveText.value = 'Day updated'
 }
 function toggleLock(stop) {
-  if (sampleMode.value) {
-    const s = sample.value.stops.find((x) => x.id === stop.id)
-    if (s) s.locked = !s.locked
-  } else {
-    emit('lock', stop.id, !stop.locked)
-  }
+  emit('lock', stop.id, !stop.locked)
 }
 
 // ---------- drag & drop ----------
@@ -2121,8 +2068,7 @@ function dropInto(slot) {
 // Which city a stop is in: its own city, or the city of the saved place with the same name
 function cityOf(stop) {
   if (stop.city) return stop.city
-  const list = sampleMode.value ? sample.value.wishlist : props.wishlist
-  const match = list.find((w) => w.name.toLowerCase() === (stop.name || '').toLowerCase())
+  const match = props.wishlist.find((w) => w.name.toLowerCase() === (stop.name || '').toLowerCase())
   return match && match.city ? match.city : null
 }
 
@@ -2165,7 +2111,7 @@ function scheduleWish(w, slot, confirmed = false, roomOk = false) {
   const items = retime(list)
   const changes = items.map((it) => ({ id: it.stop.id, hour: it.start }))
   // Doesn't fit before the day ends? Suggest a day with room (or add it anyway)
-  if (!roomOk && !sampleMode.value && endsLate(items)) {
+  if (!roomOk && endsLate(items)) {
     const date = bestDayFor(fresh, {})
     openConfirm({
       kind: 'full',
@@ -2180,15 +2126,8 @@ function scheduleWish(w, slot, confirmed = false, roomOk = false) {
     })
     return
   }
-  if (sampleMode.value) {
-    const id = 'p-' + Date.now().toString(36)
-    sample.value.stops.push({ ...w, id, date: sample.value.day, duration: w.duration || 1.5, locked: false, hour: 0 })
-    sample.value.wishlist = sample.value.wishlist.filter((x) => x.id !== w.id)
-    save(changes.map((c) => (c.id === '__new' ? { ...c, id } : c)))
-  } else {
-    emit('schedule', w, changes) // the parent creates the stop for '__new'
-    liveText.value = w.name + ' added'
-  }
+  emit('schedule', w, changes) // the parent creates the stop for '__new'
+  liveText.value = w.name + ' added'
 }
 
 // A tap on a saved place's card adds it to the end of the day (its + button handles its own click)
@@ -2206,14 +2145,7 @@ function dropOnDrawer() {
 // Take a stop off the day and put it back in Saved places (with Undo, in case it was a mistake)
 function unschedule(stop) {
   if (previewing.value) return
-  if (sampleMode.value) {
-    sampleUndo = JSON.stringify(sample.value)
-    const s = sample.value.stops.find((x) => x.id === stop.id)
-    sample.value.stops = sample.value.stops.filter((x) => x.id !== stop.id)
-    if (s) sample.value.wishlist.push({ id: 'pw-' + s.id, name: s.name, city: s.city || null, outdoor: s.outdoor, lat: s.lat, lon: s.lon, address: s.address })
-  } else {
-    emit('unschedule', stop.id)
-  }
+  emit('unschedule', stop.id)
   // A flight or a hotel visit just comes off the day; places go back to Saved places
   if (stop.kind === 'flight' || stop.kind === 'hotel') return showToast(stop.name + ' removed from the day')
   drawerOpen.value = true
@@ -2258,8 +2190,7 @@ const TYPE_TO_CATEGORY = {
 function categoryOf(s) {
   if (s.kind === 'flight') return FLIGHT_CAT
   if (s.kind === 'hotel') return HOTEL_CAT
-  const list = sampleMode.value ? sample.value.wishlist : props.wishlist
-  const saved = s.type ? s : list.find((w) => w.name.toLowerCase() === (s.name || '').toLowerCase())
+  const saved = s.type ? s : props.wishlist.find((w) => w.name.toLowerCase() === (s.name || '').toLowerCase())
   const fromType = saved && TYPE_TO_CATEGORY[saved.type]
   if (fromType) return CATEGORIES.find((c) => c.key === fromType)
   // Whole words only ("bar" shouldn't match "Barcelona"; "ji" only as in "Kinkaku-ji")
@@ -2399,13 +2330,7 @@ function chooseTravel(mode) {
   const items = retime(list)
   const changes = []
   for (const it of items) if (!it.stop.virtual) changes.push({ id: it.stop.id, hour: Math.min(it.start, 23.75) })
-  if (sampleMode.value) {
-    const s = sample.value.stops.find((x) => x.id === leg.toId)
-    if (s) s.travel = travel
-    save(changes)
-  } else {
-    emit('travel', leg.toId, travel, changes)
-  }
+  emit('travel', leg.toId, travel, changes)
   legOpen.value = null
   explainLocked(items, mode ? TRAVEL_MODES[mode].label + ' to ' + name : 'Suggested way to ' + name)
 }
@@ -2452,7 +2377,6 @@ function weatherIcon(b) {
 // The day's forecast, each 3-hour block with its icon
 const dayBlocks = computed(() => {
   const list = []
-  if (sampleMode.value) return list
   for (const b of effectiveWeatherBlocks.value) list.push({ ...b, icon: weatherIcon(b) })
   return list
 })
@@ -2491,27 +2415,18 @@ function weatherOf(it) {
     title: b.condition + (temp ? ', ' + temp + 'C' : '') + (wet ? ' · outdoors in the rain' : '')
   }
 }
-// track stop from demo
-const demoStopId = ref('')
+// The crowd panel (see "what if: crowds" above)
+const crowdStopId = ref('')
 const simulationCrowdLevel = ref('Peak')
 const SIM_CROWD = [{ value: 'Quiet', label: 'Quiet', icon: '🟢' }, { value: 'Busy', label: 'Busy', icon: '🟠' }, { value: 'Peak', label: 'Peak', icon: '🔴' }]
-
-const crowdSimulation = ref(null)
-const crowdOverrides = ref({}) // store selected crwod status for demo
+const crowdSimulation = ref(null) // the last one set, for the "Simulating …" line
 
 function crowdOf(it) {
   const s = it.stop
-  const stopKey = s.id || s.name
-  let c
-
-  if (stopKey in crowdOverrides.value) {
-    c = crowdOverrides.value[stopKey]
-  } else {
-    if (!s.crowd && !s.popular) return { value: null, text: '–', tone: 'none', title: 'No crowd data (no address)' }
-    c = Math.round(crowdAt(s, it.start))
-  }
+  if (!s.crowd && !s.popular) return { value: null, text: '–', tone: 'none', title: 'No crowd data (no address)' }
+  const c = Math.round(crowdAt(s, it.start)) // (a simulated crowd level is already in s.crowd)
   const level = c >= 80 ? { text: 'Peak', tone: 'bad' } : c >= 55 ? { text: 'Busy', tone: 'mid' } : { text: 'Quiet', tone: 'ok' }
-  const isSimulated = stopKey in crowdOverrides.value
+  const isSimulated = !!s.crowdAssumed
 
   return { value: c, text: level.text, tone: level.tone, title: level.text + ' at this time, about ' + c + '% of its busiest' + (isSimulated ? ' (Simulated)' : (s.crowd ? '' : ' (estimate)')), isSimulated }
 }
@@ -2657,11 +2572,11 @@ function previewCascadeForMove(it, newHour) {
 function quieterTimes(it) {
   // if (!it.stop.crowd && !it.stop.popular) return []
   // const now = crowdAt(it.stop, it.start)
-  // 1. Get current crowd level (checks crowdOverrides first, falls back to live data)
+  // 1. Crowd level at its planned time (a simulated level is already in the stop's curve)
   const currentCrowd = crowdOf(it)
   if (currentCrowd.value == null) return []
 
-  // 2. Baseline value (simulated override or live percentage)
+  // 2. Baseline value
   const now = currentCrowd.value
 
   return freeTimes(it, (h) => crowdAt(it.stop, h) <= now - 10)
@@ -2831,8 +2746,7 @@ let sheetOpener = null
 const sheetItem = computed(() => (sheet.value ? stopRows.value.find((it) => it.stop.id === sheet.value.id) || null : null))
 const sheetStop = computed(() => {
   if (!sheet.value) return null
-  const list = sampleMode.value ? sample.value.stops : props.stops
-  return list.find((s) => s.id === sheet.value.id) || null
+  return props.stops.find((s) => s.id === sheet.value.id) || null
 })
 // Where to search when setting a stop's location: around another stop of the day that is on the map
 const sheetNear = computed(() => {
@@ -2997,46 +2911,47 @@ function hoursText(stop) {
   return 'Open ' + formatHour(stop.open) + ' – ' + formatHour(stop.close)
 }
 
-// demo crowd 
-// set a stop's crowd status
+// Set "this stop is <level> at its planned time" (see assumedCurve)
 function applyCrowdSimulation() {
-  
-  if (!demoStopId.value) return
-
-  const presetMap = { Quiet: 25, Busy: 65, Peak: 90 }
-  const selectedLevel = simulationCrowdLevel.value
-  const targetId = demoStopId.value
-
-  crowdOverrides.value = {
-    ...crowdOverrides.value,
-    [targetId]: presetMap[selectedLevel] ?? 50
-  }
-
-  const targetStop = stopRows.value.find(item => item.stop.id === targetId)
-  crowdSimulation.value = {
-    stopId: targetId,
-    stopName: targetStop?.stop?.name || targetId,
-    level: selectedLevel
-  }
+  const it = stopRows.value.find((row) => row.stop.id === crowdStopId.value)
+  if (!it) return
+  const LEVELS = { Quiet: 25, Busy: 65, Peak: 90 }
+  const level = simulationCrowdLevel.value
+  crowdOverrides.value = { ...crowdOverrides.value, [it.stop.id]: { level: LEVELS[level], hour: it.start } }
+  crowdSimulation.value = { stopId: it.stop.id, stopName: it.stop.name, level, hour: it.start }
 }
 
-// reset all simulations back to live data
+// Back to the real crowd data
 function resetCrowdSimulation() {
   crowdOverrides.value = {}
   crowdSimulation.value = null
-  demoStopId.value = ''
+  crowdStopId.value = ''
 }
 
 // select the first stop
 watch(
   () => stopRows.value,
   (newRows) => {
-    if (newRows && newRows.length > 0 && !demoStopId.value) {
-      demoStopId.value = newRows[0].stop.id
+    if (newRows && newRows.length > 0 && !crowdStopId.value) {
+      crowdStopId.value = newRows[0].stop.id
     }
   },
   { immediate: true, deep: true }
 )
+
+// Run Optimize Route with the simulated weather / crowds, and bring its suggestion into view
+async function optimizeWithAssumptions() {
+  await optimize()
+  await nextTick()
+  const el = document.querySelector('.ip-preview')
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+// Simulations belong to the day they were made on: opening another day starts from the real data again
+watch(dayShown, () => {
+  resetCrowdSimulation()
+  resetWeatherSimulation()
+})
 
 </script>
 <style scoped>
@@ -3366,7 +3281,7 @@ watch(
 }
 .ip-views button.on { color: #fff; }
 
-.ip-sample, .ip-muted, .ip-start {
+.ip-muted, .ip-start {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -3723,12 +3638,11 @@ watch(
 .ip-add-stop span { font-size: 18px; line-height: 1; }
 .ip-add-stop:hover { background: var(--bs-primary-border-subtle, #9ec5fe); }
 
-/* ---------- Demo sections ---------- */
+/* ---------- What-if panels (simulated weather / crowds) ---------- */
 .ip-weather-sim { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--bs-border-radius-lg, 0.5rem); background: var(--soft); }
 .ip-sim-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
 .ip-sim-heading h4 { margin: 0; font-size: 15px; font-weight: 700; }
 .ip-sim-heading p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
-.ip-sim-badge { padding: 3px 8px; border: 1px solid var(--warn-line); border-radius: var(--bs-border-radius-sm, 0.25rem); background: var(--warn-bg); color: var(--warn-ink); font-size: 11px; font-weight: 700; }
 .ip-sim-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ip-sim-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; }
 .ip-sim-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
@@ -3737,6 +3651,7 @@ watch(
 .ip-sim-button:hover, .ip-preview-apply:hover { background: var(--primary-dark); }
 .ip-sim-reset, .ip-preview-cancel { border: 1px solid var(--line); background: #fff; color: var(--ink); }
 .ip-sim-active { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--warn-line); border-radius: var(--bs-border-radius, 0.375rem); background: var(--warn-bg); color: var(--ink); font-size: 12.5px; }
+.ip-sim-optimize { display: block; margin-top: 8px; }
 .ip-weather-alternatives { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--warn-line); }
 .ip-alt-heading { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
 .ip-alt-heading span { color: var(--muted); font-size: 12px; font-weight: 400; }

@@ -7,7 +7,6 @@
         <p class="ph-sub">
           {{ photos.length }} photo{{ photos.length === 1 ? '' : 's' }}
           <template v-if="contributorCount"> · {{ contributorCount }} contributor{{ contributorCount === 1 ? '' : 's' }}</template>
-          <template v-if="demo"> · demo trip, photos aren't saved</template>
         </p>
       </div>
       <div class="ph-actions">
@@ -191,7 +190,7 @@ export default {
   components: { AppIcon, CustomDropdown },
   inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
-    tripId: { type: String, default: '' },
+    tripId: { type: String, required: true },
     travellers: { type: Array, default: () => [] },
     wishlist: { type: Array, default: () => [] },       // for album suggestions
     initialAlbums: { type: Array, default: () => [] },
@@ -202,7 +201,6 @@ export default {
   data() {
     return {
       REACTIONS,
-      demo: this.tripId === 'seoul',
       albums: this.initialAlbums.slice(),
       photos: [],
       thumbs: {},          // photo id -> object URL
@@ -308,7 +306,7 @@ export default {
     window.addEventListener('dragenter', this.onDragEnter)
     window.addEventListener('dragover', this.onDragOver)
     // Pick up the group's new photos and reactions every 20 s while Photos is open
-    if (!this.demo) this.pollTimer = setInterval(this.poll, 20000)
+    this.pollTimer = setInterval(this.poll, 20000)
   },
 
   beforeUnmount() {
@@ -327,10 +325,6 @@ export default {
     async loadPhotos() {
       this.loading = true
       this.loadError = ''
-      if (this.demo) {
-        this.loading = false
-        return
-      }
       try {
         const res = await axios.get('/api/trips/' + this.tripId + '/photos')
         for (const p of res.data) p.reactions = p.reactions || {}
@@ -374,7 +368,6 @@ export default {
     },
 
     async fetchBlob(photo, thumb) {
-      if (photo.localBlob) return thumb && photo.localThumb ? photo.localThumb : photo.localBlob // demo trip
       try {
         const res = await axios.get(this.url(photo, thumb), { responseType: 'blob' })
         return res.data
@@ -400,7 +393,6 @@ export default {
 
     // ---------- albums ----------
     async saveAlbums() {
-      if (this.demo) return
       try {
         await axios.put('/api/trips/' + this.tripId + '/albums', this.albums)
       } catch (err) {
@@ -510,15 +502,6 @@ export default {
     async uploadOne(u) {
       try {
         const t = await this.makeThumb(u.file)
-        if (this.demo) {
-          const photo = { id: 'demo-' + u.key, album: this.target, uploadedBy: this.me, fileName: u.name, width: t.width, height: t.height,
-            reactions: {}, createdAt: new Date().toISOString(), localBlob: u.file, localThumb: t.blob }
-          this.photos.unshift(photo)
-          this.thumbs[photo.id] = URL.createObjectURL(t.blob)
-          u.progress = 100
-          u.status = 'done'
-          return
-        }
         const params = { album: this.target, name: u.name, w: t.width, h: t.height }
         const res = await axios.post('/api/trips/' + this.tripId + '/photos', u.file, {
           params,
@@ -554,7 +537,6 @@ export default {
       const people = photo.reactions[emoji] || []
       photo.reactions = { ...photo.reactions, [emoji]: people.includes(this.me) ? people.filter((p) => p !== this.me) : people.concat(this.me) }
       if (!photo.reactions[emoji].length) delete photo.reactions[emoji]
-      if (this.demo) return
       try {
         const res = await axios.post('/api/trips/' + this.tripId + '/photos/' + photo.id + '/react', { emoji })
         photo.reactions = res.data.reactions || {}
@@ -567,7 +549,6 @@ export default {
     async move(photo, albumId) {
       const before = photo.album
       photo.album = albumId
-      if (this.demo) return
       try {
         await axios.patch('/api/trips/' + this.tripId + '/photos/' + photo.id, { album: albumId })
       } catch (err) {
@@ -578,13 +559,11 @@ export default {
 
     async remove(photo) {
       const i = this.openIndex
-      if (!this.demo) {
-        try {
-          await axios.delete('/api/trips/' + this.tripId + '/photos/' + photo.id)
-        } catch (err) {
-          notify(errorText(err, 'Could not delete the photo.'), () => this.remove(photo))
-          return // keep it showing: it wasn't deleted
-        }
+      try {
+        await axios.delete('/api/trips/' + this.tripId + '/photos/' + photo.id)
+      } catch (err) {
+        notify(errorText(err, 'Could not delete the photo.'), () => this.remove(photo))
+        return // keep it showing: it wasn't deleted
       }
       this.photos = this.photos.filter((p) => p.id !== photo.id)
       if (this.thumbs[photo.id]) URL.revokeObjectURL(this.thumbs[photo.id])

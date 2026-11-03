@@ -37,9 +37,9 @@
                 </span>
                 <span v-if="itineraryInfo.travellers.length > 6" class="trip-face more">+{{ itineraryInfo.travellers.length - 6 }}</span>
               </span>
-              <button v-if="!isDemo && !readOnly" type="button" class="trip-invite" @click="showShare = true" data-testid="invite-btn">+ Invite</button>
+              <button v-if="!readOnly" type="button" class="trip-invite" @click="showShare = true" data-testid="invite-btn">+ Invite</button>
               <!-- Organiser: change the name, route and dates (or delete the trip) -->
-              <button v-if="!isDemo && !readOnly && trip.role === 'owner'" type="button" class="trip-edit" @click="showEdit = true" data-testid="edit-trip-btn">
+              <button v-if="!readOnly && trip.role === 'owner'" type="button" class="trip-edit" @click="showEdit = true" data-testid="edit-trip-btn">
                 <AppIcon name="pencil" :size="13" /> Edit trip
               </button>
             </div>
@@ -96,9 +96,7 @@
             <button type="button" class="btn btn-primary btn-sm" @click="showGuide = false">Got it</button>
           </section>
 
-      <!-- Group decisions and expenses are still built around the Seoul demo data -->
       <div v-show="activeTab === 'itinerary'" :id="'pane-itinerary'" role="tabpanel">
-        <FlightDelayWidget v-if="isDemo" />
         <!-- editRev: after "Edit trip" the planner starts again from the saved trip (new dates, moved stops) -->
         <ItineraryView
           :key="'itin-' + editRev"
@@ -108,8 +106,8 @@
           :start-date="itineraryInfo.startDate"
           :end-date="itineraryInfo.endDate"
           :initial-stops="itineraryInfo.stops"
-          :initial-wishlist="itineraryInfo.wishlist" :initial-version="isDemo ? 0 : trip.version || 0" :travellers="itineraryInfo.travellers"
-          :me="myName" :stays="isDemo ? [] : trip.stays || []" :crew="isDemo ? {} : trip.crew || {}"
+          :initial-wishlist="itineraryInfo.wishlist" :initial-version="trip.version || 0" :travellers="itineraryInfo.travellers"
+          :me="myName" :stays="trip.stays || []" :crew="trip.crew || {}"
           @itinerary-change="updatePackingActivities" @set-end-date="setEndDate" @go-places="addFromItinerary"
           @stays-change="staysChanged" @crew-change="trip.crew = $event" />
       </div>
@@ -134,31 +132,31 @@
       </div>
       <div v-show="activeTab === 'packing'" :id="'pane-packing'" role="tabpanel">
         <PackingView :key="'pack-' + id" :trip-id="id" :days="dayCount || 3"
-          :activities="isDemo ? ['sightseeing', 'food'] : trip.activities || []"
-          :weather="isDemo ? ['mild', 'rain'] : trip.weather || []"
-          :extras="isDemo ? [] : trip.extras || []"
-          :initial-packing="isDemo ? null : trip.packing"
+          :activities="trip.activities || []"
+          :weather="trip.weather || []"
+          :extras="trip.extras || []"
+          :initial-packing="trip.packing"
           :has-outdoor-activity="hasOutdoorActivity" />
       </div>
       <div v-show="activeTab === 'expenses'" id="pane-expenses" role="tabpanel">
         <ExpensesView :key="'xp-' + id" :trip-id="id" :travellers="itineraryInfo.travellers"
           :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate"
-          :initial="isDemo ? null : trip.expenses" :me="myName" />
+          :initial="trip.expenses" :me="myName" />
       </div>
       <div v-show="activeTab === 'photos'" :id="'pane-photos'" role="tabpanel">
         <PhotosView :key="'ph-' + id" :trip-id="id" :travellers="itineraryInfo.travellers"
-          :wishlist="wishlistPlaces" :initial-albums="isDemo ? [] : trip.photoAlbums || []" :me="myName"
+          :wishlist="wishlistPlaces" :initial-albums="trip.photoAlbums || []" :me="myName"
           :filter-who="photoWho" />
       </div>
       <div v-show="activeTab === 'crew'" :id="'pane-crew'" role="tabpanel">
         <CrewView :key="'crew-' + id" :trip-id="id" :city="itineraryInfo.destinations[0].split(', ')[0]"
-          :travellers="itineraryInfo.travellers" :members="isDemo ? [] : trip.members || []"
-          :pending-invites="isDemo ? [] : trip.pendingInvites || []" :crew="isDemo ? {} : trip.crew || {}"
-          :role="isDemo ? 'owner' : trip.role" :me="myName"
+          :travellers="itineraryInfo.travellers" :members="trip.members || []"
+          :pending-invites="trip.pendingInvites || []" :crew="trip.crew || {}"
+          :role="trip.role" :me="myName"
           :my-id="authUserId" :flights="tripFlights" @invite="showShare = true" @go="goFromCrew" @changed="reloadTrip" />
       </div>
       <!-- Recap (after the trip): the trip in numbers with its route on a map -->
-      <div v-if="!isDemo && tripPhase === 'after'" v-show="activeTab === 'recap'" id="pane-recap" role="tabpanel">
+      <div v-if="tripPhase === 'after'" v-show="activeTab === 'recap'" id="pane-recap" role="tabpanel">
         <TripRecap :key="'recap-' + id" :trip-id="id" :name="trip.name"
           :destinations="itineraryInfo.destinations" :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate"
           :travellers="itineraryInfo.travellers" :stop-count="stopCount" :phase="tripPhase" />
@@ -169,16 +167,16 @@
       -->
       <div v-show="activeTab === 'safety'" :id="'pane-safety'" role="tabpanel">
         <SafetyLayer :trip-id="id" :destinations="itineraryInfo.destinations" :start-date="itineraryInfo.startDate"
-          :end-date="itineraryInfo.endDate" :stay="isDemo ? null : trip.stay" :stops="safetyStops" :me="myName"
+          :end-date="itineraryInfo.endDate" :stay="trip.stay" :stops="safetyStops" :me="myName"
           :active="activeTab === 'safety'" @risk-change="handleRiskChange" @stay-change="trip.stay = $event" />
       </div>
 
       <div v-show="activeTab === 'travelOptions'" :id="'pane-travelOptions'" role="tabpanel">
         <!-- Journeys that aren't between two stops (travel between stops is planned in the itinerary) -->
-        <OtherJourneys :key="'oj-' + id" :trip-id="id" :is-demo="isDemo" :destinations="itineraryInfo.destinations" :stops="safetyStops"
-:stays="isDemo ? [] : trip.stays || []" :my-airports="myAirports" :travellers="itineraryInfo.travellers" :me="myName"
+        <OtherJourneys :key="'oj-' + id" :trip-id="id" :destinations="itineraryInfo.destinations" :stops="safetyStops"
+:stays="trip.stays || []" :my-airports="myAirports" :travellers="itineraryInfo.travellers" :me="myName"
           :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate"
-          :initial-journeys="isDemo ? [] : trip.journeys || []" :prefs="prefs" :flights="tripFlights" :wishlist="trip.wishlist" />
+          :initial-journeys="trip.journeys || []" :prefs="prefs" :flights="tripFlights" :wishlist="trip.wishlist" />
       </div>
 
     </main>
@@ -197,7 +195,6 @@ import PackingView from '../components/trip/PackingView.vue'
 import PhotosView from '../components/trip/PhotosView.vue'
 import ExpensesView from '../components/expenses/ExpensesView.vue'
 import SafetyLayer from '../components/safety/SafetyLayer.vue'
-import FlightDelayWidget from '../components/trip/FlightDelayWidget.vue'
 import OtherJourneys from '../components/itinerary/OtherJourneys.vue'
 import { prefs } from '../preferences.js'
 import TripShare from '../components/trip/TripShare.vue'
@@ -217,8 +214,8 @@ import DoodleIcon from '../components/common/DoodleIcon.vue'
 import UserProfileMenu from '../components/account/UserProfileMenu.vue'
 
 export default {
-  components: { DoodleIcon, UserProfileMenu, FlagImg, LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
-  props: { id: { type: String, default: 'seoul' } }, // from the route /trip/:id
+  components: { DoodleIcon, UserProfileMenu, FlagImg, LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
+  props: { id: { type: String, required: true } }, // from the route /trip/:id
   data() {
     return {
       prefs, // Settings → Transport (shared, loaded by the itinerary)
@@ -260,11 +257,10 @@ export default {
   computed: {
     // The trip has ended (see tripPhase). The server refuses changes to it too (server/archived.js).
     readOnly() {
-      return !this.isDemo && this.tripPhase === 'after'
+      return this.tripPhase === 'after'
     },
     // What the itinerary needs to know about this trip
     itineraryInfo() {
-      if (this.isDemo) return { destination: 'Seoul, South Korea', destinations: ['Seoul, South Korea'], travellers: ['Sarah', 'John', 'Amy'], startDate: '2026-10-12', endDate: '2026-10-17', stops: [], wishlist: [] }
       const t = this.trip
       return { destination: t.destination, destinations: t.destinations && t.destinations.length ? t.destinations : [t.destination], travellers: t.travellers || [], startDate: t.startDate, endDate: t.endDate, stops: t.stops || [], wishlist: t.wishlist || [] }
     },
@@ -272,7 +268,7 @@ export default {
     shownTabs() {
       const list = []
       for (const t of this.tabs) {
-        if (t.key === 'recap' && (this.isDemo || this.tripPhase !== 'after')) continue
+        if (t.key === 'recap' && this.tripPhase !== 'after') continue
         list.push(t)
       }
       return list
@@ -309,13 +305,12 @@ export default {
     stopCount() {
       return store.stops.length
     },
-    // My traveller name on this trip (the demo trip pretends you're Sarah)
+    // My traveller name on this trip
     myName() {
-      return this.isDemo ? 'Sarah' : this.trip.me || this.trip.travellers[0] || ''
+      return this.trip.me || this.trip.travellers[0] || ''
     },
     // Whose votes I may change: my own, and (organiser only) people without an account
     canVoteFor() {
-      if (this.isDemo) return this.itineraryInfo.travellers
       const list = [this.myName]
       if (this.trip.role === 'owner') {
         for (const t of this.trip.travellers) {
@@ -325,7 +320,6 @@ export default {
       return list
     },
     joinedNames() {
-      if (this.isDemo) return ['Sarah', 'John', 'Amy']
       return (this.trip.members || []).map((m) => m.name)
     },
     // Itinerary stops for the safety radar
@@ -352,9 +346,6 @@ export default {
     wishlistPlaces() {
       return store.wishlist
     },
-    isDemo() {
-      return this.id === 'seoul'
-    },
     // Places saved since "Add stop" opened Places
     newSaved() {
       return this.returnTo ? Math.max(0, store.wishlist.length - this.savedAtStart) : 0
@@ -366,10 +357,9 @@ export default {
       return auth.user && auth.user.id ? String(auth.user.id) : ''
     },
     headerTitle() {
-      return this.isDemo ? 'Seoul, South Korea' : this.trip.name
+      return this.trip.name
     },
     headerSubtitle() {
-      if (this.isDemo) return '12 Oct – 17 Oct | Travellers: Sarah, John, Amy'
       const t = this.trip
       const fmt = (s) => new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
       const dates = t.startDate ? (t.endDate ? fmt(t.startDate) + ' – ' + fmt(t.endDate) : 'From ' + fmt(t.startDate)) : 'Dates not set'
@@ -386,18 +376,16 @@ export default {
   async mounted() {
     // Remove "?welcome=1" from the address so the guide doesn't come back on refresh
     if (this.showGuide) this.$router.replace({ query: {} })
-    if (!this.isDemo) {
-      try {
-        // (a time limit, so a server that doesn't answer shows a message instead of loading forever)
-        const res = await axios.get('/api/trips/' + this.id, { timeout: 30000 })
-        this.trip = res.data
-      } catch (err) {
-        const notFound = err.response && err.response.status === 404
-        this.loadError = notFound ? 'That trip could not be found.'
-          : err.code === 'ECONNABORTED' ? 'The server is taking too long to answer (it may be starting up).'
-            : 'Could not load this trip. Is the server running?'
-        this.loadRetry = !notFound
-      }
+    try {
+      // (a time limit, so a server that doesn't answer shows a message instead of loading forever)
+      const res = await axios.get('/api/trips/' + this.id, { timeout: 30000 })
+      this.trip = res.data
+    } catch (err) {
+      const notFound = err.response && err.response.status === 404
+      this.loadError = notFound ? 'That trip could not be found.'
+        : err.code === 'ECONNABORTED' ? 'The server is taking too long to answer (it may be starting up).'
+          : 'Could not load this trip. Is the server running?'
+      this.loadRetry = !notFound
     }
     this.loading = false
     // When you scroll, the top row slides away and the tabs stay pinned: it sticks that far above the screen
@@ -420,7 +408,7 @@ export default {
   methods: {
     // Planner added or removed a day (or undid that): save the trip's new end date
     async setEndDate(endDate) {
-      if (this.isDemo || !this.trip.startDate || !endDate) return
+      if (!this.trip.startDate || !endDate) return
       const before = this.trip.endDate
       this.trip.endDate = endDate // show it straight away
       try {

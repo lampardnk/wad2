@@ -140,7 +140,7 @@ export default {
   components: { AppIcon, DoodleIcon },
   inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
-    tripId: { type: String, default: '' },
+    tripId: { type: String, required: true },
     days: { type: Number, default: 3 },
     activities: { type: Array, default: () => [] },
     weather: { type: Array, default: () => [] },
@@ -255,7 +255,7 @@ export default {
 
   watch: {
     saveKey(key) {
-      if (!this.tripId || this.tripId === 'seoul' || this.readOnly || key === this.lastSaved) return // the demo trip isn't saved
+      if (this.readOnly || key === this.lastSaved) return
       this.saveStatus = 'Saving…'
       clearTimeout(this.saveTimer)
       this.saveTimer = setTimeout(this.save, 600)

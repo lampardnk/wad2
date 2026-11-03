@@ -1,18 +1,7 @@
 // Shared itinerary state, same idea as auth.js and preferences.js.
-// FlightDelayWidget (Day 1, demo only) and ItineraryView both use this.
+// ItineraryView, PlacesVoting, WishlistView and TripView use this.
 import { reactive } from 'vue'
 import axios from 'axios'
-
-// Day 1 (Mon 12 Oct) of the Seoul demo: arrival day. Hours are decimals: 13.5 = 1:30 PM.
-// latestStart = last time the stop can still start (e.g. tour check-in closes).
-export function makeDay1() {
-  return [
-    { id: 'd1-flight', type: 'flight', name: 'Flight KE621 arrives (ICN)', start: 13, duration: 0, buffer: 0.5 },
-    { id: 'd1-transfer', type: 'transfer', name: 'Airport transfer', start: 13.5, duration: 0.5 },
-    { id: 'd1-hotel', type: 'hotel', name: 'Hotel check-in', start: 14, duration: 0.5 },
-    { id: 'd1-tour', type: 'tour', name: 'Gyeongbokgung Palace Tour', start: 15, duration: 2, latestStart: 15.5, latestNote: 'tour check-in closes at 3:30 PM' }
-  ]
-}
 
 export function newId(prefix) {
   return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
@@ -36,31 +25,9 @@ export function runtimeStop(s) {
 }
 
 export const trip = reactive({
-  day1: makeDay1(),
   stops: [],     // every stop of the open trip, all days (each has a date)
   wishlist: []   // [{ id, name, address, outdoor: false }]
 })
-
-export function resetDay1() {
-  trip.day1 = makeDay1()
-}
-
-// The Seoul demo trip (Day 2 = Tue 13 Oct 2026)
-export function loadDemo() {
-  const d = '2026-10-13'
-  trip.stops = [
-    runtimeStop({ id: 'd2-breakfast', date: d, hour: 10, duration: 1, name: 'Korean Street Food Breakfast', address: null, outdoor: false }),
-    runtimeStop({ id: 'd2-palace', date: d, hour: 12, duration: null, name: 'Gyeongbokgung Palace', address: '161 Sajik-ro, Jongno-gu, Seoul, South Korea', outdoor: true, lat: 37.57975, lon: 126.97668 }),
-    runtimeStop({ id: 'd2-namsan', date: d, hour: 14, duration: null, name: 'Namsan Park (Outdoor)', address: '231 Samil-daero, Jung-gu, Seoul, South Korea', outdoor: true, lat: 37.55046, lon: 126.9916 }),
-    runtimeStop({ id: 'd2-dinner', date: d, hour: 18, duration: 1.5, name: 'Dinner Reservation (Myeongdong Kyoja)', address: '29 Myeongdong 10-gil, Jung-gu, Seoul', outdoor: false, locked: true, lat: 37.56256, lon: 126.9856 }),
-    runtimeStop({ id: 'd2-itaewon', date: d, hour: 20, duration: null, name: 'Itaewon Street', address: 'Itaewon-ro, Yongsan-gu, Seoul, South Korea', outdoor: true, lat: 37.53447, lon: 126.99458 })
-  ]
-  trip.wishlist = [
-    { id: 'w-starfield', name: 'Starfield Library (Indoor Mall)', address: '513 Yeongdong-daero, Gangnam-gu, Seoul', outdoor: false, type: 'attraction', votes: ['Sarah', 'Amy'], lat: 37.51017, lon: 127.06009 },
-    { id: 'w-museum', name: 'National Museum of Korea', address: '137 Seobinggo-ro, Yongsan-gu, Seoul', outdoor: false, type: 'museum', votes: ['John'], lat: 37.52395, lon: 126.98032 },
-    { id: 'w-lotte', name: 'Lotte World Indoor Adventure', address: '240 Olympic-ro, Songpa-gu, Seoul', outdoor: false, type: 'theme_park', votes: ['Sarah', 'John', 'Amy'], lat: 37.51108, lon: 127.09812 }
-  ]
-}
 
 // A saved trip from the server
 export function loadFromServer(saved) {
@@ -83,7 +50,7 @@ export function savedShape() {
 }
 // Save the open trip's stops + wishlist (for pages that don't show the itinerary, e.g. trip setup)
 export async function saveTrip(tripId) {
-  if (!tripId || tripId === 'seoul') return // the demo trip isn't saved
+  if (!tripId) return
   try {
     const res = await axios.put('/api/trips/' + tripId + '/itinerary', { ...savedShape(), version: trip.version })
     trip.version = res.data.version

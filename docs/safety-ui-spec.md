@@ -31,13 +31,12 @@ Dark surface (gradient `#121b19` → `#022538`), teal accent `#3fb8c6`, glass bo
                                               │ Level 1 of 4 · normal caution  │
                                               │ ▸ How the risk score works     │
                                               └────────────────────────────────┘
-▸ 🎬 Demo tools (preview a city, simulate a quake)
 ```
 
 ## Components
 | Part | File |
 |---|---|
-| Tab (banner, calls, I'm safe, stay card, guides, advice, demo tools) | `src/components/safety/SafetyLayer.vue` |
+| Tab (banner, calls, I'm safe, stay card, guides, advice) | `src/components/safety/SafetyLayer.vue` |
 | Radar (SVG, bearing + distance, legend filters, tooltips) | `src/components/safety/SafetyRadar.vue` |
 | Data + risk score | `src/services/safetyService.js` |
 | Server: `GET /api/safety/locate`, `/nearby` (OpenStreetMap via Overpass, cached 2 days), `/stay-search` (hotel search with local script, Geoapify when configured) | `server/routes/safety.js` |
@@ -66,7 +65,6 @@ Floors (quakes = last 24 h): UK level 3 → ≥ High, level 4 → Critical · GD
 - Archived trips: the saved stay can't be changed.
 - Taxi card is cached in the browser, so it shows offline; guides are built in.
 - Emergency numbers for 26 countries (`EMERGENCY_NUMBERS`) plus tourist hotlines and Singapore MFA's 24h duty office (+65 6379 8800, `HOME_HELPLINE`).
-- Demo tools (preview a city, simulate a quake or going offline): everything simulated is labelled "demo".
 
 ## Accessibility
 Banner uses `aria-live`; each alert says what/where/severity/when in words (not colour alone); radar points are focusable

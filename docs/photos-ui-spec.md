@@ -53,7 +53,6 @@ Lightbox: photo + ‹ › arrows · side panel: uploader, date, reactions, move 
 - **Empty state**: a drop card with a photo stack, "Start the shared roll" and "+ Add the first memories".
 - **Others' photos**: the view polls every 20 s (new photos, reactions, deletions).
 - **Archived trip**: view and download only; "This trip has ended, so no more photos can be added."
-- **Demo trip**: works with photos kept in the browser only ("demo trip, photos aren't saved").
 
 ## Accessibility & heuristics
 

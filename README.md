@@ -25,6 +25,16 @@ Any other branch also gets its own preview address: `chuise-your-trip-git-<branc
 2. Put the settings in `server/.env` (`MONGODB_URI`, `JWT_SECRET`, and the API keys)
 3. `pnpm dev:api` (server on port 3000) and `pnpm dev` (app on port 5173)
 
+## Tests
+
+Unit, integration and E2E tests live in `tests/<name>/{unit,integration,e2e}/` (Vitest, Vue Test Utils, Playwright).
+The integration and E2E tests use the real server and a real account: they create their own trip and delete it afterwards.
+Use a test account, not your own.
+
+1. Start the server: `pnpm dev:api`
+2. Set the test account: `export TEST_USERNAME=... TEST_PASSWORD=...`
+3. `pnpm test` (unit + integration), `pnpm test:e2e` (E2E in a real browser; first time: `pnpm exec playwright install chromium`)
+
 ## Folder structure
 
 ```
@@ -38,7 +48,7 @@ src/                    Vue app (Vite)
     auth/               login and signup page parts
     home/               home page parts (new-trip notebook, passport)
     account/            profile menu, friends drawer
-    trip/               trip page shell: tabs, share, edit, recap, map, packing, photos, flight delay
+    trip/               trip page shell: tabs, share, edit, recap, map, packing, photos
     itinerary/          planner, stop / leg sheets, schedule, crowd chart, other journeys
     places/             wishlist and voting
     expenses/           expenses, expense form, exchange rates
@@ -46,7 +56,7 @@ src/                    Vue app (Vite)
     safety/             safety tab and radar
   lib/                  plain JavaScript (no Vue), grouped by feature
     itinerary/          day optimizer, crowds, itinerary store, shortlist
-    trip/               expenses maths, packing list, trip and crew options, destinations, delay cascade
+    trip/               expenses maths, packing list, trip and crew options, destinations
     ui/                 doodles, icons, stamps, map shapes, notifications, zip
   services/             calls to the server and outside APIs (weather, safety, map)
   data/                 static JSON and catalogs (attractions, cities, avatars)
@@ -61,6 +71,7 @@ server/                 Express API (MongoDB)
 api/index.js            Vercel entry: runs the same Express app
 public/                 files served as-is
 docs/                   feature specs and the project proposal
+tests/                  unit, integration and E2E tests, one folder per team member
 ```
 
 ## Editing at the same time

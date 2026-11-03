@@ -109,23 +109,6 @@ export function settleUp(balanceMap) {
   return payments
 }
 
-// Example data for the Seoul demo trip
-export function demoExpenses() {
-  return {
-    homeCurrency: 'SGD',
-    budget: 1500,
-    items: [
-      { id: 'd1', title: 'Myeongdong dinner', amount: 90000, currency: 'KRW', category: 'food', paidBy: 'Sarah', date: '2026-10-12', splitType: 'equal', people: ['Sarah', 'John', 'Amy'], exact: {} },
-      { id: 'd2', title: 'Hotel Gracery (2 nights)', amount: 420, currency: 'SGD', category: 'stay', paidBy: 'John', date: '2026-10-12', splitType: 'equal', people: ['Sarah', 'John', 'Amy'], exact: {} },
-      { id: 'd3', title: 'T-money cards', amount: 30000, currency: 'KRW', category: 'transport', paidBy: 'Amy', date: '2026-10-13', splitType: 'equal', people: ['Sarah', 'John', 'Amy'], exact: {} },
-      { id: 'd4', title: 'Lotte World tickets', amount: 186000, currency: 'KRW', category: 'activities', paidBy: 'Sarah', date: '2026-10-13', splitType: 'exact', people: [], exact: { Sarah: 62000, John: 62000, Amy: 62000 } },
-      { id: 'd5', title: 'Olive Young haul', amount: 54000, currency: 'KRW', category: 'shopping', paidBy: 'Amy', date: '2026-10-14', splitType: 'exact', people: [], exact: { Amy: 54000 } },
-      { id: 'd6', title: 'Korean BBQ', amount: 120000, currency: 'KRW', category: 'food', paidBy: 'John', date: '2026-10-14', splitType: 'equal', people: ['Sarah', 'John', 'Amy'], exact: {} }
-    ],
-    settlements: []
-  }
-}
-
 // Currency codes with their names, for dropdowns: { value: 'JPY', label: 'JPY', description: 'Japanese Yen' }
 export function currencyOptions() {
   let names = null

@@ -172,7 +172,6 @@ const TABS = [
   { key: 'time', icon: '🕒', label: 'Details' }, // start time, day, name and address
   { key: 'notes', icon: '💬', label: 'Notes' }
 ]
-// Notes need a real trip, so the sample itinerary doesn't get them
 // Archived trips: no Details tab (it's only for changing the stop)
 const tabs = computed(() => (props.canChangeDay ? TABS : TABS.slice(0, 3)).filter((t) => !(readOnly.value && t.key === 'time')))
 const tab = ref('crowd')

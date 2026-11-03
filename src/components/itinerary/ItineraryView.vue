@@ -13,7 +13,7 @@
     <!-- The itinerary: day navigator, timeline with weather + crowd icons, saved places drawer -->
     <ItineraryPlanner :days="dayList" :selected-date="selectedDate" :stops="itinerary"
       :wishlist="allWishlist" :scheduled-names="scheduledNames" :day-name="tripDay" :weather-blocks="dayWeather" :typical="typicalWeather" :prefs="dayPrefs"
-      :can-add-day="!isDemo && !!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :travellers="travellers" :me="me"
+      :can-add-day="!!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :travellers="travellers" :me="me"
       :day-city="dayCities[selectedDate] || ''" :day-cities="dayCities" :stays="staysByDate" :my-flight="myFlight"
       :day-stay="stayOn(selectedDate)" :morning-stay="morningStayOn(selectedDate)"
       @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @notice="showNotice" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
@@ -31,7 +31,7 @@ import ItineraryPlanner from './ItineraryPlanner.vue'
 import { prefs, loadPreferences } from '../../preferences.js'
 import { getForecast } from '../../lib/itinerary/crowd.js'
 import { fetchWeatherForecast } from '../../services/weatherService.js'
-import { trip, loadDemo, loadFromServer, savedShape, runtimeStop, newId } from '../../lib/itinerary/itineraryStore.js'
+import { trip, loadFromServer, savedShape, runtimeStop, newId } from '../../lib/itinerary/itineraryStore.js'
 import { codeForDestination, COUNTRY_CODES } from '../../lib/trip/destinations.js'
 import DISCOVER from '../../data/discoverCities.json'
 
@@ -51,7 +51,7 @@ export default {
   inject: { readOnly: { default: false } }, // an archived trip: nothing is saved (see TripView)
   emits: ['itinerary-change', 'set-end-date', 'go-places', 'stays-change', 'crew-change'],
   props: {
-    tripId: { type: String, default: 'seoul' }, // 'seoul' = the demo trip (not saved)
+    tripId: { type: String, required: true },
     destination: { type: String, default: '' },
     destinations: { type: Array, default: () => [] },
     startDate: { type: String, default: '' },
@@ -70,12 +70,6 @@ export default {
       plannerStatus: { kind: 'idle', text: 'Add places to this day and the schedule balances itself.' },
       weather: [], // every forecast entry: { date, time, span, condition, rain }
       weatherError: false,
-      weatherSimulation: null,
-      // Example:
-      // {
-      //   stopId: 'abc123',
-      //   condition: 'Rain'
-      // }
       climate: [], // typical weather by month for each destination (for days beyond the 5-day forecast)
       climateRetried: false,
       saveStatus: '',
@@ -89,17 +83,16 @@ export default {
   },
 
   async mounted() {
-    // Start from this trip's saved data (or the demo)
-    if (this.isDemo) loadDemo()
-    else loadFromServer({ stops: this.initialStops, wishlist: this.initialWishlist})
+    // Start from this trip's saved data
+    loadFromServer({ stops: this.initialStops, wishlist: this.initialWishlist })
     this.tripVersion = this.initialVersion
     
     const firstStopDay = trip.stops.map((s) => s.date).sort()[0]
     this.selectedDate = firstStopDay || this.dayList[0] || ''
 
-    // Load simulated weather for every day of the trip
+    // The real forecast (about 5 days ahead; later days use the typical weather for the month)
     try {
-      this.weather = await fetchWeatherForecast({ dates: this.dayList })
+      this.weather = await fetchWeatherForecast({ q: this.destination })
     } catch (err) {
       this.weatherError = true
     }
@@ -123,11 +116,15 @@ export default {
     this.loaded = true
 
     // Shared trips: check every 30 seconds whether someone else changed it
-    if (!this.isDemo) this.pollTimer = setInterval(this.pollTrip, 30000)
+    this.pollTimer = setInterval(this.pollTrip, 30000)
+
+    // Re-check the weather every 15 minutes while this page is open
+    this.weatherTimer = setInterval(this.refreshWeather, 15 * 60 * 1000)
   },
 
   beforeUnmount() {
     clearInterval(this.pollTimer)
+    clearInterval(this.weatherTimer)
     clearTimeout(this.noticeTimer)
     // Don't lose a change made just before leaving the page
     if (this.saveTimer) {
@@ -143,7 +140,7 @@ export default {
     },
     // Fires whenever anything worth saving changes
     persistKey(key) {
-      if (!this.loaded || this.isDemo || this.readOnly || key === this.lastSavedKey) return
+      if (!this.loaded || this.readOnly || key === this.lastSavedKey) return
       this.saveStatus = 'Saving…'
       clearTimeout(this.saveTimer)
       this.saveTimer = setTimeout(this.saveNow, 800)
@@ -168,45 +165,6 @@ export default {
     },
     scheduledNames() {
       return trip.stops.map((s) => s.name)
-    },
-    isDemo() {
-      return this.tripId === 'seoul'
-    },
-    effectiveWeather() {
-      if (!this.weatherSimulation) {
-        return this.weather
-      }
-
-      const stop = trip.stops.find(
-        (s) => s.id === this.weatherSimulation.stopId
-      )
-
-      if (!stop) {
-        return this.weather
-      }
-
-      return this.weather.map((w) => {
-        const duration = stop.duration || 1
-
-        const overlapsStop =
-          w.date === stop.date &&
-          w.time < stop.hour + duration &&
-          w.time + (w.span || 3) > stop.hour
-
-        if (!overlapsStop) {
-          return w
-        }
-
-        const rainy =
-          this.weatherSimulation.condition === 'Rain'
-
-        return {
-          ...w,
-          condition: rainy ? 'Rain' : 'Clear',
-          rain: rainy,
-          demoSimulation: true
-        }
-      })
     },
     // The selected day is too far ahead for a forecast: what's the weather usually like that month?
     typicalWeather() {
@@ -316,7 +274,7 @@ export default {
       return this.selectedDate ? DAY_NAMES[new Date(this.selectedDate + 'T00:00:00').getDay()] : ''
     },
     dayWeather() {
-      return this.effectiveWeather.filter(
+      return this.weather.filter(
         (w) => w.date === this.selectedDate
       )
     },
@@ -345,7 +303,7 @@ export default {
           const dur = s.duration || 1
           planned += dur
           let wet = false
-          for (const w of this.effectiveWeather) {
+          for (const w of this.weather) {
             if (w.date === d && w.rain && w.time < s.hour + dur && w.time + (w.span || 3) > s.hour) wet = true
           }
           if (s.outdoor && !s.locked && wet) issues++
@@ -440,7 +398,6 @@ export default {
         message = 'Hotel saved from Day ' + dayNo + ' until your next hotel change.'
       }
       if (this.readOnly) return
-      if (this.isDemo) return this.$emit('stays-change', { stays: list })
       try {
         const res = await axios.put('/api/trips/' + this.tripId + '/stays', list)
         this.$emit('stays-change', res.data)
@@ -467,7 +424,7 @@ export default {
         body.departure = data ? data.date + 'T' + data.time : ''
         body.departFrom = data ? data.place : null
       }
-      if (this.isDemo || !this.me || this.readOnly) return
+      if (!this.me || this.readOnly) return
       try {
         const res = await axios.put('/api/trips/' + this.tripId + '/crew/' + encodeURIComponent(this.me), body)
         this.$emit('crew-change', res.data.crew)
@@ -671,7 +628,7 @@ export default {
     // ---------- saving ----------
     async saveNow() {
       this.saveTimer = null
-      if (this.isDemo || this.readOnly) return
+      if (this.readOnly) return
       // A save is already running: try again shortly, so the version numbers don't clash
       if (this.saving) {
         this.saveTimer = setTimeout(this.saveNow, 500)
@@ -711,7 +668,7 @@ export default {
     // Every 30 seconds: has someone else changed this trip?
     async pollTrip() {
       // Don't interrupt anything the user is in the middle of
-      if (this.isDemo || this.saveTimer || this.saving || this.anyLoading) return
+      if (this.saveTimer || this.saving || this.anyLoading) return
       if (this.persistKey !== this.lastSavedKey) return // we have unsaved changes of our own
       try {
         const res = await axios.get('/api/trips/' + this.tripId)
@@ -776,7 +733,6 @@ export default {
       return best ? best.cityName + ', ' + country : name
     },
     async loadClimate() {
-      if (this.isDemo) return
       const picked = (this.destinations.length ? this.destinations : [this.destination]).filter(Boolean).slice(0, 10)
       const names = []
       for (const n of picked) names.push(this.cityForClimate(n))
@@ -795,6 +751,15 @@ export default {
         setTimeout(() => this.loadClimate(), 15000)
       }
     },
+    async refreshWeather() {
+      try {
+        this.weather = await fetchWeatherForecast({ q: this.destination })
+        this.weatherError = false
+      } catch (err) {
+        // keep showing the last forecast if a refresh fails
+      }
+    },
+
     // ---------- weather ----------
     // Find the weather that overlaps with a stop
     weatherForStop(stop) {
@@ -810,36 +775,6 @@ export default {
         )
       }) || null
     },
-
-    // Start a temporary weather simulation
-    simulateWeather(stopId, condition) {
-      const stop = trip.stops.find(
-        (s) => s.id === stopId
-      )
-
-      if (!stop) return
-
-      this.weatherSimulation = {
-        stopId,
-        condition
-      }
-
-      this.showNotice(
-        `Demo: ${condition} weather simulated for ${this.shortName(stop.name)}.`,
-        'info'
-      )
-    },
-
-    // Return to the original simulated forecast
-    resetWeatherSimulation() {
-      this.weatherSimulation = null
-
-      this.showNotice(
-        'Weather simulation reset.',
-        'info'
-      )
-    },
-
 
     // A clear message for any failed request
     errorText(err) {

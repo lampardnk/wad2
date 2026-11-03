@@ -1,6 +1,6 @@
 # Day optimizer (Itinerary tab)
 
-Files: `src/lib/itinerary/dayOptimizer.js` (algorithm, no Vue), `src/components/itinerary/ItineraryPlanner.vue` (UI: Optimize Route, preview, lock, drag), `src/lib/itinerary/dayOptimizerSample.js` (`PLANNER_SAMPLE`, the sample Kyoto day).
+Files: `src/lib/itinerary/dayOptimizer.js` (algorithm, no Vue), `src/components/itinerary/ItineraryPlanner.vue` (UI: Optimize Route, preview, lock, drag), `src/services/weatherService.js` (forecast from `GET /api/weather`, OpenWeather; needs `OPENWEATHER_API_KEY` on the server).
 
 ## Algorithm (`optimizeDay(stops, rainByHour, { dayStart, dayEnd, buffer, crowdWeight, travel, from, end })`)
 1. Travel matrix (`travelMatrix`): every pair of stops, using `travelBetween` (see Getting around). Without travel preferences: walk up to 1.3 km, otherwise transit. No location → 15 min.
@@ -19,7 +19,14 @@ Files: `src/lib/itinerary/dayOptimizer.js` (algorithm, no Vue), `src/components/
 Crowd data comes from the stop's BestTime forecast (`src/lib/itinerary/crowd.js`, `server/routes/crowd.js`) when available, else a typical curve (outdoor sights peak 11 AM–3 PM). Rain comes from the 3-hour forecast blocks (`rainFromBlocks`). Day start/end, travel buffer and crowd sensitivity come from the user's preferences (Settings); they guide Optimize and the warnings but never re-time saved stops by themselves. Flight days are the exception: stops are re-timed around the flight.
 
 ## UI
-**Optimize Route** (Analyzing route… → Checking forecast… → Reordering…) → preview with the summary + **Apply** / **Dismiss**. If nothing better is found: "Your day is already in a good order." (or a note that warnings remain) + **OK**. Lock per stop; drag (or arrow keys on the handle) re-times the day in the new order. The sample Kyoto day ("Sample Kyoto day · not saved · Back to my trip") runs on mock data and is never saved.
+**Optimize Route** (Analyzing route… → Checking forecast… → Reordering…) → preview with the summary + **Apply** / **Dismiss**. If nothing better is found: "Your day is already in a good order." (or a note that warnings remain) + **OK**. Lock per stop; drag (or arrow keys on the handle) re-times the day in the new order.
+
+## What if: simulated weather and crowds
+Two panels under the day's timeline ("Simulate weather conditions", "Simulate crowd conditions"). They change what the planner *assumes* for the day you're looking at, so you can see how Optimize Route would react. Only you see them, nothing is saved, and opening another day (or Reset) goes back to the real data.
+
+- **Weather**: pick a stop and Rainy / Sunny. The forecast blocks that overlap that stop's planned time are replaced (`effectiveWeatherBlocks` → `rain`). Everything that reads `rain` uses it: Optimize Route, the 🌧️ warnings, the timeline icons and "dry times". With rain assumed, "Try a clearer time" lists dry slots; **Preview → Apply changes** moves the stop (and anything in the way) for real.
+- **Crowds**: pick a stop and Quiet (25%) / Busy (65%) / Peak (90%). The stop's crowd curve for the day is scaled so its planned hour has that level (`assumedCurve`; the other hours keep their shape). It goes into the stops the optimizer gets (`work`), so Optimize Route, the 👥 warnings, the crowd badge ("Simulated") and "quieter times" all use it.
+- **Optimize Route with this** runs Optimize Route straight away and scrolls to its suggestion; **Apply** saves it as usual.
 
 ## Getting around (travel between stops)
 Files: `src/lib/itinerary/dayOptimizer.js` (travel model), `src/components/itinerary/LegSheet.vue` (panel), `TravelChoices.vue` (option list),

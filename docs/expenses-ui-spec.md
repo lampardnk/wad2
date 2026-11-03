@@ -32,7 +32,7 @@ Below 992px the side column moves under the feed and the tiles become 2×2. Belo
 
 | File | Role |
 |---|---|
-| `src/lib/trip/expenses.js` | Pure logic: `CATEGORIES`, `CURRENCIES`, `money()`, `toHome()`, `sharesOf()`, `balances()`, `settleUp()`, `demoExpenses()`, `currencyOptions()` |
+| `src/lib/trip/expenses.js` | Pure logic: `CATEGORIES`, `CURRENCIES`, `money()`, `toHome()`, `sharesOf()`, `balances()`, `settleUp()`, `currencyOptions()` |
 | `src/components/expenses/ExpensesView.vue` | Container: state, saving, polling, rates, toolbar, tiles, feed, balances, charts |
 | `src/components/expenses/ExpenseForm.vue` | Slide-over editor for one expense (add / edit / delete) |
 | `src/components/expenses/ExchangeRates.vue` | "Live rates" popover: shows rates, lets the group set its own rate for a currency |
@@ -75,7 +75,6 @@ Every answer is the latest expenses from everyone.
 - **Saving**: each change is saved straight away; the toolbar shows "Saving…", then "Saved ✓" or the error.
 - **Others' changes**: polled every 15 s; new items from others show as a toast. Rows show "added by …" when someone else logged them.
 - **Archived trip**: read only (no add, edit, budget or rates).
-- **Demo trip (Seoul)**: pre-filled example data, not saved, no polling.
 
 ## Heuristics checklist (Nielsen)
 

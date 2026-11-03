@@ -8,7 +8,7 @@
         <CustomDropdown v-else :model-value="state.homeCurrency" :options="currencyOptions" size="sm" header-text="Home currency"
           aria-label="Home currency" @update:model-value="changeCurrency" />
       </div>
-      <span v-if="!demo && !readOnly" class="xp-live" title="Changes from everyone on the trip show up here automatically">
+      <span v-if="!readOnly" class="xp-live" title="Changes from everyone on the trip show up here automatically">
         <span class="xp-live-dot" aria-hidden="true"></span> Synced with the group
       </span>
       <!-- Live rates, or the group's own (click to see and change) -->
@@ -239,7 +239,7 @@ import axios from 'axios'
 import ExpenseForm from './ExpenseForm.vue'
 import ExchangeRates from './ExchangeRates.vue'
 import CustomDropdown from '../common/CustomDropdown.vue'
-import { CATEGORIES, CURRENCIES, currencyOptions, categoryOf, money, toHome, sharesOf, balances, settleUp, demoExpenses } from '../../lib/trip/expenses.js'
+import { CATEGORIES, CURRENCIES, currencyOptions, categoryOf, money, toHome, sharesOf, balances, settleUp } from '../../lib/trip/expenses.js'
 import AppIcon from '../common/AppIcon.vue'
 import { lineIconFor } from '../../lib/ui/emojiIcons.js'
 
@@ -247,7 +247,7 @@ export default {
   components: { AppIcon, ExpenseForm, CustomDropdown, ExchangeRates },
   inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
-    tripId: { type: String, default: '' },
+    tripId: { type: String, required: true },
     travellers: { type: Array, default: () => [] },
     startDate: { type: String, default: '' },
     endDate: { type: String, default: '' },
@@ -256,15 +256,13 @@ export default {
   },
 
   data() {
-    const demo = this.tripId === 'seoul'
-    const saved = demo ? demoExpenses() : this.initial || {}
+    const saved = this.initial || {}
     return {
       CATEGORIES,
       savingExpense: false, // an expense is being saved (the form waits for it)
       CURRENCIES,
       currencyOptions: currencyOptions(),
       categoryOptions: [{ value: '', label: 'All categories', icon: '🗂' }].concat(CATEGORIES.map((c) => ({ value: c.key, label: c.label, icon: c.icon }))),
-      demo,
       state: {
         homeCurrency: saved.homeCurrency || 'SGD',
         budget: saved.budget || null,
@@ -476,7 +474,7 @@ export default {
   mounted() {
     window.addEventListener('keydown', this.onKey)
     // Check for other people's changes every 15 s while the tab is open
-    if (!this.demo) this.pollTimer = setInterval(this.poll, 15000)
+    this.pollTimer = setInterval(this.poll, 15000)
   },
 
   beforeUnmount() {
@@ -583,13 +581,6 @@ export default {
     },
 
     async saveExpense(expense) {
-      if (this.demo) {
-        const i = this.state.items.findIndex((x) => x.id === expense.id)
-        if (i >= 0) this.state.items.splice(i, 1, expense)
-        else this.state.items.push(expense)
-        this.showForm = false
-        return
-      }
       if (this.savingExpense) return // the first click is still saving
       this.savingExpense = true
       const exists = this.state.items.some((x) => x.id === expense.id)
@@ -599,43 +590,30 @@ export default {
     },
 
     async deleteExpense(id) {
-      if (this.demo) this.state.items = this.state.items.filter((x) => x.id !== id)
-      else if (!(await this.send('delete', '/items/' + id))) return
+      if (!(await this.send('delete', '/items/' + id))) return
       this.showForm = false
     },
 
     markPaid(p) {
-      if (this.demo) this.state.settlements.push({ id: 's' + Date.now(), from: p.from, to: p.to, amount: p.amount, date: new Date().toISOString().slice(0, 10) })
-      else this.send('post', '/settlements', { from: p.from, to: p.to, amount: p.amount })
+      this.send('post', '/settlements', { from: p.from, to: p.to, amount: p.amount })
     },
 
     undoPayment(id) {
-      if (this.demo) this.state.settlements = this.state.settlements.filter((s) => s.id !== id)
-      else this.send('delete', '/settlements/' + id)
+      this.send('delete', '/settlements/' + id)
     },
 
     // The group's own exchange rate (saved for everyone on the trip)
     setGroupRate(code, rate) {
-      if (this.demo) {
-        this.state.groupRates = { ...this.state.groupRates, [code]: { base: this.home, rate, by: this.me, at: new Date().toISOString() } }
-        return
-      }
       this.send('put', '/rates/' + code, { rate })
     },
     resetGroupRate(code) {
-      if (this.demo) {
-        const copy = { ...this.state.groupRates }
-        delete copy[code]
-        this.state.groupRates = copy
-        return
-      }
       this.send('delete', '/rates/' + code)
     },
 
     changeCurrency(code) {
       this.state.homeCurrency = code
       this.loadRates()
-      if (!this.demo) this.send('patch', '/settings', { homeCurrency: code })
+      this.send('patch', '/settings', { homeCurrency: code })
     },
 
     editBudget() {
@@ -647,7 +625,7 @@ export default {
     saveBudget() {
       this.state.budget = this.budgetInput > 0 ? this.budgetInput : null
       this.budgetEditing = false
-      if (!this.demo) this.send('patch', '/settings', { budget: this.state.budget })
+      this.send('patch', '/settings', { budget: this.state.budget })
     },
 
     splitText(e) {
