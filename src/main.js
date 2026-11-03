@@ -82,6 +82,12 @@ axios.interceptors.response.use(
       notify((r.data && r.data.message) || 'Someone else changed this at the same time. The latest version is loaded: please try again.')
       window.dispatchEvent(new CustomEvent('trip-conflict'))
     }
+    // The trip ended while the page was open: it's archived now (server/archived.js). Say so, and let the
+    // open trip page load the trip again so it turns read only (TripView listens for 'trip-archived').
+    if (r && r.status === 403 && r.data && r.data.archived) {
+      notify(r.data.message)
+      window.dispatchEvent(new CustomEvent('trip-archived'))
+    }
     return Promise.reject(err)
   }
 )

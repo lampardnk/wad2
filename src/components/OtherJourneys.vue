@@ -2,9 +2,10 @@
   <!-- Transport > Other journeys: trips that aren't between two stops on the plan
        (airport to hotel, a day trip to another city). Between-stop travel lives in the itinerary. -->
   <section class="mb-4" aria-labelledby="oj-title">
-    <h2 id="oj-title" class="h4 mb-3">Plan Journeys</h2>
+    <h2 id="oj-title" class="h4 mb-3">{{ readOnly ? 'Journeys' : 'Plan Journeys' }}</h2>
  
-    <!-- Plan a journey (or change a saved one) -->
+    <!-- Plan a journey (or change a saved one). Not on an archived trip: it's read only. -->
+    <template v-if="!readOnly">
     <div v-if="editing" class="alert alert-warning d-flex align-items-center py-2" role="status">
       <AppIcon name="pencil" :size="15" class="me-2" />
       <span>Changing <strong>{{ editing.from }} → {{ editing.to }}</strong></span>
@@ -50,6 +51,7 @@
         action-label="Save" :mark-in-use="false" @choose="saveJourney" />
       <p class="form-text mt-2">{{ editing ? 'Save replaces the saved journey.' : 'Save the way you\'ll go, so everyone on the trip can see it.' }}</p>
     </div>
+    </template>
  
     <!-- Flights between cities, added on itinerary days (read-only here: change them on their day) -->
     <template v-if="flights.length">
@@ -67,7 +69,7 @@
  
     <!-- Saved journeys -->
     <h3 class="h5 mt-4">Saved Journeys <span class="badge bg-secondary">{{ journeys.length }}</span></h3>
-    <p v-if="!journeys.length" class="text-muted">Nothing saved yet. Airport transfers and day trips you plan above appear here.</p>
+    <p v-if="!journeys.length" class="text-muted">{{ readOnly ? 'No journeys were saved for this trip.' : 'Nothing saved yet. Airport transfers and day trips you plan above appear here.' }}</p>
     <ul v-else class="list-group">
       <li v-for="j in journeys" :key="j.id" class="list-group-item d-flex align-items-center" :class="{ 'list-group-item-warning': editing && editing.id === j.id }">
         <AppIcon :name="MODES[j.mode].icon" :size="18" class="me-3" />
@@ -75,19 +77,21 @@
           <strong>{{ j.from }} → {{ j.to }}</strong><br>
           <small class="text-muted">{{ MODES[j.mode].label }}, {{ durationText(j.min) }}<template v-if="j.date">, {{ dayLabel(j.date) }}</template><template v-if="j.by">, added by {{ j.by }}</template></small>
         </div>
+        <template v-if="!readOnly">
         <button type="button" class="btn btn-outline-primary btn-sm me-2" :aria-label="'Change ' + j.from + ' to ' + j.to" @click="editJourney(j)">
           <AppIcon name="pencil" :size="16" /> Change
         </button>
         <button type="button" class="btn btn-outline-danger btn-sm" :aria-label="'Delete ' + j.from + ' to ' + j.to" @click="removeJourney(j)">
           <AppIcon name="trash" :size="16" /> Delete
         </button>
+        </template>
       </li>
     </ul>
   </section>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import axios from 'axios'
 import AppIcon from './AppIcon.vue'
 import TravelChoices from './TravelChoices.vue'
@@ -97,6 +101,7 @@ import { TRAVEL_MODES as MODES, travelOptions, recommendTravel, legKey, DEFAULT_
 import { notify, errorText } from '../notify.js'
 import { cityCentre } from '../services/cityCentre.js'
 
+const readOnly = inject('readOnly', ref(false)) // an archived trip: saved journeys can be seen, not changed
 const props = defineProps({
   tripId: { type: String, default: '' },
   isDemo: { type: Boolean, default: false },

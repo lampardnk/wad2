@@ -24,7 +24,7 @@
               <!-- ===== Crowds ===== -->
               <section v-if="tab === 'crowd'" aria-label="Crowds">
                 <p class="ss-lead">
-                  <template v-if="crowd.value == null">No crowd data for this place.<template v-if="stop.lat == null"> Set its location under <button type="button" class="ss-link" @click="tab = 'time'">Details</button> to get it.</template></template>
+                  <template v-if="crowd.value == null">No crowd data for this place.<template v-if="stop.lat == null && !readOnly"> Set its location under <button type="button" class="ss-link" @click="tab = 'time'">Details</button> to get it.</template></template>
                   <template v-else>
                     <span class="ss-badge" :class="crowd.tone">{{ crowd.text }}</span> 
                     at {{ formatHour(start) }} · about {{ crowd.value }}% of its busiest
@@ -35,7 +35,7 @@
                   :planned-hour="Math.floor(start)" :suggest-hour="quieter.length ? Math.floor(quieter[0].hour) : null" />
                 <p v-if="crowd.value != null && !hasChart" class="ss-note">Estimate for this kind of place.</p>
 
-                <template v-if="quieter.length">
+                <template v-if="quieter.length && !readOnly">
                   <h4 class="ss-h">Quieter times that fit your day</h4>
                   <div class="ss-picks">
                     <button v-for="q in quieter" :key="q.hour" type="button" class="ss-pick" @click="emit('move-time', q.hour)">
@@ -69,7 +69,7 @@
 
                   <div v-if="wet" class="ss-callout">
                     <strong>Rain is likely while you're here, and it's outdoors.</strong>
-                    <template v-if="dry.length">
+                    <template v-if="dry.length && !readOnly">
                       <h4 class="ss-h">Move to a dry time</h4>
                       <div class="ss-picks">
                         <button v-for="d in dry" :key="d.hour" type="button" class="ss-pick" @click="emit('move-time', d.hour)">
@@ -77,7 +77,7 @@
                         </button>
                       </div>
                     </template>
-                    <template v-if="canChangeDay && indoorPicks.length">
+                    <template v-if="canChangeDay && indoorPicks.length && !readOnly">
                       <h4 class="ss-h">Or swap in an indoor saved place</h4>
                       <ul class="ss-swaps">
                         <li v-for="w in indoorPicks" :key="w.id">
@@ -87,7 +87,7 @@
                       </ul>
                       <p class="ss-note">{{ stop.name }} goes back to Saved places, so nothing is lost.</p>
                     </template>
-                    <p v-if="!dry.length && !(canChangeDay && indoorPicks.length)" class="ss-note">
+                    <p v-if="!readOnly && !dry.length && !(canChangeDay && indoorPicks.length)" class="ss-note">
                       No dry time fits this day. Try moving it to another day under <button type="button" class="ss-link" @click="tab = 'time'">Details</button>.
                     </p>
                   </div>
@@ -100,7 +100,7 @@
               <StopNotes v-else-if="tab === 'notes'" :stop-id="stop.id || ''" @count="noteCount = $event" />
 
               <!-- ===== Time & details ===== -->
-              <section v-else aria-label="Time and details">
+              <section v-else-if="!readOnly" aria-label="Time and details">
                 <form class="ss-row" @submit.prevent="moveTime">
                   <label for="ss-time" class="ss-label">Start time</label>
                   <input id="ss-time" v-model="timeText" type="time" step="900" class="ss-input">
@@ -134,7 +134,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, inject } from 'vue'
 import CrowdChart from './CrowdChart.vue'
 import CustomDropdown from './CustomDropdown.vue'
 import { formatHour } from '../crowd.js'
@@ -143,6 +143,7 @@ import PlaceInput from './PlaceInput.vue'
 import StopNotes from './StopNotes.vue'
 import { lineIconFor } from '../emojiIcons.js'
 
+const readOnly = inject('readOnly', ref(false)) // an archived trip: look, don't change
 const props = defineProps({
   open: { type: Boolean, default: false },
   stop: { type: Object, default: () => ({}) },          // the stop (with its crowd forecast)
@@ -172,7 +173,8 @@ const TABS = [
   { key: 'notes', icon: '💬', label: 'Notes' }
 ]
 // Notes need a real trip, so the sample itinerary doesn't get them
-const tabs = computed(() => (props.canChangeDay ? TABS : TABS.slice(0, 3)))
+// Archived trips: no Details tab (it's only for changing the stop)
+const tabs = computed(() => (props.canChangeDay ? TABS : TABS.slice(0, 3)).filter((t) => !(readOnly.value && t.key === 'time')))
 const tab = ref('crowd')
 const noteCount = ref(0)
 const panel = ref(null)
@@ -244,12 +246,12 @@ function reset() {
 }
 watch(() => props.open, (open) => {
   if (!open) return
-  tab.value = props.section
+  tab.value = readOnly.value && props.section === 'time' ? 'crowd' : props.section
   noteCount.value = 0
   reset()
   nextTick(() => panel.value && panel.value.focus())
 }, { immediate: true })
-watch(() => props.section, (s) => { tab.value = s })
+watch(() => props.section, (s) => { tab.value = readOnly.value && s === 'time' ? 'crowd' : s })
 watch(() => [props.start, props.stop.name, props.stop.lat, props.stop.lon, props.stop.outdoor], reset)
 </script>
 

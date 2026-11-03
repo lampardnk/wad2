@@ -14,7 +14,7 @@
         <button v-if="photos.length" type="button" class="ph-ghost" :disabled="zipping" @click="downloadAll" data-testid="photos-zip">
           <span aria-hidden="true">⬇</span> {{ zipping ? zipText : 'Download all (.zip)' }}
         </button>
-        <button v-if="photos.length" type="button" class="ph-primary" @click="$refs.picker.click()" data-testid="photos-add">+ Drop photos</button>
+        <button v-if="photos.length && !readOnly" type="button" class="ph-primary" @click="$refs.picker.click()" data-testid="photos-add">+ Drop photos</button>
         <input ref="picker" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="visually-hidden"
           tabindex="-1" aria-hidden="true" @change="onPick">
       </div>
@@ -32,13 +32,13 @@
         :aria-selected="album === a.id" @click="album = a.id">
         {{ a.name }} <span class="ph-n">{{ countIn(a.id) }}</span>
       </button>
-      <div class="ph-add-wrap">
+      <div v-if="!readOnly" class="ph-add-wrap">
         <button type="button" class="ph-pill ph-pill-add" :aria-expanded="addingAlbum" @click="addingAlbum = !addingAlbum">+ Add album</button>
       </div>
     </div>
 
     <!-- New spot album: pick from the wishlist or type a name -->
-      <form v-if="addingAlbum" class="ph-newalbum" @submit.prevent="createAlbum(newAlbumName, '📍')">
+      <form v-if="addingAlbum && !readOnly" class="ph-newalbum" @submit.prevent="createAlbum(newAlbumName, '📍')">
         <p class="ph-small mb-2">From your wishlist</p>
         <div class="d-flex flex-wrap gap-2 mb-3">
           <button v-for="s in albumSuggestions" :key="s.name" type="button" class="ph-pill" @click="createAlbum(s.name, s.icon)">
@@ -62,7 +62,7 @@
         <span class="ph-av" :style="{ background: colorFor(p.name) }" aria-hidden="true">{{ p.name.charAt(0).toUpperCase() }}</span>
         {{ p.name === me ? 'My photos' : p.name }} <span class="ph-n">{{ p.count }}</span>
       </button>
-      <button v-if="currentAlbum" type="button" class="ph-link ms-auto" @click="removeAlbum">Remove "{{ currentAlbum.name }}" album</button>
+      <button v-if="currentAlbum && !readOnly" type="button" class="ph-link ms-auto" @click="removeAlbum">Remove "{{ currentAlbum.name }}" album</button>
     </div>
 
     <!-- ===== Upload staging tray ===== -->
@@ -85,7 +85,11 @@
     <p v-if="loadError" class="ph-err" role="alert">{{ loadError }} <button type="button" class="ph-link" @click="loadPhotos">Try again</button></p>
 
     <!-- ===== Empty state ===== -->
-    <button v-if="!loading && !shown.length" type="button" class="ph-empty" @click="$refs.picker.click()">
+    <p v-if="!loading && !shown.length && readOnly" class="ph-empty">
+      <strong class="ph-empty-title">No photos here</strong>
+      <span class="ph-empty-text">This trip has ended, so no more photos can be added.</span>
+    </p>
+    <button v-else-if="!loading && !shown.length" type="button" class="ph-empty" @click="$refs.picker.click()">
       <span class="ph-empty-stack" aria-hidden="true"><span><AppIcon name="image" :size="24" /></span><span><AppIcon name="camera" :size="24" /></span><span><AppIcon name="map-pin" :size="24" /></span></span>
       <strong class="ph-empty-title">{{ photos.length ? 'No photos here yet' : 'Start the shared roll' }}</strong>
       <span class="ph-empty-text">Drop photos anywhere on this page, or click to browse.</span>
@@ -108,7 +112,7 @@
 
         <!-- Reactions: counts always visible, adding shows on hover / focus -->
         <div class="ph-reacts">
-          <button v-for="e in REACTIONS" :key="e" type="button" class="ph-react"
+          <button v-for="e in reactionsFor(p)" :key="e" type="button" class="ph-react" :disabled="readOnly"
             :class="{ has: (p.reactions[e] || []).length, mine: (p.reactions[e] || []).includes(me) }"
             :aria-pressed="(p.reactions[e] || []).includes(me)" :aria-label="e + ' ' + (p.reactions[e] || []).length"
             :title="(p.reactions[e] || []).join(', ')" @click.stop="react(p, e)">
@@ -147,19 +151,20 @@
               </div>
             </div>
             <div class="ph-reacts static">
-              <button v-for="e in REACTIONS" :key="e" type="button" class="ph-react"
+              <button v-for="e in reactionsFor(open)" :key="e" type="button" class="ph-react" :disabled="readOnly"
                 :class="{ has: (open.reactions[e] || []).length, mine: (open.reactions[e] || []).includes(me) }"
                 :aria-pressed="(open.reactions[e] || []).includes(me)" :title="(open.reactions[e] || []).join(', ')" @click="react(open, e)">
                 {{ e }}<span v-if="(open.reactions[e] || []).length">{{ open.reactions[e].length }}</span>
               </button>
             </div>
-            <label class="ph-small" for="ph-move">Album</label>
-            <CustomDropdown id="ph-move" :model-value="open.album || ''" :options="albumOptions" block header-text="Move to album"
+            <p v-if="readOnly" class="ph-small">Album: {{ albumNameOf(open) }}</p>
+            <label v-if="!readOnly" class="ph-small" for="ph-move">Album</label>
+            <CustomDropdown v-if="!readOnly" id="ph-move" :model-value="open.album || ''" :options="albumOptions" block header-text="Move to album"
               @update:model-value="move(open, $event)" />
             <div class="d-flex gap-2 mt-auto flex-wrap">
               <button type="button" class="ph-ghost" @click="downloadOne(open)">⬇ Original</button>
-              <button v-if="!confirmDelete" type="button" class="ph-ghost danger" @click="confirmDelete = true">Delete</button>
-              <template v-else>
+              <button v-if="!confirmDelete && !readOnly" type="button" class="ph-ghost danger" @click="confirmDelete = true">Delete</button>
+              <template v-else-if="!readOnly">
                 <button type="button" class="ph-ghost danger" @click="remove(open)">Delete for everyone</button>
                 <button type="button" class="ph-ghost" @click="confirmDelete = false">Keep</button>
               </template>
@@ -184,6 +189,7 @@ const AVATAR_COLORS = ['#00798c', '#30638e', '#d0662e', '#7a5bd6', '#c2477d', '#
 
 export default {
   components: { AppIcon, CustomDropdown },
+  inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
     tripId: { type: String, default: '' },
     travellers: { type: Array, default: () => [] },
@@ -432,7 +438,7 @@ export default {
     },
 
     onDragEnter(e) {
-      if (this.hasFiles(e)) this.dragging = true
+      if (this.hasFiles(e) && !this.readOnly) this.dragging = true
     },
 
     // Stops the browser from opening a dropped photo in the tab
@@ -451,6 +457,7 @@ export default {
     },
 
     addFiles(fileList) {
+      if (this.readOnly) return
       const fresh = []
       for (const file of fileList) {
         const item = { key: Math.random().toString(36).slice(2), name: file.name, file, preview: URL.createObjectURL(file), status: 'waiting', progress: 0, error: '' }
@@ -532,7 +539,16 @@ export default {
     },
 
     // ---------- photo actions ----------
+    // Archived trip: only the reactions people already left
+    reactionsFor(photo) {
+      return this.readOnly ? REACTIONS.filter((e) => (photo.reactions[e] || []).length) : REACTIONS
+    },
+    albumNameOf(photo) {
+      const a = this.albums.find((x) => x.id === photo.album)
+      return a ? a.name : 'Highlights'
+    },
     async react(photo, emoji) {
+      if (this.readOnly) return
       // Update straight away, then save
       const before = photo.reactions
       const people = photo.reactions[emoji] || []
@@ -1053,7 +1069,8 @@ export default {
   font-size: 13px;
   padding: 3px 9px;
 }
-.ph-react:hover {
+.ph-react:disabled { cursor: default; opacity: 1; }
+.ph-react:hover:not(:disabled) {
   transform: scale(1.08);
 }
 .ph-react.mine {

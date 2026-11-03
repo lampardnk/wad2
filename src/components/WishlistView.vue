@@ -21,26 +21,26 @@
         </span>
         <div class="wl-actions">
           <a v-if="w.link" :href="w.link" target="_blank" rel="noopener" class="wl-round" :aria-label="'Open booking for ' + w.name" title="Open booking">↗</a>
-          <button type="button" class="wl-round" :aria-label="'Edit ' + w.name" title="Edit" @click="startEdit(w)"><AppIcon name="pencil" :size="14" /></button>
-          <button type="button" class="wl-heart filled" :aria-label="'Remove ' + w.name + ' from wishlist'" title="Remove" @click="remove(w)"><AppIcon name="heart" :size="17" filled /></button>
+          <button v-if="!readOnly" type="button" class="wl-round" :aria-label="'Edit ' + w.name" title="Edit" @click="startEdit(w)"><AppIcon name="pencil" :size="14" /></button>
+          <button v-if="!readOnly" type="button" class="wl-heart filled" :aria-label="'Remove ' + w.name + ' from wishlist'" title="Remove" @click="remove(w)"><AppIcon name="heart" :size="17" filled /></button>
         </div>
         <div class="wl-info">
           <h4 class="wl-name" :title="w.name">{{ w.name }}</h4>
           <span class="wl-sub" :title="w.address || ''">
             <template v-if="w.city"><FlagImg :code="flagFor(w.city)" :size="12" /> {{ w.city.split(', ')[0] }}</template><template v-if="w.city && streetOf(w)"> · </template>{{ streetOf(w) }}
           </span>
-          <button v-if="needsPoint(w)" type="button" class="wl-setloc" @click="startEdit(w)"><AppIcon name="map-pin" :size="12" /> Set location</button>
+          <button v-if="needsPoint(w) && !readOnly" type="button" class="wl-setloc" @click="startEdit(w)"><AppIcon name="map-pin" :size="12" /> Set location</button>
           <span v-if="w.votes && w.votes.length" class="wl-votes" :title="w.votes.join(', ') + ' want to go'"><AppIcon name="thumbs-up" :size="12" /> {{ w.votes.length }} want to go</span>
         </div>
       </article>
     </div>
     <p v-else class="wl-empty">
-      {{ wishlist.length ? 'No saved places match this filter.' : 'No places yet. Tap the heart on a popular place below, or add your own.' }}
+      {{ wishlist.length ? 'No saved places match this filter.' : readOnly ? 'No places were saved for this trip.' : 'No places yet. Tap the heart on a popular place below, or add your own.' }}
     </p>
 
     <!-- Edit panel -->
       <!-- Opening it scrolls here; Save or Cancel scrolls back to the card -->
-      <form v-if="editId" ref="editPanel" class="wl-panel" aria-labelledby="wl-edit-title" @submit.prevent="saveEdit" @keydown.esc="cancelEdit">
+      <form v-if="editId && !readOnly" ref="editPanel" class="wl-panel" aria-labelledby="wl-edit-title" @submit.prevent="saveEdit" @keydown.esc="cancelEdit">
         <strong id="wl-edit-title" class="d-block mb-2">Edit place</strong>
         <div class="row g-2">
           <!-- The name is a label: rename freely. Picking a suggestion (or a pin / Maps link) moves the place. -->
@@ -62,6 +62,8 @@
 
     <!-- Find a place (any shop, restaurant, temple...) or add your own -->
     <!-- Find a real place (any shop, restaurant, temple...): pick a suggestion, paste a Google Maps link, or drop a pin -->
+    <!-- (an archived trip has none of this: it's read only) -->
+    <template v-if="!readOnly">
     <form class="wl-add" @submit.prevent="addPicked">
       <CustomDropdown v-if="destinations.length > 1" v-model="searchIn" :options="cityOptions" class="wl-in"
         header-text="Search in" aria-label="Search in" />
@@ -203,6 +205,7 @@
         </div>
       </template>
     </section>
+    </template>
   </div>
 </template>
 
@@ -240,6 +243,7 @@ function emptyTour() {
 
 export default {
   components: { FlagImg, AppIcon, CustomDropdown, PlaceInput },
+  inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
     // All of the trip's destinations, e.g. ['Tokyo, Japan', 'Kyoto, Japan']
     destinations: { type: Array, default: () => [] },

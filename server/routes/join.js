@@ -3,6 +3,7 @@ import Trip from '../models/trip.js'
 import User from '../models/User.js'
 import { requireAuth } from './auth.js'
 import { ensureMembers, memberName } from '../tripAccess.js'
+import { hasEnded } from '../archived.js'
 
 const router = express.Router()
 
@@ -52,7 +53,8 @@ router.get('/:code', requireAuth, async (req, res) => {
     invitedBy: owner ? owner.name : '',
     members: await membersWithFaces(trip),
     guests: guestsOf(trip),
-    alreadyMember: !!memberName(trip, req.userId)
+    alreadyMember: !!memberName(trip, req.userId),
+    ended: hasEnded(trip) // archived: it can't be joined any more
   })
 })
 
@@ -61,6 +63,7 @@ router.post('/:code', requireAuth, async (req, res) => {
   const trip = await tripForCode(req.params.code)
   if (!trip) return res.status(404).json({ message: 'This invite link is not valid any more. Ask for a new one.' })
   if (memberName(trip, req.userId)) return res.json({ id: trip._id })
+  if (hasEnded(trip)) return res.status(403).json({ message: 'This trip has ended, so nobody new can join it.', archived: true })
   // Joining answers any username invite too
   trip.pendingInvites = (trip.pendingInvites || []).filter((p) => String(p.user) !== String(req.userId))
 

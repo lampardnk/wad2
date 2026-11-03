@@ -7,7 +7,8 @@
     </div>
 
     <!-- Smart Schedule: hours, crowds, buffer, and what the scheduler is doing -->
-    <SchedulePanel :save-status="saveStatus" :status="plannerStatus" />
+    <!-- (not on an archived trip: its settings re-time the days) -->
+    <SchedulePanel v-if="!readOnly" :save-status="saveStatus" :status="plannerStatus" />
 
     <!-- The itinerary: day navigator, timeline with weather + crowd icons, saved places drawer -->
     <ItineraryPlanner :days="dayList" :selected-date="selectedDate" :stops="itinerary"
@@ -47,6 +48,7 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 
 export default {
   components: { SchedulePanel, ItineraryPlanner },
+  inject: { readOnly: { default: false } }, // an archived trip: nothing is saved (see TripView)
   emits: ['itinerary-change', 'set-end-date', 'go-places', 'stays-change', 'crew-change'],
   props: {
     tripId: { type: String, default: 'seoul' }, // 'seoul' = the demo trip (not saved)
@@ -141,7 +143,7 @@ export default {
     },
     // Fires whenever anything worth saving changes
     persistKey(key) {
-      if (!this.loaded || this.isDemo || key === this.lastSavedKey) return
+      if (!this.loaded || this.isDemo || this.readOnly || key === this.lastSavedKey) return
       this.saveStatus = 'Saving…'
       clearTimeout(this.saveTimer)
       this.saveTimer = setTimeout(this.saveNow, 800)
@@ -437,6 +439,7 @@ export default {
         list.push({ from: change.from, ...change.place, by: this.me })
         message = 'Hotel saved from Day ' + dayNo + ' until your next hotel change.'
       }
+      if (this.readOnly) return
       if (this.isDemo) return this.$emit('stays-change', { stays: list })
       try {
         const res = await axios.put('/api/trips/' + this.tripId + '/stays', list)
@@ -464,7 +467,7 @@ export default {
         body.departure = data ? data.date + 'T' + data.time : ''
         body.departFrom = data ? data.place : null
       }
-      if (this.isDemo || !this.me) return
+      if (this.isDemo || !this.me || this.readOnly) return
       try {
         const res = await axios.put('/api/trips/' + this.tripId + '/crew/' + encodeURIComponent(this.me), body)
         this.$emit('crew-change', res.data.crew)
@@ -668,7 +671,7 @@ export default {
     // ---------- saving ----------
     async saveNow() {
       this.saveTimer = null
-      if (this.isDemo) return
+      if (this.isDemo || this.readOnly) return
       // A save is already running: try again shortly, so the version numbers don't clash
       if (this.saving) {
         this.saveTimer = setTimeout(this.saveNow, 500)

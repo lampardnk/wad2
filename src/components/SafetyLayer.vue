@@ -18,7 +18,7 @@
 
   Emits "risk-change" so the trip page can show a banner and flag outdoor stops.
 */
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import axios from 'axios'
 import SafetyRadar from './SafetyRadar.vue'
 import CustomDropdown from './CustomDropdown.vue'
@@ -29,6 +29,7 @@ import {
 } from '../services/safetyService.js'
 import { lineIconFor } from '../emojiIcons.js'
 
+const readOnly = inject('readOnly', ref(false)) // an archived trip: the saved stay can't be changed
 const props = defineProps({
   tripId: { type: String, default: '' },
   destinations: { type: Array, default: () => [] },
@@ -831,10 +832,11 @@ onUnmounted(() => {
           <div class="sf-safe-btns">
             <button type="button" class="sf-btn ic" @click="taxiMode = !taxiMode"><AppIcon :name="taxiMode ? 'x' : 'eye'" :size="15" /> {{ taxiMode ? 'Close' : 'Show big for taxi' }}</button>
             <button type="button" class="sf-btn ic" @click="printCard"><AppIcon name="archive" :size="15" /> Print / save PDF</button>
-            <button type="button" class="sf-btn ic" @click="editingStay = true"><AppIcon name="pencil" :size="15" /> Change</button>
+            <button v-if="!readOnly" type="button" class="sf-btn ic" @click="editingStay = true"><AppIcon name="pencil" :size="15" /> Change</button>
           </div>
         </template>
 
+        <p v-else-if="readOnly" class="sf-muted small mb-0">No place to stay was saved for this trip.</p>
         <form v-else class="sf-stay-form" @submit.prevent="saveTypedStay">
           <p class="sf-muted small mb-2">Add your hotel or Airbnb: we'll show its name and address in English and the local script for taxi drivers, and centre the radar on it.</p>
           <label for="sf-stay" class="visually-hidden">Hotel or address</label>

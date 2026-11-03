@@ -27,8 +27,8 @@
               </button>
             </div>
           </div>
-          <button v-if="sampleMode || canAddDay" type="button" class="ip-small add" title="Add a day at the end of the trip" @click="askAddDay">+ Add day</button>
-          <button v-if="(sampleMode || canAddDay) && dayList.length > 1" type="button" class="ip-small remove"
+          <button v-if="(sampleMode || canAddDay) && !readOnly" type="button" class="ip-small add" title="Add a day at the end of the trip" @click="askAddDay">+ Add day</button>
+          <button v-if="(sampleMode || canAddDay) && !readOnly && dayList.length > 1" type="button" class="ip-small remove"
             :title="'Remove the last day (Day ' + dayList.length + ')'" :aria-label="'Remove the last day, Day ' + dayList.length" @click="askRemoveDay">− Day {{ dayList.length }}</button>
         </div>
       </div>
@@ -79,7 +79,7 @@
 
     <!-- ===== Actions ===== -->
     <div class="ip-bar">
-      <button type="button" class="ip-cta" :class="{ busy: phase }" :disabled="!!phase || stopRows.length < 2" @click="optimize" data-testid="optimize-route">
+      <button v-if="!readOnly" type="button" class="ip-cta" :class="{ busy: phase }" :disabled="!!phase || stopRows.length < 2" @click="optimize" data-testid="optimize-route">
         <span v-if="phase" class="ip-spin" aria-hidden="true"></span><AppIcon v-else name="sparkles" :size="16" />
         {{ phaseText }}
       </button>
@@ -101,10 +101,10 @@
                 <strong>{{ x.it.stop.name }}</strong>
                 <small>{{ x.text }}</small>
               </button>
-              <button type="button" class="ip-issue-fix" @click="x.fix">{{ x.fixLabel }}</button>
+              <button v-if="!readOnly" type="button" class="ip-issue-fix" @click="x.fix">{{ x.fixLabel }}</button>
             </li>
           </ul>
-          <button v-if="stopRows.length > 1" type="button" class="ip-outline small ip-issues-all" @click="issuesOpen = false; optimize()"><AppIcon name="sparkles" :size="15" /> Let Optimize Route sort these out</button>
+          <button v-if="stopRows.length > 1 && !readOnly" type="button" class="ip-outline small ip-issues-all" @click="issuesOpen = false; optimize()"><AppIcon name="sparkles" :size="15" /> Let Optimize Route sort these out</button>
         </div>
       </div>
       <!-- List or map of this day's stops (the sliding highlight shows which one you're on) -->
@@ -144,7 +144,7 @@
         </div>
       </div>
 
-    <div class="ip-body" :class="{ 'drawer-closed': !drawerOpen }">
+    <div class="ip-body" :class="{ 'drawer-closed': !drawerOpen, 'no-drawer': readOnly }">
       <div class="ip-main">
         <!-- ===== List: numbered timeline ===== -->
         <template v-if="view === 'list'">
@@ -153,10 +153,11 @@
             <span class="ip-start-icon" aria-hidden="true"><AppIcon name="map-pin" :size="20" /></span>
             <div class="ip-start-text">
               <strong>Nothing planned for Day {{ dayIndex + 1 }} yet</strong>
-              <small v-if="picks.length">Add one of your saved places, or find new ones to visit.</small>
+              <small v-if="readOnly">This trip has ended.</small>
+              <small v-else-if="picks.length">Add one of your saved places, or find new ones to visit.</small>
               <small v-else>Find places to visit and save them. Then add them to this day.</small>
             </div>
-            <div class="ip-start-btns">
+            <div v-if="!readOnly" class="ip-start-btns">
               <button v-if="picks.length" type="button" class="ip-cta small" @click="showSaved">
                 Choose from {{ picks.length }} saved place{{ picks.length === 1 ? '' : 's' }}
               </button>
@@ -164,7 +165,7 @@
             </div>
           </div>
 
-          <p v-if="stopRows.length > 1 && !previewing" class="ip-reorder-hint">
+          <p v-if="stopRows.length > 1 && !previewing && !readOnly" class="ip-reorder-hint">
             <AppIcon name="swap" :size="14" /> Drag a stop by its dots (on a phone: press and hold it), or use the arrows, to change the order. Times update by themselves.
           </p>
           <!-- More planned than the day has time for: say so once, with a fix -->
@@ -174,13 +175,13 @@
               <strong>Day {{ dayIndex + 1 }} is too full</strong>
               <small>{{ dayEndReason }}. {{ overflow.count }} stop{{ overflow.count === 1 ? '' : 's' }} won't fit.</small>
             </span>
-            <button type="button" class="ip-cta small" @click="overflowOpen = true">Choose where they go</button>
+            <button v-if="!readOnly" type="button" class="ip-cta small" @click="overflowOpen = true">Choose where they go</button>
           </div>
           <ol class="ip-list" :class="{ dragging: !!drag }">
             <!-- Where the day starts: your hotel, or the airport on the day you land -->
             <li v-if="!sampleMode" class="ip-anchor-row start">
               <!-- Day 1: landing comes first, so the flight goes above the hotel -->
-              <button v-if="dayIndex === 0 && !arrivalToday" type="button" class="ip-flight-card" @click="editAnchor('arrive')">
+              <button v-if="dayIndex === 0 && !arrivalToday && !readOnly" type="button" class="ip-flight-card" @click="editAnchor('arrive')">
                 <span class="ip-flight-icon" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
                 <span class="ip-anchor-text">
                   <strong>Landing today?</strong>
@@ -188,15 +189,15 @@
                 </span>
                 <span class="ip-flight-btn">Add flight</span>
               </button>
-              <button type="button" class="ip-anchor" :class="{ empty: !startAnchor }" @click="editAnchor('start')">
+              <button type="button" class="ip-anchor" :class="{ empty: !startAnchor }" :disabled="readOnly" @click="editAnchor('start')">
                 <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="startAnchor && startAnchor.kind === 'arrive' ? 'plane' : 'door'" :size="16" /></span>
                 <span class="ip-anchor-text">
                   <small>{{ startCaption }}</small>
                   <strong>{{ startAnchor ? startAnchor.name : 'Add where you\'re staying' }}</strong>
                 </span>
-                <span class="ip-anchor-edit">{{ startAnchor ? 'Change' : 'Add' }}</span>
+                <span v-if="!readOnly" class="ip-anchor-edit">{{ startAnchor ? 'Change' : 'Add' }}</span>
               </button>
-              <button v-if="startLeg" type="button" class="ip-leg clickable" :aria-label="'Getting to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
+              <button v-if="startLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly }" :disabled="readOnly" :aria-label="'Getting to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
                 <AppIcon :name="modeIcon(startLeg.mode)" :size="13" /> {{ anchorLegText(startLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
             </li>
@@ -206,11 +207,11 @@
                 @dragover.prevent="dropAt = i" @dragleave="dropAt = null" @drop.prevent="dropInto(slotOf(i))">
                 <span v-if="drag" class="ip-drop">Drop here</span>
                 <!-- How to get here: the suggested (or the group's chosen) way. Tap to see every way and change it. -->
-                <button v-else-if="i > 0 && legText(it)" type="button" class="ip-leg" :class="{ picked: legEntry(it).picked, clickable: it.mode !== 'unknown' }"
-                  :disabled="it.mode === 'unknown'" :aria-label="'Getting to ' + it.stop.name + ': ' + legText(it) + (it.mode !== 'unknown' ? '. See other ways' : '')"
+                <button v-else-if="i > 0 && legText(it)" type="button" class="ip-leg" :class="{ picked: legEntry(it).picked, clickable: it.mode !== 'unknown' && !readOnly }"
+                  :disabled="it.mode === 'unknown' || readOnly" :aria-label="'Getting to ' + it.stop.name + ': ' + legText(it) + (it.mode !== 'unknown' ? '. See other ways' : '')"
                   @click="openLeg(it)">
                   <AppIcon :name="legIcon(it)" :size="13" /> {{ legText(it) }}<span v-if="legNote(it)" class="ip-leg-why">· {{ legNote(it) }}</span>
-                  <AppIcon v-if="it.mode !== 'unknown'" name="chevron" :size="12" class="ip-leg-go" />
+                  <AppIcon v-if="it.mode !== 'unknown' && !readOnly" name="chevron" :size="12" class="ip-leg-go" />
                 </button>
               </li>
 
@@ -220,7 +221,7 @@
                 <div class="ip-meal">
                   <span class="ip-when">{{ formatHour(it.start) }} <small>· {{ durationText(it.stop.duration) }}</small></span>
                   <strong class="ip-meal-name">{{ it.stop.name }}</strong>
-                  <button type="button" class="ip-link" @click="openEat(it, i)">Find somewhere to eat</button>
+                  <button v-if="!readOnly" type="button" class="ip-link" @click="openEat(it, i)">Find somewhere to eat</button>
                 </div>
               </li>
 
@@ -228,11 +229,11 @@
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
                 <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }"
-                  :draggable="!it.stop.locked && !previewing" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag"
+                  :draggable="!it.stop.locked && !previewing && !readOnly" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag"
                   @touchstart="touchStart($event, it, i)" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchCancel"
                   @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(slotOf(dropAt == null ? i : dropAt))">
                   <!-- Move: drag the dots, or tap the arrows (works on phones and keyboards too) -->
-                  <div v-if="!it.stop.locked && !previewing" class="ip-move">
+                  <div v-if="!it.stop.locked && !previewing && !readOnly" class="ip-move">
                     <button type="button" class="ip-move-btn" :disabled="numberOf(it) === 0"
                       :aria-label="'Move ' + it.stop.name + ' earlier'" title="Move earlier" @click="moveStop(numberOf(it), numberOf(it) - 1)">
                       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
@@ -245,7 +246,7 @@
                       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
                     </button>
                   </div>
-                  <span v-else-if="it.stop.locked" class="ip-move ip-move-locked" title="Locked to its time: unlock to move it" aria-hidden="true">
+                  <span v-else-if="it.stop.locked && !readOnly" class="ip-move ip-move-locked" title="Locked to its time: unlock to move it" aria-hidden="true">
                     <AppIcon name="lock" :size="14" />
                   </span>
 
@@ -258,10 +259,10 @@
                       {{ formatHour(it.start) }}
                       <!-- Tap the duration to change it; the rest of the day re-times -->
                       <span class="ip-dur-wrap">
-                        <button type="button" class="ip-dur" :disabled="previewing" :aria-expanded="durFor === it.stop.id"
+                        <button type="button" class="ip-dur" :disabled="previewing || readOnly" :aria-expanded="durFor === it.stop.id"
                           :aria-label="'How long at ' + it.stop.name + ': ' + durationText(it.stop.duration) + '. Change'"
                           title="Change how long you stay" @click.stop="toggleDur(it.stop.id)">
-                          <AppIcon name="clock" :size="13" /> {{ durationText(it.stop.duration) }} <span aria-hidden="true">▾</span>
+                          <AppIcon name="clock" :size="13" /> {{ durationText(it.stop.duration) }} <span v-if="!readOnly" aria-hidden="true">▾</span>
                         </button>
                         <span v-if="durFor === it.stop.id" class="ip-dur-menu" role="dialog" :aria-label="'Time at ' + it.stop.name" @click.stop @keydown.esc="durFor = null">
                           <span class="ip-dur-step">
@@ -304,7 +305,7 @@
                     </div>
 
                     <!-- On the day: finish early or stay longer, and the rest of the day follows -->
-                    <div v-if="live && live.id === it.stop.id && live.state === 'now' && !previewing" class="ip-live">
+                    <div v-if="live && live.id === it.stop.id && live.state === 'now' && !previewing && !readOnly" class="ip-live">
                       <button type="button" class="ip-live-btn done" @click="finishNow(it)"><AppIcon name="check" :size="15" /> I'm done</button>
                       <button type="button" class="ip-live-btn" @click="stayLonger(it)">+15 min</button>
                     </div>
@@ -312,13 +313,13 @@
 
                   <div class="ip-side">
                     <!-- Red circled ✕ = remove from this day (it goes back to Saved places, not deleted) -->
-                    <button type="button" class="ip-back" :disabled="previewing" :aria-label="'Remove ' + it.stop.name + ' from this day (back to saved places)'"
+                    <button v-if="!readOnly" type="button" class="ip-back" :disabled="previewing" :aria-label="'Remove ' + it.stop.name + ' from this day (back to saved places)'"
                       title="Remove from this day (back to Saved places)" @click="unschedule(it.stop)">
                       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#d1495b" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="9.5" /><path d="M9 9l6 6M15 9l-6 6" />
                       </svg>
                     </button>
-                    <button v-if="it.stop.kind !== 'flight'" type="button" class="ip-lock" :class="{ on: it.stop.locked }" :aria-pressed="it.stop.locked" :disabled="previewing"
+                    <button v-if="it.stop.kind !== 'flight' && !readOnly" type="button" class="ip-lock" :class="{ on: it.stop.locked }" :aria-pressed="it.stop.locked" :disabled="previewing"
                       :aria-label="(it.stop.locked ? 'Unlock ' : 'Lock ') + it.stop.name" :title="it.stop.locked ? 'Fixed time (reservation)' : 'Lock this time'"
                       @click="toggleLock(it.stop)"><AppIcon :name="it.stop.locked ? 'lock' : 'unlock'" :size="17" /></button>
                     <button type="button" class="ip-go" :aria-label="'Show ' + it.stop.name + ' on the map'" title="Show on map" @click="openOnMap(it.stop)">
@@ -336,11 +337,11 @@
             </li>
             <!-- Where the day ends: back to the hotel, or the airport on the day you fly home -->
             <li v-if="!sampleMode && stopRows.length" class="ip-anchor-row end">
-              <button v-if="endLeg" type="button" class="ip-leg clickable" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
+              <button v-if="endLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly }" :disabled="readOnly" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
                 <AppIcon :name="modeIcon(endLeg.mode)" :size="13" /> {{ anchorLegText(endLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
               <!-- Last day, nothing set yet: one question, two answers (the flight home first: most people fly out) -->
-              <div v-if="isLastDay && !endAnchor" class="ip-end-choice" role="group" aria-labelledby="ip-end-q">
+              <div v-if="isLastDay && !endAnchor && !readOnly" class="ip-end-choice" role="group" aria-labelledby="ip-end-q">
                 <p id="ip-end-q" class="ip-end-q">Where does the day end?</p>
                 <div class="ip-end-options">
                   <button type="button" class="ip-end-option main" @click="editAnchor('depart')">
@@ -360,28 +361,28 @@
                 </div>
               </div>
               <template v-else>
-                <button type="button" class="ip-anchor" :class="{ empty: !endAnchor }" @click="editAnchor('end')">
+                <button type="button" class="ip-anchor" :class="{ empty: !endAnchor }" :disabled="readOnly" @click="editAnchor('end')">
                   <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="endAnchor && endAnchor.kind === 'depart' ? 'plane' : 'door'" :size="16" /></span>
                   <span class="ip-anchor-text">
                     <small>{{ endCaption }}</small>
                     <strong>{{ endAnchor ? endAnchor.name : 'Add where you\'re staying' }}</strong>
                   </span>
-                  <span class="ip-anchor-edit">{{ endAnchor ? 'Change' : 'Add' }}</span>
+                  <span v-if="!readOnly" class="ip-anchor-edit">{{ endAnchor ? 'Change' : 'Add' }}</span>
                 </button>
                 <!-- Last day ending at the hotel: switching to the flight home is one tap -->
-                <button v-if="isLastDay && endAnchor && endAnchor.kind === 'stay'" type="button" class="ip-end-switch" @click="editAnchor('depart')">
+                <button v-if="isLastDay && endAnchor && endAnchor.kind === 'stay' && !readOnly" type="button" class="ip-end-switch" @click="editAnchor('depart')">
                   <AppIcon name="plane" :size="14" /> Flying home today? Add your flight
                 </button>
               </template>
             </li>
           </ol>
 
-          <button v-if="stopRows.length" type="button" class="ip-add-stop" @click="openAddSheet">
+          <button v-if="stopRows.length && !readOnly" type="button" class="ip-add-stop" @click="openAddSheet">
             <span aria-hidden="true">⊕</span> Add stop
           </button>
 
           <!-- ===== Demo: simulate weather conditions ===== -->
-          <section v-if="stopRows.length" class="ip-weather-sim">
+          <section v-if="stopRows.length && !readOnly" class="ip-weather-sim">
             <div class="ip-sim-heading">
               <div>
                 <h4>Simulate weather conditions</h4>
@@ -601,7 +602,7 @@
           </section>
 
           <!-- demo for crowd status -->
-          <section v-if="stopRows.length" class="ip-weather-sim">
+          <section v-if="stopRows.length && !readOnly" class="ip-weather-sim">
             <!-- Heading & Demo Badge -->
             <div class="ip-sim-heading">
               <div>
@@ -666,7 +667,7 @@
       </div>
 
       <!-- ===== Saved places (unscheduled) ===== -->
-      <aside ref="drawerEl" class="ip-drawer" :class="{ target: drag && drag.kind === 'stop', flash: drawerFlash }" @dragover.prevent @drop.prevent="dropOnDrawer">
+      <aside v-if="!readOnly" ref="drawerEl" class="ip-drawer" :class="{ target: drag && drag.kind === 'stop', flash: drawerFlash }" @dragover.prevent @drop.prevent="dropOnDrawer">
         <button type="button" class="ip-drawer-head" :aria-expanded="drawerOpen" @click="drawerOpen = !drawerOpen">
           <span class="ip-drawer-icon" aria-hidden="true"><AppIcon name="map-pin" :size="20" /></span>
           <span class="ip-drawer-title">
@@ -753,7 +754,7 @@
 // and an "Unscheduled" drawer.
 // Drag (HTML5) stops to reorder, wishlist places onto the timeline, or stops back to the drawer.
 // Times are worked out by dayOptimizer.js: flexible stops follow each other, locked ones keep their time.
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, inject } from 'vue'
 import axios from 'axios'
 import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, addMealBreaks, defaultDuration, crowdAt, rainDuring,
   travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf } from '../dayOptimizer.js'
@@ -771,6 +772,8 @@ import CustomDropdown from './CustomDropdown.vue'
 import AddStopSheet from './AddStopSheet.vue'
 import { lineIconFor } from '../emojiIcons.js'
 
+// An archived (ended) trip is read only: see TripView
+const readOnly = inject('readOnly', ref(false))
 const props = defineProps({
   days: { type: Array, default: () => [] },
   selectedDate: { type: String, default: '' },
@@ -2038,6 +2041,7 @@ function endDrag() {
 // (drag and drop doesn't work with fingers; the arrows still work too)
 let touch = null // { timer, x, y, i, dragging }
 function touchStart(e, it, i) {
+  if (readOnly.value) return
   if (it.stop.locked || previewing.value || e.touches.length !== 1) return
   if (e.target.closest('button, a, input, select, textarea')) return
   const t = e.touches[0]
@@ -3388,6 +3392,7 @@ watch(
 /* ---------- Layout ---------- */
 .ip-body { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; margin-top: 16px; align-items: start; }
 .ip-body.drawer-closed { grid-template-columns: minmax(0, 1fr) 220px; }
+.ip-body.no-drawer { grid-template-columns: minmax(0, 1fr); }
 .ip-reorder-hint { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; color: var(--muted); }
 
 /* ---------- Timeline ---------- */
@@ -3475,7 +3480,8 @@ watch(
   text-align: left;
   color: var(--ink);
 }
-.ip-anchor:hover { border-color: var(--primary); }
+.ip-anchor:hover:not(:disabled) { border-color: var(--primary); }
+.ip-anchor:disabled { cursor: default; color: var(--ink); opacity: 1; }
 .ip-anchor.empty { border-style: dashed; background: transparent; }
 .ip-flight-card { background: var(--warn-bg); border-color: var(--warn-line); margin-bottom: 4px; }
 .ip-flight-card:hover { border-color: var(--gold); }

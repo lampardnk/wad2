@@ -1,7 +1,7 @@
 <template>
   <div class="pk">
     <!-- ===== Trip details the list is built from ===== -->
-    <section v-if="editing" class="pk-setup" aria-labelledby="pk-setup-title">
+    <section v-if="editing && !readOnly" class="pk-setup" aria-labelledby="pk-setup-title">
       <h3 id="pk-setup-title" class="pk-setup-title">{{ hasProfile ? 'Edit trip details' : 'Tell us about your trip' }}</h3>
 
       <!-- What you'll do: a tile grid (like Airbnb's amenity picker) -->
@@ -69,7 +69,7 @@
       <div class="pk-profile">
         <span class="pk-muted small">Built for {{ days }} day{{ days === 1 ? '' : 's' }}<span v-if="profileTags.length">:</span></span>
         <span v-for="t in profileTags" :key="t.key" class="pk-tag"><DoodleIcon :name="t.icon" :size="18" /> {{ t.label }}</span>
-        <button type="button" class="pk-link" @click="editing = true"><AppIcon name="pencil" :size="14" /> Edit trip details</button>
+        <button v-if="!readOnly" type="button" class="pk-link" @click="editing = true"><AppIcon name="pencil" :size="14" /> Edit trip details</button>
         <label class="pk-hide ms-auto">
           <input v-model="hidePacked" type="checkbox"> Hide packed
         </label>
@@ -88,25 +88,26 @@
           <ul class="pk-list">
             <li v-for="it in cat.shown" :key="it.id" class="pk-item" :class="{ packed: packing.checked[it.id] }">
               <label class="pk-check">
-                <input type="checkbox" :checked="!!packing.checked[it.id]" @change="toggleChecked(it.id)" data-testid="packing-check">
+                <input type="checkbox" :checked="!!packing.checked[it.id]" :disabled="readOnly" @change="toggleChecked(it.id)" data-testid="packing-check">
                 <span class="pk-box" aria-hidden="true">✓</span>
                 <span class="pk-name">
                   {{ it.name }}
                   <small class="d-block pk-muted">{{ it.why }}</small>
                 </span>
               </label>
-              <div class="pk-qty" role="group" :aria-label="'Amount of ' + it.name">
+              <span v-if="readOnly" class="pk-muted">× {{ it.qty }}</span>
+              <div v-else class="pk-qty" role="group" :aria-label="'Amount of ' + it.name">
                 <button type="button" :aria-label="'Fewer ' + it.name" :disabled="it.qty <= 1" @click="changeQty(it, -1)">−</button>
                 <span aria-live="polite">{{ it.qty }}</span>
                 <button type="button" :aria-label="'More ' + it.name" :disabled="it.qty >= 99" @click="changeQty(it, 1)">+</button>
               </div>
-              <button type="button" class="pk-remove" :aria-label="'Remove ' + it.name" title="Remove" @click="removeItem(it)"><AppIcon name="x" :size="15" /></button>
+              <button v-if="!readOnly" type="button" class="pk-remove" :aria-label="'Remove ' + it.name" title="Remove" @click="removeItem(it)"><AppIcon name="x" :size="15" /></button>
             </li>
           </ul>
           <p v-if="!cat.shown.length" class="pk-muted small px-3 mb-2">Everything here is packed ✓</p>
 
           <!-- Add an item to this category -->
-          <form class="pk-add" @submit.prevent="addItem(cat.key)">
+          <form v-if="!readOnly" class="pk-add" @submit.prevent="addItem(cat.key)">
             <label :for="'pk-add-' + cat.key" class="visually-hidden">Add an item to {{ cat.label }}</label>
             <input :id="'pk-add-' + cat.key" v-model="newItem[cat.key]" class="form-control" maxlength="80" :placeholder="'+ Add to ' + cat.label.toLowerCase()">
             <button type="submit" class="btn btn-sm pk-btn-dark" :disabled="!(newItem[cat.key] || '').trim()">Add</button>
@@ -115,10 +116,10 @@
       </section>
 
       <div class="d-flex flex-wrap gap-3 align-items-center mt-3">
-        <button v-if="packing.removed.length" type="button" class="pk-link" @click="packing.removed = []">
+        <button v-if="packing.removed.length && !readOnly" type="button" class="pk-link" @click="packing.removed = []">
           ↺ Bring back {{ packing.removed.length }} removed item{{ packing.removed.length === 1 ? '' : 's' }}
         </button>
-        <button v-if="packedCount" type="button" class="pk-link" @click="packing.checked = {}">Untick everything</button>
+        <button v-if="packedCount && !readOnly" type="button" class="pk-link" @click="packing.checked = {}">Untick everything</button>
         <span class="pk-muted small ms-auto" role="status">{{ saveStatus }}</span>
       </div>
     </template>
@@ -134,6 +135,7 @@ import DoodleIcon from './DoodleIcon.vue'
 
 export default {
   components: { AppIcon, DoodleIcon },
+  inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
     tripId: { type: String, default: '' },
     days: { type: Number, default: 3 },
@@ -250,7 +252,7 @@ export default {
 
   watch: {
     saveKey(key) {
-      if (!this.tripId || this.tripId === 'seoul' || key === this.lastSaved) return // the demo trip isn't saved
+      if (!this.tripId || this.tripId === 'seoul' || this.readOnly || key === this.lastSaved) return // the demo trip isn't saved
       this.saveStatus = 'Saving…'
       clearTimeout(this.saveTimer)
       this.saveTimer = setTimeout(this.save, 600)

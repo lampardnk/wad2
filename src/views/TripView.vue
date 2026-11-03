@@ -8,50 +8,44 @@
     </div>
 
     <template v-else>
-      <!-- Dark header with the trip photo glowing behind it -->
-      <div class="trip-stage" :style="stageStyle" aria-hidden="true"></div>
-
-      <!-- Top bar: back, trip name, every section of the trip. Stays on screen while scrolling. -->
-      <!-- One line: back, trip name, then the tabs. As the window narrows, tabs move into "More" one by one;
-           on phones they become one menu button. -->
-      <nav class="trip-nav" aria-label="Trip sections">
-        <router-link to="/home" class="trip-back" data-testid="back-to-trips" title="Back to My Trips">
-          <AppIcon name="chevron-left" :size="16" /><span class="trip-back-text">My Trips</span>
-        </router-link>
-        <span class="trip-nav-name" :title="headerTitle">{{ headerTitle }}</span>
-
-        <TripTabs :model-value="activeTab" @update:model-value="goToTab" :tabs="shownTabs" :alert-key="safetyWarning ? 'safety' : ''" class="trip-tabs" />
-      </nav>
-
-      <!-- Trip title -->
-      <header class="trip-head">
-        <h1 class="trip-title">{{ headerTitle }}</h1>
-        <!-- The route, place to place with dotted lines (like a travel journal) -->
-        <ol class="trip-route" :aria-label="'Route: ' + itineraryInfo.destinations.map((d) => d.split(', ')[0]).join(', then ')">
-          <li v-for="d in itineraryInfo.destinations" :key="d" class="trip-route-stop">
-            <span class="trip-route-dot" aria-hidden="true"></span><FlagImg :code="flagFor(d)" :size="12" /> {{ d.split(', ')[0] }}
-          </li>
-        </ol>
-        <div class="trip-toggle" aria-label="Trip details">
-          <span class="trip-toggle-item"><AppIcon name="calendar" :size="15" /> {{ dateText }}</span>
-          <span class="trip-toggle-item on"><AppIcon name="users" :size="15" /> {{ itineraryInfo.travellers.length }} traveller{{ itineraryInfo.travellers.length === 1 ? '' : 's' }}</span>
+      <!-- One bar for the whole top of the page (it replaces the app's navbar here), stays on screen while scrolling:
+           logo, back, the trip's basics (name, route, dates, who's going, Invite, Edit trip) and your profile,
+           then the sections. As the window narrows, tabs move into "More"; on phones they become one menu button. -->
+      <header class="trip-bar" :style="{ top: -barHide + 'px' }">
+        <div ref="barTop" class="trip-bar-top">
+          <span class="pl-brand-mark trip-logo" title="Chui-se Your Trip" aria-hidden="true"><DoodleIcon name="plane" :size="22" tint="cream" /></span>
+          <router-link to="/home" class="trip-back" data-testid="back-to-trips" title="Back to My Trips">
+            <AppIcon name="chevron-left" :size="16" /><span class="trip-back-text">My Trips</span>
+          </router-link>
+          <div class="trip-basics">
+            <h1 class="trip-title" :title="headerTitle">{{ headerTitle }}</h1>
+            <div class="trip-meta">
+              <ol class="trip-route" :aria-label="'Route: ' + itineraryInfo.destinations.map((d) => d.split(', ')[0]).join(', then ')">
+                <li v-for="d in itineraryInfo.destinations" :key="d" class="trip-route-stop">
+                  <FlagImg :code="flagFor(d)" :size="12" /> {{ d.split(', ')[0] }}
+                </li>
+              </ol>
+              <span class="trip-date"><AppIcon name="calendar" :size="14" /> {{ dateText }}</span>
+              <!-- Who's going: joined people (solid) and not-yet-joined travellers (dashed) -->
+              <span class="trip-faces" :aria-label="joinedNames.length + ' joined: ' + joinedNames.join(', ')">
+                <span v-for="(n, i) in itineraryInfo.travellers.slice(0, 6)" :key="n" class="trip-face"
+                  :class="{ guest: !joinedNames.includes(n) }" :style="{ zIndex: 10 - i }" :title="n + (joinedNames.includes(n) ? '' : ' (not joined yet)')">
+                  {{ n.charAt(0).toUpperCase() }}
+                </span>
+                <span v-if="itineraryInfo.travellers.length > 6" class="trip-face more">+{{ itineraryInfo.travellers.length - 6 }}</span>
+              </span>
+              <button v-if="!isDemo && !readOnly" type="button" class="trip-invite" @click="showShare = true" data-testid="invite-btn">+ Invite</button>
+              <!-- Organiser: change the name, route and dates (or delete the trip) -->
+              <button v-if="!isDemo && !readOnly && trip.role === 'owner'" type="button" class="trip-edit" @click="showEdit = true" data-testid="edit-trip-btn">
+                <AppIcon name="pencil" :size="13" /> Edit trip
+              </button>
+            </div>
+          </div>
+          <UserProfileMenu v-if="signedIn" class="trip-profile" />
         </div>
-
-        <!-- Who's going: joined people (solid) and not-yet-joined travellers (dashed) + invite -->
-        <div class="trip-crew">
-          <span class="trip-faces" :aria-label="joinedNames.length + ' joined: ' + joinedNames.join(', ')">
-            <span v-for="(n, i) in itineraryInfo.travellers.slice(0, 6)" :key="n" class="trip-face"
-              :class="{ guest: !joinedNames.includes(n) }" :style="{ zIndex: 10 - i }" :title="n + (joinedNames.includes(n) ? '' : ' (not joined yet)')">
-              {{ n.charAt(0).toUpperCase() }}
-            </span>
-            <span v-if="itineraryInfo.travellers.length > 6" class="trip-face more">+{{ itineraryInfo.travellers.length - 6 }}</span>
-          </span>
-          <button v-if="!isDemo" type="button" class="trip-invite" @click="showShare = true" data-testid="invite-btn">+ Invite</button>
-          <!-- Organiser: change the name, route and dates (or delete the trip) -->
-          <button v-if="!isDemo && trip.role === 'owner'" type="button" class="trip-edit" @click="showEdit = true" data-testid="edit-trip-btn">
-            <AppIcon name="pencil" :size="14" /> Edit trip
-          </button>
-        </div>
+        <nav ref="barTabs" aria-label="Trip sections">
+          <TripTabs :model-value="activeTab" @update:model-value="goToTab" :tabs="shownTabs" :alert-key="safetyWarning ? 'safety' : ''" class="trip-tabs" />
+        </nav>
       </header>
 
       <TripShare v-if="showShare" :trip-id="id" :trip-name="trip.name" :members="trip.members || []"
@@ -59,36 +53,16 @@
         @close="showShare = false" @changed="reloadTrip" @left="$router.push('/home')" />
       <TripEditModal v-if="showEdit" :trip="trip" @close="showEdit = false" @saved="tripEdited" />
 
-      <!-- Summary cards: tap one to jump to that section -->
-      <div class="trip-cards">
-        <!-- The card for the open section grows and gets a tick, so you can see which one is picked -->
-        <button type="button" class="trip-card" :class="{ selected: activeTab === 'itinerary' }" :aria-pressed="activeTab === 'itinerary'"
-          @click="activeTab = 'itinerary'">
-          <span v-if="activeTab === 'itinerary'" class="trip-card-badge" aria-hidden="true">✓</span>
-          <span class="trip-card-label">Trip length</span>
-          <span class="trip-card-big">{{ dayCount || '–' }}<small> / day{{ dayCount === 1 ? '' : 's' }}</small></span>
-          <span class="trip-card-sub">{{ stopCount }} stop{{ stopCount === 1 ? '' : 's' }} planned</span>
-        </button>
-        <button type="button" class="trip-card" :class="{ selected: activeTab === 'places' }" :aria-pressed="activeTab === 'places'"
-          @click="openPlaces('vote')">
-          <span v-if="activeTab === 'places'" class="trip-card-badge" aria-hidden="true">✓</span>
-          <span class="trip-card-label">Group picks</span>
-          <span class="trip-card-big">{{ pickCount }}<small> / {{ wishCount }} places</small></span>
-          <span class="trip-card-sub">{{ wishCount ? 'Vote in Places → Group decisions' : 'Save places to your wishlist first' }}</span>
-        </button>
-        <button type="button" class="trip-card" :class="{ selected: activeTab === 'crew' }" :aria-pressed="activeTab === 'crew'"
-          @click="activeTab = 'crew'">
-          <span v-if="activeTab === 'crew'" class="trip-card-badge" aria-hidden="true">✓</span>
-          <span class="trip-card-label">Travellers</span>
-          <span class="trip-card-big">{{ itineraryInfo.travellers.length }}<small> / people</small></span>
-          <span class="trip-card-sub text-truncate">{{ itineraryInfo.travellers.join(', ') || 'Just you' }}</span>
-        </button>
-      </div>
-
       <!-- The open section -->
-      <main ref="panel" class="trip-panel">
+      <!-- (keyed by readOnly: if the trip ends while open, every section starts again from what was saved) -->
+      <main ref="panel" :key="readOnly ? 'panel-archived' : 'panel'" class="trip-panel">
         <div class="trip-panel-head">
           <h2 class="trip-panel-title"><span class="trip-panel-icon"><TabIcon :name="currentTab.key" :size="18" /></span> {{ currentTab.title }}</h2>
+        </div>
+
+        <!-- Archived: the trip has ended, so every section is look-only (the server refuses changes too) -->
+        <div v-if="readOnly" class="alert alert-secondary d-flex align-items-center gap-2" role="status" data-testid="archived-banner">
+          <AppIcon name="archive" :size="16" /> This trip has ended, so it's archived and read only.
         </div>
 
         <!-- Safety banner: shown on every other tab when SafetyLayer reports High/Critical risk
@@ -211,6 +185,7 @@
 
 <script>
 import axios from 'axios'
+import { computed } from 'vue'
 import ItineraryView from '../components/ItineraryView.vue'
 import WishlistView from '../components/WishlistView.vue'
 import PlacesVoting from '../components/PlacesVoting.vue'
@@ -235,13 +210,16 @@ import TripRecap from '../components/TripRecap.vue'
 import TripEditModal from '../components/TripEditModal.vue'
 import { notify } from '../notify.js'
 import FlagImg from '../components/FlagImg.vue'
+import DoodleIcon from '../components/DoodleIcon.vue'
+import UserProfileMenu from '../components/UserProfileMenu.vue'
 
 export default {
-  components: { FlagImg, LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
+  components: { DoodleIcon, UserProfileMenu, FlagImg, LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, FlightDelayWidget, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
   props: { id: { type: String, default: 'seoul' } }, // from the route /trip/:id
   data() {
     return {
       prefs, // Settings → Transport (shared, loaded by the itinerary)
+      barHide: 0, // how much of the top bar scrolls away: everything above the tabs (see mounted)
       activeTab: 'itinerary',
       placesTab: 'wishlist', // inside Places: 'wishlist' | 'vote'
       returnTo: null, // { date, day } when Places was opened from the itinerary's "Add stop"
@@ -269,12 +247,17 @@ export default {
       showEdit: false, // Edit trip dialog
       editRev: 0,      // goes up after each edit, to reload the itinerary
       photoWho: { name: '', at: 0 }, // set when "Photos" is clicked on a crew card
-      stagePhoto: '', // photo of the first destination (Wikipedia); plain dark header until it loads
-      photoPage: '',
-      stageHeight: 0 // small screens: the dark header ends just above the white panel
     }
   },
+  // Every section reads this: an archived trip shows everything, but nothing can be changed
+  provide() {
+    return { readOnly: computed(() => this.readOnly) }
+  },
   computed: {
+    // The trip has ended (see tripPhase). The server refuses changes to it too (server/archived.js).
+    readOnly() {
+      return !this.isDemo && this.tripPhase === 'after'
+    },
     // What the itinerary needs to know about this trip
     itineraryInfo() {
       if (this.isDemo) return { destination: 'Seoul, South Korea', destinations: ['Seoul, South Korea'], travellers: ['Sarah', 'John', 'Amy'], startDate: '2026-10-12', endDate: '2026-10-17', stops: [], wishlist: [] }
@@ -306,7 +289,9 @@ export default {
     tripPhase() {
       const t = this.itineraryInfo
       if (!t.startDate) return 'before'
-      const today = new Date().toISOString().slice(0, 10)
+      // Today on this device (like My Trips), so a trip moves to Archive here and there at the same moment
+      const now = new Date()
+      const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
       if (today < t.startDate) return 'before'
       if (t.endDate && today > t.endDate) return 'after'
       return 'during'
@@ -363,17 +348,6 @@ export default {
     wishlistPlaces() {
       return store.wishlist
     },
-    wishCount() {
-      return store.wishlist.length
-    },
-    pickCount() {
-      const needed = Math.floor(this.itineraryInfo.travellers.length / 2) + 1
-      let count = 0
-      for (const w of store.wishlist) {
-        if (this.itineraryInfo.travellers.length && (w.votes || []).length >= needed) count++
-      }
-      return count
-    },
     isDemo() {
       return this.id === 'seoul'
     },
@@ -381,14 +355,11 @@ export default {
     newSaved() {
       return this.returnTo ? Math.max(0, store.wishlist.length - this.savedAtStart) : 0
     },
+    signedIn() {
+      return !!auth.user
+    },
     authUserId() {
       return auth.user && auth.user.id ? String(auth.user.id) : ''
-    },
-    stageStyle() {
-      const style = {}
-      if (this.stagePhoto) style['--trip-photo'] = 'url(' + this.stagePhoto + ')'
-      if (this.stageHeight) style.height = this.stageHeight + 'px'
-      return style
     },
     headerTitle() {
       return this.isDemo ? 'Seoul, South Korea' : this.trip.name
@@ -420,26 +391,24 @@ export default {
       }
     }
     this.loading = false
-    this.loadPhoto()
-    window.addEventListener('resize', this.fitStage)
+    // When you scroll, the top row slides away and the tabs stay pinned: it sticks that far above the screen
+    this.$nextTick(() => {
+      const row = this.$refs.barTop
+      const tabs = this.$refs.barTabs
+      if (!row || !tabs || typeof ResizeObserver === 'undefined') return
+      // (6px of the bar stays above the tabs)
+      this.barObserver = new ResizeObserver(() => { this.barHide = Math.max(0, tabs.offsetTop - 6) })
+      this.barObserver.observe(row)
+    })
     window.addEventListener('trip-conflict', this.reloadTrip) // a save clashed with another device's
-    this.$nextTick(this.fitStage)
+    window.addEventListener('trip-archived', this.reloadTrip) // the trip ended while open: reload it read only
   },
   beforeUnmount() {
-    window.removeEventListener('resize', this.fitStage)
+    if (this.barObserver) this.barObserver.disconnect()
     window.removeEventListener('trip-conflict', this.reloadTrip)
+    window.removeEventListener('trip-archived', this.reloadTrip)
   },
   methods: {
-    // On small screens the header is shorter than 610px, so stop the dark background
-    // 16px above the white panel instead of letting the two overlap
-    fitStage() {
-      const panel = this.$refs.panel
-      if (!panel || window.innerWidth > 900) {
-        this.stageHeight = 0
-        return
-      }
-      this.stageHeight = Math.max(200, panel.offsetTop - 16)
-    },
     // Planner added or removed a day (or undid that): save the trip's new end date
     async setEndDate(endDate) {
       if (this.isDemo || !this.trip.startDate || !endDate) return
@@ -463,8 +432,8 @@ export default {
       this.$nextTick(() => {
         const panel = this.$refs.panel
         if (!panel) return
-        const nav = this.$el.querySelector('.trip-nav')
-        const gap = nav ? nav.offsetHeight + 24 : 90
+        const nav = this.$el.querySelector('.trip-bar')
+        const gap = nav ? nav.offsetHeight - this.barHide + 24 : 90 // (only the tabs row stays on screen)
         const top = panel.getBoundingClientRect().top + window.scrollY - gap
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         window.scrollTo({ top: top, behavior: reduce ? 'auto' : 'smooth' })
@@ -481,7 +450,6 @@ export default {
       this.showEdit = false
       await this.reloadTrip()
       this.editRev++
-      this.loadPhoto() // the first destination may have changed
       let text = 'Trip updated.'
       if (saved && saved.movedStops) {
         const days = Math.abs(saved.shiftDays) + (Math.abs(saved.shiftDays) === 1 ? ' day' : ' days')
@@ -495,24 +463,6 @@ export default {
         this.trip = res.data
       } catch (err) {
         // keep what we have
-      }
-    },
-    // A photo of the first destination for the header
-    async loadPhoto() {
-      const first = this.itineraryInfo.destinations[0]
-      if (!first) return
-      try {
-        const res = await axios.get('/api/places/photo', { params: { destination: first } })
-        if (!res.data.url) return
-        // Only swap once the image has downloaded, so the header never flashes empty
-        const img = new Image()
-        img.onload = () => {
-          this.stagePhoto = res.data.url
-          this.photoPage = res.data.page
-        }
-        img.src = res.data.url
-      } catch (err) {
-        // Keep the default photo
       }
     },
     flagFor(d) {
@@ -573,44 +523,30 @@ export default {
 /* ===== Page layout (dark header in the style of a product page, theme from the home page) ===== */
 .trip-page {
   position: relative;
-  padding: 12px 0 40px;
+  padding: 0 0 40px;
 }
-/* Trip photo behind the top of the page, edge to edge: it breaks out of the page column to the full
-   screen width (100vw, centred on the page), and tucks up under the navbar's rounded bottom.
-   The text and cards sit in .trip-inner-width columns, so they never touch the screen edges. */
-.trip-stage {
-  position: absolute;
-  top: -64px;
-  left: 50%;
-  width: 100vw;
-  margin-left: -50vw;
-  height: 674px;
-  border-radius: 0 0 36px 36px;
-  z-index: 0;
-  overflow: hidden;
-  /* Photo first: the cover photo shows clearly at the top, then fades into navy behind the cards */
-  background:
-    linear-gradient(180deg, rgba(0, 29, 44, 0.25) 0%, rgba(0, 29, 44, 0.1) 22%, rgba(0, 29, 44, 0.55) 42%, #001d2c 62%),
-    var(--trip-photo, none) center 35% / cover no-repeat, /* cover: fills any width without stretching */
-    #003d5b;
-}
-
-/* Top bar */
-.trip-nav {
+/* The one bar at the top: full screen width, like the app's navbar (which is hidden on this page) */
+.trip-bar {
   position: sticky;
-  top: 12px;
-  z-index: 50;
-  margin: 0 16px;
+  top: 0;
+  z-index: 1030;
+  margin: 0 calc(50% - 50vw);
+  padding: 10px clamp(14px, 3.2vw, 44px) 12px;
+  background: linear-gradient(100deg, var(--pl-navy-deep), var(--pl-navy) 55%, #145079);
+  border-radius: 0 0 28px 28px;
+  box-shadow: 0 10px 30px -12px rgba(8, 42, 68, 0.55);
+  color: #fff;
+}
+.trip-bar-top {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 10px 12px;
-  border-radius: 20px;
-  background: rgba(0, 40, 60, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+.trip-logo {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
 }
 .trip-back {
   display: inline-flex;
@@ -618,69 +554,51 @@ export default {
   gap: 6px;
   color: #003d5b;
   text-decoration: none;
-  padding: 8px 14px;
+  padding: 7px 12px;
   border-radius: 12px;
   background: #fbf5ea;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   font-weight: 700;
   flex-shrink: 0;
 }
-.trip-back span:first-child {
-  font-size: 20px;
-  line-height: 1;
-}
 .trip-back:hover {
   background: #fbf5ea;
   color: #003d5b;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
-.trip-nav-name {
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  max-width: 200px;
+.trip-profile {
+  flex: none;
+  margin-left: auto;
+}
+/* Name on top, the basics in one row under it */
+.trip-basics {
+  flex: 1;
   min-width: 0;
-  flex: 0 1 auto;
+}
+.trip-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* The tabs take the width they need (how many show depends on the window's width, see TripTabs);
-   the trip name gives way first (it's also the big title below) */
-.trip-tabs {
-  margin-left: auto;
-  flex: 0 0 auto;
+.trip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  font-size: 14px;
 }
-
-/* Title */
-.trip-head {
-  position: relative;
-  z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  text-align: left;
-  color: #fff;
-  padding: 150px clamp(16px, 4vw, 48px) 0;
-}
-.trip-title {
-  font-family: var(--font-display);
-  font-size: clamp(2.2rem, 5.4vw, 3.6rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  margin-bottom: 10px;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
-}
-/* Places joined by dotted lines */
 .trip-route {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 0;
-  margin: 0 0 18px;
+  margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 1.05rem;
   font-weight: 700;
 }
 .trip-route-stop {
@@ -689,80 +607,44 @@ export default {
   gap: 6px;
 }
 .trip-route-stop + .trip-route-stop::before {
-  content: '';
-  width: 34px;
-  height: 3px;
-  margin: 0 10px;
-  background-image: radial-gradient(circle, #edae49 1.5px, transparent 1.8px);
-  background-size: 7px 3px;
+  content: '→';
+  margin: 0 8px;
+  color: #edae49;
 }
-.trip-route-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #edae49;
-  box-shadow: 0 0 0 3px rgba(237, 174, 73, 0.3);
-}
-/* Pill like a Monthly / Yearly switch */
-.trip-toggle {
+.trip-date {
   display: inline-flex;
-  gap: 4px;
-  padding: 6px;
-  border-radius: 999px;
-  background: rgba(0, 30, 46, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.trip-toggle-item {
-  padding: 8px 18px;
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 14px;
-}
-.trip-toggle-item.on {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-/* Summary cards */
-@media (max-width: 700px) {
-  .trip-head { padding: 96px 18px 0; }
-  .trip-route-stop + .trip-route-stop::before { width: 20px; margin: 0 6px; }
-}
-.trip-crew {
-  display: flex;
-  justify-content: flex-start;
   align-items: center;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.8);
 }
 .trip-faces {
   display: flex;
 }
 .trip-face {
   position: relative;
-  width: 32px;
-  height: 32px;
-  margin-left: -8px;
+  width: 26px;
+  height: 26px;
+  margin-left: -7px;
   border-radius: 50%;
   background: #00798c;
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #002233;
+  border: 2px solid var(--pl-navy);
 }
 .trip-face:first-child {
   margin-left: 0;
 }
 .trip-face.guest {
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
-  border: 2px dashed rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.75);
+  border: 2px dashed rgba(255, 255, 255, 0.4);
 }
 .trip-face.more {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
   font-size: 11px;
 }
 .trip-invite {
@@ -771,119 +653,43 @@ export default {
   background: #edae49;
   color: #00283c;
   font-weight: 700;
-  padding: 7px 16px;
-  box-shadow: 0 6px 18px rgba(237, 174, 73, 0.3);
-}
-.trip-invite:hover {
-  transform: translateY(-1px);
-}
-.trip-invite:focus-visible {
-  outline: 3px solid #f3c26f;
-  outline-offset: 2px;
+  padding: 3px 12px;
 }
 .trip-edit {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
   font-weight: 700;
-  padding: 6px 14px;
+  padding: 2px 11px;
+}
+.trip-invite:hover,
+.trip-edit:hover {
+  transform: translateY(-1px);
 }
 .trip-edit:hover {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(237, 174, 73, 0.7);
-  transform: translateY(-1px);
 }
+.trip-invite:focus-visible,
 .trip-edit:focus-visible {
   outline: 3px solid #f3c26f;
   outline-offset: 2px;
 }
-.trip-cards {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  max-width: 1200px;
-  margin: 44px auto 0;
-  padding: 0 clamp(16px, 4vw, 48px);
-  align-items: end;
-}
-.trip-card {
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 26px 28px;
-  color: #fff;
-  background: #062c42;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 22px;
-  /* springy grow when picked */
-  position: relative;
-}
-.trip-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(243, 194, 111, 0.4);
-}
-.trip-card:active {
-  transform: scale(0.98);
-}
-.trip-card.selected {
-  background: #0b3048;
-  z-index: 1;
-  border-color: rgba(243, 194, 111, 0.55);
-  transform: translateY(-14px) scale(1.06);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(237, 174, 73, 0.25);
-}
-.trip-card.selected:hover {
-  transform: translateY(-16px) scale(1.06);
-}
-
-.trip-card-badge {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid #f3c26f;
-  color: #f3c26f;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  box-shadow: 0 0 14px rgba(243, 194, 111, 0.5);
-}
-.trip-card-label {
-  font-weight: 600;
-  font-size: 1.05rem;
-}
-.trip-card-big {
-  font-size: 3rem;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-top: 8px;
-}
-.trip-card-big small,
-.trip-card-sub {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-weight: 400;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.62);
-}
-.trip-card-sub {
-  max-width: 100%;
+/* The sections, on their own row under the basics */
+.trip-tabs {
+  justify-content: flex-start;
+  margin-top: 10px;
 }
 
 /* The open section */
 .trip-panel {
   position: relative;
   z-index: 1;
-  margin-top: 32px;
+  margin-top: 20px;
   background: #fbf5ea;
   border-radius: 28px;
   padding: 32px;
@@ -999,47 +805,13 @@ export default {
 
 /* Keyboard focus is always visible */
 .trip-back:focus-visible,
-.trip-card:focus-visible,
 .places-switch button:focus-visible {
   outline: 3px solid #f3c26f;
   outline-offset: 2px;
 }
 
-/* Small screens: tabs get their own scrolling row, cards stack */
+/* Small screens */
 @media (max-width: 900px) {
-  .trip-nav {
-    margin: 0 8px;
-  }
-  /* Cards become three small tiles so they still fit on the header */
-  .trip-cards {
-    gap: 8px;
-    margin-top: 28px;
-    padding: 0 10px;
-  }
-  .trip-card,
-  .trip-card.selected {
-    padding: 14px 12px;
-    border-radius: 16px;
-  }
-  .trip-card.selected,
-  .trip-card.selected:hover {
-    transform: translateY(-6px) scale(1.04);
-  }
-  .trip-card-label {
-    font-size: 13px;
-  }
-  .trip-card-big {
-    font-size: 1.9rem;
-    margin-top: 2px;
-  }
-  .trip-card-big small {
-    display: block;
-    font-size: 12px;
-  }
-  .trip-card-sub,
-  .trip-card-badge {
-    display: none;
-  }
   .trip-panel {
     padding: 20px 16px;
     border-radius: 22px;
@@ -1055,24 +827,22 @@ export default {
     height: 30px;
   }
 }
-/* Phones: the sections become one menu button, on the same row as the trip name */
+/* Phones: no logo, the name and basics get the room; the sections are one menu button */
 @media (max-width: 640px) {
-  .trip-nav {
-    flex-wrap: nowrap;
+  .trip-bar {
+    padding: 8px 12px 10px;
+    border-radius: 0 0 20px 20px;
+  }
+  .trip-bar-top {
     gap: 10px;
-    padding: 8px;
+    align-items: flex-start;
   }
-  .trip-nav-name {
-    flex: 1;
-    min-width: 0;
-    max-width: none;
+  .trip-logo {
+    display: none;
   }
-  .trip-tabs {
-    order: 0;
-    width: auto;
-    margin-left: auto;
-    flex: 0 1 auto;
-    min-width: 0;
+  .trip-meta {
+    font-size: 13px;
+    gap: 6px 10px;
   }
 }
 @media (max-width: 480px) {

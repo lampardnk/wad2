@@ -6,7 +6,8 @@
       {{ loadError }} <button type="button" class="sn-link" @click="load">Try again</button>
     </p>
     <template v-else>
-      <p v-if="!notes.length" class="sn-empty">
+      <p v-if="!notes.length && readOnly" class="sn-empty">No notes were left on this stop.</p>
+      <p v-else-if="!notes.length" class="sn-empty">
         No notes yet. Leave one for the group, like "book tickets ahead" or "cash only".
       </p>
       <ol v-else class="sn-list">
@@ -36,7 +37,7 @@
               <button type="button" class="sn-btn danger" :disabled="busy" @click="remove(n)">Delete</button>
               <button type="button" class="sn-btn" @click="confirmId = null">Keep</button>
             </div>
-            <div v-else-if="editingId !== n.id && (n.mine || n.canDelete)" class="sn-tools">
+            <div v-else-if="!readOnly && editingId !== n.id && (n.mine || n.canDelete)" class="sn-tools">
               <button v-if="n.mine" type="button" class="sn-tool" @click="startEdit(n)">Edit</button>
               <button v-if="n.canDelete" type="button" class="sn-tool" @click="confirmId = n.id">Delete</button>
             </div>
@@ -45,7 +46,7 @@
       </ol>
 
       <!-- New note -->
-      <form class="sn-new" @submit.prevent="add">
+      <form v-if="!readOnly" class="sn-new" @submit.prevent="add">
         <label for="sn-new-text" class="visually-hidden">Add a note</label>
         <textarea id="sn-new-text" v-model="newText" class="sn-input" rows="2" maxlength="500"
           placeholder="Add a note for the group…" @keydown.enter.exact.prevent="add"></textarea>
@@ -60,10 +61,11 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
+const readOnly = inject('readOnly', ref(false)) // an archived trip: notes can be read, not added
 const props = defineProps({
   stopId: { type: String, default: '' }
 })

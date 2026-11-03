@@ -12,7 +12,7 @@ const routes = [
   { path: '/', redirect: '/home' },
   { path: '/home', name: 'Home', component: HomeView, meta: { requiresAuth: true } },
   { path: '/settings', name: 'Settings', component: SettingsView, meta: { requiresAuth: true } },
-  { path: '/trip/:id', name: 'Trip', component: TripView, props: true, meta: { requiresAuth: true } },
+  { path: '/trip/:id', name: 'Trip', component: TripView, props: true, meta: { requiresAuth: true, ownNav: true } },
   // Invite links: /join/<code>
   { path: '/join/:code', name: 'Join', component: JoinView, props: true, meta: { requiresAuth: true } },
   { path: '/login', name: 'Login', component: LoginView, meta: { hideNav: true } },

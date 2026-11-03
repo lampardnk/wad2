@@ -162,7 +162,7 @@
       </form>
     </NotebookModal>
 
-    <!-- ===== Search + sort & filter ===== -->
+    <!-- ===== Search + sort ===== -->
     <div v-if="!noTrips" class="toolbar">
       <!-- Search: cream, chunky and soft, like Discover's (press "/" to jump here) -->
       <div class="search">
@@ -175,7 +175,7 @@
         </button>
         <kbd v-else class="search-kbd" aria-hidden="true" title="Press / to search">/</kbd>
       </div>
-      <!-- Sort & filter: a chunky button that opens a cream paper menu -->
+      <!-- Sort: a chunky button that opens a cream paper menu -->
       <div class="sortbox" @keydown.esc="sortOpen = false">
         <button type="button" class="sort-btn" :class="{ open: sortOpen }" aria-haspopup="true" :aria-expanded="sortOpen" data-testid="trip-sort"
           @click.stop="sortOpen = !sortOpen">
@@ -183,21 +183,14 @@
             <path d="M7 4v15M3.5 15.5 7 19l3.5-3.5M17 20V5M13.5 8.5 17 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <span class="sort-btn-text">{{ sortLabel }}</span>
-          <span v-if="tripFilter !== 'all'" class="sort-badge">{{ tripFilter === 'group' ? 'Group' : 'Solo' }}</span>
           <svg class="sort-caret" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
-        <div v-if="sortOpen" class="sort-menu" role="menu" aria-label="Sort and filter trips" @click.stop>
+        <div v-if="sortOpen" class="sort-menu" role="menu" aria-label="Sort trips" @click.stop>
             <p class="sort-head">Sort by</p>
             <button v-for="o in SORTS" :key="o.key" type="button" class="sort-item" :class="{ on: tripSort === o.key }"
               role="menuitemradio" :aria-checked="tripSort === o.key" @click="pickSort(o.key)">
               <DoodleIcon :name="o.doodle" :size="20" /> {{ o.label }}
               <span v-if="tripSort === o.key" class="sort-tick"><DoodleIcon name="check" :size="18" /></span>
-            </button>
-            <p class="sort-head">Show</p>
-            <button v-for="o in TRIP_FILTERS" :key="o.key" type="button" class="sort-item" :class="{ on: tripFilter === o.key }"
-              role="menuitemradio" :aria-checked="tripFilter === o.key" @click="pickFilter(o.key)">
-              <DoodleIcon :name="o.doodle" :size="20" /> {{ o.label }}
-              <span v-if="tripFilter === o.key" class="sort-tick"><DoodleIcon name="check" :size="18" /></span>
             </button>
         </div>
       </div>
@@ -225,7 +218,7 @@
     <!-- ===== Trips ===== -->
     <div class="trips-head">
       <h2 class="section-title">My Trips</h2>
-      <!-- Planning / Upcoming / Archive (finished trips) -->
+      <!-- Planning / Archive (finished trips) -->
       <div v-if="!noTrips" class="stage-tabs" role="tablist" aria-label="Show trips">
         <button v-for="st in STAGES" :key="st.key" type="button" role="tab" class="stage-tab"
           :class="{ on: stage === st.key }" :aria-selected="stage === st.key" :data-testid="'stage-' + st.key"
@@ -255,10 +248,9 @@
     </div>
 
     <!-- Nothing matches the search -->
-    <div v-else-if="!visibleTrips.length && (search || tripFilter !== 'all')" class="empty">
-      <p v-if="search" class="mb-2">No {{ stageName.toLowerCase() }} trips match “{{ search }}”.</p>
-      <p v-else class="mb-2">No {{ tripFilter }} trips in {{ stageName }}.</p>
-      <button class="btn btn-sm btn-outline-primary" @click="clearFilters">Clear filters</button>
+    <div v-else-if="!visibleTrips.length && search" class="empty">
+      <p class="mb-2">No {{ stageName.toLowerCase() }} trips match “{{ search }}”.</p>
+      <button class="btn btn-sm btn-outline-primary" @click="clearFilters">Clear search</button>
     </div>
 
     <!-- No trips at all yet (new account) -->
@@ -381,20 +373,14 @@ const DAY_MS = 86400000
 
 const STAGES = [
   { key: 'planning', label: 'Planning', doodle: 'map' },
-  { key: 'upcoming', label: 'Upcoming', doodle: 'plane' },
   { key: 'archive', label: 'Archive', doodle: 'ticket' }
 ]
-// Sort & filter choices for the trip cards
+// Sort choices for the trip cards
 const SORTS = [
   { key: 'upcoming', label: 'Upcoming first', doodle: 'calendar' },
   { key: 'earliest', label: 'Earliest departure', doodle: 'plane' },
   { key: 'recent', label: 'Recently added / edited', doodle: 'sparkle' },
   { key: 'shortest', label: 'Shortest trip first', doodle: 'boot' }
-]
-const TRIP_FILTERS = [
-  { key: 'all', label: 'All trips', doodle: 'suitcase' },
-  { key: 'group', label: 'Group trips only', doodle: 'users' },
-  { key: 'solo', label: 'Solo trips only', doodle: 'backpack' }
 ]
 function readPref(key, fallback) {
   try {
@@ -431,17 +417,15 @@ export default {
       destTimer: null,
       confirmingId: null,
       search: '',
-      // Sort & filter for the trip cards (remembered in this browser)
+      // Sort for the trip cards (remembered in this browser)
       tripSort: readPref('chuise-trip-sort', 'upcoming'),
-      tripFilter: readPref('chuise-trip-filter', 'all'),
       sortOpen: false,
       SORTS,
-      TRIP_FILTERS,
       stampFilter: '',   // a passport stamp that was tapped: only trips to that place
       STAGES,
       CARD_TILT,
       STATUS_DOODLE,
-      stage: null, // 'planning' | 'upcoming' | 'archive' (picked once the trips load, see shownStage)
+      stage: null, // 'planning' | 'archive' (picked once the trips load)
       // destination = what's being typed; destinations = the ones already added
       photos: {}, // destination -> photo url
       invites: [], // trips I've been invited to by username
@@ -543,7 +527,7 @@ export default {
     // "All" plus one city per trip (the first one, for multi-city trips), for the filter dropdown
     // How many trips are in each stage
     stageCounts() {
-      const counts = { planning: 0, upcoming: 0, archive: 0 }
+      const counts = { planning: 0, archive: 0 }
       for (const t of this.allTrips) counts[this.stageOf(t)]++
       return counts
     },
@@ -559,10 +543,6 @@ export default {
       for (const t of this.allTrips) {
         if (this.stageOf(t) !== this.stage) continue
         if (this.stampFilter && this.stage === 'archive' && !t.destinations.includes(this.stampFilter)) continue
-        // group = more than one traveller, solo = just you
-        const people = (t.travellers || []).length
-        if (this.tripFilter === 'group' && people < 2) continue
-        if (this.tripFilter === 'solo' && people > 1) continue
         let matchesSearch = !q || t.name.toLowerCase().includes(q)
         for (const d of t.destinations) {
           if (d.toLowerCase().includes(q)) matchesSearch = true
@@ -920,11 +900,6 @@ export default {
       this.sortOpen = false
       try { localStorage.setItem('chuise-trip-sort', key) } catch (err) { /* private mode */ }
     },
-    pickFilter(key) {
-      this.tripFilter = key
-      this.sortOpen = false
-      try { localStorage.setItem('chuise-trip-filter', key) } catch (err) { /* private mode */ }
-    },
     closeSort() {
       this.sortOpen = false
     },
@@ -944,14 +919,13 @@ export default {
 
     clearFilters() {
       this.search = ''
-      this.pickFilter('all')
       this.stampFilter = ''
     },
 
-    // First visit: open Upcoming if there's anything coming up, otherwise Planning
+    // First visit: open Planning
     pickStartStage() {
       if (this.stage) return
-      this.stage = this.stageCounts.upcoming ? 'upcoming' : 'planning'
+      this.stage = 'planning'
     },
 
     async createTrip() {
@@ -1014,14 +988,9 @@ export default {
     },
 
     // Upcoming / ongoing / past, from today's date
-    // Archive: the trip has ended. Upcoming: dates set and the itinerary has stops (or it's on now).
-    // Planning: everything else (no dates yet, or nothing planned yet).
+    // Archive: the trip has ended (read only). Planning: everything else.
     stageOf(t) {
-      const status = this.statusFor(t).kind
-      if (status === 'past') return 'archive'
-      if (status === 'ongoing') return 'upcoming'
-      if (status === 'upcoming' && (t.stopCount || (t.stops && t.stops.length))) return 'upcoming'
-      return 'planning'
+      return this.statusFor(t).kind === 'past' ? 'archive' : 'planning'
     },
 
     statusFor(t) {
@@ -1642,14 +1611,6 @@ export default {
 .sort-btn-text {
   white-space: nowrap;
 }
-.sort-badge {
-  padding: 1px 8px;
-  border-radius: 8px;
-  background: #ffbf3c;
-  font-size: 12px;
-  font-weight: 900;
-}
-
 .sort-btn.open .sort-caret {
   transform: rotate(180deg);
 }

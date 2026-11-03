@@ -4,16 +4,17 @@
     <div class="xp-toolbar">
       <div class="xp-select">
         <span>Show totals in</span>
-        <CustomDropdown :model-value="state.homeCurrency" :options="currencyOptions" size="sm" header-text="Home currency"
+        <strong v-if="readOnly">{{ state.homeCurrency }}</strong>
+        <CustomDropdown v-else :model-value="state.homeCurrency" :options="currencyOptions" size="sm" header-text="Home currency"
           aria-label="Home currency" @update:model-value="changeCurrency" />
       </div>
-      <span v-if="!demo" class="xp-live" title="Changes from everyone on the trip show up here automatically">
+      <span v-if="!demo && !readOnly" class="xp-live" title="Changes from everyone on the trip show up here automatically">
         <span class="xp-live-dot" aria-hidden="true"></span> Synced with the group
       </span>
       <!-- Live rates, or the group's own (click to see and change) -->
       <ExchangeRates :home="home" :live="liveRates" :live-date="ratesDate" :live-error="ratesError" :group="state.groupRates"
         :totals="currencyTotals" :me="me" @set="setGroupRate" @reset="resetGroupRate" />
-      <button v-if="state.items.length" type="button" class="btn xp-add" @click="openForm(null)" data-testid="expense-add">
+      <button v-if="state.items.length && !readOnly" type="button" class="btn xp-add" @click="openForm(null)" data-testid="expense-add">
         + Add expense <kbd aria-hidden="true">N</kbd>
       </button>
     </div>
@@ -22,7 +23,8 @@
     <div v-if="!state.items.length" class="xp-empty">
       <div class="xp-empty-art" aria-hidden="true"><AppIcon name="receipt" :size="40" /></div>
       <h1 class="xp-h">No expenses yet</h1>
-      <button type="button" class="btn xp-add" @click="openForm(null)">+ Add the first expense</button>
+      <p v-if="readOnly" class="xp-muted mb-0">Nothing was logged for this trip.</p>
+      <button v-else type="button" class="btn xp-add" @click="openForm(null)">+ Add the first expense</button>
     </div>
 
     <template v-else>
@@ -46,10 +48,10 @@
             </div>
             <span class="xp-tile-sub">
               {{ Math.round(budgetPct) }}% of {{ money(state.budget, home) }} budget
-              <button type="button" class="xp-link-light" @click="editBudget">Edit</button>
+              <button v-if="!readOnly" type="button" class="xp-link-light" @click="editBudget">Edit</button>
             </span>
           </template>
-          <button v-else type="button" class="xp-link-light mt-2" @click="editBudget">+ Set a budget</button>
+          <button v-else-if="!readOnly" type="button" class="xp-link-light mt-2" @click="editBudget">+ Set a budget</button>
           <form v-if="budgetEditing" class="xp-budget-form" @submit.prevent="saveBudget">
             <label for="xp-budget" class="visually-hidden">Budget in {{ home }}</label>
             <input id="xp-budget" ref="budget" v-model.number="budgetInput" type="number" min="0" class="form-control form-control-sm" :placeholder="'Budget in ' + home">
@@ -103,7 +105,7 @@
             </div>
             <ul class="xp-list">
               <li v-for="e in day.items" :key="e.id">
-                <button type="button" class="xp-row" @click="openForm(e)" :aria-label="'Edit ' + e.title">
+                <button type="button" class="xp-row" :disabled="readOnly" @click="openForm(e)" :aria-label="readOnly ? e.title : 'Edit ' + e.title">
                   <span class="xp-icon" :style="{ background: categoryOf(e.category).color + '22' }" aria-hidden="true"><AppIcon :name="lineIconFor(categoryOf(e.category).icon)" :size="16" /></span>
                   <span class="xp-row-main">
                     <span class="xp-row-title">{{ e.title }}</span>
@@ -155,7 +157,7 @@
                   <strong>{{ p.to === me ? 'you' : p.to }}</strong>
                   <span class="d-block xp-num xp-pay-amt">{{ money(p.amount, home) }}</span>
                 </span>
-                <button type="button" class="btn btn-sm xp-mini" @click="markPaid(p)">Mark paid</button>
+                <button v-if="!readOnly" type="button" class="btn btn-sm xp-mini" @click="markPaid(p)">Mark paid</button>
               </li>
             </ul>
             <details v-if="state.settlements.length" class="xp-history">
@@ -163,7 +165,7 @@
               <ul>
                 <li v-for="s in state.settlements" :key="s.id">
                   {{ s.from === me ? 'You' : s.from }} paid {{ s.to === me ? 'you' : s.to }} <span class="xp-num">{{ money(s.amount, home) }}</span>
-                  <button type="button" class="xp-link" @click="undoPayment(s.id)">Undo</button>
+                  <button v-if="!readOnly" type="button" class="xp-link" @click="undoPayment(s.id)">Undo</button>
                 </li>
               </ul>
             </details>
@@ -243,6 +245,7 @@ import { lineIconFor } from '../emojiIcons.js'
 
 export default {
   components: { AppIcon, ExpenseForm, CustomDropdown, ExchangeRates },
+  inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
     tripId: { type: String, default: '' },
     travellers: { type: Array, default: () => [] },
@@ -507,6 +510,7 @@ export default {
     },
 
     openForm(expense) {
+      if (this.readOnly) return // (the N shortcut too)
       this.editing = expense ? this.state.items.find((x) => x.id === expense.id) : null
       this.showForm = true
     },
@@ -966,6 +970,7 @@ export default {
   padding: 0;
   margin: 0;
 }
+.xp-row:disabled { cursor: default; color: inherit; opacity: 1; }
 .xp-row {
   width: 100%;
   display: flex;

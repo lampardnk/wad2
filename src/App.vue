@@ -1,7 +1,8 @@
 <template>
   <div class="pl-app">
-    <!-- Full-width playful navbar: brand (just the name, not a link) and the profile menu -->
-    <nav v-if="!$route.meta.hideNav" class="pl-nav" aria-label="Main">
+    <!-- Full-width playful navbar: brand (just the name, not a link) and the profile menu.
+         Trip pages draw their own (logo, trip basics, profile and tabs in one bar): meta.ownNav -->
+    <nav v-if="!$route.meta.hideNav && !$route.meta.ownNav" class="pl-nav" aria-label="Main">
       <span class="pl-brand">
         <span class="pl-brand-mark"><DoodleIcon name="plane" :size="28" tint="cream" /></span>
         Chui-se Your Trip

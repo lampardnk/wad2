@@ -5,9 +5,9 @@
       <div class="pv-error-icon">!</div>
       <div class="flex-grow-1">
         <strong>Your wishlist is empty.</strong>
-        <div>Add at least one place to the wishlist before the group can vote.</div>
+        <div>{{ readOnly ? 'No places were saved for this trip.' : 'Add at least one place to the wishlist before the group can vote.' }}</div>
       </div>
-      <button type="button" class="btn btn-danger pv-pill" @click="$emit('go-wishlist')">← Go to wishlist</button>
+      <button v-if="!readOnly" type="button" class="btn btn-danger pv-pill" @click="$emit('go-wishlist')">← Go to wishlist</button>
     </div>
 
     <template v-else>
@@ -17,13 +17,14 @@
         <strong>Vote on your wishlist together.</strong>
         A place becomes a <strong>group pick</strong>
         when {{ needed }} of {{ travellers.length }} want to go.
-        <template v-if="canVoteFor.length > 1">As organiser, you can also vote for people without an account.</template>
+        <template v-if="readOnly">This trip has ended, so voting is closed.</template>
+        <template v-else-if="canVoteFor.length > 1">As organiser, you can also vote for people without an account.</template>
       </div>
       <span class="pv-summary" data-testid="vote-summary">✓ {{ picks }} group pick{{ picks === 1 ? '' : 's' }}</span>
     </div>
 
     <!-- Quick vote: the whole list in one tap. Shows where you're at, and every bulk vote can be undone. -->
-    <section v-if="voter" class="pv-quick" :class="{ done: !leftFor(voter) }" aria-labelledby="pv-quick-title">
+    <section v-if="voter && !readOnly" class="pv-quick" :class="{ done: !leftFor(voter) }" aria-labelledby="pv-quick-title">
       <span class="pv-quick-icon" aria-hidden="true"><AppIcon :name="leftFor(voter) ? 'thumbs-up' : 'check'" :size="24" /></span>
       <div class="pv-quick-text">
         <h3 id="pv-quick-title" class="pv-quick-title">{{ leftFor(voter) ? 'Like everything on the list?' : "You've voted on every place" }}</h3>
@@ -78,7 +79,7 @@
           <div class="pv-voters" role="group" :aria-label="'Votes for ' + w.name">
             <template v-for="person in travellers" :key="person">
               <!-- Your own vote (and, for the organiser, people without an account) -->
-              <button v-if="canVoteFor.includes(person)" type="button" class="pv-voter" :class="{ yes: w.votes.includes(person), mine: person === me }"
+              <button v-if="canVoteFor.includes(person) && !readOnly" type="button" class="pv-voter" :class="{ yes: w.votes.includes(person), mine: person === me }"
                 :aria-pressed="w.votes.includes(person)" @click="toggle(w, person)" data-testid="vote-btn">
                 <AppIcon :name="w.votes.includes(person) ? 'thumbs-up' : 'plus'" :size="14" /> {{ person === me ? 'You' : person }}
               </button>
@@ -110,6 +111,7 @@ import { notify, errorText } from '../notify.js'
 
 export default {
   components: { AppIcon, CustomDropdown },
+  inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
     travellers: { type: Array, default: () => [] },
     me: { type: String, default: '' },                 // my name on this trip

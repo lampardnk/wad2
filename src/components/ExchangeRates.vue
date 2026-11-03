@@ -41,8 +41,8 @@
                 Set by {{ r.group.by === me ? 'you' : r.group.by }} · {{ shortDate(r.group.at) }}
                 <span v-if="r.live">· live is {{ fmt(r.live) }}</span>
               </p>
-              <p v-else-if="!r.live" class="er-meta warn">No live rate, so {{ r.code }} amounts aren't converted. Set one so totals add up.</p>
-              <div class="er-actions">
+              <p v-else-if="!r.live" class="er-meta warn">No live rate, so {{ r.code }} amounts aren't converted.<template v-if="!readOnly"> Set one so totals add up.</template></p>
+              <div v-if="!readOnly" class="er-actions">
                 <button type="button" class="er-btn" @click="startEdit(r)">{{ r.group ? 'Change' : 'Set group rate' }}</button>
                 <button v-if="r.group" type="button" class="er-btn ghost" @click="resetRate(r)">Use live rate</button>
               </div>
@@ -79,11 +79,12 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, inject } from 'vue'
 import { currencyOptions, money } from '../expenses.js'
 import CustomDropdown from './CustomDropdown.vue'
 import AppIcon from './AppIcon.vue'
 
+const readOnly = inject('readOnly', ref(false)) // an archived trip: rates can be seen, not set
 const props = defineProps({
   home: { type: String, default: 'SGD' },
   live: { type: Object, default: () => ({}) },      // { JPY: 112.4 } = 1 home -> 112.4 JPY

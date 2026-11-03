@@ -26,6 +26,7 @@ import discoverRoutes from './routes/discover.js'
 import { imageRoute, flagRoute } from './images.js'
 import travelRoutes from './routes/travel.js'
 import { rateLimit } from './rateLimit.js'
+import { blockArchivedWrites } from './archived.js'
 
 const app = express()
 app.use(cors())
@@ -74,6 +75,7 @@ for (const path of ['/api/crowd', '/api/weather', '/api/travel', '/api/flights',
 app.use('/api/auth', authRoutes)
 app.use('/api/crowd', crowdRoutes)
 app.use('/api/preferences', preferenceRoutes)
+app.use('/api/trips/:tripId', blockArchivedWrites) // ended trips are read only (see archived.js)
 app.use('/api/trips/:tripId/photos', photoRoutes) // before trips, so /photos is not read as a trip id
 app.use('/api/trips/:tripId/expenses', expenseRoutes)
 app.use('/api/join', joinRoutes)

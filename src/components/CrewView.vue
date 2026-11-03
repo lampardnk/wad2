@@ -10,7 +10,7 @@
           · {{ activeCount }} active<template v-if="pending.length"> · {{ pending.length }} pending</template>
         </p>
       </div>
-      <div class="cw-actions">
+      <div v-if="!readOnly" class="cw-actions">
         <button type="button" class="cw-primary" :class="{ done: copied }" @click="copyLink" data-testid="crew-copy">
           <AppIcon :name="copied ? 'check' : 'link'" :size="15" /> {{ copied ? 'Link copied' : 'Copy invite link' }}
         </button>
@@ -139,6 +139,7 @@ const DEMO = {
 
 export default {
   components: { AppIcon, CrewDetailsForm, InitialBadge },
+  inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
     tripId: { type: String, required: true },
     city: { type: String, default: 'Trip' },
@@ -213,7 +214,7 @@ export default {
           id: m ? m.id : '', avatarV: m ? m.avatarV || 0 : 0,
           hasProfile: fromSettings ? !!m.contactSaved : !!this.profiles[name],
           fromSettings,
-          canEdit: name === this.me || (kind === 'guest' && this.role === 'owner') || this.demo
+          canEdit: !this.readOnly && (name === this.me || (kind === 'guest' && this.role === 'owner') || this.demo)
         })
       }
       // You first, then active people, then the rest
@@ -354,6 +355,7 @@ export default {
     },
 
     canManage(inv) {
+      if (this.readOnly) return false
       return this.demo || this.role === 'owner' || String(inv.invitedById) === String(this.myId)
     },
 

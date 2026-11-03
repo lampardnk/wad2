@@ -46,6 +46,12 @@
           <router-link :to="'/trip/' + trip.id" class="jv-btn">Open trip →</router-link>
         </template>
 
+        <!-- Ended trips are archived: nobody new can join (server/archived.js) -->
+        <template v-else-if="trip.ended">
+          <p class="jv-note">This trip has ended, so nobody new can join it.</p>
+          <router-link to="/home" class="jv-btn">Go to your trips →</router-link>
+        </template>
+
         <template v-else>
           <!-- Claim a name the organiser already listed, so past expenses and votes line up -->
           <fieldset v-if="trip.guests.length" class="jv-who">
