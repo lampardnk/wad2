@@ -1,6 +1,6 @@
 # Day optimizer (Itinerary tab)
 
-Files: `src/lib/itinerary/dayOptimizer.js` (algorithm, no Vue), `src/components/itinerary/ItineraryPlanner.vue` (UI: Optimize Route, preview, lock, drag), `src/lib/itinerary/dayOptimizerSample.js` (`PLANNER_SAMPLE`, the sample Kyoto day). Tests: `src/lib/itinerary/dayOptimizer.spec.js`.
+Files: `src/lib/itinerary/dayOptimizer.js` (algorithm, no Vue), `src/components/itinerary/ItineraryPlanner.vue` (UI: Optimize Route, preview, lock, drag), `src/lib/itinerary/dayOptimizerSample.js` (`PLANNER_SAMPLE`, the sample Kyoto day).
 
 ## Algorithm (`optimizeDay(stops, rainByHour, { dayStart, dayEnd, buffer, crowdWeight, travel, from, end })`)
 1. Travel matrix (`travelMatrix`): every pair of stops, using `travelBetween` (see Getting around). Without travel preferences: walk up to 1.3 km, otherwise transit. No location → 15 min.
