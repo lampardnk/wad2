@@ -2,11 +2,11 @@
 
 Calm when nothing is happening, unmistakable when something is. Patterns from NERV (state banner, zero clutter),
 Citizen (hyper-local radius), Red Cross Emergency (one-tap calls, "I'm safe", offline guides) and IQAir (one score, one colour).
-Dark slate surface, mint `#2FE0A1`, 16px cards, glass borders `rgba(255,255,255,0.08)`.
+Dark surface (gradient `#121b19` → `#022538`), teal accent `#3fb8c6`, glass borders `rgba(255,255,255,0.08)`.
 
 ## Hierarchy (most urgent first)
 ```
-[📍 Kyoto] [📍 Osaka] [🧭 My location]                                   [🔔 Alerts]
+[Kyoto] [Osaka] [My location]          (one pill per destination, plus live GPS)
 ┌ 1 STATUS BANNER (NERV) ─────────────────────────────────────────────────────────┐
 │ ● NORMAL · KYOTO, JAPAN                                                  0/100 │
 │ All clear                                                                       │
@@ -17,16 +17,19 @@ Dark slate surface, mint `#2FE0A1`, 16px cards, glass borders `rgba(255,255,255,
   WHAT (Earthquake M6.2) · WHERE (15 km from Kyoto) · SEVERITY (Strong / Tsunami possible) · WHEN (3 min ago)
 ┌ 2 EMERGENCY CALLS ───────────┐ ┌ 3 HELP NEARBY (radar) ──────────┐
 │ [👮 110 Police] [🚑 119 Amb.] │ │  rings 1/2/3 km around the hotel │
-│ [🗾 Visitor Hotline] [🇸🇬 MFA] │ │  H C P F E ★ + your stops        │
+│ [🗾 Visitor Hotline] [🇸🇬 MFA] │ │  hospitals, police, shelters,    │
+│                              │ │  embassy + your stops            │
 │ I'm safe: preview + WhatsApp │ │  nearest hospital … 0.8 km  Go ↗ │
 │ SMS · Copy · Share           │ └──────────────────────────────────┘
 └──────────────────────────────┘
 ┌ 4 WHERE WE'RE STAYING (offline taxi card) ┐ ┌ IF SOMETHING HAPPENS (guides) ┐
 │ ホテルグレイスリー新宿  (local script, big)  │ │ ▸ Earthquake: drop, cover…     │
-│ Hotel Gracery Shinjuku, address (English) │ │ ▸ Tsunami ▸ Typhoon ▸ Fire …    │
+│ Hotel Gracery Shinjuku, address (English) │ │ ▸ Tsunami ▸ Typhoon ▸ Fire      │
+│ ▸ Lost passport ▸ Medical       │
 │ [⛶ Show big for taxi] [🖨 Print] [✎]       │ └────────────────────────────────┘
 └───────────────────────────────────────────┘ ┌ 5 OFFICIAL TRAVEL ADVICE ──────┐
                                               │ Level 1 of 4 · normal caution  │
+                                              │ ▸ How the risk score works     │
                                               └────────────────────────────────┘
 ▸ 🎬 Demo tools (preview a city, simulate a quake)
 ```
@@ -37,30 +40,37 @@ Dark slate surface, mint `#2FE0A1`, 16px cards, glass borders `rgba(255,255,255,
 | Tab (banner, calls, I'm safe, stay card, guides, advice, demo tools) | `src/components/SafetyLayer.vue` |
 | Radar (SVG, bearing + distance, legend filters, tooltips) | `src/components/SafetyRadar.vue` |
 | Data + risk score | `src/services/safetyService.js` |
-| Server: place lookup, nearby help (cached Overpass), hotel search with local script | `server/routes/safety.js` |
+| Server: `GET /api/safety/locate`, `/nearby` (OpenStreetMap via Overpass, cached 2 days), `/stay-search` (hotel search with local script, Geoapify when configured) | `server/routes/safety.js` |
 | Saving the stay | `PUT /api/trips/:id/stay`, `trip.stay` |
 
 ## States
 | State | Score | Colour | Shown as |
 |---|---|---|---|
-| clear | 0–24 | mint `#2FE0A1` | "All clear" + what was checked |
+| clear | 0–24 | teal `#3fb8c6` | "All clear" + what was checked (or alerts too small to matter) |
 | advisory | 25–49 | amber `#FFB020` | alert rows |
-| warning | 50–74 | red `#FF5A5F` | alert rows, banner on every tab |
-| critical | 75–100 | purple `#B37FEB` | alert rows, banner on every tab |
-Floors: UK level 3 → ≥ High, level 4 → Critical, GDACS Red → ≥ High, quake ≤100 km in 24 h: M5.5+ → ≥ Moderate, M6.5+/tsunami → ≥ High.
+| warning | 50–74 | red `#d1495b` | alert rows, banner on every tab |
+| critical | 75–100 | purple `#b37feb` | alert rows, banner on every tab |
+Score: (UK advice level − 1) × 15 + nearby quakes (magnitude, distance up to 300 km, last 72 h) + 30 per GDACS Red / 15 per other alert, capped at 100.
+
+Floors (quakes = last 24 h): UK level 3 → ≥ High, level 4 → Critical · GDACS Red → ≥ High, Orange → ≥ Moderate · M5.5+ within 100 km → ≥ Moderate · M6.5+ within 100 km or M6+ within 50 km → ≥ High · M7+ within 150 km or any tsunami → Critical. All in `computeRiskScore` (`src/services/safetyService.js`).
 
 ## Behaviour
 - Where: before/after the trip the destination (centred on the hotel once added); during the trip live GPS,
   falling back to the destination if location is off (said once, not repeated).
 - When: starts when Safety is opened (or immediately during the trip); every 5 min while the page is visible, or after moving 1 km.
 - Every request times out after 10 s; GPS is rounded to ~100 m before leaving the device.
-- Nearby help comes from our server (3 Overpass servers, 24 h cache), so busy map servers don't show errors in the browser.
+- Nearby help comes from our server (Overpass, cached in MongoDB), so busy map servers don't show errors in the browser.
+- Other sources are called from the browser, all free with no key: BigDataCloud (GPS → place), UK FCDO travel advice, USGS earthquakes, GDACS disasters.
+- New alerts can show a browser notification (if allowed). The tab emits `risk-change`, so TripView shows the banner on other tabs and flags outdoor stops.
+- The banner never claims "All clear" when nothing could be loaded ("Couldn't check yet" + Refresh).
+- Archived trips: the saved stay can't be changed.
 - Taxi card is cached in the browser, so it shows offline; guides are built in.
-- Emergency numbers for 25+ countries plus tourist hotlines and Singapore MFA's 24h duty office (+65 6379 8800).
+- Emergency numbers for 26 countries (`EMERGENCY_NUMBERS`) plus tourist hotlines and Singapore MFA's 24h duty office (+65 6379 8800, `HOME_HELPLINE`).
+- Demo tools (preview a city, simulate a quake or going offline): everything simulated is labelled "demo".
 
 ## Accessibility
 Banner uses `aria-live`; each alert says what/where/severity/when in words (not colour alone); radar points are focusable
-with spoken labels; every button has a visible mint focus ring; animations stop with reduced motion; text on tinted
+with spoken labels; every button has a visible focus ring; animations stop with reduced motion; text on tinted
 banners stays white on dark for high contrast; the taxi card is dark-on-light for reading in a car.
 
 ## Not included (no free data source)

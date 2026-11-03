@@ -4,13 +4,14 @@ Borrowed patterns: Notion / Figma share panel (link + people list + roles), Part
 (photo, "X invited you", who's going, one big button), Splitwise "claim a placeholder name".
 
 ## Flow
-0. **Plan a new trip** only asks for name, destinations and dates. The creator is added as the organiser.
-   Setup then opens on **Invite your group** (username search + link + "+ Add someone without an account"),
-   with **Skip for now** for solo trips, before Wishlist and Vote.
+0. **Plan a new trip** (the notebook pop-up on Home) asks for name, destinations (in travel order), dates and trip vibe.
+   The creator is added as the organiser and lands straight on the new trip page.
 1. Trip page → **+ Invite** (next to the avatars under the trip title) opens the share panel:
+   your friends (one tap to invite, with a filter when the list is long), invite by username,
    copy link, WhatsApp / Telegram / Email / native share, everyone on the trip
    (solid avatar = joined, dashed = listed but not joined), Organiser badge.
-2. Friend opens `/join/<code>` → logs in or signs up (the link survives both) → invite card:
+   The **+ Add member** button on the Crew tab opens the same panel.
+2. Friend opens `/join/<code>` → a short preview works before signing in → logs in or signs up (the link survives both) → invite card:
    destination photo, "Kay invited you", route, dates, who's going.
 3. **Which one is you?** If the organiser typed their name as a traveller, they pick it, so earlier expenses,
    votes and photos are already theirs. Otherwise "Not listed, join as <name>".
@@ -27,6 +28,11 @@ Borrowed patterns: Notion / Figma share panel (link + people list + roles), Part
 - Server: `trip.pendingInvites [{ user, invitedBy, invitedById, at }]`;
   `GET /api/invites/users?q=&trip=`, `POST /api/trips/:id/invites {userId}`, `DELETE /api/trips/:id/invites/:userId`,
   `GET /api/invites` (mine), `POST /api/invites/:tripId/decline`. Joining clears your pending invite.
+
+## Friends and family groups
+- Friends (`server/routes/friends.js`, `FriendsDrawer.vue` from the profile menu) show at the top of the share panel.
+- A trip can be shared with a family group (`trip.group`, `server/routes/groups.js`): everyone in the group can open it,
+  and is added as a member the first time they do.
 
 ## People without an account
 "+ Add someone without an account" (kids, parents) adds a name to the trip so they can be in expenses and votes
@@ -46,10 +52,17 @@ Removed or leaving people stay on the trip as a (dashed) traveller name so balan
 ## Server
 - `trip.members [{ user, name, role }]`, `trip.inviteCode`; older trips get the owner added automatically.
 - `server/tripAccess.js` → `findTripFor(userId, tripId, ownerOnly)` used by every trip, photo and expense route.
+  A trip is visible to its owner, its members, and anyone in its family group.
 - `POST /api/trips/:id/invite {reset}`, `DELETE /api/trips/:id/members/:userId`
-- `GET /api/join/:code` (preview), `POST /api/join/:code {as}` (join)
-- Expenses save **one change at a time** with MongoDB `$push` / `$pull` / positional `$set`
-  (`/api/trips/:id/expenses/items`, `/settlements`, `/settings`), so two people adding at once never overwrite each other.
+- `GET /api/join/:code/preview` (no login), `GET /api/join/:code` (preview), `POST /api/join/:code {as}` (join)
+- Ended trips are archived: `server/archived.js` blocks every change except deleting the trip or leaving it.
+- Expenses save **one change at a time** with MongoDB `$push` / `$pull` / `$set`
+  (`/api/trips/:id/expenses/items`, `/settlements`, `/rates`, `/settings`), so two people adding at once never overwrite each other.
+- Itinerary saves (`PUT /api/trips/:id/itinerary`) send the trip `version`. If someone else saved first, the server answers
+  409 with their latest trip, and the page shows it instead of overwriting.
+- Packing sends the list as this person last saw it (`base`); only their own changes are applied on top of the latest.
+- Votes: you can only change your own (the organiser also for people without an account).
+- Stop notes (`/api/trips/:id/comments`) are kept apart from the stops, so saving the itinerary never touches them.
 - Photos and reactions are always recorded as the logged-in member (the server decides, not the browser).
 
 ## Seeing others' changes
@@ -58,4 +71,4 @@ Removed or leaving people stay on the trip as a (dashed) traveller name so balan
 - Photos refresh every 20 s (new photos, reactions, deletions).
 
 ## Still last-save-wins (one person usually edits these)
-Itinerary stops, wishlist + votes, packing ticks and album list are still saved as a whole.
+The photo album list, crew cards, the stay and other journeys are still saved as a whole.

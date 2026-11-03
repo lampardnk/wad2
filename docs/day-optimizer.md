@@ -1,28 +1,31 @@
 # Day optimizer (Itinerary tab)
 
-Files: `src/dayOptimizer.js` (algorithm, no Vue), `src/components/DayOptimizer.vue` (UI), `src/dayOptimizerSample.js` (Kyoto sample day).
+Files: `src/dayOptimizer.js` (algorithm, no Vue), `src/components/ItineraryPlanner.vue` (UI: Optimize Route, preview, lock, drag), `src/dayOptimizerSample.js` (`PLANNER_SAMPLE`, the sample Kyoto day; `KYOTO_SAMPLE` is no longer used). Tests: `src/dayOptimizer.spec.js`.
 
-## Algorithm (`optimizeDay(stops, rainByHour, { dayStart, dayEnd })`)
-1. Travel matrix: straight-line distance between every pair → walk (≤1.3 km, 4.8 km/h ×1.25) or transit (8 min wait + 22 km/h ×1.3). No address → 15 min.
-2. `scheduleInOrder`: flexible stops in a given order, each starting when you arrive (rounded up to 15 min). Locked stops keep their time; a flexible stop only goes before a locked one if it fits (including travel).
-3. `measure` cost (lower = better): travel min + 0.3×waiting + 0.5×crowd% (outdoor ×1, indoor ×0.5) + 90×rain chance on outdoor stops − 8×rain on indoor stops + 300 per stop outside opening hours + 5×minutes late for a locked stop + 2×minutes past the end of the day.
+## Algorithm (`optimizeDay(stops, rainByHour, { dayStart, dayEnd, buffer, crowdWeight, travel, from, end })`)
+1. Travel matrix (`travelMatrix`): every pair of stops, using `travelBetween` (see Getting around). Without travel preferences: walk up to 1.3 km, otherwise transit. No location → 15 min.
+2. `scheduleInOrder`: flexible stops in a given order, each starting when you arrive (rounded up to 15 min), waiting for opening time if early. Locked stops keep their time; a flexible stop only goes before a locked one if it fits (travel + buffer included). Lunch / dinner breaks are slotted in when the day has no meal planned (`mealsNeeded`, `MEALS`).
+3. `measure` cost (lower = better), weights in `WEIGHTS`:
+   - travel min ×1 + waiting ×0.3 + minutes late for a locked stop ×5
+   - crowd % ×0.5 × `crowdWeight` (outdoor ×1, indoor ×0.5; locked stops not counted)
+   - +90 × rain chance on outdoor stops, −8 × rain on indoor stops
+   - +300 per stop outside opening hours
+   - ×2 per minute past the end of the day or before it starts (e.g. before your flight lands)
+   - meals: named meals ×2 per minute outside their window; food places ×1 per minute away from lunch or dinner
+   - the legs from the hotel / airport (`from`) and back to it (`end`) count as travel
 4. Search: every order for ≤7 flexible stops (5040), otherwise nearest-neighbour + 2-opt.
 5. `reasonsFor` writes the pills (morning slot, rain, walk time…); `warningsFor` flags problems in the current plan.
 
-Crowd data comes from the itinerary's BestTime forecasts when available (else a typical curve: outdoor sights peak 11 AM–3 PM). Rain comes from the 3-hour forecast blocks (`rainFromBlocks`).
+Crowd data comes from the stop's BestTime forecast (`src/crowd.js`, `server/routes/crowd.js`) when available, else a typical curve (outdoor sights peak 11 AM–3 PM). Rain comes from the 3-hour forecast blocks (`rainFromBlocks`). Day start/end, travel buffer and crowd sensitivity come from the user's preferences (Settings); they guide Optimize and the warnings but never re-time saved stops by themselves. Flight days are the exception: stops are re-timed around the flight.
 
 ## UI
-✨ Optimize Day (Analyzing route → Checking forecast → Reordering) → preview with summary + Apply / Dismiss. 🔒/🔓 per stop, ⋮⋮ drag (or arrow keys on the handle) re-times the day in the new order. "Try a sample Kyoto day" shows the before/after on mock data (not saved).
+**Optimize Route** (Analyzing route… → Checking forecast… → Reordering…) → preview with the summary + **Apply** / **Dismiss**. If nothing better is found: "Your day is already in a good order." (or a note that warnings remain) + **OK**. Lock per stop; drag (or arrow keys on the handle) re-times the day in the new order. The sample Kyoto day ("Sample Kyoto day · not saved · Back to my trip") runs on mock data and is never saved.
 
 ## Getting around (travel between stops)
 Files: `src/dayOptimizer.js` (travel model), `src/components/LegSheet.vue` (panel), `TravelChoices.vue` (option list),
-`OtherJourneys.vue` (Getting around tab), `server/routes/travel.js` (live routes, Geoapify), Settings → Getting Around.
+`OtherJourneys.vue` (Transport tab), `server/routes/travel.js` (live routes, Geoapify), Settings → Transport.
 
-1. `travelOptions(a, b, tp)`: walk / transit / taxi / bike times. Live routes from `/api/travel/leg` when the server has a
-   Geoapify key (walk, bicycle, drive; transit is OSM-approximated, so always labelled "estimate"), otherwise straight-line
-   estimates. Results are cached on the server (`server/data/cache/travel-legs.json`).
-2. `recommendTravel(options, tp)`: follows the user's preferences (allowed modes, longest walk, balanced / fastest / cheapest)
-   and explains why ("walking is 32 min, over your 20-min limit").
-3. A leg chosen by the group is saved on the destination stop as `travel: { mode, from, by }` (only valid while that stop
-   follows `from`). `travelBetween` uses it, so the timeline, the re-timing after a choice and Optimize Route all agree.
-4. Other journeys (airport → hotel, day trips) are saved on the trip as `journeys`.
+1. `travelOptions(a, b, tp)`: walk / transit / taxi / bike times (`TRAVEL_MODES`). Live routes from `GET /api/travel/leg?from=lat,lon&to=lat,lon` when the server has `GEOAPIFY_KEY` (walk, bicycle, drive, approximated transit; transit is always labelled an estimate). Otherwise straight-line estimates. Transit is skipped under 0.6 km. Answers are kept in MongoDB for 90 days (`sharedCache('travel-legs')`, `server/sharedCache.js`).
+2. `recommendTravel(options, tp)`: follows the user's preferences (allowed modes, longest walk, balanced / fastest / cheapest) and explains why ("walking is 32 min, over your 20-min limit"). Balanced: walk within the limit, else transit, a taxi only if it saves at least 20 min.
+3. A leg chosen by the group is saved on the destination stop as `travel: { mode, from, by }` (only valid while that stop follows `from`). `travelBetween` uses it, so the timeline, the re-timing after a choice and Optimize Route all agree.
+4. Other journeys (airport → hotel, day trips) are saved on the trip as `journeys` (`PUT /api/trips/:id/journeys`).
