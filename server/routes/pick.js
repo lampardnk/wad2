@@ -19,6 +19,28 @@ function point(lat, lon) {
   return Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null
 }
 
+// TEMPORARY (speed test): Photon, limited to about 60 km around the trip like the Geoapify search
+async function photonAutocomplete({ q, near }) {
+  const params = { q, limit: '8', lang: 'en' }
+  if (near) {
+    const dLat = 0.55
+    const dLon = 0.55 / Math.max(0.2, Math.cos((near.lat * Math.PI) / 180))
+    params.lat = String(near.lat)
+    params.lon = String(near.lon)
+    params.bbox = [near.lon - dLon, near.lat - dLat, near.lon + dLon, near.lat + dLat].join(',')
+  }
+  const res = await fetch('https://photon.komoot.io/api/?' + new URLSearchParams(params), {
+    headers: { 'User-Agent': 'ChuiseYourTrip/1.0 (SMU IS216 student project)' }, signal: AbortSignal.timeout(8000)
+  })
+  if (!res.ok) throw new Error('Photon ' + res.status)
+  const data = await res.json()
+  return (data.features || []).map((f) => {
+    const p = f.properties || {}
+    const [lon, lat] = (f.geometry && f.geometry.coordinates) || []
+    return { name: p.name || '', address: [p.street, p.city, p.country].filter(Boolean).join(', '), lat, lon, kind: (p.osm_key || '') + '.' + (p.osm_value || ''), city: p.city || '', countryCode: (p.countrycode || '').toUpperCase() }
+  }).filter((p) => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lon))
+}
+
 router.get('/suggest', requireAuth, async (req, res) => {
   const q = String(req.query.q || '').trim()
   if (q.length < 2 || q.length > 120) return res.json([])
@@ -26,6 +48,18 @@ router.get('/suggest', requireAuth, async (req, res) => {
   const [lat, lon] = String(req.query.near || '').split(',')
   const near = point(lat, lon)
   const key = q.toLowerCase() + '|' + (near ? near.lat.toFixed(2) + ',' + near.lon.toFixed(2) : '')
+  // TEMPORARY speed test (branch photon-test only): ?engine=photon|geoapify skips the cache and times one service
+  if (req.query.engine === 'photon' || req.query.engine === 'geoapify') {
+    const started = Date.now()
+    try {
+      const list = req.query.engine === 'photon' ? await photonAutocomplete({ q, near }) : await geoapifyAutocomplete({ q, near })
+      res.set('X-Engine-Ms', String(Date.now() - started))
+      return res.json(list)
+    } catch (err) {
+      res.set('X-Engine-Ms', String(Date.now() - started))
+      return res.status(502).json({ message: err.message })
+    }
+  }
   const saved = await suggestions.get(key)
   if (saved) return res.json(saved.value)
   try {
