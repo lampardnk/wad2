@@ -1,10 +1,11 @@
 <template>
   <!-- A box that only ever gives a real place: { name, address, lat, lon }.
-       Typing searches (Geoapify) and lists trip places that match; the user picks one.
+       Typing lists trip places that match; Search (or Enter) asks Geoapify; the user picks one.
        Also: paste a Google Maps link, or drop a pin on a small map. Typed text alone is never a place. -->
   <div class="pi" :class="{ open: showList }">
     <label v-if="label" :for="id" class="pi-label">{{ label }}</label>
     <div class="pi-box">
+      <span class="pi-field">
       <AppIcon :name="place ? 'check-circle' : 'map-pin'" :size="16" class="pi-pin" :class="{ ok: !!place }" />
       <input :id="id" ref="input" :value="modelValue" class="pi-input" maxlength="2000" :placeholder="placeholder" autocomplete="off"
         role="combobox" aria-autocomplete="list" :aria-expanded="showList" :aria-controls="id + '-list'"
@@ -12,6 +13,10 @@
         @input="onInput" @focus="open = true" @blur="onBlur" @keydown="onKey">
       <button v-if="modelValue" type="button" class="pi-clear" :aria-label="'Clear ' + (label || 'place')" title="Clear" @mousedown.prevent @click="clear">
         <AppIcon name="x" :size="14" :stroke="2.6" />
+      </button>
+      </span>
+      <button type="button" class="pi-go" :disabled="modelValue.trim().length < 2 || !!busy" @mousedown.prevent @click="go">
+        <AppIcon name="search" :size="14" /> Search
       </button>
     </div>
     <div v-if="showList" :id="id + '-list'" class="pi-list" role="listbox" :aria-label="(label || 'Place') + ' suggestions'">
@@ -57,7 +62,7 @@ const props = defineProps({
   id: { type: String, required: true },
   label: { type: String, default: '' },
   placeholder: { type: String, default: '' },
-  hint: { type: String, default: 'Pick a suggestion, paste a Google Maps link, or drop a pin.' },
+  hint: { type: String, default: 'Type a name and press Search, paste a Google Maps link, or drop a pin.' },
   // Trip places to offer first: [{ label: 'Your hotel', icon: 'door', items: [{ label, sub, place }] }]
   groups: { type: Array, default: () => [] },
   near: { type: Object, default: null },     // { lat, lon }: search around here (the trip city)
@@ -71,7 +76,6 @@ const active = ref(-1)
 const found = ref([])   // search results for the text in the box
 const busy = ref('')
 const problem = ref('')
-let timer = null
 let asked = ''          // the text the last search was for
 
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -138,9 +142,15 @@ function onInput(e) {
   open.value = true
   active.value = -1
   problem.value = ''
-  clearTimeout(timer)
-  if (isLink(text)) timer = setTimeout(() => fromLink(text), 200)
-  else timer = setTimeout(() => search(text), 300)
+  found.value = [] // results were for the old text
+}
+// Search button / Enter: look the text up (a Google Maps link is read instead)
+function go() {
+  const text = props.modelValue
+  if (text.trim().length < 2 || busy.value) return
+  open.value = true
+  if (isLink(text)) fromLink(text)
+  else search(text)
 }
 
 async function search(text) {
@@ -154,13 +164,13 @@ async function search(text) {
   try {
     const params = { q }
     if (props.near) params.near = props.near.lat + ',' + props.near.lon
-    const res = await axios.get('/api/place/suggest', { params, background: true })
+    const res = await axios.get('/api/place/suggest', { params, timeout: 15000 })
     if (asked !== q) return // an answer to older typing
     found.value = res.data
     const anyLocal = flat.value.length > 0
     if (!res.data.length && !anyLocal) problem.value = 'No real place matches "' + q + '". Try another spelling, paste a Google Maps link, or drop a pin.'
   } catch (err) {
-    if (asked === q) problem.value = (err.response && err.response.data && err.response.data.message) || "Couldn't search places just now. Try again."
+    if (asked === q) problem.value = (err.response && err.response.data && err.response.data.message) || "Couldn't search places just now. Press Search to try again."
   } finally {
     if (asked === q) busy.value = ''
   }
@@ -171,7 +181,7 @@ async function fromLink(text) {
   found.value = []
   busy.value = 'Reading the link…'
   try {
-    const res = await axios.get('/api/place/from-link', { params: { url: text.trim() }, background: true })
+    const res = await axios.get('/api/place/from-link', { params: { url: text.trim() }, timeout: 15000 })
     if (asked !== text) return
     choose(res.data)
   } catch (err) {
@@ -215,13 +225,13 @@ function onKey(e) {
     e.preventDefault()
     active.value = (active.value - 1 + n) % n
   } else if (e.key === 'Enter') {
-    // Enter picks the highlighted suggestion (or the only one). It never turns the text into a place.
-    if (showList.value && (active.value >= 0 || n === 1)) {
+    // Enter picks the highlighted suggestion, otherwise searches. It never turns the text into a place.
+    if (showList.value && active.value >= 0) {
       e.preventDefault()
-      pick(flat.value[Math.max(0, active.value)])
-    } else if (!props.place) {
+      pick(flat.value[active.value])
+    } else if (!props.place || props.keepPlace) {
       e.preventDefault()
-      open.value = true
+      go()
     }
   } else if (e.key === 'Escape' && showList.value) {
     e.stopPropagation()
@@ -264,7 +274,7 @@ async function dropPin(L, lat, lon) {
   busy.value = 'Finding what is there…'
   problem.value = ''
   try {
-    const res = await axios.get('/api/place/reverse', { params: { lat, lon }, background: true })
+    const res = await axios.get('/api/place/reverse', { params: { lat, lon }, timeout: 15000 })
     choose(res.data)
   } catch (err) {
     choose({ name: 'Pinned spot', address: lat.toFixed(5) + ', ' + lon.toFixed(5), lat, lon })
@@ -273,7 +283,6 @@ async function dropPin(L, lat, lon) {
   }
 }
 onBeforeUnmount(() => {
-  clearTimeout(timer)
   if (map) map.remove()
 })
 </script>
@@ -291,9 +300,36 @@ onBeforeUnmount(() => {
   color: #003d5b;
 }
 .pi-box {
-  position: relative;
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+.pi-field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.pi-go {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 14px;
+  background: #003d5b;
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.pi-go:disabled {
+  opacity: 0.45;
+}
+.pi-go:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.7);
+  outline-offset: 1px;
 }
 .pi-pin {
   position: absolute;

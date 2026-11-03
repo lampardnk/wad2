@@ -150,14 +150,20 @@
           <template v-else>from OpenStreetMap</template>
         </span>
       </div>
-      <!-- The map service was busy: only the hand-picked (and Wikipedia) places for now; the full list follows by itself -->
+      <!-- The map service was busy: only the hand-picked (and Wikipedia) places for now -->
       <p v-if="sec.partial && !sec.loading" class="wl-partial" role="status">
         <span class="wl-partial-dot" aria-hidden="true"></span>
-        Showing top picks for now: the map service is busy. More places will appear here by themselves in a minute.
-        <button type="button" class="wl-partial-btn" @click="loadPopular(sec.dest)">Try now</button>
+        Showing top picks for now: the map service was busy. Refresh in a minute for the full list.
+        <button type="button" class="wl-partial-btn" @click="loadPopular(sec.dest)">Refresh</button>
       </p>
 
-      <div v-if="sec.loading" aria-busy="true">
+      <!-- Loaded only when asked for -->
+      <div v-if="sec.idle" class="wl-load">
+        <button type="button" class="btn btn-outline-primary wl-pill-btn" @click="loadPopular(sec.dest)">
+          <AppIcon name="star" :size="15" /> Show popular places in {{ sec.city }}
+        </button>
+      </div>
+      <div v-else-if="sec.loading" aria-busy="true">
         <p class="small text-muted">Finding popular places… the first time for a whole country can take up to a minute.</p>
         <div class="wl-grid"><div v-for="n in 6" :key="n" class="wl-card skeleton"></div></div>
       </div>
@@ -257,7 +263,6 @@ export default {
       searchIn: '',      // which destination "Find a place" searches in
       centres: {},       // destination -> { lat, lon }, so search looks around that city
       editId: null,
-      refreshTries: {}, // background reloads per city when only part of its list came back
       editForm: { name: '', place: null, link: '', isTour: false },
       tourOpen: false,
       tour: emptyTour(),
@@ -297,7 +302,6 @@ export default {
     destinations: {
       immediate: true,
       handler(list) {
-        this.loadAllPopular(list)
         if (!list.includes(this.searchIn)) this.searchIn = list[0] || ''
         for (const d of list) {
           cityCentre(d).then((c) => {
@@ -351,7 +355,7 @@ export default {
     sections() {
       const result = []
       for (const d of this.destinations) {
-        const st = this.status[d] || { loading: true, error: '', shown: 12 }
+        const st = this.status[d] || { idle: true, loading: false, error: '', shown: 12 }
         const list = []
         for (const p of this.popularByDest[d] || []) {
           if (this.kindFilter[d] && p.type !== this.kindFilter[d]) continue
@@ -362,6 +366,7 @@ export default {
           city: d.split(', ')[0],
           flag: this.flagFor(d),
           list,
+          idle: !!st.idle,
           loading: st.loading,
           error: st.error,
           shown: st.shown,
@@ -536,62 +541,22 @@ export default {
       return kinds
     },
 
-    // One city at a time: the free map services refuse lots of requests arriving together
-    async loadAllPopular(list) {
-      const todo = []
-      for (const d of list) {
-        if (this.status[d]) continue
-        this.status[d] = { loading: true, error: '', shown: 12 } // show the loading cards straight away
-        todo.push(d)
-      }
-      for (const d of todo) await this.loadPopular(d)
-    },
-
-    async loadPopular(dest, firstTry = true) {
-      this.status[dest] = { loading: true, error: '', shown: 12 }
+    async loadPopular(dest) {
+      const shown = (this.status[dest] && this.status[dest].shown) || 12
+      this.status[dest] = { loading: true, error: '', shown }
       try {
-        const res = await axios.get('/api/places/attractions', { params: { destination: dest }, background: true })
+        const res = await axios.get('/api/places/attractions', { params: { destination: dest }, timeout: 40000 })
         // Remember which city each place is in
         const list = []
         for (const p of res.data) list.push({ ...p, city: dest })
         this.popularByDest[dest] = list
         this.$nextTick(this.loadPhotos)
-        // Only part of the list (the map service was busy): quietly ask again in a minute
+        // Only part of the list (the map service was busy): the Refresh button asks again
         this.status[dest].partial = res.headers['x-places-partial'] === '1'
-        if (this.status[dest].partial) this.refreshLater(dest)
       } catch (err) {
-        // A busy map server is often fine a few seconds later: try once more by itself before showing the error
-        if (firstTry && err.response) {
-          await new Promise((resolve) => setTimeout(resolve, 4000))
-          return this.loadPopular(dest, false)
-        }
         this.status[dest].error = (err.response && err.response.data && err.response.data.message) || 'Could not load popular places. Is the server running?'
       }
       this.status[dest].loading = false
-    },
-
-    // Ask for the full list again in the background, keeping the cards on screen meanwhile (3 times at most)
-    refreshLater(dest) {
-      this.refreshTries[dest] = (this.refreshTries[dest] || 0) + 1
-      if (this.refreshTries[dest] > 3) return
-      setTimeout(async () => {
-        if (!this.destinations.includes(dest)) return // the trip changed meanwhile
-        try {
-          const res = await axios.get('/api/places/attractions', { params: { destination: dest }, background: true })
-          const partial = res.headers['x-places-partial'] === '1'
-          const old = this.popularByDest[dest] || []
-          if (!partial || res.data.length > old.length) {
-            const list = []
-            for (const p of res.data) list.push({ ...p, city: dest })
-            this.popularByDest[dest] = list
-            this.status[dest].partial = partial
-            this.$nextTick(this.loadPhotos)
-          }
-          if (partial) this.refreshLater(dest)
-        } catch (err) {
-          this.refreshLater(dest)
-        }
-      }, 60000)
     },
 
     togglePopular(p) {
@@ -1009,6 +974,9 @@ export default {
   background: #edae49;
 }
 
+.wl-load {
+  padding: 8px 0 4px;
+}
 .wl-partial-btn {
   margin-left: auto;
   border: 0;
