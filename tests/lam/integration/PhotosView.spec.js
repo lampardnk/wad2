@@ -63,7 +63,9 @@ describe('PhotosView with the server', () => {
 
     const wrapper = await mountPhotos()
     expect(wrapper.text()).toContain('1 photo')
-    expect(wrapper.find('img[alt="Photo by ' + trip.me + '"]').exists()).toBe(true)
+    const thumbnail = () => wrapper.find('img[alt="Photo by ' + trip.me + '"]').exists()
+    await waitFor(thumbnail) // the thumbnail is fetched after the list
+    expect(thumbnail()).toBe(true)
   })
 
   it('saves a reaction, and takes it back on a second tap', async () => {
