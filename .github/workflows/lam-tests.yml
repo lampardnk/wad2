@@ -1,0 +1,42 @@
+name: Lam tests
+
+on: [push, pull_request]
+
+jobs:
+  lam-tests:
+    name: Lam tests (1 unit, 2 integration, 2 E2E)
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7 # mongo 8 can't start on the runner's Linux kernel (SERVER-121912)
+        ports: ['27017:27017']
+    env:
+      MONGODB_URI: mongodb://localhost:27017/ci
+      JWT_SECRET: ci-only-secret
+      TEST_USERNAME: citester
+      TEST_PASSWORD: Travel#2026ok
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile && pnpm install --frozen-lockfile --dir server
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start the server and create the test account
+        run: |
+          for i in $(seq 30); do (echo > /dev/tcp/localhost/27017) 2>/dev/null && break; sleep 1; done
+          (cd server && node index.js > ../server.log 2>&1 &)
+          for i in $(seq 30); do curl -sf http://localhost:3000/api/health && break; sleep 1; done
+          curl -sf -X POST http://localhost:3000/api/auth/register -H 'Content-Type: application/json' \
+            -d "{\"name\":\"Test User\",\"username\":\"$TEST_USERNAME\",\"email\":\"$TEST_USERNAME@example.com\",\"password\":\"$TEST_PASSWORD\"}"
+
+      - name: Unit test
+        run: pnpm exec vitest run tests/lam/unit
+      - name: Integration tests
+        run: pnpm exec vitest run tests/lam/integration
+      - name: E2E tests
+        run: pnpm exec playwright test tests/lam/e2e
+
+      - if: failure()
+        run: cat server.log
