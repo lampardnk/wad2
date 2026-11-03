@@ -24,7 +24,7 @@
               <!-- ===== Crowds ===== -->
               <section v-if="tab === 'crowd'" aria-label="Crowds">
                 <p class="ss-lead">
-                  <template v-if="crowd.value == null">No crowd data for this place.<template v-if="!stop.address"> Add its address under <button type="button" class="ss-link" @click="tab = 'time'">Details</button> to get it.</template></template>
+                  <template v-if="crowd.value == null">No crowd data for this place.<template v-if="stop.lat == null"> Set its location under <button type="button" class="ss-link" @click="tab = 'time'">Details</button> to get it.</template></template>
                   <template v-else>
                     <span class="ss-badge" :class="crowd.tone">{{ crowd.text }}</span> 
                     at {{ formatHour(start) }} · about {{ crowd.value }}% of its busiest
@@ -117,10 +117,9 @@
 
                 <form v-if="canChangeDay" class="ss-details" @submit.prevent="saveDetails">
                   <h4 class="ss-h">Details</h4>
-                  <label for="ss-name" class="ss-label">Name</label>
-                  <input id="ss-name" v-model="form.name" class="ss-input" maxlength="120" required>
-                  <label for="ss-address" class="ss-label">Address <span class="ss-opt">turns on crowds and the map</span></label>
-                  <input id="ss-address" v-model="form.address" class="ss-input" maxlength="200">
+                  <!-- The name is a label: rename freely. Picking a suggestion (or a pin / Maps link) moves the stop. -->
+                  <PlaceInput id="ss-name" v-model="form.name" v-model:place="form.place" label="Name" keep-place pin :near="near || form.place"
+                    hint="No location yet: pick a suggestion, paste a Google Maps link, or drop a pin." />
                   <div class="ss-seg" role="group" aria-label="Indoor or outdoor">
                     <button type="button" :class="{ on: form.outdoor }" :aria-pressed="form.outdoor" @click="form.outdoor = true"><AppIcon name="trees" :size="15" /> Outdoor</button>
                     <button type="button" :class="{ on: !form.outdoor }" :aria-pressed="!form.outdoor" @click="form.outdoor = false"><AppIcon name="landmark" :size="15" /> Indoor</button>
@@ -140,6 +139,7 @@ import CrowdChart from './CrowdChart.vue'
 import CustomDropdown from './CustomDropdown.vue'
 import { formatHour } from '../crowd.js'
 import AppIcon from './AppIcon.vue'
+import PlaceInput from './PlaceInput.vue'
 import StopNotes from './StopNotes.vue'
 import { lineIconFor } from '../emojiIcons.js'
 
@@ -160,7 +160,8 @@ const props = defineProps({
   quieter: { type: Array, default: () => [] },          // [{ hour, crowd }]
   dry: { type: Array, default: () => [] },
   indoorPicks: { type: Array, default: () => [] },
-  canChangeDay: { type: Boolean, default: true }
+  canChangeDay: { type: Boolean, default: true },
+  near: { type: Object, default: null }                 // { lat, lon }: search for places around here
 })
 const emit = defineEmits(['close', 'move-time', 'move-day', 'swap', 'edit'])
 
@@ -201,7 +202,7 @@ function shortHour(h) {
 const timeText = ref('')
 const timeError = ref('')
 const dayPick = ref('')
-const form = ref({ name: '', address: '', outdoor: false })
+const form = ref({ name: '', place: null, outdoor: false })
 
 function toText(h) {
   const m = Math.round(h * 60)
@@ -222,10 +223,15 @@ function moveTime() {
   emit('move-time', h)
 }
 
-const detailsChanged = computed(() => form.value.name.trim() !== props.stop.name ||
-  form.value.address.trim() !== (props.stop.address || '') || form.value.outdoor !== !!props.stop.outdoor)
+const moved = computed(() => !!form.value.place && (form.value.place.lat !== props.stop.lat || form.value.place.lon !== props.stop.lon))
+const detailsChanged = computed(() => form.value.name.trim() !== props.stop.name || moved.value || form.value.outdoor !== !!props.stop.outdoor)
 function saveDetails() {
-  emit('edit', { name: form.value.name.trim(), address: form.value.address.trim() || null, outdoor: form.value.outdoor })
+  const p = moved.value ? form.value.place : null
+  emit('edit', {
+    name: form.value.name.trim(), outdoor: form.value.outdoor,
+    address: p ? p.address || null : props.stop.address || null,
+    lat: p ? p.lat : props.stop.lat ?? null, lon: p ? p.lon : props.stop.lon ?? null
+  })
 }
 
 // Fill everything in each time the sheet opens (or the stop changes underneath it)
@@ -233,7 +239,8 @@ function reset() {
   timeText.value = toText(props.start)
   timeError.value = ''
   dayPick.value = props.selectedDate
-  form.value = { name: props.stop.name || '', address: props.stop.address || '', outdoor: !!props.stop.outdoor }
+  const s = props.stop
+  form.value = { name: s.name || '', place: s.lat != null ? { name: s.name, address: s.address || '', lat: s.lat, lon: s.lon } : null, outdoor: !!s.outdoor }
 }
 watch(() => props.open, (open) => {
   if (!open) return
@@ -243,7 +250,7 @@ watch(() => props.open, (open) => {
   nextTick(() => panel.value && panel.value.focus())
 }, { immediate: true })
 watch(() => props.section, (s) => { tab.value = s })
-watch(() => [props.start, props.stop.name, props.stop.address, props.stop.outdoor], reset)
+watch(() => [props.start, props.stop.name, props.stop.lat, props.stop.lon, props.stop.outdoor], reset)
 </script>
 
 <style scoped>

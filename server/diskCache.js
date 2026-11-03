@@ -6,7 +6,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 // On Vercel only /tmp can be written to (and it is emptied now and then, which is fine for a cache)
-const DIR = process.env.VERCEL ? '/tmp/cache' : path.join(path.dirname(fileURLToPath(import.meta.url)), 'data', 'cache')
+// (tests set CACHE_DIR to a throwaway folder, so fake answers never land in the real cache)
+const DIR = process.env.CACHE_DIR || (process.env.VERCEL ? '/tmp/cache' : path.join(path.dirname(fileURLToPath(import.meta.url)), 'data', 'cache'))
 
 export function diskMap(name, maxEntries = 5000) {
   const file = path.join(DIR, name + '.json')

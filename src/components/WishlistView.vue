@@ -29,6 +29,7 @@
           <span class="wl-sub" :title="w.address || ''">
             <template v-if="w.city"><FlagImg :code="flagFor(w.city)" :size="12" /> {{ w.city.split(', ')[0] }}</template><template v-if="w.city && streetOf(w)"> · </template>{{ streetOf(w) }}
           </span>
+          <button v-if="needsPoint(w)" type="button" class="wl-setloc" @click="startEdit(w)"><AppIcon name="map-pin" :size="12" /> Set location</button>
           <span v-if="w.votes && w.votes.length" class="wl-votes" :title="w.votes.join(', ') + ' want to go'"><AppIcon name="thumbs-up" :size="12" /> {{ w.votes.length }} want to go</span>
         </div>
       </article>
@@ -42,13 +43,11 @@
       <form v-if="editId" ref="editPanel" class="wl-panel" aria-labelledby="wl-edit-title" @submit.prevent="saveEdit" @keydown.esc="cancelEdit">
         <strong id="wl-edit-title" class="d-block mb-2">Edit place</strong>
         <div class="row g-2">
-          <div class="col-md-5">
-            <label for="wl-edit-name" class="form-label small">Name</label>
-            <input id="wl-edit-name" v-model="editForm.name" class="form-control wl-input" maxlength="120">
-          </div>
-          <div class="col-md-5">
-            <label for="wl-edit-address" class="form-label small">Address <span class="text-muted">(optional, turns on crowd info)</span></label>
-            <input id="wl-edit-address" v-model="editForm.address" class="form-control wl-input" maxlength="200">
+          <!-- The name is a label: rename freely. Picking a suggestion (or a pin / Maps link) moves the place. -->
+          <div class="col-md-10">
+            <PlaceInput id="wl-edit-name" v-model="editForm.name" v-model:place="editForm.place" label="Name" keep-place pin
+              :near="centres[editCity]" hint="No location yet: pick a suggestion, paste a Google Maps link, or drop a pin." />
+            <p class="small text-muted mb-0 mt-1">Rename it freely. Pick a suggestion only if you want to move it to that place.</p>
           </div>
           <div v-if="editForm.isTour" class="col-md-10">
             <label for="wl-edit-link" class="form-label small">Booking link</label>
@@ -62,45 +61,16 @@
       </form>
 
     <!-- Find a place (any shop, restaurant, temple...) or add your own -->
-    <form class="wl-add" @submit.prevent="chooseActive">
+    <!-- Find a real place (any shop, restaurant, temple...): pick a suggestion, paste a Google Maps link, or drop a pin -->
+    <form class="wl-add" @submit.prevent="addPicked">
       <CustomDropdown v-if="destinations.length > 1" v-model="searchIn" :options="cityOptions" class="wl-in"
-        header-text="Search in" aria-label="Search in" @change="runSearch" />
-      <div class="wl-add-name position-relative">
+        header-text="Search in" aria-label="Search in" />
+      <div class="wl-add-name">
         <label for="wish-name" class="visually-hidden">Find a place</label>
-        <input id="wish-name" v-model="form.name" class="form-control wl-input" maxlength="120" autocomplete="off"
-          :placeholder="'Find a place in ' + (searchIn ? searchIn.split(', ')[0] : 'your destination')"
-          role="combobox" aria-autocomplete="list" aria-controls="wish-suggest"
-          :aria-expanded="showSuggest && rows.length > 0"
-          :aria-activedescendant="active >= 0 ? 'wish-opt-' + active : null"
-          @focus="showSuggest = true" @blur="showSuggest = false" @input="onType" @keydown="onKeydown"
-          data-testid="wish-name">
-
-        <ul v-if="showSuggest && rows.length" id="wish-suggest" class="wl-suggest" role="listbox">
-          <li v-for="(row, k) in rows" :id="'wish-opt-' + k" :key="row.key" role="option"
-            :class="['wl-row-' + row.kind, { active: k === active }]" :aria-selected="k === active"
-            :aria-expanded="row.kind === 'chain' ? openChain === row.name : null"
-            @mousedown.prevent="choose(row)" @mouseenter="active = k">
-            <span class="wl-row-icon" aria-hidden="true"><AppIcon :name="lineIconFor(row.icon)" :size="16" /></span>
-            <span class="wl-row-text">
-              <!-- The part that matches what you typed is highlighted -->
-              <strong v-if="row.kind === 'own' || row.kind === 'branch'">{{ row.name }}</strong>
-              <strong v-else><template v-for="(part, n) in highlight(row.name)" :key="n"><mark v-if="part.hit" class="wl-hit">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></strong>
-              <span v-if="row.note" class="wl-row-note"> {{ row.note }}</span>
-              <span v-if="row.sub" class="d-block small text-muted text-truncate">{{ row.sub }}</span>
-            </span>
-            <AppIcon v-if="row.kind === 'chain'" class="wl-row-arrow" :name="openChain === row.name ? 'chevron-down' : 'chevron'" :size="16" />
-          </li>
-        </ul>
-        <p v-if="showSuggest && searching" class="wl-searching small text-muted" role="status">Searching…</p>
-        <!-- Search failed: a clear message under the box (not on top of the text), with Try again -->
-        <div v-else-if="showSuggest && searchError && form.name.trim().length >= 2" class="wl-search-msg" role="status">
-          <span>{{ searchError }} Press <strong>Enter</strong> to add "{{ form.name.trim() }}" as your own place.</span>
-          <button type="button" class="wl-search-retry" @mousedown.prevent="runSearch">Try again</button>
-        </div>
+        <PlaceInput id="wish-name" v-model="form.name" v-model:place="form.place" :groups="popularGroups" :near="centres[searchIn]" pin
+          :placeholder="'Find a place in ' + (searchIn ? searchIn.split(', ')[0] : 'your destination')" />
       </div>
-      <label for="wish-address" class="visually-hidden">Address</label>
-      <input id="wish-address" v-model="form.address" class="form-control wl-input wl-add-address" maxlength="200" placeholder="Address (optional, for your own place)">
-      <button type="submit" class="btn btn-primary wl-pill-btn" :disabled="!form.name.trim()" data-testid="wish-add">+ Add</button>
+      <button type="submit" class="btn btn-primary wl-pill-btn" :disabled="!form.place" data-testid="wish-add">+ Add</button>
       <button type="button" class="btn wl-pill-btn wl-tour-btn" :class="{ on: tourOpen }" :aria-expanded="tourOpen"
         title="Add a tour or activity you booked, e.g. on GetYourGuide" @click="tourOpen ? (tourOpen = false) : openTour()"><AppIcon name="ticket" :size="16" /> Add a tour</button>
     </form>
@@ -129,7 +99,8 @@
         </div>
 
         <label for="wl-tour-where" class="wl-tour-label">Meeting point <span class="wl-opt">optional</span></label>
-        <input id="wl-tour-where" v-model="tour.address" class="form-control wl-input" maxlength="200" placeholder="Hotel pickup, or an address">
+        <PlaceInput id="wl-tour-where" v-model="tour.address" v-model:place="tour.place" pin :near="centres[searchIn]"
+          placeholder="Where it starts" hint="Leave empty for hotel pickup, or pick a suggestion, paste a Google Maps link, or drop a pin." />
 
         <span class="wl-tour-label">How long?</span>
         <div class="wl-seg" role="group" aria-label="How long">
@@ -236,46 +207,33 @@ import { codeForDestination } from '../destinations.js'
 import { placeStyle } from '../placeStyle.js'
 import CustomDropdown from './CustomDropdown.vue'
 import AppIcon from './AppIcon.vue'
-import { lineIconFor } from '../emojiIcons.js'
 import FlagImg from './FlagImg.vue'
+import PlaceInput from './PlaceInput.vue'
+import { cityCentre } from '../services/cityCentre.js'
 
-// ---------- search matching ----------
-// One letter without its accent, lower case: "É" -> "e" (so "cafe" finds "Café")
-function plainChar(c) {
-  return c.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().charAt(0) || c
-}
-function plain(text) {
-  let out = ''
-  for (const c of String(text)) out += plainChar(c)
-  return out
-}
-// How well a name matches what was typed (0 = not at all):
-// starts with it 70, a word starts with it 50, every typed word starts a word ("lake phew" -> Phewa Lake) 45, inside it 25
-function matchScore(typed, name) {
-  const q = plain(typed.trim())
-  const n = plain(name)
-  if (!q) return 0
-  if (n === q) return 100
-  if (n.startsWith(q)) return 70
-  const words = n.split(/[\s\-,'’()]+/)
-  for (const w of words) if (w.startsWith(q)) return 50
-  let all = true
-  for (const part of q.split(/\s+/)) {
-    let found = false
-    for (const w of words) if (w.startsWith(part)) found = true
-    if (!found) all = false
-  }
-  if (all) return 45
-  if (n.includes(q)) return 25
-  return 0
+// Geoapify's kind of place ('catering.cafe', 'entertainment.museum'...) -> our card types
+const INDOOR_TYPES = ['museum', 'gallery', 'aquarium', 'food', 'shop']
+function typeForKind(kind) {
+  const k = String(kind || '')
+  if (k.includes('museum')) return 'museum'
+  if (k.includes('gallery')) return 'gallery'
+  if (k.includes('aquarium')) return 'aquarium'
+  if (k.includes('zoo')) return 'zoo'
+  if (k.includes('theme_park')) return 'theme_park'
+  if (k.startsWith('catering')) return 'food'
+  if (k.startsWith('commercial')) return 'shop'
+  if (k.includes('park') || k.startsWith('natural') || k.startsWith('beach')) return 'park'
+  if (k.includes('heritage') || k.startsWith('religion') || k.includes('sights')) return 'heritage'
+  if (k.includes('viewpoint')) return 'viewpoint'
+  return 'attraction'
 }
 
 function emptyTour() {
-  return { name: '', bookedVia: '', link: '', address: '', duration: 3, outdoor: true, date: '', time: '' }
+  return { name: '', bookedVia: '', link: '', address: '', place: null, duration: 3, outdoor: true, date: '', time: '' }
 }
 
 export default {
-  components: { FlagImg, AppIcon, CustomDropdown },
+  components: { FlagImg, AppIcon, CustomDropdown, PlaceInput },
   props: {
     // All of the trip's destinations, e.g. ['Tokyo, Japan', 'Kyoto, Japan']
     destinations: { type: Array, default: () => [] },
@@ -295,18 +253,12 @@ export default {
         { value: 'indoor', label: 'Indoor', icon: 'landmark' },
         { value: 'outdoor', label: 'Outdoor', icon: 'trees' }
       ],
-      form: { name: '', address: '' },
-      showSuggest: false,
+      form: { name: '', place: null }, // "Find a place": the text, and the real place picked
       searchIn: '',      // which destination "Find a place" searches in
-      found: [],         // results from /api/places/search
-      searching: false,
-      searchError: '',
-      searchTimer: null,
-      openChain: null,   // name of the chain whose branches are shown
-      active: -1,
+      centres: {},       // destination -> { lat, lon }, so search looks around that city
       editId: null,
       refreshTries: {}, // background reloads per city when only part of its list came back
-      editForm: { name: '', address: '', link: '', isTour: false },
+      editForm: { name: '', place: null, link: '', isTour: false },
       tourOpen: false,
       tour: emptyTour(),
       tourError: '',
@@ -347,6 +299,11 @@ export default {
       handler(list) {
         this.loadAllPopular(list)
         if (!list.includes(this.searchIn)) this.searchIn = list[0] || ''
+        for (const d of list) {
+          cityCentre(d).then((c) => {
+            if (c) this.centres[d] = c
+          })
+        }
       }
     }
   },
@@ -415,78 +372,24 @@ export default {
       return result
     },
 
-    // Rows in the "Find a place" dropdown: popular matches, search results (chains grouped), then "add your own"
-    rows() {
-      const q = this.form.name.trim()
-      if (q.length < 2) return []
-      const rows = []
-      const names = []
-
-      // 1. Popular places in this destination: shown instantly (no waiting for the search), best match first
-      const popular = []
+    // Popular places in the city being searched, offered first in "Find a place" (they have map points)
+    popularGroups() {
+      const items = []
       for (const p of this.popularByDest[this.searchIn] || []) {
-        const score = matchScore(q, p.name)
-        if (score > 0 && !this.isAdded(p)) popular.push({ p, score })
+        if (p.lat == null || this.isAdded(p)) continue
+        items.push({ label: p.name, sub: placeStyle(p.type).label, place: { name: p.name, address: p.address, lat: p.lat, lon: p.lon } })
       }
-      popular.sort((a, b) => b.score - a.score)
-      for (const m of popular.slice(0, 4)) {
-        const p = m.p
-        rows.push({ key: 'p-' + p.name, kind: 'popular', name: p.name, note: 'Popular', sub: placeStyle(p.type).label, icon: placeStyle(p.type).icon, place: p })
-        names.push(plain(p.name))
-      }
-
-      // 2. Search results
-      for (const g of this.found) {
-        if (names.includes(plain(g.name)) || this.isAdded(g)) continue
-        const icon = placeStyle(g.type).icon
-        if (g.branches.length === 1) {
-          const far = this.kmText(g.branches[0].km)
-          rows.push({ key: 'f-' + g.name, kind: 'place', name: g.name, note: g.kind, sub: g.branches[0].address + (far ? ' · ' + far : ''), icon, group: g, branch: g.branches[0] })
-        } else {
-          const far = this.kmText(g.km)
-          rows.push({ key: 'c-' + g.name, kind: 'chain', name: g.name, note: g.kind, sub: 'See ' + g.branches.length + ' locations' + (far ? ' · nearest ' + far : ''), icon, group: g })
-          if (this.openChain === g.name) {
-            for (const b of g.branches) {
-              const bFar = this.kmText(b.km)
-              rows.push({ key: 'b-' + g.name + b.address, kind: 'branch', name: b.address + (bFar ? ' · ' + bFar : ''), note: '', sub: '', icon: '📍', group: g, branch: b })
-            }
-          }
-        }
-      }
-
-      // 3. Not found? Add exactly what was typed
-      rows.push({ key: 'own', kind: 'own', name: 'Add "' + q + '" as your own place', note: '', sub: this.form.address.trim() || '', icon: '＋' })
-      return rows
+      return items.length ? [{ label: 'Popular in ' + this.searchIn.split(', ')[0], icon: 'star', items }] : []
+    },
+    // The city of the place being edited (to search around it)
+    editCity() {
+      const w = this.wishlist.find((x) => x.id === this.editId)
+      return (w && w.city) || this.searchIn
     }
   },
 
   methods: {
-    lineIconFor,
     placeStyle,
-
-    // Split a name into the bit that matches what was typed and the rest: "Phewa Lake" + "phew" -> [Phew][a Lake]
-    highlight(name) {
-      const q = plain(this.form.name.trim())
-      const n = plain(name)
-      // Prefer a match at the start of a word ("lake" in "Phewa Lake"), else anywhere
-      let at = -1
-      for (let i = 0; i < n.length && at < 0; i++) {
-        if (n.startsWith(q, i) && (i === 0 || /[\s\-,('’]/.test(n.charAt(i - 1)))) at = i
-      }
-      if (at < 0) at = n.indexOf(q)
-      if (at < 0 || !q) return [{ text: name, hit: false }]
-      const chars = Array.from(name)
-      return [
-        { text: chars.slice(0, at).join(''), hit: false },
-        { text: chars.slice(at, at + q.length).join(''), hit: true },
-        { text: chars.slice(at + q.length).join(''), hit: false }
-      ]
-    },
-    // 2.4 -> "2.4 km from the centre" (nothing for a country-wide search or no distance)
-    kmText(km) {
-      if (km == null || this.searchIn.split(', ').length < 2) return ''
-      return (km < 1 ? 'under 1 km' : km < 10 ? km.toFixed(1) + ' km' : Math.round(km) + ' km') + ' from the centre'
-    },
 
     lengthText(h) {
       if (h >= 8) return 'Full day'
@@ -523,7 +426,8 @@ export default {
         return
       }
       const item = {
-        id: newId('w'), name, address: t.address.trim() || null, outdoor: t.outdoor, type: 'tour',
+        id: newId('w'), name, address: t.place ? t.place.address || t.place.name : null, lat: t.place ? t.place.lat : null, lon: t.place ? t.place.lon : null,
+        outdoor: t.outdoor, type: 'tour',
         city: this.searchIn || null, votes: [], duration: t.duration, bookedVia: t.bookedVia || null, link: link || null
       }
       trip.wishlist.push(item)
@@ -531,7 +435,7 @@ export default {
       if (t.date && t.time) {
         const parts = t.time.split(':')
         const hour = Math.min(23.75, Number(parts[0]) + Number(parts[1]) / 60)
-        trip.stops.push(runtimeStop({ id: newId('s'), name, address: item.address, date: t.date, hour, duration: t.duration, outdoor: t.outdoor, locked: true }))
+        trip.stops.push(runtimeStop({ id: newId('s'), name, address: item.address, lat: item.lat, lon: item.lon, date: t.date, hour, duration: t.duration, outdoor: t.outdoor, locked: true }))
       }
       this.form.name = ''
       this.tourOpen = false
@@ -707,85 +611,30 @@ export default {
 
     addPopular(p) {
       if (this.isAdded(p)) return
-      trip.wishlist.push({ id: newId('w'), name: p.name, address: p.address || null, outdoor: !p.indoor, type: p.type, city: p.city || null, votes: [] })
+      trip.wishlist.push({ id: newId('w'), name: p.name, address: p.address || null, outdoor: !p.indoor, type: p.type, city: p.city || null, votes: [], lat: p.lat ?? null, lon: p.lon ?? null })
       this.clearForm()
     },
 
-    // Typing: wait until the user pauses, then search (keeps us within Photon's fair-use limits)
-    onType() {
-      this.active = -1
-      this.openChain = null
-      clearTimeout(this.searchTimer)
-      this.searchTimer = setTimeout(this.runSearch, 300)
-    },
-
-    async runSearch() {
-      const q = this.form.name.trim()
-      if (q.length < 2 || !this.searchIn) {
-        this.found = []
-        this.searchError = ''
-        return
-      }
-      this.searching = true
-      this.searchError = ''
-      try {
-        const res = await axios.get('/api/places/search', { params: { q, near: this.searchIn } })
-        if (q === this.form.name.trim()) this.found = res.data // ignore answers to older typing
-      } catch (err) {
-        if (err.response && err.response.status === 429) this.searchError = 'Searching too fast. Wait a moment.'
-        else this.searchError = "Couldn't search places just now."
-      }
-      this.searching = false
-    },
-
-    choose(row) {
-      if (row.kind === 'chain') {
-        // Show or hide this chain's branches
-        this.openChain = this.openChain === row.name ? null : row.name
-        return
-      }
-      if (row.kind === 'popular') this.addPopular(row.place)
-      else if (row.kind === 'place' || row.kind === 'branch') this.addFound(row.group, row.branch)
-      else this.addOwn()
-    },
-
-    // Enter / the + Add button: the highlighted row, otherwise add what was typed
-    chooseActive() {
-      if (this.active >= 0 && this.rows[this.active]) this.choose(this.rows[this.active])
-      else this.addOwn()
-    },
-
-    addFound(group, branch) {
-      trip.wishlist.push({ id: newId('w'), name: group.name, address: branch.address, outdoor: !group.indoor, type: group.type, city: this.searchIn || null, votes: [] })
-      this.clearForm()
-    },
-
-    addOwn() {
-      const name = this.form.name.trim()
-      if (!name) return
-      trip.wishlist.push({ id: newId('w'), name, address: this.form.address.trim() || null, outdoor: false, type: 'custom', city: this.searchIn || null, votes: [] })
+    // "+ Add": the place picked in "Find a place" (a popular one keeps its card details)
+    addPicked() {
+      const pl = this.form.place
+      if (!pl) return
+      const same = (p) => p.lat != null && Math.abs(p.lat - pl.lat) < 1e-4 && Math.abs(p.lon - pl.lon) < 1e-4
+      const popular = (this.popularByDest[this.searchIn] || []).find(same)
+      if (popular) return this.addPopular(popular)
+      const type = typeForKind(pl.kind)
+      trip.wishlist.push({ id: newId('w'), name: pl.name, address: pl.address || null, outdoor: !INDOOR_TYPES.includes(type), type,
+        city: this.searchIn || null, votes: [], lat: pl.lat, lon: pl.lon })
       this.clearForm()
     },
 
     clearForm() {
-      this.form = { name: '', address: '' }
-      this.found = []
-      this.active = -1
-      this.openChain = null
+      this.form = { name: '', place: null }
     },
 
-    onKeydown(e) {
-      const count = this.rows.length
-      if (!count) return
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        this.active = (this.active + 1) % count
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        this.active = (this.active - 1 + count) % count
-      } else if (e.key === 'Escape') {
-        this.showSuggest = false
-      }
+    // A place (not a tour) that isn't on the map yet: saved before places had map points
+    needsPoint(w) {
+      return w.lat == null && w.type !== 'tour'
     },
 
     remove(w) {
@@ -795,7 +644,7 @@ export default {
 
     startEdit(w) {
       this.editId = w.id
-      this.editForm = { name: w.name, address: w.address || '', link: w.link || '', isTour: w.type === 'tour' }
+      this.editForm = { name: w.name, place: w.lat != null ? { name: w.name, address: w.address || '', lat: w.lat, lon: w.lon } : null, link: w.link || '', isTour: w.type === 'tour' }
       // The form sits under all the cards: bring it into view and put the cursor in Name
       this.$nextTick(() => {
         const panel = this.$refs.editPanel
@@ -832,7 +681,13 @@ export default {
       for (const w of trip.wishlist) {
         if (w.id === this.editId) {
           w.name = name
-          w.address = this.editForm.address.trim() || null
+          // A new place was picked: it moves there. Otherwise only the name changed.
+          const pl = this.editForm.place
+          if (pl && (pl.lat !== w.lat || pl.lon !== w.lon)) {
+            w.lat = pl.lat
+            w.lon = pl.lon
+            w.address = pl.address || null
+          }
           if (this.editForm.isTour) {
             let link = this.editForm.link.trim()
             if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link
@@ -1110,13 +965,11 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: flex-start;
   margin-top: 18px;
 }
 .wl-add-name {
   flex: 2 1 240px;
-}
-.wl-add-address {
-  flex: 2 1 200px;
 }
 .wl-input {
   border-radius: 999px;
@@ -1177,115 +1030,9 @@ export default {
   padding: 16px 18px;
   margin-top: 16px;
 }
-.wl-suggest {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 20;
-  list-style: none;
-  margin: 0;
-  padding: 6px;
-  background: #fbf5ea;
-  border: 1px solid #e2dacb;
-  border-radius: 18px;
-  box-shadow: 0 14px 30px rgba(0, 40, 62, 0.14);
-  max-height: 360px;
-  overflow-y: auto;
-}
-.wl-suggest li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 12px;
-  border-radius: 12px;
-  cursor: pointer;
-}
 .wl-in {
   flex: 0 0 150px;
 }
-.wl-hit {
-  padding: 0;
-  background: none;
-  color: inherit;
-  text-decoration: underline;
-  text-decoration-color: #edae49;
-  text-decoration-thickness: 3px;
-  text-underline-offset: 2px;
-}
-.wl-row-text {
-  flex: 1;
-  min-width: 0;
-}
-.wl-row-note {
-  margin-left: 6px;
-  color: var(--app-muted, #5a6b78);
-  font-size: 13px;
-}
-.wl-row-icon {
-  width: 28px;
-  text-align: center;
-  flex-shrink: 0;
-}
-.wl-row-arrow {
-  color: var(--app-muted, #5a6b78);
-  font-size: 18px;
-}
-.wl-suggest li.wl-row-branch {
-  padding-left: 40px;
-  font-size: 14px;
-}
-.wl-suggest li.wl-row-branch strong {
-  font-weight: 500;
-}
-.wl-suggest li.wl-row-own {
-  border-top: 1px solid #efe9df;
-  color: #00798c;
-}
-.wl-searching {
-  position: absolute;
-  right: 16px;
-  top: 12px;
-  margin: 0;
-  pointer-events: none;
-}
-.wl-search-msg {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  background: #fbf5ea;
-  border: 1px solid #e2dacb;
-  border-radius: 14px;
-  box-shadow: 0 12px 28px rgba(0, 29, 44, 0.12);
-  font-size: 14px;
-  color: #003d5b;
-}
-.wl-search-retry {
-  flex: none;
-  padding: 5px 12px;
-  border: 1.5px solid #003d5b;
-  border-radius: 999px;
-  background: transparent;
-  color: #003d5b;
-  font-weight: 700;
-  font-size: 13px;
-}
-.wl-search-retry:hover {
-  background: #003d5b;
-  color: #fff;
-}
-.wl-suggest li.active {
-  background: #fbefd9;
-}
-
-/* ---------- Loading + animations ---------- */
 .skeleton {
   background: linear-gradient(90deg, #efe9df 25%, #f9f6f0 50%, #efe9df 75%);
   background-size: 200% 100%;
@@ -1382,4 +1129,20 @@ export default {
   .wl-name { font-size: 0.95rem; }
 }
 
+.wl-setloc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: #fbefd9;
+  color: #8a5a00;
+  font-size: 12px;
+  font-weight: 700;
+}
+.wl-setloc:hover {
+  background: #f6dfb3;
+}
 </style>

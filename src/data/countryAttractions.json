@@ -1,84 +1,122 @@
 {
- "_about": "Top sights per Discover country, hand-picked. name = Wikipedia-style title (used for the photo); city = the Discover city it belongs near.",
+ "_about": "Top sights per Discover country, hand-picked. name = Wikipedia-style title (used for the photo); city = the Discover city it belongs near. lat/lon = its map point (from Wikipedia); sights without one are not recommended.",
  "countries": {
   "South Korea": [
    {
     "name": "Gyeongbokgung",
-    "city": "Seoul"
+    "city": "Seoul",
+    "lat": 37.57988,
+    "lon": 126.9768
    },
    {
     "name": "Bukchon Hanok Village",
-    "city": "Seoul"
+    "city": "Seoul",
+    "lat": 37.58306,
+    "lon": 126.98361
    },
    {
     "name": "N Seoul Tower",
-    "city": "Seoul"
+    "city": "Seoul",
+    "lat": 37.55122,
+    "lon": 126.98828
    },
    {
     "name": "Myeongdong",
-    "city": "Seoul"
+    "city": "Seoul",
+    "lat": 37.5637,
+    "lon": 126.984
    },
    {
     "name": "Gamcheon Culture Village",
-    "city": "Busan"
+    "city": "Busan",
+    "lat": 35.097,
+    "lon": 129.009
    },
    {
     "name": "Haeundae Beach",
-    "city": "Busan"
+    "city": "Busan",
+    "lat": 35.15855,
+    "lon": 129.16053
    },
    {
     "name": "Seongsan Ilchulbong",
-    "city": "Jeju"
+    "city": "Jeju",
+    "lat": 33.4585,
+    "lon": 126.942
    },
    {
     "name": "Hallasan",
-    "city": "Jeju"
+    "city": "Jeju",
+    "lat": 33.36167,
+    "lon": 126.52917
    },
    {
     "name": "Bulguksa",
-    "city": "Gyeongju"
+    "city": "Gyeongju",
+    "lat": 35.79,
+    "lon": 129.33222
    },
    {
     "name": "Changdeokgung",
-    "city": "Seoul"
+    "city": "Seoul",
+    "lat": 37.57944,
+    "lon": 126.99278
    }
   ],
   "Japan": [
    {
     "name": "Fushimi Inari-taisha",
-    "city": "Kyoto"
+    "city": "Kyoto",
+    "lat": 34.96722,
+    "lon": 135.77278
    },
    {
     "name": "Kinkaku-ji",
-    "city": "Kyoto"
+    "city": "Kyoto",
+    "lat": 35.0395,
+    "lon": 135.7285
    },
    {
     "name": "Arashiyama",
-    "city": "Kyoto"
+    "city": "Kyoto",
+    "lat": 35.0151,
+    "lon": 135.67067
    },
    {
     "name": "Senso-ji",
-    "city": "Tokyo"
+    "city": "Tokyo",
+    "lat": 35.71472,
+    "lon": 139.79675
    },
    {
     "name": "Shibuya Crossing",
-    "city": "Tokyo"
+    "city": "Tokyo",
+    "lat": 35.6595,
+    "lon": 139.70056
    },
    {
     "name": "Mount Fuji",
-    "city": "Tokyo"
+    "city": "Tokyo",
+    "lat": 35.36083,
+    "lon": 138.7275
    },
    {
     "name": "Dotonbori",
-    "city": "Osaka"
+    "city": "Osaka",
+    "lat": 34.66871,
+    "lon": 135.50131
    },
    {
     "name": "Nara Park",
-    "city": "Nara"
+    "city": "Nara",
+    "lat": 34.685,
+    "lon": 135.85
    },
    {
     "name": "Hiroshima Peace Memorial",
-    "city": "Fukuoka"
+    "city": "Fukuoka",
+    "lat": 34.39556,
+    "lon": 132.45361
    },
    {
     "name": "Sapporo Snow Festival",
@@ -88,31 +126,45 @@
   "Taiwan": [
    {
     "name": "Taipei 101",
-    "city": "Taipei"
+    "city": "Taipei",
+    "lat": 25.0336,
+    "lon": 121.5647
    },
    {
     "name": "Shilin Night Market",
-    "city": "Taipei"
+    "city": "Taipei",
+    "lat": 25.0866,
+    "lon": 121.5254
    },
    {
     "name": "Jiufen",
-    "city": "Taipei"
+    "city": "Taipei",
+    "lat": 25.107,
+    "lon": 121.843
    },
    {
     "name": "National Palace Museum",
-    "city": "Taipei"
+    "city": "Taipei",
+    "lat": 25.1022,
+    "lon": 121.5486
    },
    {
     "name": "Taroko Gorge",
-    "city": "Hualien"
+    "city": "Hualien",
+    "lat": 24.16667,
+    "lon": 121.33333
    },
    {
     "name": "Sun Moon Lake",
-    "city": "Taipei"
+    "city": "Taipei",
+    "lat": 23.86667,
+    "lon": 120.91667
    },
    {
     "name": "Chihkan Tower",
-    "city": "Tainan"
+    "city": "Tainan",
+    "lat": 22.9975,
+    "lon": 120.20281
    },
    {
     "name": "Anping Fort",
@@ -124,21 +176,29 @@
    },
    {
     "name": "Yehliu Geopark",
-    "city": "Taipei"
+    "city": "Taipei",
+    "lat": 25.2131,
+    "lon": 121.698
    }
   ],
   "Hong Kong": [
    {
     "name": "Victoria Peak",
-    "city": "Hong Kong Island"
+    "city": "Hong Kong Island",
+    "lat": 22.27556,
+    "lon": 114.14389
    },
    {
     "name": "Victoria Harbour",
-    "city": "Hong Kong Island"
+    "city": "Hong Kong Island",
+    "lat": 22.29,
+    "lon": 114.17
    },
    {
     "name": "Tian Tan Buddha",
-    "city": "Lantau Island"
+    "city": "Lantau Island",
+    "lat": 22.25411,
+    "lon": 113.90514
    },
    {
     "name": "Ngong Ping 360",
@@ -146,23 +206,33 @@
    },
    {
     "name": "Temple Street Night Market",
-    "city": "Hong Kong Island"
+    "city": "Hong Kong Island",
+    "lat": 22.30589,
+    "lon": 114.16987
    },
    {
     "name": "Man Mo Temple",
-    "city": "Hong Kong Island"
+    "city": "Hong Kong Island",
+    "lat": 22.28398,
+    "lon": 114.15024
    },
    {
     "name": "Hong Kong Disneyland",
-    "city": "Lantau Island"
+    "city": "Lantau Island",
+    "lat": 22.31333,
+    "lon": 114.04333
    },
    {
     "name": "Tai O",
-    "city": "Lantau Island"
+    "city": "Lantau Island",
+    "lat": 22.25444,
+    "lon": 113.86417
    },
    {
     "name": "Dragon's Back",
-    "city": "Hong Kong Island"
+    "city": "Hong Kong Island",
+    "lat": 22.2357,
+    "lon": 114.2437
    },
    {
     "name": "Star Ferry",
@@ -172,23 +242,33 @@
   "Macau": [
    {
     "name": "Ruins of St. Paul's",
-    "city": "Macau Peninsula"
+    "city": "Macau Peninsula",
+    "lat": 22.1975,
+    "lon": 113.54056
    },
    {
     "name": "Senado Square",
-    "city": "Macau Peninsula"
+    "city": "Macau Peninsula",
+    "lat": 22.19358,
+    "lon": 113.53967
    },
    {
     "name": "A-Ma Temple",
-    "city": "Macau Peninsula"
+    "city": "Macau Peninsula",
+    "lat": 22.18611,
+    "lon": 113.53114
    },
    {
     "name": "Macau Tower",
-    "city": "Macau Peninsula"
+    "city": "Macau Peninsula",
+    "lat": 22.17972,
+    "lon": 113.53667
    },
    {
     "name": "Guia Fortress",
-    "city": "Macau Peninsula"
+    "city": "Macau Peninsula",
+    "lat": 22.1965,
+    "lon": 113.55
    },
    {
     "name": "Taipa Village",
@@ -196,53 +276,77 @@
    },
    {
     "name": "Cotai Strip",
-    "city": "Taipa"
+    "city": "Taipa",
+    "lat": 22.14056,
+    "lon": 113.56306
    },
    {
     "name": "Mount Fortress",
-    "city": "Macau Peninsula"
+    "city": "Macau Peninsula",
+    "lat": 22.1969,
+    "lon": 113.5422
    }
   ],
   "China": [
    {
     "name": "Great Wall of China",
-    "city": "Beijing"
+    "city": "Beijing",
+    "lat": 40.43139,
+    "lon": 116.56444
    },
    {
     "name": "Forbidden City",
-    "city": "Beijing"
+    "city": "Beijing",
+    "lat": 39.91583,
+    "lon": 116.39083
    },
    {
     "name": "Temple of Heaven",
-    "city": "Beijing"
+    "city": "Beijing",
+    "lat": 39.8822,
+    "lon": 116.4066
    },
    {
     "name": "The Bund",
-    "city": "Shanghai"
+    "city": "Shanghai",
+    "lat": 31.23803,
+    "lon": 121.48614
    },
    {
     "name": "Yu Garden",
-    "city": "Shanghai"
+    "city": "Shanghai",
+    "lat": 31.22917,
+    "lon": 121.4875
    },
    {
     "name": "Terracotta Army",
-    "city": "Xi'an"
+    "city": "Xi'an",
+    "lat": 34.385,
+    "lon": 109.27306
    },
    {
     "name": "Li River",
-    "city": "Guilin"
+    "city": "Guilin",
+    "lat": 24.6301,
+    "lon": 110.64
    },
    {
     "name": "Chengdu Research Base of Giant Panda Breeding",
-    "city": "Chengdu"
+    "city": "Chengdu",
+    "lat": 30.73861,
+    "lon": 104.14194
    },
    {
     "name": "Summer Palace",
-    "city": "Beijing"
+    "city": "Beijing",
+    "lat": 39.9975,
+    "lon": 116.2689
    },
    {
     "name": "Leshan Giant Buddha",
-    "city": "Chengdu"
+    "city": "Chengdu",
+    "lat": 29.54472,
+    "lon": 103.77333
    },
    {
     "name": "Hongyadong",
@@ -254,7 +358,9 @@
    },
    {
     "name": "Jiefangbei CBD",
-    "city": "Chongqing"
+    "city": "Chongqing",
+    "lat": 29.56045,
+    "lon": 106.5734
    },
    {
     "name": "Dazu Rock Carvings",
@@ -262,29 +368,41 @@
    },
    {
     "name": "Wulong Karst",
-    "city": "Chongqing"
+    "city": "Chongqing",
+    "lat": 29.3,
+    "lon": 108
    }
   ],
   "Thailand": [
    {
     "name": "Grand Palace",
-    "city": "Bangkok"
+    "city": "Bangkok",
+    "lat": 13.7501,
+    "lon": 100.492
    },
    {
     "name": "Wat Arun",
-    "city": "Bangkok"
+    "city": "Bangkok",
+    "lat": 13.74361,
+    "lon": 100.48889
    },
    {
     "name": "Wat Pho",
-    "city": "Bangkok"
+    "city": "Bangkok",
+    "lat": 13.74639,
+    "lon": 100.49361
    },
    {
     "name": "Chatuchak Weekend Market",
-    "city": "Bangkok"
+    "city": "Bangkok",
+    "lat": 13.80083,
+    "lon": 100.55139
    },
    {
     "name": "Doi Suthep",
-    "city": "Chiang Mai"
+    "city": "Chiang Mai",
+    "lat": 18.81278,
+    "lon": 98.89361
    },
    {
     "name": "Old City, Chiang Mai",
@@ -292,7 +410,9 @@
    },
    {
     "name": "Phi Phi Islands",
-    "city": "Phuket"
+    "city": "Phuket",
+    "lat": 7.73333,
+    "lon": 98.76667
    },
    {
     "name": "Big Buddha Phuket",
@@ -300,7 +420,9 @@
    },
    {
     "name": "Ang Thong National Marine Park",
-    "city": "Koh Samui"
+    "city": "Koh Samui",
+    "lat": 9.62278,
+    "lon": 99.675
    },
    {
     "name": "Pai Canyon",
@@ -314,57 +436,83 @@
    },
    {
     "name": "Uluwatu Temple",
-    "city": "Bali"
+    "city": "Bali",
+    "lat": -8.82889,
+    "lon": 115.08528
    },
    {
     "name": "Tanah Lot",
-    "city": "Bali"
+    "city": "Bali",
+    "lat": -8.62107,
+    "lon": 115.08716
    },
    {
     "name": "Ubud Monkey Forest",
-    "city": "Bali"
+    "city": "Bali",
+    "lat": -8.51882,
+    "lon": 115.25838
    },
    {
     "name": "Borobudur",
-    "city": "Yogyakarta"
+    "city": "Yogyakarta",
+    "lat": -7.608,
+    "lon": 110.204
    },
    {
     "name": "Prambanan",
-    "city": "Yogyakarta"
+    "city": "Yogyakarta",
+    "lat": -7.75222,
+    "lon": 110.49167
    },
    {
     "name": "Mount Bromo",
-    "city": "Yogyakarta"
+    "city": "Yogyakarta",
+    "lat": -7.94167,
+    "lon": 112.95
    },
    {
     "name": "Komodo National Park",
-    "city": "Labuan Bajo"
+    "city": "Labuan Bajo",
+    "lat": -8.54333,
+    "lon": 119.48944
    },
    {
     "name": "Gili Islands",
-    "city": "Lombok"
+    "city": "Lombok",
+    "lat": -8.35,
+    "lon": 116.06
    },
    {
     "name": "Mount Rinjani",
-    "city": "Lombok"
+    "city": "Lombok",
+    "lat": -8.41441,
+    "lon": 116.45977
    }
   ],
   "Malaysia": [
    {
     "name": "Petronas Towers",
-    "city": "Kuala Lumpur"
+    "city": "Kuala Lumpur",
+    "lat": 3.1578,
+    "lon": 101.7117
    },
    {
     "name": "Batu Caves",
-    "city": "Kuala Lumpur"
+    "city": "Kuala Lumpur",
+    "lat": 3.2374,
+    "lon": 101.6839
    },
    {
     "name": "George Town, Penang",
-    "city": "Penang"
+    "city": "Penang",
+    "lat": 5.41444,
+    "lon": 100.32917
    },
    {
     "name": "Penang Hill",
-    "city": "Penang"
+    "city": "Penang",
+    "lat": 5.42444,
+    "lon": 100.26892
    },
    {
     "name": "Langkawi Sky Bridge",
@@ -376,7 +524,9 @@
    },
    {
     "name": "Cameron Highlands",
-    "city": "Kuala Lumpur"
+    "city": "Kuala Lumpur",
+    "lat": 4.5,
+    "lon": 101.5
    },
    {
     "name": "Merdeka Square",
@@ -384,7 +534,9 @@
    },
    {
     "name": "Kek Lok Si",
-    "city": "Penang"
+    "city": "Penang",
+    "lat": 5.39952,
+    "lon": 100.27373
    },
    {
     "name": "Pantai Cenang",
@@ -394,11 +546,15 @@
   "Vietnam": [
    {
     "name": "Ha Long Bay",
-    "city": "Hanoi"
+    "city": "Hanoi",
+    "lat": 20.9,
+    "lon": 107.2
    },
    {
     "name": "Hoan Kiem Lake",
-    "city": "Hanoi"
+    "city": "Hanoi",
+    "lat": 21.02889,
+    "lon": 105.8525
    },
    {
     "name": "Hanoi Old Quarter",
@@ -410,15 +566,21 @@
    },
    {
     "name": "Golden Bridge (Vietnam)",
-    "city": "Hoi An"
+    "city": "Hoi An",
+    "lat": 15.99486,
+    "lon": 107.99625
    },
    {
     "name": "Ben Thanh Market",
-    "city": "Ho Chi Minh City"
+    "city": "Ho Chi Minh City",
+    "lat": 10.77252,
+    "lon": 106.69802
    },
    {
     "name": "Cu Chi tunnels",
-    "city": "Ho Chi Minh City"
+    "city": "Ho Chi Minh City",
+    "lat": 11.06083,
+    "lon": 106.52861
    },
    {
     "name": "Ha Giang Loop",
@@ -430,25 +592,35 @@
    },
    {
     "name": "Trang An",
-    "city": "Hanoi"
+    "city": "Hanoi",
+    "lat": 20.25667,
+    "lon": 105.89639
    }
   ],
   "Philippines": [
    {
     "name": "Intramuros",
-    "city": "Manila"
+    "city": "Manila",
+    "lat": 14.59147,
+    "lon": 120.97356
    },
    {
     "name": "Rizal Park",
-    "city": "Manila"
+    "city": "Manila",
+    "lat": 14.5825,
+    "lon": 120.97833
    },
    {
     "name": "Chocolate Hills",
-    "city": "Cebu"
+    "city": "Cebu",
+    "lat": 9.91667,
+    "lon": 124.16667
    },
    {
     "name": "Kawasan Falls",
-    "city": "Cebu"
+    "city": "Cebu",
+    "lat": 9.8,
+    "lon": 123.36667
    },
    {
     "name": "Oslob whale sharks",
@@ -460,57 +632,83 @@
    },
    {
     "name": "Puerto Princesa Subterranean River National Park",
-    "city": "El Nido"
+    "city": "El Nido",
+    "lat": 10.16667,
+    "lon": 118.91667
    },
    {
     "name": "Magellan's Cross",
-    "city": "Cebu"
+    "city": "Cebu",
+    "lat": 10.29354,
+    "lon": 123.90195
    },
    {
     "name": "Binondo",
-    "city": "Manila"
+    "city": "Manila",
+    "lat": 14.6,
+    "lon": 120.967
    },
    {
     "name": "Moalboal",
-    "city": "Cebu"
+    "city": "Cebu",
+    "lat": 9.95,
+    "lon": 123.4
    }
   ],
   "Cambodia": [
    {
     "name": "Angkor Wat",
-    "city": "Siem Reap"
+    "city": "Siem Reap",
+    "lat": 13.4125,
+    "lon": 103.86667
    },
    {
     "name": "Bayon",
-    "city": "Siem Reap"
+    "city": "Siem Reap",
+    "lat": 13.44111,
+    "lon": 103.85861
    },
    {
     "name": "Ta Prohm",
-    "city": "Siem Reap"
+    "city": "Siem Reap",
+    "lat": 13.435,
+    "lon": 103.88917
    },
    {
     "name": "Banteay Srei",
-    "city": "Siem Reap"
+    "city": "Siem Reap",
+    "lat": 13.59889,
+    "lon": 103.96278
    },
    {
     "name": "Royal Palace, Phnom Penh",
-    "city": "Phnom Penh"
+    "city": "Phnom Penh",
+    "lat": 11.56365,
+    "lon": 104.93081
    },
    {
     "name": "Tuol Sleng Genocide Museum",
-    "city": "Phnom Penh"
+    "city": "Phnom Penh",
+    "lat": 11.54944,
+    "lon": 104.91778
    },
    {
     "name": "Silver Pagoda",
-    "city": "Phnom Penh"
+    "city": "Phnom Penh",
+    "lat": 11.5625,
+    "lon": 104.93167
    },
    {
     "name": "Tonlé Sap",
-    "city": "Siem Reap"
+    "city": "Siem Reap",
+    "lat": 12.88333,
+    "lon": 104.06667
    },
    {
     "name": "Central Market (Phnom Penh)",
-    "city": "Phnom Penh"
+    "city": "Phnom Penh",
+    "lat": 11.56944,
+    "lon": 104.92111
    },
    {
     "name": "Pub Street",
@@ -520,27 +718,39 @@
   "Sri Lanka": [
    {
     "name": "Sigiriya",
-    "city": "Kandy"
+    "city": "Kandy",
+    "lat": 7.95694,
+    "lon": 80.75972
    },
    {
     "name": "Temple of the Tooth",
-    "city": "Kandy"
+    "city": "Kandy",
+    "lat": 7.2936,
+    "lon": 80.6414
    },
    {
     "name": "Nine Arch Bridge",
-    "city": "Ella"
+    "city": "Ella",
+    "lat": 6.87667,
+    "lon": 81.06111
    },
    {
     "name": "Galle Fort",
-    "city": "Galle"
+    "city": "Galle",
+    "lat": 6.02583,
+    "lon": 80.2175
    },
    {
     "name": "Yala National Park",
-    "city": "Ella"
+    "city": "Ella",
+    "lat": 6.55,
+    "lon": 81.5
    },
    {
     "name": "Dambulla cave temple",
-    "city": "Kandy"
+    "city": "Kandy",
+    "lat": 7.85667,
+    "lon": 80.64917
    },
    {
     "name": "Kandy to Ella train",
@@ -548,21 +758,29 @@
    },
    {
     "name": "Adam's Peak",
-    "city": "Ella"
+    "city": "Ella",
+    "lat": 6.8094,
+    "lon": 80.4997
    },
    {
     "name": "Gangaramaya Temple",
-    "city": "Colombo"
+    "city": "Colombo",
+    "lat": 6.91639,
+    "lon": 79.85639
    },
    {
     "name": "Mirissa",
-    "city": "Galle"
+    "city": "Galle",
+    "lat": 5.94583,
+    "lon": 80.45972
    }
   ],
   "Maldives": [
    {
     "name": "Malé Friday Mosque",
-    "city": "Malé"
+    "city": "Malé",
+    "lat": 4.17806,
+    "lon": 73.5125
    },
    {
     "name": "Maafushi beach",
@@ -582,11 +800,15 @@
    },
    {
     "name": "Hulhumalé",
-    "city": "Malé"
+    "city": "Malé",
+    "lat": 4.2125,
+    "lon": 73.54
    },
    {
     "name": "Biyadhoo",
-    "city": "Maafushi"
+    "city": "Maafushi",
+    "lat": 3.9223,
+    "lon": 73.4564
    },
    {
     "name": "Sandbank picnics",
@@ -596,31 +818,45 @@
   "Nepal": [
    {
     "name": "Swayambhunath",
-    "city": "Kathmandu"
+    "city": "Kathmandu",
+    "lat": 27.715,
+    "lon": 85.29
    },
    {
     "name": "Boudhanath",
-    "city": "Kathmandu"
+    "city": "Kathmandu",
+    "lat": 27.72139,
+    "lon": 85.36194
    },
    {
     "name": "Pashupatinath Temple",
-    "city": "Kathmandu"
+    "city": "Kathmandu",
+    "lat": 27.70972,
+    "lon": 85.34861
    },
    {
     "name": "Kathmandu Durbar Square",
-    "city": "Kathmandu"
+    "city": "Kathmandu",
+    "lat": 27.70415,
+    "lon": 85.30647
    },
    {
     "name": "Bhaktapur Durbar Square",
-    "city": "Kathmandu"
+    "city": "Kathmandu",
+    "lat": 27.67203,
+    "lon": 85.42811
    },
    {
     "name": "Phewa Lake",
-    "city": "Pokhara"
+    "city": "Pokhara",
+    "lat": 28.2142,
+    "lon": 83.9472
    },
    {
     "name": "Sarangkot",
-    "city": "Pokhara"
+    "city": "Pokhara",
+    "lat": 28.24167,
+    "lon": 83.96667
    },
    {
     "name": "Annapurna Base Camp",
@@ -628,7 +864,9 @@
    },
    {
     "name": "Chitwan National Park",
-    "city": "Pokhara"
+    "city": "Pokhara",
+    "lat": 27.5,
+    "lon": 84.33333
    },
    {
     "name": "Everest Base Camp",
@@ -638,23 +876,33 @@
   "India": [
    {
     "name": "Taj Mahal",
-    "city": "Delhi"
+    "city": "Delhi",
+    "lat": 27.175,
+    "lon": 78.0419
    },
    {
     "name": "Red Fort",
-    "city": "Delhi"
+    "city": "Delhi",
+    "lat": 28.65583,
+    "lon": 77.24083
    },
    {
     "name": "Qutub Minar",
-    "city": "Delhi"
+    "city": "Delhi",
+    "lat": 28.52435,
+    "lon": 77.18525
    },
    {
     "name": "Hawa Mahal",
-    "city": "Jaipur"
+    "city": "Jaipur",
+    "lat": 26.9239,
+    "lon": 75.8267
    },
    {
     "name": "Amber Fort",
-    "city": "Jaipur"
+    "city": "Jaipur",
+    "lat": 26.9859,
+    "lon": 75.8507
    },
    {
     "name": "Ganges ghats in Varanasi",
@@ -662,53 +910,77 @@
    },
    {
     "name": "Baga Beach",
-    "city": "Goa"
+    "city": "Goa",
+    "lat": 15.55889,
+    "lon": 73.75333
    },
    {
     "name": "Basilica of Bom Jesus",
-    "city": "Goa"
+    "city": "Goa",
+    "lat": 15.50087,
+    "lon": 73.91151
    },
    {
     "name": "India Gate",
-    "city": "Delhi"
+    "city": "Delhi",
+    "lat": 28.61286,
+    "lon": 77.22931
    },
    {
     "name": "City Palace, Jaipur",
-    "city": "Jaipur"
+    "city": "Jaipur",
+    "lat": 26.9257,
+    "lon": 75.8236
    }
   ],
   "United Arab Emirates": [
    {
     "name": "Burj Khalifa",
-    "city": "Dubai"
+    "city": "Dubai",
+    "lat": 25.1972,
+    "lon": 55.2742
    },
    {
     "name": "Dubai Mall",
-    "city": "Dubai"
+    "city": "Dubai",
+    "lat": 25.1975,
+    "lon": 55.27917
    },
    {
     "name": "Palm Jumeirah",
-    "city": "Dubai"
+    "city": "Dubai",
+    "lat": 25.11806,
+    "lon": 55.13333
    },
    {
     "name": "Dubai Creek",
-    "city": "Dubai"
+    "city": "Dubai",
+    "lat": 25.25583,
+    "lon": 55.31667
    },
    {
     "name": "Museum of the Future",
-    "city": "Dubai"
+    "city": "Dubai",
+    "lat": 25.21912,
+    "lon": 55.2821
    },
    {
     "name": "Sheikh Zayed Grand Mosque",
-    "city": "Abu Dhabi"
+    "city": "Abu Dhabi",
+    "lat": 24.412,
+    "lon": 54.474
    },
    {
     "name": "Louvre Abu Dhabi",
-    "city": "Abu Dhabi"
+    "city": "Abu Dhabi",
+    "lat": 24.533,
+    "lon": 54.40001
    },
    {
     "name": "Ferrari World",
-    "city": "Abu Dhabi"
+    "city": "Abu Dhabi",
+    "lat": 24.4838,
+    "lon": 54.607
    },
    {
     "name": "Desert safari Dubai",
@@ -716,13 +988,17 @@
    },
    {
     "name": "Qasr Al Watan",
-    "city": "Abu Dhabi"
+    "city": "Abu Dhabi",
+    "lat": 24.46225,
+    "lon": 54.30551
    }
   ],
   "Oman": [
    {
     "name": "Sultan Qaboos Grand Mosque",
-    "city": "Muscat"
+    "city": "Muscat",
+    "lat": 23.58389,
+    "lon": 58.38917
    },
    {
     "name": "Mutrah Souq",
@@ -734,11 +1010,15 @@
    },
    {
     "name": "Nizwa Fort",
-    "city": "Nizwa"
+    "city": "Nizwa",
+    "lat": 22.93333,
+    "lon": 57.53028
    },
    {
     "name": "Jebel Shams",
-    "city": "Nizwa"
+    "city": "Nizwa",
+    "lat": 23.23694,
+    "lon": 57.26389
    },
    {
     "name": "Wadi Shab",
@@ -746,11 +1026,15 @@
    },
    {
     "name": "Bimmah Sinkhole",
-    "city": "Muscat"
+    "city": "Muscat",
+    "lat": 23.03611,
+    "lon": 59.07194
    },
    {
     "name": "Wahiba Sands",
-    "city": "Nizwa"
+    "city": "Nizwa",
+    "lat": 22,
+    "lon": 58.83333
    },
    {
     "name": "Jabrin Castle",
@@ -758,7 +1042,9 @@
    },
    {
     "name": "Misfat al Abriyeen",
-    "city": "Nizwa"
+    "city": "Nizwa",
+    "lat": 23.1375,
+    "lon": 57.30861
    }
   ],
   "Jordan": [
@@ -768,15 +1054,21 @@
    },
    {
     "name": "Al-Khazneh",
-    "city": "Petra"
+    "city": "Petra",
+    "lat": 30.32208,
+    "lon": 35.45154
    },
    {
     "name": "Ad Deir",
-    "city": "Petra"
+    "city": "Petra",
+    "lat": 30.33778,
+    "lon": 35.43111
    },
    {
     "name": "Wadi Rum",
-    "city": "Wadi Rum"
+    "city": "Wadi Rum",
+    "lat": 29.59306,
+    "lon": 35.42
    },
    {
     "name": "Dead Sea",
@@ -788,25 +1080,35 @@
    },
    {
     "name": "Roman Theatre (Amman)",
-    "city": "Amman"
+    "city": "Amman",
+    "lat": 31.95169,
+    "lon": 35.93931
    },
    {
     "name": "Jerash",
-    "city": "Amman"
+    "city": "Amman",
+    "lat": 32.28056,
+    "lon": 35.89722
    },
    {
     "name": "Wadi Mujib",
-    "city": "Amman"
+    "city": "Amman",
+    "lat": 31.46583,
+    "lon": 35.57333
    },
    {
     "name": "Mount Nebo",
-    "city": "Amman"
+    "city": "Amman",
+    "lat": 31.76667,
+    "lon": 35.725
    }
   ],
   "Turkey": [
    {
     "name": "Hagia Sophia",
-    "city": "Istanbul"
+    "city": "Istanbul",
+    "lat": 41.00833,
+    "lon": 28.98
    },
    {
     "name": "Blue Mosque",
@@ -818,15 +1120,21 @@
    },
    {
     "name": "Topkapı Palace",
-    "city": "Istanbul"
+    "city": "Istanbul",
+    "lat": 41.013,
+    "lon": 28.984
    },
    {
     "name": "Basilica Cistern",
-    "city": "Istanbul"
+    "city": "Istanbul",
+    "lat": 41.00806,
+    "lon": 28.97778
    },
    {
     "name": "Göreme National Park",
-    "city": "Cappadocia"
+    "city": "Cappadocia",
+    "lat": 38.65278,
+    "lon": 34.86306
    },
    {
     "name": "Hot air balloons over Cappadocia",
@@ -834,11 +1142,15 @@
    },
    {
     "name": "Pamukkale",
-    "city": "Antalya"
+    "city": "Antalya",
+    "lat": 37.92389,
+    "lon": 29.12333
    },
    {
     "name": "Ephesus",
-    "city": "Antalya"
+    "city": "Antalya",
+    "lat": 37.94111,
+    "lon": 27.34194
    },
    {
     "name": "Kaleiçi",
@@ -848,39 +1160,57 @@
   "Egypt": [
    {
     "name": "Giza pyramid complex",
-    "city": "Cairo"
+    "city": "Cairo",
+    "lat": 29.97611,
+    "lon": 31.13278
    },
    {
     "name": "Great Sphinx of Giza",
-    "city": "Cairo"
+    "city": "Cairo",
+    "lat": 29.97526,
+    "lon": 31.13758
    },
    {
     "name": "Egyptian Museum",
-    "city": "Cairo"
+    "city": "Cairo",
+    "lat": 30.04778,
+    "lon": 31.23333
    },
    {
     "name": "Grand Egyptian Museum",
-    "city": "Cairo"
+    "city": "Cairo",
+    "lat": 29.995,
+    "lon": 31.1193
    },
    {
     "name": "Khan el-Khalili",
-    "city": "Cairo"
+    "city": "Cairo",
+    "lat": 30.0475,
+    "lon": 31.26222
    },
    {
     "name": "Karnak",
-    "city": "Luxor"
+    "city": "Luxor",
+    "lat": 25.7183,
+    "lon": 32.6583
    },
    {
     "name": "Valley of the Kings",
-    "city": "Luxor"
+    "city": "Luxor",
+    "lat": 25.74083,
+    "lon": 32.60222
    },
    {
     "name": "Luxor Temple",
-    "city": "Luxor"
+    "city": "Luxor",
+    "lat": 25.7,
+    "lon": 32.63917
    },
    {
     "name": "Abu Simbel",
-    "city": "Luxor"
+    "city": "Luxor",
+    "lat": 22.33694,
+    "lon": 31.62556
    },
    {
     "name": "Blue Hole (Red Sea)",
@@ -890,27 +1220,39 @@
   "Morocco": [
    {
     "name": "Jemaa el-Fnaa",
-    "city": "Marrakech"
+    "city": "Marrakech",
+    "lat": 31.62583,
+    "lon": -7.98944
    },
    {
     "name": "Majorelle Garden",
-    "city": "Marrakech"
+    "city": "Marrakech",
+    "lat": 31.64278,
+    "lon": -8.00306
    },
    {
     "name": "Bahia Palace",
-    "city": "Marrakech"
+    "city": "Marrakech",
+    "lat": 31.62159,
+    "lon": -7.98223
    },
    {
     "name": "Koutoubia Mosque",
-    "city": "Marrakech"
+    "city": "Marrakech",
+    "lat": 31.62412,
+    "lon": -7.99354
    },
    {
     "name": "Fes el Bali",
-    "city": "Fes"
+    "city": "Fes",
+    "lat": 34.0625,
+    "lon": -4.9725
    },
    {
     "name": "Chouara Tannery",
-    "city": "Fes"
+    "city": "Fes",
+    "lat": 34.06609,
+    "lon": -4.97098
    },
    {
     "name": "Chefchaouen medina",
@@ -918,45 +1260,65 @@
    },
    {
     "name": "Aït Benhaddou",
-    "city": "Marrakech"
+    "city": "Marrakech",
+    "lat": 31.04722,
+    "lon": -7.12889
    },
    {
     "name": "Erg Chebbi",
-    "city": "Marrakech"
+    "city": "Marrakech",
+    "lat": 31.16667,
+    "lon": -3.98333
    },
    {
     "name": "Atlas Mountains",
-    "city": "Marrakech"
+    "city": "Marrakech",
+    "lat": 31.05963,
+    "lon": -7.91513
    }
   ],
   "South Africa": [
    {
     "name": "Table Mountain",
-    "city": "Cape Town"
+    "city": "Cape Town",
+    "lat": -33.96218,
+    "lon": 18.40988
    },
    {
     "name": "Cape of Good Hope",
-    "city": "Cape Town"
+    "city": "Cape Town",
+    "lat": -34.35806,
+    "lon": 18.47556
    },
    {
     "name": "Boulders Beach",
-    "city": "Cape Town"
+    "city": "Cape Town",
+    "lat": -34.197,
+    "lon": 18.451
    },
    {
     "name": "Robben Island",
-    "city": "Cape Town"
+    "city": "Cape Town",
+    "lat": -33.805,
+    "lon": 18.37
    },
    {
     "name": "V&A Waterfront",
-    "city": "Cape Town"
+    "city": "Cape Town",
+    "lat": -33.90306,
+    "lon": 18.42278
    },
    {
     "name": "Kirstenbosch National Botanical Garden",
-    "city": "Cape Town"
+    "city": "Cape Town",
+    "lat": -33.9875,
+    "lon": 18.4325
    },
    {
     "name": "Kruger National Park",
-    "city": "Kruger National Park"
+    "city": "Kruger National Park",
+    "lat": -24,
+    "lon": 31.5
    },
    {
     "name": "Blyde River Canyon",
@@ -964,79 +1326,115 @@
    },
    {
     "name": "Chapman's Peak Drive",
-    "city": "Cape Town"
+    "city": "Cape Town",
+    "lat": -34.08722,
+    "lon": 18.36056
    },
    {
     "name": "Stellenbosch",
-    "city": "Cape Town"
+    "city": "Cape Town",
+    "lat": -33.93667,
+    "lon": 18.86139
    }
   ],
   "United Kingdom": [
    {
     "name": "British Museum",
-    "city": "London"
+    "city": "London",
+    "lat": 51.5194,
+    "lon": -0.1269
    },
    {
     "name": "Tower of London",
-    "city": "London"
+    "city": "London",
+    "lat": 51.50806,
+    "lon": -0.07611
    },
    {
     "name": "Buckingham Palace",
-    "city": "London"
+    "city": "London",
+    "lat": 51.50083,
+    "lon": -0.14194
    },
    {
     "name": "Big Ben",
-    "city": "London"
+    "city": "London",
+    "lat": 51.5007,
+    "lon": -0.1245
    },
    {
     "name": "London Eye",
-    "city": "London"
+    "city": "London",
+    "lat": 51.5033,
+    "lon": -0.1194
    },
    {
     "name": "Edinburgh Castle",
-    "city": "Edinburgh"
+    "city": "Edinburgh",
+    "lat": 55.94861,
+    "lon": -3.20083
    },
    {
     "name": "Royal Mile",
-    "city": "Edinburgh"
+    "city": "Edinburgh",
+    "lat": 55.95056,
+    "lon": -3.18556
    },
    {
     "name": "Stonehenge",
-    "city": "Bath"
+    "city": "Bath",
+    "lat": 51.17889,
+    "lon": -1.82611
    },
    {
     "name": "Roman Baths (Bath)",
-    "city": "Bath"
+    "city": "Bath",
+    "lat": 51.3809,
+    "lon": -2.3595
    },
    {
     "name": "Old Man of Storr",
-    "city": "Isle of Skye"
+    "city": "Isle of Skye",
+    "lat": 57.50669,
+    "lon": -6.18368
    }
   ],
   "France": [
    {
     "name": "Eiffel Tower",
-    "city": "Paris"
+    "city": "Paris",
+    "lat": 48.85822,
+    "lon": 2.2945
    },
    {
     "name": "Louvre",
-    "city": "Paris"
+    "city": "Paris",
+    "lat": 48.8611,
+    "lon": 2.3358
    },
    {
     "name": "Montmartre",
-    "city": "Paris"
+    "city": "Paris",
+    "lat": 48.88694,
+    "lon": 2.34111
    },
    {
     "name": "Palace of Versailles",
-    "city": "Paris"
+    "city": "Paris",
+    "lat": 48.8047,
+    "lon": 2.1203
    },
    {
     "name": "Musée d'Orsay",
-    "city": "Paris"
+    "city": "Paris",
+    "lat": 48.85997,
+    "lon": 2.32653
    },
    {
     "name": "Mont-Saint-Michel",
-    "city": "Paris"
+    "city": "Paris",
+    "lat": 48.636,
+    "lon": -1.511
    },
    {
     "name": "Promenade des Anglais",
@@ -1044,41 +1442,59 @@
    },
    {
     "name": "Vieux Lyon",
-    "city": "Lyon"
+    "city": "Lyon",
+    "lat": 45.76222,
+    "lon": 4.82667
    },
    {
     "name": "Cité du Vin",
-    "city": "Bordeaux"
+    "city": "Bordeaux",
+    "lat": 44.8625,
+    "lon": -0.5503
    },
    {
     "name": "Lake Annecy",
-    "city": "Annecy"
+    "city": "Annecy",
+    "lat": 45.85,
+    "lon": 6.16667
    }
   ],
   "Italy": [
    {
     "name": "Colosseum",
-    "city": "Rome"
+    "city": "Rome",
+    "lat": 41.8903,
+    "lon": 12.4922
    },
    {
     "name": "Trevi Fountain",
-    "city": "Rome"
+    "city": "Rome",
+    "lat": 41.90083,
+    "lon": 12.48306
    },
    {
     "name": "Vatican Museums",
-    "city": "Rome"
+    "city": "Rome",
+    "lat": 41.9064,
+    "lon": 12.4544
    },
    {
     "name": "Pantheon, Rome",
-    "city": "Rome"
+    "city": "Rome",
+    "lat": 41.8986,
+    "lon": 12.4768
    },
    {
     "name": "Florence Cathedral",
-    "city": "Florence"
+    "city": "Florence",
+    "lat": 43.77306,
+    "lon": 11.25694
    },
    {
     "name": "Uffizi",
-    "city": "Florence"
+    "city": "Florence",
+    "lat": 43.7683,
+    "lon": 11.2553
    },
    {
     "name": "Grand Canal (Venice)",
@@ -1086,29 +1502,41 @@
    },
    {
     "name": "St Mark's Basilica",
-    "city": "Venice"
+    "city": "Venice",
+    "lat": 45.43444,
+    "lon": 12.33972
    },
    {
     "name": "Positano",
-    "city": "Amalfi Coast"
+    "city": "Amalfi Coast",
+    "lat": 40.63333,
+    "lon": 14.48333
    },
    {
     "name": "Manarola",
-    "city": "Cinque Terre"
+    "city": "Cinque Terre",
+    "lat": 44.1,
+    "lon": 9.75
    }
   ],
   "Spain": [
    {
     "name": "Sagrada Família",
-    "city": "Barcelona"
+    "city": "Barcelona",
+    "lat": 41.40369,
+    "lon": 2.17433
    },
    {
     "name": "Park Güell",
-    "city": "Barcelona"
+    "city": "Barcelona",
+    "lat": 41.41361,
+    "lon": 2.15278
    },
    {
     "name": "Casa Batlló",
-    "city": "Barcelona"
+    "city": "Barcelona",
+    "lat": 41.39158,
+    "lon": 2.16492
    },
    {
     "name": "La Rambla, Barcelona",
@@ -1116,23 +1544,33 @@
    },
    {
     "name": "Museo del Prado",
-    "city": "Madrid"
+    "city": "Madrid",
+    "lat": 40.4139,
+    "lon": -3.6922
    },
    {
     "name": "Royal Palace of Madrid",
-    "city": "Madrid"
+    "city": "Madrid",
+    "lat": 40.41806,
+    "lon": -3.71417
    },
    {
     "name": "Alhambra",
-    "city": "Granada"
+    "city": "Granada",
+    "lat": 37.1775,
+    "lon": -3.59
    },
    {
     "name": "Plaza de España (Seville)",
-    "city": "Seville"
+    "city": "Seville",
+    "lat": 37.37694,
+    "lon": -5.98694
    },
    {
     "name": "Seville Cathedral",
-    "city": "Seville"
+    "city": "Seville",
+    "lat": 37.38589,
+    "lon": -5.99306
    },
    {
     "name": "Cathedral of Santa Maria of Palma",
@@ -1142,19 +1580,27 @@
   "Portugal": [
    {
     "name": "Belém Tower",
-    "city": "Lisbon"
+    "city": "Lisbon",
+    "lat": 38.69167,
+    "lon": -9.21611
    },
    {
     "name": "Jerónimos Monastery",
-    "city": "Lisbon"
+    "city": "Lisbon",
+    "lat": 38.69778,
+    "lon": -9.20611
    },
    {
     "name": "Alfama",
-    "city": "Lisbon"
+    "city": "Lisbon",
+    "lat": 38.71222,
+    "lon": -9.13
    },
    {
     "name": "Pena Palace",
-    "city": "Lisbon"
+    "city": "Lisbon",
+    "lat": 38.78778,
+    "lon": -9.39056
    },
    {
     "name": "Tram 28",
@@ -1166,15 +1612,21 @@
    },
    {
     "name": "Livraria Lello",
-    "city": "Porto"
+    "city": "Porto",
+    "lat": 41.14694,
+    "lon": -8.61472
    },
    {
     "name": "Dom Luís I Bridge",
-    "city": "Porto"
+    "city": "Porto",
+    "lat": 41.13986,
+    "lon": -8.60934
    },
    {
     "name": "Ponta da Piedade",
-    "city": "Lagos"
+    "city": "Lagos",
+    "lat": 37.081,
+    "lon": -8.67
    },
    {
     "name": "Benagil Cave",
@@ -1184,27 +1636,39 @@
   "Netherlands": [
    {
     "name": "Rijksmuseum",
-    "city": "Amsterdam"
+    "city": "Amsterdam",
+    "lat": 52.36,
+    "lon": 4.8853
    },
    {
     "name": "Van Gogh Museum",
-    "city": "Amsterdam"
+    "city": "Amsterdam",
+    "lat": 52.3583,
+    "lon": 4.8811
    },
    {
     "name": "Anne Frank House",
-    "city": "Amsterdam"
+    "city": "Amsterdam",
+    "lat": 52.37525,
+    "lon": 4.88432
    },
    {
     "name": "Canals of Amsterdam",
-    "city": "Amsterdam"
+    "city": "Amsterdam",
+    "lat": 52.365,
+    "lon": 4.88778
    },
    {
     "name": "Keukenhof",
-    "city": "Amsterdam"
+    "city": "Amsterdam",
+    "lat": 52.27126,
+    "lon": 4.54636
    },
    {
     "name": "Zaanse Schans",
-    "city": "Amsterdam"
+    "city": "Amsterdam",
+    "lat": 52.47389,
+    "lon": 4.81639
    },
    {
     "name": "Kinderdijk",
@@ -1212,41 +1676,59 @@
    },
    {
     "name": "Dom Tower of Utrecht",
-    "city": "Utrecht"
+    "city": "Utrecht",
+    "lat": 52.09065,
+    "lon": 5.1214
    },
    {
     "name": "Vondelpark",
-    "city": "Amsterdam"
+    "city": "Amsterdam",
+    "lat": 52.358,
+    "lon": 4.868
    },
    {
     "name": "Giethoorn",
-    "city": "Utrecht"
+    "city": "Utrecht",
+    "lat": 52.73889,
+    "lon": 6.07806
    }
   ],
   "Germany": [
    {
     "name": "Brandenburg Gate",
-    "city": "Berlin"
+    "city": "Berlin",
+    "lat": 52.5163,
+    "lon": 13.3777
    },
    {
     "name": "Berlin Wall Memorial",
-    "city": "Berlin"
+    "city": "Berlin",
+    "lat": 52.535,
+    "lon": 13.38972
    },
    {
     "name": "Museum Island",
-    "city": "Berlin"
+    "city": "Berlin",
+    "lat": 52.52139,
+    "lon": 13.39556
    },
    {
     "name": "Reichstag building",
-    "city": "Berlin"
+    "city": "Berlin",
+    "lat": 52.51861,
+    "lon": 13.37611
    },
    {
     "name": "Neuschwanstein Castle",
-    "city": "Munich"
+    "city": "Munich",
+    "lat": 47.5575,
+    "lon": 10.74944
    },
    {
     "name": "Marienplatz",
-    "city": "Munich"
+    "city": "Munich",
+    "lat": 48.1373,
+    "lon": 11.5755
    },
    {
     "name": "English Garden",
@@ -1254,41 +1736,59 @@
    },
    {
     "name": "Elbphilharmonie",
-    "city": "Hamburg"
+    "city": "Hamburg",
+    "lat": 53.54139,
+    "lon": 9.98417
    },
    {
     "name": "Speicherstadt",
-    "city": "Hamburg"
+    "city": "Hamburg",
+    "lat": 53.54333,
+    "lon": 9.99194
    },
    {
     "name": "Cologne Cathedral",
-    "city": "Berlin"
+    "city": "Berlin",
+    "lat": 50.94139,
+    "lon": 6.95833
    }
   ],
   "Czechia": [
    {
     "name": "Charles Bridge",
-    "city": "Prague"
+    "city": "Prague",
+    "lat": 50.08639,
+    "lon": 14.41194
    },
    {
     "name": "Prague Castle",
-    "city": "Prague"
+    "city": "Prague",
+    "lat": 50.09,
+    "lon": 14.4
    },
    {
     "name": "Old Town Square (Prague)",
-    "city": "Prague"
+    "city": "Prague",
+    "lat": 50.0875,
+    "lon": 14.4214
    },
    {
     "name": "Prague astronomical clock",
-    "city": "Prague"
+    "city": "Prague",
+    "lat": 50.08701,
+    "lon": 14.42092
    },
    {
     "name": "St. Vitus Cathedral",
-    "city": "Prague"
+    "city": "Prague",
+    "lat": 50.09083,
+    "lon": 14.40056
    },
    {
     "name": "Český Krumlov Castle",
-    "city": "Český Krumlov"
+    "city": "Český Krumlov",
+    "lat": 48.8125,
+    "lon": 14.31528
    },
    {
     "name": "Kutná Hora Sedlec Ossuary",
@@ -1296,29 +1796,41 @@
    },
    {
     "name": "Petřín",
-    "city": "Prague"
+    "city": "Prague",
+    "lat": 50.08361,
+    "lon": 14.39528
    },
    {
     "name": "Karlštejn",
-    "city": "Prague"
+    "city": "Prague",
+    "lat": 49.93944,
+    "lon": 14.18806
    },
    {
     "name": "Vyšehrad",
-    "city": "Prague"
+    "city": "Prague",
+    "lat": 50.06417,
+    "lon": 14.41944
    }
   ],
   "Austria": [
    {
     "name": "Schönbrunn Palace",
-    "city": "Vienna"
+    "city": "Vienna",
+    "lat": 48.18452,
+    "lon": 16.31187
    },
    {
     "name": "Belvedere, Vienna",
-    "city": "Vienna"
+    "city": "Vienna",
+    "lat": 48.19417,
+    "lon": 16.38028
    },
    {
     "name": "St. Stephen's Cathedral, Vienna",
-    "city": "Vienna"
+    "city": "Vienna",
+    "lat": 48.2085,
+    "lon": 16.373
    },
    {
     "name": "Vienna State Opera",
@@ -1326,61 +1838,89 @@
    },
    {
     "name": "Hofburg",
-    "city": "Vienna"
+    "city": "Vienna",
+    "lat": 48.20639,
+    "lon": 16.36528
    },
    {
     "name": "Hohensalzburg Fortress",
-    "city": "Salzburg"
+    "city": "Salzburg",
+    "lat": 47.795,
+    "lon": 13.04722
    },
    {
     "name": "Mirabell Palace",
-    "city": "Salzburg"
+    "city": "Salzburg",
+    "lat": 47.80556,
+    "lon": 13.04194
    },
    {
     "name": "Getreidegasse",
-    "city": "Salzburg"
+    "city": "Salzburg",
+    "lat": 47.8,
+    "lon": 13.04389
    },
    {
     "name": "Hallstatt",
-    "city": "Hallstatt"
+    "city": "Hallstatt",
+    "lat": 47.562,
+    "lon": 13.649
    },
    {
     "name": "Grossglockner High Alpine Road",
-    "city": "Salzburg"
+    "city": "Salzburg",
+    "lat": 47.08333,
+    "lon": 12.84278
    }
   ],
   "Switzerland": [
    {
     "name": "Matterhorn",
-    "city": "Zermatt"
+    "city": "Zermatt",
+    "lat": 45.97639,
+    "lon": 7.65861
    },
    {
     "name": "Jungfraujoch",
-    "city": "Interlaken"
+    "city": "Interlaken",
+    "lat": 46.54722,
+    "lon": 7.98056
    },
    {
     "name": "Chapel Bridge",
-    "city": "Lucerne"
+    "city": "Lucerne",
+    "lat": 47.05167,
+    "lon": 8.3075
    },
    {
     "name": "Mount Pilatus",
-    "city": "Lucerne"
+    "city": "Lucerne",
+    "lat": 46.97389,
+    "lon": 8.24111
    },
    {
     "name": "Lake Geneva",
-    "city": "Zurich"
+    "city": "Zurich",
+    "lat": 46.45,
+    "lon": 6.55
    },
    {
     "name": "Rhine Falls",
-    "city": "Zurich"
+    "city": "Zurich",
+    "lat": 47.67722,
+    "lon": 8.61583
    },
    {
     "name": "Grindelwald",
-    "city": "Interlaken"
+    "city": "Interlaken",
+    "lat": 46.61667,
+    "lon": 8.03333
    },
    {
     "name": "Lauterbrunnen",
-    "city": "Interlaken"
+    "city": "Interlaken",
+    "lat": 46.595,
+    "lon": 7.90745
    },
    {
     "name": "Old Town Zurich",
@@ -1388,25 +1928,35 @@
    },
    {
     "name": "Glacier Express",
-    "city": "Zermatt"
+    "city": "Zermatt",
+    "lat": 46.595,
+    "lon": 9.76
    }
   ],
   "Hungary": [
    {
     "name": "Hungarian Parliament Building",
-    "city": "Budapest"
+    "city": "Budapest",
+    "lat": 47.50694,
+    "lon": 19.04556
    },
    {
     "name": "Buda Castle",
-    "city": "Budapest"
+    "city": "Budapest",
+    "lat": 47.49611,
+    "lon": 19.03972
    },
    {
     "name": "Fisherman's Bastion",
-    "city": "Budapest"
+    "city": "Budapest",
+    "lat": 47.5027,
+    "lon": 19.0344
    },
    {
     "name": "Széchenyi thermal bath",
-    "city": "Budapest"
+    "city": "Budapest",
+    "lat": 47.51861,
+    "lon": 19.08194
    },
    {
     "name": "Chain Bridge",
@@ -1414,19 +1964,27 @@
    },
    {
     "name": "St. Stephen's Basilica",
-    "city": "Budapest"
+    "city": "Budapest",
+    "lat": 47.50083,
+    "lon": 19.05389
    },
    {
     "name": "Gellért Baths",
-    "city": "Budapest"
+    "city": "Budapest",
+    "lat": 47.48371,
+    "lon": 19.05097
    },
    {
     "name": "Szimpla Kert",
-    "city": "Budapest"
+    "city": "Budapest",
+    "lat": 47.497,
+    "lon": 19.0634
    },
    {
     "name": "Eger Castle",
-    "city": "Eger"
+    "city": "Eger",
+    "lat": 47.9039,
+    "lon": 20.3794
    },
    {
     "name": "Valley of the Beautiful Women",
@@ -1436,15 +1994,21 @@
   "Greece": [
    {
     "name": "Acropolis of Athens",
-    "city": "Athens"
+    "city": "Athens",
+    "lat": 37.97167,
+    "lon": 23.72611
    },
    {
     "name": "Parthenon",
-    "city": "Athens"
+    "city": "Athens",
+    "lat": 37.9715,
+    "lon": 23.7266
    },
    {
     "name": "Plaka",
-    "city": "Athens"
+    "city": "Athens",
+    "lat": 37.97222,
+    "lon": 23.73056
    },
    {
     "name": "Oia",
@@ -1452,15 +2016,21 @@
    },
    {
     "name": "Red Beach (Santorini)",
-    "city": "Santorini"
+    "city": "Santorini",
+    "lat": 36.34732,
+    "lon": 25.39459
    },
    {
     "name": "Knossos",
-    "city": "Crete"
+    "city": "Crete",
+    "lat": 35.29806,
+    "lon": 25.16306
    },
    {
     "name": "Balos",
-    "city": "Crete"
+    "city": "Crete",
+    "lat": 35.61111,
+    "lon": 23.57917
    },
    {
     "name": "Little Venice (Mykonos)",
@@ -1472,7 +2042,9 @@
    },
    {
     "name": "Meteora",
-    "city": "Athens"
+    "city": "Athens",
+    "lat": 39.71417,
+    "lon": 21.63111
    }
   ],
   "Iceland": [
@@ -1486,31 +2058,45 @@
    },
    {
     "name": "Gullfoss",
-    "city": "Reykjavik"
+    "city": "Reykjavik",
+    "lat": 64.32611,
+    "lon": -20.12111
    },
    {
     "name": "Þingvellir",
-    "city": "Reykjavik"
+    "city": "Reykjavik",
+    "lat": 64.25381,
+    "lon": -21.03725
    },
    {
     "name": "Hallgrímskirkja",
-    "city": "Reykjavik"
+    "city": "Reykjavik",
+    "lat": 64.1417,
+    "lon": -21.9266
    },
    {
     "name": "Jökulsárlón",
-    "city": "Vík"
+    "city": "Vík",
+    "lat": 64.07028,
+    "lon": -16.21167
    },
    {
     "name": "Reynisfjara",
-    "city": "Vík"
+    "city": "Vík",
+    "lat": 63.4035,
+    "lon": -19.0474
    },
    {
     "name": "Skógafoss",
-    "city": "Vík"
+    "city": "Vík",
+    "lat": 63.53211,
+    "lon": -19.51114
    },
    {
     "name": "Seljalandsfoss",
-    "city": "Vík"
+    "city": "Vík",
+    "lat": 63.61583,
+    "lon": -19.99278
    },
    {
     "name": "Northern lights in Iceland",
@@ -1520,19 +2106,27 @@
   "Denmark": [
    {
     "name": "Nyhavn",
-    "city": "Copenhagen"
+    "city": "Copenhagen",
+    "lat": 55.67972,
+    "lon": 12.59056
    },
    {
     "name": "Tivoli Gardens",
-    "city": "Copenhagen"
+    "city": "Copenhagen",
+    "lat": 55.67361,
+    "lon": 12.56833
    },
    {
     "name": "The Little Mermaid (statue)",
-    "city": "Copenhagen"
+    "city": "Copenhagen",
+    "lat": 55.69286,
+    "lon": 12.59928
    },
    {
     "name": "Rosenborg Castle",
-    "city": "Copenhagen"
+    "city": "Copenhagen",
+    "lat": 55.68556,
+    "lon": 12.57778
    },
    {
     "name": "Christiania",
@@ -1540,41 +2134,59 @@
    },
    {
     "name": "Kronborg",
-    "city": "Copenhagen"
+    "city": "Copenhagen",
+    "lat": 56.0386,
+    "lon": 12.6219
    },
    {
     "name": "Frederiksborg Castle",
-    "city": "Copenhagen"
+    "city": "Copenhagen",
+    "lat": 55.935,
+    "lon": 12.3012
    },
    {
     "name": "ARoS Aarhus Art Museum",
-    "city": "Aarhus"
+    "city": "Aarhus",
+    "lat": 56.15389,
+    "lon": 10.19961
    },
    {
     "name": "Den Gamle By",
-    "city": "Aarhus"
+    "city": "Aarhus",
+    "lat": 56.15917,
+    "lon": 10.19083
    },
    {
     "name": "Louisiana Museum of Modern Art",
-    "city": "Copenhagen"
+    "city": "Copenhagen",
+    "lat": 55.96944,
+    "lon": 12.54306
    }
   ],
   "Sweden": [
    {
     "name": "Gamla stan",
-    "city": "Stockholm"
+    "city": "Stockholm",
+    "lat": 59.325,
+    "lon": 18.07083
    },
    {
     "name": "Vasa Museum",
-    "city": "Stockholm"
+    "city": "Stockholm",
+    "lat": 59.32794,
+    "lon": 18.09139
    },
    {
     "name": "Stockholm City Hall",
-    "city": "Stockholm"
+    "city": "Stockholm",
+    "lat": 59.3275,
+    "lon": 18.055
    },
    {
     "name": "ABBA The Museum",
-    "city": "Stockholm"
+    "city": "Stockholm",
+    "lat": 59.325,
+    "lon": 18.09639
    },
    {
     "name": "Skansen",
@@ -1582,15 +2194,21 @@
    },
    {
     "name": "Djurgården",
-    "city": "Stockholm"
+    "city": "Stockholm",
+    "lat": 59.325,
+    "lon": 18.11667
    },
    {
     "name": "Stockholm archipelago",
-    "city": "Stockholm"
+    "city": "Stockholm",
+    "lat": 59.38778,
+    "lon": 18.73581
    },
    {
     "name": "Abisko National Park",
-    "city": "Abisko"
+    "city": "Abisko",
+    "lat": 68.31667,
+    "lon": 18.68333
    },
    {
     "name": "Aurora Sky Station",
@@ -1604,31 +2222,45 @@
   "Norway": [
    {
     "name": "Geirangerfjord",
-    "city": "Bergen"
+    "city": "Bergen",
+    "lat": 62.121,
+    "lon": 7.129
    },
    {
     "name": "Bryggen",
-    "city": "Bergen"
+    "city": "Bergen",
+    "lat": 60.39722,
+    "lon": 5.32306
    },
    {
     "name": "Preikestolen",
-    "city": "Bergen"
+    "city": "Bergen",
+    "lat": 58.98666,
+    "lon": 6.18748
    },
    {
     "name": "Trolltunga",
-    "city": "Bergen"
+    "city": "Bergen",
+    "lat": 60.13318,
+    "lon": 6.75472
    },
    {
     "name": "Oslo Opera House",
-    "city": "Oslo"
+    "city": "Oslo",
+    "lat": 59.90694,
+    "lon": 10.75361
    },
    {
     "name": "Vigeland installation",
-    "city": "Oslo"
+    "city": "Oslo",
+    "lat": 59.92667,
+    "lon": 10.70139
    },
    {
     "name": "Lofoten",
-    "city": "Tromsø"
+    "city": "Tromsø",
+    "lat": 68.33333,
+    "lon": 14.66667
    },
    {
     "name": "Northern lights in Tromsø",
@@ -1636,25 +2268,35 @@
    },
    {
     "name": "Flåm Railway",
-    "city": "Bergen"
+    "city": "Bergen",
+    "lat": 60.77,
+    "lon": 7.1
    },
    {
     "name": "Fram Museum",
-    "city": "Oslo"
+    "city": "Oslo",
+    "lat": 59.90333,
+    "lon": 10.69944
    }
   ],
   "Finland": [
    {
     "name": "Suomenlinna",
-    "city": "Helsinki"
+    "city": "Helsinki",
+    "lat": 60.14361,
+    "lon": 24.98444
    },
    {
     "name": "Helsinki Cathedral",
-    "city": "Helsinki"
+    "city": "Helsinki",
+    "lat": 60.17028,
+    "lon": 24.95222
    },
    {
     "name": "Temppeliaukio Church",
-    "city": "Helsinki"
+    "city": "Helsinki",
+    "lat": 60.17306,
+    "lon": 24.92528
    },
    {
     "name": "Market Square (Helsinki)",
@@ -1666,15 +2308,21 @@
    },
    {
     "name": "Löyly",
-    "city": "Helsinki"
+    "city": "Helsinki",
+    "lat": 60.15192,
+    "lon": 24.93011
    },
    {
     "name": "Santa Claus Village",
-    "city": "Rovaniemi"
+    "city": "Rovaniemi",
+    "lat": 66.54333,
+    "lon": 25.8475
    },
    {
     "name": "Arktikum",
-    "city": "Rovaniemi"
+    "city": "Rovaniemi",
+    "lat": 66.5075,
+    "lon": 25.72611
    },
    {
     "name": "Northern lights in Lapland",
@@ -1682,21 +2330,29 @@
    },
    {
     "name": "Nuuksio National Park",
-    "city": "Helsinki"
+    "city": "Helsinki",
+    "lat": 60.3075,
+    "lon": 24.49917
    }
   ],
   "Ireland": [
    {
     "name": "Cliffs of Moher",
-    "city": "Galway"
+    "city": "Galway",
+    "lat": 52.97175,
+    "lon": -9.42633
    },
    {
     "name": "Guinness Storehouse",
-    "city": "Dublin"
+    "city": "Dublin",
+    "lat": 53.34187,
+    "lon": -6.28671
    },
    {
     "name": "Trinity College Library",
-    "city": "Dublin"
+    "city": "Dublin",
+    "lat": 53.34389,
+    "lon": -6.25681
    },
    {
     "name": "Temple Bar",
@@ -1704,53 +2360,77 @@
    },
    {
     "name": "Ring of Kerry",
-    "city": "Galway"
+    "city": "Galway",
+    "lat": 51.94889,
+    "lon": -9.9175
    },
    {
     "name": "Giant's Causeway",
-    "city": "Dublin"
+    "city": "Dublin",
+    "lat": 55.24083,
+    "lon": -6.51167
    },
    {
     "name": "Kylemore Abbey",
-    "city": "Galway"
+    "city": "Galway",
+    "lat": 53.56171,
+    "lon": -9.88943
    },
    {
     "name": "Connemara National Park",
-    "city": "Galway"
+    "city": "Galway",
+    "lat": 53.5311,
+    "lon": -9.8803
    },
    {
     "name": "Dublin Castle",
-    "city": "Dublin"
+    "city": "Dublin",
+    "lat": 53.3429,
+    "lon": -6.2675
    },
    {
     "name": "Rock of Cashel",
-    "city": "Dublin"
+    "city": "Dublin",
+    "lat": 52.52,
+    "lon": -7.89
    }
   ],
   "United States": [
    {
     "name": "Statue of Liberty",
-    "city": "New York"
+    "city": "New York",
+    "lat": 40.68917,
+    "lon": -74.04444
    },
    {
     "name": "Times Square",
-    "city": "New York"
+    "city": "New York",
+    "lat": 40.7575,
+    "lon": -73.9858
    },
    {
     "name": "Central Park",
-    "city": "New York"
+    "city": "New York",
+    "lat": 40.78222,
+    "lon": -73.96528
    },
    {
     "name": "Golden Gate Bridge",
-    "city": "San Francisco"
+    "city": "San Francisco",
+    "lat": 37.81972,
+    "lon": -122.47861
    },
    {
     "name": "Alcatraz Island",
-    "city": "San Francisco"
+    "city": "San Francisco",
+    "lat": 37.82667,
+    "lon": -122.42278
    },
    {
     "name": "Grand Canyon",
-    "city": "Las Vegas"
+    "city": "Las Vegas",
+    "lat": 36.3,
+    "lon": -112.75
    },
    {
     "name": "Las Vegas Strip",
@@ -1762,25 +2442,35 @@
    },
    {
     "name": "Santa Monica Pier",
-    "city": "Los Angeles"
+    "city": "Los Angeles",
+    "lat": 34.00861,
+    "lon": -118.49861
    },
    {
     "name": "Waikiki",
-    "city": "Honolulu"
+    "city": "Honolulu",
+    "lat": 21.2752,
+    "lon": -157.8312
    }
   ],
   "Canada": [
    {
     "name": "Niagara Falls",
-    "city": "Toronto"
+    "city": "Toronto",
+    "lat": 43.0799,
+    "lon": -79.0747
    },
    {
     "name": "CN Tower",
-    "city": "Toronto"
+    "city": "Toronto",
+    "lat": 43.64256,
+    "lon": -79.38708
    },
    {
     "name": "Moraine Lake",
-    "city": "Banff"
+    "city": "Banff",
+    "lat": 51.3225,
+    "lon": -116.18556
    },
    {
     "name": "Lake Louise",
@@ -1788,15 +2478,21 @@
    },
    {
     "name": "Stanley Park",
-    "city": "Vancouver"
+    "city": "Vancouver",
+    "lat": 49.3,
+    "lon": -123.14
    },
    {
     "name": "Granville Island",
-    "city": "Vancouver"
+    "city": "Vancouver",
+    "lat": 49.27083,
+    "lon": -123.13417
    },
    {
     "name": "Capilano Suspension Bridge",
-    "city": "Vancouver"
+    "city": "Vancouver",
+    "lat": 49.34287,
+    "lon": -123.11513
    },
    {
     "name": "Icefields Parkway",
@@ -1814,7 +2510,9 @@
   "Mexico": [
    {
     "name": "Chichen Itza",
-    "city": "Cancún"
+    "city": "Cancún",
+    "lat": 20.68306,
+    "lon": -88.56861
    },
    {
     "name": "Tulum (Maya site)",
@@ -1822,15 +2520,21 @@
    },
    {
     "name": "Teotihuacan",
-    "city": "Mexico City"
+    "city": "Mexico City",
+    "lat": 19.6925,
+    "lon": -98.84389
    },
    {
     "name": "Zócalo",
-    "city": "Mexico City"
+    "city": "Mexico City",
+    "lat": 19.43278,
+    "lon": -99.13306
    },
    {
     "name": "Frida Kahlo Museum",
-    "city": "Mexico City"
+    "city": "Mexico City",
+    "lat": 19.35514,
+    "lon": -99.16253
    },
    {
     "name": "Xochimilco",
@@ -1838,15 +2542,21 @@
    },
    {
     "name": "Cenote Ik Kil",
-    "city": "Cancún"
+    "city": "Cancún",
+    "lat": 20.6609,
+    "lon": -88.5505
    },
    {
     "name": "Isla Mujeres",
-    "city": "Cancún"
+    "city": "Cancún",
+    "lat": 21.23333,
+    "lon": -86.73333
    },
    {
     "name": "Monte Albán",
-    "city": "Oaxaca"
+    "city": "Oaxaca",
+    "lat": 17.04389,
+    "lon": -96.76778
    },
    {
     "name": "Hierve el Agua",
@@ -1856,19 +2566,27 @@
   "Peru": [
    {
     "name": "Machu Picchu",
-    "city": "Cusco"
+    "city": "Cusco",
+    "lat": -13.16333,
+    "lon": -72.54556
    },
    {
     "name": "Sacred Valley",
-    "city": "Cusco"
+    "city": "Cusco",
+    "lat": -13.33333,
+    "lon": -72.08333
    },
    {
     "name": "Rainbow Mountain (Peru)",
-    "city": "Cusco"
+    "city": "Cusco",
+    "lat": -13.87023,
+    "lon": -71.30295
    },
    {
     "name": "Sacsayhuamán",
-    "city": "Cusco"
+    "city": "Cusco",
+    "lat": -13.50778,
+    "lon": -71.98222
    },
    {
     "name": "Plaza de Armas, Cusco",
@@ -1876,7 +2594,9 @@
    },
    {
     "name": "Lake Titicaca",
-    "city": "Cusco"
+    "city": "Cusco",
+    "lat": -15.825,
+    "lon": -69.325
    },
    {
     "name": "Miraflores",
@@ -1884,15 +2604,21 @@
    },
    {
     "name": "Historic Centre of Lima",
-    "city": "Lima"
+    "city": "Lima",
+    "lat": -12.05139,
+    "lon": -77.04306
    },
    {
     "name": "Nazca Lines",
-    "city": "Lima"
+    "city": "Lima",
+    "lat": -14.6975,
+    "lon": -75.135
    },
    {
     "name": "Huacachina",
-    "city": "Lima"
+    "city": "Lima",
+    "lat": -14.0875,
+    "lon": -75.76333
    }
   ],
   "Brazil": [
@@ -1902,15 +2628,21 @@
    },
    {
     "name": "Sugarloaf Mountain",
-    "city": "Rio de Janeiro"
+    "city": "Rio de Janeiro",
+    "lat": -22.9494,
+    "lon": -43.1567
    },
    {
     "name": "Copacabana Beach",
-    "city": "Rio de Janeiro"
+    "city": "Rio de Janeiro",
+    "lat": -22.96694,
+    "lon": -43.18056
    },
    {
     "name": "Ipanema",
-    "city": "Rio de Janeiro"
+    "city": "Rio de Janeiro",
+    "lat": -22.98361,
+    "lon": -43.20444
    },
    {
     "name": "Selarón Steps",
@@ -1918,57 +2650,83 @@
    },
    {
     "name": "Iguazu Falls",
-    "city": "Foz do Iguaçu"
+    "city": "Foz do Iguaçu",
+    "lat": -25.68667,
+    "lon": -54.44472
    },
    {
     "name": "Avenida Paulista",
-    "city": "São Paulo"
+    "city": "São Paulo",
+    "lat": -23.56139,
+    "lon": -46.65639
    },
    {
     "name": "Ibirapuera Park",
-    "city": "São Paulo"
+    "city": "São Paulo",
+    "lat": -23.58833,
+    "lon": -46.65889
    },
    {
     "name": "São Paulo Museum of Art",
-    "city": "São Paulo"
+    "city": "São Paulo",
+    "lat": -23.5611,
+    "lon": -46.6558
    },
    {
     "name": "Tijuca Forest",
-    "city": "Rio de Janeiro"
+    "city": "Rio de Janeiro",
+    "lat": -22.9594,
+    "lon": -43.2778
    }
   ],
   "Argentina": [
    {
     "name": "Perito Moreno Glacier",
-    "city": "El Calafate"
+    "city": "El Calafate",
+    "lat": -50.5,
+    "lon": -73.13333
    },
    {
     "name": "Iguazu Falls",
-    "city": "Buenos Aires"
+    "city": "Buenos Aires",
+    "lat": -25.68667,
+    "lon": -54.44472
    },
    {
     "name": "La Boca",
-    "city": "Buenos Aires"
+    "city": "Buenos Aires",
+    "lat": -34.63556,
+    "lon": -58.36472
    },
    {
     "name": "Teatro Colón",
-    "city": "Buenos Aires"
+    "city": "Buenos Aires",
+    "lat": -34.60108,
+    "lon": -58.38308
    },
    {
     "name": "Recoleta Cemetery",
-    "city": "Buenos Aires"
+    "city": "Buenos Aires",
+    "lat": -34.58806,
+    "lon": -58.39306
    },
    {
     "name": "Plaza de Mayo",
-    "city": "Buenos Aires"
+    "city": "Buenos Aires",
+    "lat": -34.60833,
+    "lon": -58.37194
    },
    {
     "name": "Fitz Roy",
-    "city": "El Calafate"
+    "city": "El Calafate",
+    "lat": -49.27128,
+    "lon": -73.04322
    },
    {
     "name": "Aconcagua",
-    "city": "Mendoza"
+    "city": "Mendoza",
+    "lat": -32.65306,
+    "lon": -70.01167
    },
    {
     "name": "Mendoza wine region",
@@ -1976,21 +2734,29 @@
    },
    {
     "name": "San Telmo",
-    "city": "Buenos Aires"
+    "city": "Buenos Aires",
+    "lat": -34.62056,
+    "lon": -58.37167
    }
   ],
   "Australia": [
    {
     "name": "Sydney Opera House",
-    "city": "Sydney"
+    "city": "Sydney",
+    "lat": -33.85681,
+    "lon": 151.21514
    },
    {
     "name": "Sydney Harbour Bridge",
-    "city": "Sydney"
+    "city": "Sydney",
+    "lat": -33.85222,
+    "lon": 151.21056
    },
    {
     "name": "Bondi Beach",
-    "city": "Sydney"
+    "city": "Sydney",
+    "lat": -33.89111,
+    "lon": 151.27417
    },
    {
     "name": "Blue Mountains",
@@ -1998,41 +2764,59 @@
    },
    {
     "name": "Great Barrier Reef",
-    "city": "Cairns"
+    "city": "Cairns",
+    "lat": -16.4,
+    "lon": 145.8
    },
    {
     "name": "Daintree Rainforest",
-    "city": "Cairns"
+    "city": "Cairns",
+    "lat": -16.2,
+    "lon": 145.4
    },
    {
     "name": "Great Ocean Road",
-    "city": "Melbourne"
+    "city": "Melbourne",
+    "lat": -38.73383,
+    "lon": 143.68727
    },
    {
     "name": "Federation Square",
-    "city": "Melbourne"
+    "city": "Melbourne",
+    "lat": -37.8178,
+    "lon": 144.96871
    },
    {
     "name": "Rottnest Island",
-    "city": "Perth"
+    "city": "Perth",
+    "lat": -32.005,
+    "lon": 115.515
    },
    {
     "name": "Uluru",
-    "city": "Perth"
+    "city": "Perth",
+    "lat": -25.345,
+    "lon": 131.03611
    }
   ],
   "New Zealand": [
    {
     "name": "Milford Sound",
-    "city": "Queenstown"
+    "city": "Queenstown",
+    "lat": -44.64806,
+    "lon": 167.90556
    },
    {
     "name": "Hobbiton Movie Set",
-    "city": "Rotorua"
+    "city": "Rotorua",
+    "lat": -37.8575,
+    "lon": 175.67972
    },
    {
     "name": "Waitomo Glowworm Caves",
-    "city": "Auckland"
+    "city": "Auckland",
+    "lat": -38.2608,
+    "lon": 175.1036
    },
    {
     "name": "Sky Tower",
@@ -2040,11 +2824,15 @@
    },
    {
     "name": "Te Puia",
-    "city": "Rotorua"
+    "city": "Rotorua",
+    "lat": -38.16361,
+    "lon": 176.25389
    },
    {
     "name": "Lake Wanaka",
-    "city": "Wanaka"
+    "city": "Wanaka",
+    "lat": -44.5,
+    "lon": 169.13333
    },
    {
     "name": "Roys Peak",
@@ -2056,17 +2844,23 @@
    },
    {
     "name": "Lake Tekapo",
-    "city": "Queenstown"
+    "city": "Queenstown",
+    "lat": -43.88333,
+    "lon": 170.51667
    },
    {
     "name": "Franz Josef Glacier",
-    "city": "Queenstown"
+    "city": "Queenstown",
+    "lat": -43.46694,
+    "lon": 170.19167
    }
   ],
   "Saudi Arabia": [
    {
     "name": "Hegra",
-    "city": "AlUla"
+    "city": "AlUla",
+    "lat": 26.79167,
+    "lon": 37.95278
    },
    {
     "name": "Elephant Rock (AlUla)",
@@ -2082,23 +2876,33 @@
    },
    {
     "name": "Kingdom Centre",
-    "city": "Riyadh"
+    "city": "Riyadh",
+    "lat": 24.7113,
+    "lon": 46.6744
    },
    {
     "name": "Diriyah",
-    "city": "Riyadh"
+    "city": "Riyadh",
+    "lat": 24.73333,
+    "lon": 46.57556
    },
    {
     "name": "Masmak Fort",
-    "city": "Riyadh"
+    "city": "Riyadh",
+    "lat": 24.63111,
+    "lon": 46.71333
    },
    {
     "name": "Al-Balad, Jeddah",
-    "city": "Jeddah"
+    "city": "Jeddah",
+    "lat": 21.48333,
+    "lon": 39.18333
    },
    {
     "name": "King Fahd's Fountain",
-    "city": "Jeddah"
+    "city": "Jeddah",
+    "lat": 21.51556,
+    "lon": 39.145
    },
    {
     "name": "Jeddah Corniche",
@@ -2108,7 +2912,9 @@
   "Qatar": [
    {
     "name": "Museum of Islamic Art, Doha",
-    "city": "Doha"
+    "city": "Doha",
+    "lat": 25.29502,
+    "lon": 51.53927
    },
    {
     "name": "National Museum of Qatar",
@@ -2120,27 +2926,39 @@
    },
    {
     "name": "The Pearl-Qatar",
-    "city": "Doha"
+    "city": "Doha",
+    "lat": 25.36861,
+    "lon": 51.55194
    },
    {
     "name": "Katara Cultural Village",
-    "city": "Doha"
+    "city": "Doha",
+    "lat": 25.36033,
+    "lon": 51.52636
    },
    {
     "name": "Doha Corniche",
-    "city": "Doha"
+    "city": "Doha",
+    "lat": 25.29139,
+    "lon": 51.53722
    },
    {
     "name": "Khor Al Adaid",
-    "city": "Khor Al Adaid"
+    "city": "Khor Al Adaid",
+    "lat": 24.63,
+    "lon": 51.296
    },
    {
     "name": "Msheireb Downtown Doha",
-    "city": "Doha"
+    "city": "Doha",
+    "lat": 25.28608,
+    "lon": 51.52711
    },
    {
     "name": "Qatar National Library",
-    "city": "Doha"
+    "city": "Doha",
+    "lat": 25.2825,
+    "lon": 51.54028
    },
    {
     "name": "Zekreet",
@@ -2150,19 +2968,27 @@
   "Bahrain": [
    {
     "name": "Bahrain Fort",
-    "city": "Manama"
+    "city": "Manama",
+    "lat": 26.23361,
+    "lon": 50.52056
    },
    {
     "name": "Bahrain National Museum",
-    "city": "Manama"
+    "city": "Manama",
+    "lat": 26.24056,
+    "lon": 50.59833
    },
    {
     "name": "Al Fateh Grand Mosque",
-    "city": "Manama"
+    "city": "Manama",
+    "lat": 26.21889,
+    "lon": 50.59806
    },
    {
     "name": "Bab Al Bahrain",
-    "city": "Manama"
+    "city": "Manama",
+    "lat": 26.23473,
+    "lon": 50.57466
    },
    {
     "name": "Pearling Path",
@@ -2170,25 +2996,35 @@
    },
    {
     "name": "Bahrain World Trade Center",
-    "city": "Manama"
+    "city": "Manama",
+    "lat": 26.23917,
+    "lon": 50.58139
    },
    {
     "name": "Tree of Life (Bahrain)",
-    "city": "Manama"
+    "city": "Manama",
+    "lat": 25.99407,
+    "lon": 50.58324
    },
    {
     "name": "Bahrain International Circuit",
-    "city": "Manama"
+    "city": "Manama",
+    "lat": 26.0325,
+    "lon": 50.51056
    }
   ],
   "Kuwait": [
    {
     "name": "Kuwait Towers",
-    "city": "Kuwait City"
+    "city": "Kuwait City",
+    "lat": 29.39,
+    "lon": 48.00306
    },
    {
     "name": "Grand Mosque (Kuwait)",
-    "city": "Kuwait City"
+    "city": "Kuwait City",
+    "lat": 29.37889,
+    "lon": 47.97472
    },
    {
     "name": "Souq Al-Mubarakiya",
@@ -2196,7 +3032,9 @@
    },
    {
     "name": "Sheikh Jaber Al-Ahmad Cultural Centre",
-    "city": "Kuwait City"
+    "city": "Kuwait City",
+    "lat": 29.36003,
+    "lon": 47.95594
    },
    {
     "name": "Liberation Tower",
@@ -2204,37 +3042,53 @@
    },
    {
     "name": "Al Shaheed Park",
-    "city": "Kuwait City"
+    "city": "Kuwait City",
+    "lat": 29.37,
+    "lon": 47.994
    },
    {
     "name": "Failaka Island",
-    "city": "Failaka Island"
+    "city": "Failaka Island",
+    "lat": 29.43889,
+    "lon": 48.33333
    },
    {
     "name": "The Avenues (Kuwait)",
-    "city": "Kuwait City"
+    "city": "Kuwait City",
+    "lat": 29.3032,
+    "lon": 47.9354
    }
   ],
   "Israel": [
    {
     "name": "Western Wall",
-    "city": "Jerusalem"
+    "city": "Jerusalem",
+    "lat": 31.7767,
+    "lon": 35.2345
    },
    {
     "name": "Church of the Holy Sepulchre",
-    "city": "Jerusalem"
+    "city": "Jerusalem",
+    "lat": 31.77833,
+    "lon": 35.22972
    },
    {
     "name": "Old City (Jerusalem)",
-    "city": "Jerusalem"
+    "city": "Jerusalem",
+    "lat": 31.77667,
+    "lon": 35.23417
    },
    {
     "name": "Dome of the Rock",
-    "city": "Jerusalem"
+    "city": "Jerusalem",
+    "lat": 31.778,
+    "lon": 35.2354
    },
    {
     "name": "Masada",
-    "city": "Ein Bokek"
+    "city": "Ein Bokek",
+    "lat": 31.31556,
+    "lon": 35.35389
    },
    {
     "name": "Dead Sea",
@@ -2242,15 +3096,21 @@
    },
    {
     "name": "Jaffa",
-    "city": "Tel Aviv"
+    "city": "Tel Aviv",
+    "lat": 32.05222,
+    "lon": 34.75306
    },
    {
     "name": "Carmel Market",
-    "city": "Tel Aviv"
+    "city": "Tel Aviv",
+    "lat": 32.06868,
+    "lon": 34.76905
    },
    {
     "name": "Yad Vashem",
-    "city": "Jerusalem"
+    "city": "Jerusalem",
+    "lat": 31.77417,
+    "lon": 35.17556
    },
    {
     "name": "Mahane Yehuda Market",
@@ -2260,27 +3120,39 @@
   "Lebanon": [
    {
     "name": "Jeita Grotto",
-    "city": "Beirut"
+    "city": "Beirut",
+    "lat": 33.94339,
+    "lon": 35.64136
    },
    {
     "name": "Baalbek",
-    "city": "Baalbek"
+    "city": "Baalbek",
+    "lat": 34.00634,
+    "lon": 36.20732
    },
    {
     "name": "Byblos Castle",
-    "city": "Byblos"
+    "city": "Byblos",
+    "lat": 34.12,
+    "lon": 35.6464
    },
    {
     "name": "Raouché",
-    "city": "Beirut"
+    "city": "Beirut",
+    "lat": 33.88333,
+    "lon": 35.46667
    },
    {
     "name": "Corniche Beirut",
-    "city": "Beirut"
+    "city": "Beirut",
+    "lat": 33.9,
+    "lon": 35.47083
    },
    {
     "name": "Cedars of God",
-    "city": "Byblos"
+    "city": "Byblos",
+    "lat": 34.245,
+    "lon": 36.04806
    },
    {
     "name": "Harissa",
@@ -2292,7 +3164,9 @@
    },
    {
     "name": "Mohammad Al-Amin Mosque",
-    "city": "Beirut"
+    "city": "Beirut",
+    "lat": 33.89497,
+    "lon": 35.50637
    },
    {
     "name": "Gemmayzeh",
@@ -2302,7 +3176,9 @@
   "Iran": [
    {
     "name": "Naqsh-e Jahan Square",
-    "city": "Isfahan"
+    "city": "Isfahan",
+    "lat": 32.6575,
+    "lon": 51.67778
    },
    {
     "name": "Shah Mosque",
@@ -2310,65 +3186,95 @@
    },
    {
     "name": "Si-o-se-pol",
-    "city": "Isfahan"
+    "city": "Isfahan",
+    "lat": 32.64487,
+    "lon": 51.66759
    },
    {
     "name": "Nasir al-Mulk Mosque",
-    "city": "Shiraz"
+    "city": "Shiraz",
+    "lat": 29.60861,
+    "lon": 52.54833
    },
    {
     "name": "Persepolis",
-    "city": "Shiraz"
+    "city": "Shiraz",
+    "lat": 29.935,
+    "lon": 52.89
    },
    {
     "name": "Eram Garden",
-    "city": "Shiraz"
+    "city": "Shiraz",
+    "lat": 29.63583,
+    "lon": 52.52528
    },
    {
     "name": "Golestan Palace",
-    "city": "Tehran"
+    "city": "Tehran",
+    "lat": 35.67972,
+    "lon": 51.42028
    },
    {
     "name": "Azadi Tower",
-    "city": "Tehran"
+    "city": "Tehran",
+    "lat": 35.69944,
+    "lon": 51.33778
    },
    {
     "name": "Jameh Mosque of Yazd",
-    "city": "Yazd"
+    "city": "Yazd",
+    "lat": 31.90139,
+    "lon": 54.36861
    },
    {
     "name": "Dowlatabad Garden",
-    "city": "Yazd"
+    "city": "Yazd",
+    "lat": 31.90278,
+    "lon": 54.35222
    }
   ],
   "Poland": [
    {
     "name": "Main Market Square, Kraków",
-    "city": "Kraków"
+    "city": "Kraków",
+    "lat": 50.06167,
+    "lon": 19.93722
    },
    {
     "name": "Wawel Castle",
-    "city": "Kraków"
+    "city": "Kraków",
+    "lat": 50.05389,
+    "lon": 19.93472
    },
    {
     "name": "Wieliczka Salt Mine",
-    "city": "Kraków"
+    "city": "Kraków",
+    "lat": 49.97917,
+    "lon": 20.06389
    },
    {
     "name": "Auschwitz-Birkenau State Museum",
-    "city": "Kraków"
+    "city": "Kraków",
+    "lat": 50.03583,
+    "lon": 19.17833
    },
    {
     "name": "Kazimierz",
-    "city": "Kraków"
+    "city": "Kraków",
+    "lat": 50.05167,
+    "lon": 19.94472
    },
    {
     "name": "Warsaw Old Town",
-    "city": "Warsaw"
+    "city": "Warsaw",
+    "lat": 52.2497,
+    "lon": 21.0122
    },
    {
     "name": "Łazienki Park",
-    "city": "Warsaw"
+    "city": "Warsaw",
+    "lat": 52.21278,
+    "lon": 21.03278
    },
    {
     "name": "Long Market, Gdańsk",
@@ -2376,11 +3282,15 @@
    },
    {
     "name": "Malbork Castle",
-    "city": "Gdańsk"
+    "city": "Gdańsk",
+    "lat": 54.03972,
+    "lon": 19.02778
    },
    {
     "name": "Morskie Oko",
-    "city": "Zakopane"
+    "city": "Zakopane",
+    "lat": 49.19722,
+    "lon": 20.07083
    }
   ],
   "Croatia": [
@@ -2394,31 +3304,45 @@
    },
    {
     "name": "Diocletian's Palace",
-    "city": "Split"
+    "city": "Split",
+    "lat": 43.50833,
+    "lon": 16.44
    },
    {
     "name": "Plitvice Lakes National Park",
-    "city": "Plitvice Lakes"
+    "city": "Plitvice Lakes",
+    "lat": 44.88056,
+    "lon": 15.61611
    },
    {
     "name": "Krka National Park",
-    "city": "Split"
+    "city": "Split",
+    "lat": 43.80194,
+    "lon": 15.97278
    },
    {
     "name": "Hvar (town)",
-    "city": "Hvar"
+    "city": "Hvar",
+    "lat": 43.17139,
+    "lon": 16.44333
    },
    {
     "name": "Pakleni Islands",
-    "city": "Hvar"
+    "city": "Hvar",
+    "lat": 43.16667,
+    "lon": 16.36667
    },
    {
     "name": "Zlatni Rat",
-    "city": "Split"
+    "city": "Split",
+    "lat": 43.25583,
+    "lon": 16.6338
    },
    {
     "name": "Lokrum",
-    "city": "Dubrovnik"
+    "city": "Dubrovnik",
+    "lat": 42.63333,
+    "lon": 18.11667
    },
    {
     "name": "Upper Town (Zagreb)",
@@ -2428,49 +3352,71 @@
   "Slovenia": [
    {
     "name": "Lake Bled",
-    "city": "Lake Bled"
+    "city": "Lake Bled",
+    "lat": 46.36444,
+    "lon": 14.09472
    },
    {
     "name": "Bled Castle",
-    "city": "Lake Bled"
+    "city": "Lake Bled",
+    "lat": 46.36972,
+    "lon": 14.10056
    },
    {
     "name": "Lake Bohinj",
-    "city": "Lake Bled"
+    "city": "Lake Bled",
+    "lat": 46.28231,
+    "lon": 13.85822
    },
    {
     "name": "Vintgar Gorge",
-    "city": "Lake Bled"
+    "city": "Lake Bled",
+    "lat": 46.39,
+    "lon": 14.083
    },
    {
     "name": "Postojna Cave",
-    "city": "Ljubljana"
+    "city": "Ljubljana",
+    "lat": 45.78267,
+    "lon": 14.20367
    },
    {
     "name": "Predjama Castle",
-    "city": "Ljubljana"
+    "city": "Ljubljana",
+    "lat": 45.81528,
+    "lon": 14.12667
    },
    {
     "name": "Ljubljana Castle",
-    "city": "Ljubljana"
+    "city": "Ljubljana",
+    "lat": 46.04889,
+    "lon": 14.50833
    },
    {
     "name": "Triple Bridge",
-    "city": "Ljubljana"
+    "city": "Ljubljana",
+    "lat": 46.05111,
+    "lon": 14.50611
    },
    {
     "name": "Škocjan Caves",
-    "city": "Piran"
+    "city": "Piran",
+    "lat": 45.66667,
+    "lon": 14
    },
    {
     "name": "Tartini Square",
-    "city": "Piran"
+    "city": "Piran",
+    "lat": 45.52852,
+    "lon": 13.56839
    }
   ],
   "Slovakia": [
    {
     "name": "Bratislava Castle",
-    "city": "Bratislava"
+    "city": "Bratislava",
+    "lat": 48.14222,
+    "lon": 17.1
    },
    {
     "name": "Old Town Bratislava",
@@ -2478,45 +3424,65 @@
    },
    {
     "name": "St. Martin's Cathedral, Bratislava",
-    "city": "Bratislava"
+    "city": "Bratislava",
+    "lat": 48.14214,
+    "lon": 17.10478
    },
    {
     "name": "Devín Castle",
-    "city": "Bratislava"
+    "city": "Bratislava",
+    "lat": 48.17361,
+    "lon": 16.97833
    },
    {
     "name": "Blue Church",
-    "city": "Bratislava"
+    "city": "Bratislava",
+    "lat": 48.14339,
+    "lon": 17.11683
    },
    {
     "name": "Štrbské Pleso",
-    "city": "High Tatras"
+    "city": "High Tatras",
+    "lat": 49.11667,
+    "lon": 20.06667
    },
    {
     "name": "Lomnický štít",
-    "city": "High Tatras"
+    "city": "High Tatras",
+    "lat": 49.19583,
+    "lon": 20.21278
    },
    {
     "name": "Spiš Castle",
-    "city": "High Tatras"
+    "city": "High Tatras",
+    "lat": 49.00056,
+    "lon": 20.76833
    },
    {
     "name": "Slovak Paradise National Park",
-    "city": "High Tatras"
+    "city": "High Tatras",
+    "lat": 48.90833,
+    "lon": 20.4
    },
    {
     "name": "Bojnice Castle",
-    "city": "Bratislava"
+    "city": "Bratislava",
+    "lat": 48.78,
+    "lon": 18.57778
    }
   ],
   "Romania": [
    {
     "name": "Bran Castle",
-    "city": "Brașov"
+    "city": "Brașov",
+    "lat": 45.515,
+    "lon": 25.36722
    },
    {
     "name": "Peleș Castle",
-    "city": "Brașov"
+    "city": "Brașov",
+    "lat": 45.35984,
+    "lon": 25.54265
    },
    {
     "name": "Brașov Council Square",
@@ -2528,7 +3494,9 @@
    },
    {
     "name": "Palace of the Parliament",
-    "city": "Bucharest"
+    "city": "Bucharest",
+    "lat": 44.4275,
+    "lon": 26.0875
    },
    {
     "name": "Old Town Bucharest",
@@ -2540,29 +3508,41 @@
    },
    {
     "name": "Transfăgărășan",
-    "city": "Sibiu"
+    "city": "Sibiu",
+    "lat": 45.5981,
+    "lon": 24.6165
    },
    {
     "name": "Sighișoara",
-    "city": "Brașov"
+    "city": "Brașov",
+    "lat": 46.21694,
+    "lon": 24.79111
    },
    {
     "name": "Merry Cemetery",
-    "city": "Sibiu"
+    "city": "Sibiu",
+    "lat": 47.97139,
+    "lon": 23.69556
    }
   ],
   "Bulgaria": [
    {
     "name": "Alexander Nevsky Cathedral, Sofia",
-    "city": "Sofia"
+    "city": "Sofia",
+    "lat": 42.69583,
+    "lon": 23.33296
    },
    {
     "name": "Rila Monastery",
-    "city": "Rila Monastery"
+    "city": "Rila Monastery",
+    "lat": 42.13333,
+    "lon": 23.34028
    },
    {
     "name": "Seven Rila Lakes",
-    "city": "Rila Monastery"
+    "city": "Rila Monastery",
+    "lat": 42.2025,
+    "lon": 23.315
    },
    {
     "name": "Plovdiv Old Town",
@@ -2574,7 +3554,9 @@
    },
    {
     "name": "Boyana Church",
-    "city": "Sofia"
+    "city": "Sofia",
+    "lat": 42.64467,
+    "lon": 23.26617
    },
    {
     "name": "Vitosha",
@@ -2582,7 +3564,9 @@
    },
    {
     "name": "Nesebar",
-    "city": "Plovdiv"
+    "city": "Plovdiv",
+    "lat": 42.65,
+    "lon": 27.73333
    },
    {
     "name": "Belogradchik Rocks",
@@ -2596,15 +3580,21 @@
   "Serbia": [
    {
     "name": "Belgrade Fortress",
-    "city": "Belgrade"
+    "city": "Belgrade",
+    "lat": 44.82333,
+    "lon": 20.45028
    },
    {
     "name": "Church of Saint Sava",
-    "city": "Belgrade"
+    "city": "Belgrade",
+    "lat": 44.79806,
+    "lon": 20.46854
    },
    {
     "name": "Skadarlija",
-    "city": "Belgrade"
+    "city": "Belgrade",
+    "lat": 44.8178,
+    "lon": 20.4643
    },
    {
     "name": "Knez Mihailova Street",
@@ -2612,11 +3602,15 @@
    },
    {
     "name": "Zemun",
-    "city": "Belgrade"
+    "city": "Belgrade",
+    "lat": 44.85,
+    "lon": 20.4
    },
    {
     "name": "Petrovaradin Fortress",
-    "city": "Novi Sad"
+    "city": "Novi Sad",
+    "lat": 45.2525,
+    "lon": 19.8625
    },
    {
     "name": "Novi Sad Old Town",
@@ -2624,15 +3618,21 @@
    },
    {
     "name": "Fruška Gora",
-    "city": "Novi Sad"
+    "city": "Novi Sad",
+    "lat": 45.1511,
+    "lon": 19.7111
    },
    {
     "name": "Đavolja Varoš",
-    "city": "Belgrade"
+    "city": "Belgrade",
+    "lat": 42.9925,
+    "lon": 21.40722
    },
    {
     "name": "Tara National Park",
-    "city": "Belgrade"
+    "city": "Belgrade",
+    "lat": 43.84833,
+    "lon": 19.45944
    }
   ],
   "Bosnia and Herzegovina": [
@@ -2642,7 +3642,9 @@
    },
    {
     "name": "Baščaršija",
-    "city": "Sarajevo"
+    "city": "Sarajevo",
+    "lat": 43.859,
+    "lon": 18.43
    },
    {
     "name": "Latin Bridge",
@@ -2650,11 +3652,15 @@
    },
    {
     "name": "Gazi Husrev-beg Mosque",
-    "city": "Sarajevo"
+    "city": "Sarajevo",
+    "lat": 43.85917,
+    "lon": 18.42903
    },
    {
     "name": "Sarajevo Tunnel",
-    "city": "Sarajevo"
+    "city": "Sarajevo",
+    "lat": 43.81972,
+    "lon": 18.33722
    },
    {
     "name": "Kravice waterfall",
@@ -2662,19 +3668,27 @@
    },
    {
     "name": "Blagaj Tekke",
-    "city": "Mostar"
+    "city": "Mostar",
+    "lat": 43.25727,
+    "lon": 17.90358
    },
    {
     "name": "Počitelj",
-    "city": "Mostar"
+    "city": "Mostar",
+    "lat": 43.13333,
+    "lon": 17.73333
    },
    {
     "name": "Trebević",
-    "city": "Sarajevo"
+    "city": "Sarajevo",
+    "lat": 43.81861,
+    "lon": 18.46
    },
    {
     "name": "Vrelo Bosne",
-    "city": "Sarajevo"
+    "city": "Sarajevo",
+    "lat": 43.81887,
+    "lon": 18.26945
    }
   ],
   "Montenegro": [
@@ -2684,7 +3698,9 @@
    },
    {
     "name": "Bay of Kotor",
-    "city": "Kotor"
+    "city": "Kotor",
+    "lat": 42.45,
+    "lon": 18.67
    },
    {
     "name": "Kotor Fortress",
@@ -2692,11 +3708,15 @@
    },
    {
     "name": "Our Lady of the Rocks",
-    "city": "Kotor"
+    "city": "Kotor",
+    "lat": 42.48667,
+    "lon": 18.68889
    },
    {
     "name": "Perast",
-    "city": "Kotor"
+    "city": "Kotor",
+    "lat": 42.48694,
+    "lon": 18.69917
    },
    {
     "name": "Budva Old Town",
@@ -2704,19 +3724,27 @@
    },
    {
     "name": "Sveti Stefan",
-    "city": "Budva"
+    "city": "Budva",
+    "lat": 42.25583,
+    "lon": 18.89111
    },
    {
     "name": "Durmitor National Park",
-    "city": "Durmitor"
+    "city": "Durmitor",
+    "lat": 43.12806,
+    "lon": 19.03472
    },
    {
     "name": "Tara River Canyon",
-    "city": "Durmitor"
+    "city": "Durmitor",
+    "lat": 43.25079,
+    "lon": 19.00847
    },
    {
     "name": "Ostrog Monastery",
-    "city": "Durmitor"
+    "city": "Durmitor",
+    "lat": 42.675,
+    "lon": 19.02917
    }
   ],
   "Albania": [
@@ -2726,7 +3754,9 @@
    },
    {
     "name": "Butrint",
-    "city": "Ksamil"
+    "city": "Ksamil",
+    "lat": 39.74556,
+    "lon": 20.02056
    },
    {
     "name": "Blue Eye (Albania)",
@@ -2734,15 +3764,21 @@
    },
    {
     "name": "Berat Castle",
-    "city": "Berat"
+    "city": "Berat",
+    "lat": 40.708,
+    "lon": 19.945
    },
    {
     "name": "Gjirokastër",
-    "city": "Berat"
+    "city": "Berat",
+    "lat": 40.06667,
+    "lon": 20.13333
    },
    {
     "name": "Skanderbeg Square",
-    "city": "Tirana"
+    "city": "Tirana",
+    "lat": 41.32833,
+    "lon": 19.81833
    },
    {
     "name": "Bunk'Art",
@@ -2754,21 +3790,29 @@
    },
    {
     "name": "Llogara Pass",
-    "city": "Ksamil"
+    "city": "Ksamil",
+    "lat": 40.19861,
+    "lon": 19.59167
    },
    {
     "name": "Theth",
-    "city": "Tirana"
+    "city": "Tirana",
+    "lat": 42.4,
+    "lon": 19.76667
    }
   ],
   "North Macedonia": [
    {
     "name": "Lake Ohrid",
-    "city": "Ohrid"
+    "city": "Ohrid",
+    "lat": 41.03,
+    "lon": 20.72
    },
    {
     "name": "Church of St. John at Kaneo",
-    "city": "Ohrid"
+    "city": "Ohrid",
+    "lat": 41.11109,
+    "lon": 20.78866
    },
    {
     "name": "Samuel's Fortress",
@@ -2776,23 +3820,33 @@
    },
    {
     "name": "Plaošnik",
-    "city": "Ohrid"
+    "city": "Ohrid",
+    "lat": 41.11274,
+    "lon": 20.79124
    },
    {
     "name": "Old Bazaar, Skopje",
-    "city": "Skopje"
+    "city": "Skopje",
+    "lat": 42.00076,
+    "lon": 21.43696
    },
    {
     "name": "Stone Bridge (Skopje)",
-    "city": "Skopje"
+    "city": "Skopje",
+    "lat": 41.99699,
+    "lon": 21.43307
    },
    {
     "name": "Matka Canyon",
-    "city": "Skopje"
+    "city": "Skopje",
+    "lat": 41.94,
+    "lon": 21.3
    },
    {
     "name": "Millennium Cross",
-    "city": "Skopje"
+    "city": "Skopje",
+    "lat": 41.9651,
+    "lon": 21.39455
    },
    {
     "name": "Galičica",
@@ -2800,25 +3854,35 @@
    },
    {
     "name": "Saint Naum Monastery",
-    "city": "Ohrid"
+    "city": "Ohrid",
+    "lat": 40.91389,
+    "lon": 20.7405
    }
   ],
   "Estonia": [
    {
     "name": "Tallinn Old Town",
-    "city": "Tallinn"
+    "city": "Tallinn",
+    "lat": 59.43722,
+    "lon": 24.74528
    },
    {
     "name": "Toompea Castle",
-    "city": "Tallinn"
+    "city": "Tallinn",
+    "lat": 59.4356,
+    "lon": 24.7372
    },
    {
     "name": "Alexander Nevsky Cathedral, Tallinn",
-    "city": "Tallinn"
+    "city": "Tallinn",
+    "lat": 59.43583,
+    "lon": 24.73936
    },
    {
     "name": "Kadriorg Palace",
-    "city": "Tallinn"
+    "city": "Tallinn",
+    "lat": 59.43851,
+    "lon": 24.79084
    },
    {
     "name": "Telliskivi Creative City",
@@ -2826,11 +3890,15 @@
    },
    {
     "name": "Lennusadam",
-    "city": "Tallinn"
+    "city": "Tallinn",
+    "lat": 59.45043,
+    "lon": 24.73831
    },
    {
     "name": "Estonian National Museum",
-    "city": "Tartu"
+    "city": "Tartu",
+    "lat": 58.39565,
+    "lon": 26.7456
    },
    {
     "name": "Tartu Town Hall Square",
@@ -2838,11 +3906,15 @@
    },
    {
     "name": "Lahemaa National Park",
-    "city": "Tallinn"
+    "city": "Tallinn",
+    "lat": 59.57111,
+    "lon": 25.80028
    },
    {
     "name": "Saaremaa",
-    "city": "Tallinn"
+    "city": "Tallinn",
+    "lat": 58.41667,
+    "lon": 22.5
    }
   ],
   "Latvia": [
@@ -2856,7 +3928,9 @@
    },
    {
     "name": "Riga Central Market",
-    "city": "Riga"
+    "city": "Riga",
+    "lat": 56.94371,
+    "lon": 24.1149
    },
    {
     "name": "Art Nouveau architecture in Riga",
@@ -2864,11 +3938,15 @@
    },
    {
     "name": "Freedom Monument",
-    "city": "Riga"
+    "city": "Riga",
+    "lat": 56.95139,
+    "lon": 24.11306
    },
    {
     "name": "Rundāle Palace",
-    "city": "Riga"
+    "city": "Riga",
+    "lat": 56.4138,
+    "lon": 24.0248
    },
    {
     "name": "Jūrmala beach",
@@ -2876,29 +3954,41 @@
    },
    {
     "name": "Gauja National Park",
-    "city": "Riga"
+    "city": "Riga",
+    "lat": 57.41667,
+    "lon": 25.41667
    },
    {
     "name": "Sigulda",
-    "city": "Riga"
+    "city": "Riga",
+    "lat": 57.15,
+    "lon": 24.86667
    },
    {
     "name": "Kemeri National Park",
-    "city": "Jūrmala"
+    "city": "Jūrmala",
+    "lat": 56.95167,
+    "lon": 23.5125
    }
   ],
   "Lithuania": [
    {
     "name": "Vilnius Old Town",
-    "city": "Vilnius"
+    "city": "Vilnius",
+    "lat": 54.68667,
+    "lon": 25.29306
    },
    {
     "name": "Gediminas' Tower",
-    "city": "Vilnius"
+    "city": "Vilnius",
+    "lat": 54.6867,
+    "lon": 25.2907
    },
    {
     "name": "Vilnius Cathedral",
-    "city": "Vilnius"
+    "city": "Vilnius",
+    "lat": 54.68583,
+    "lon": 25.28778
    },
    {
     "name": "Gates of Dawn",
@@ -2906,57 +3996,83 @@
    },
    {
     "name": "Užupis",
-    "city": "Vilnius"
+    "city": "Vilnius",
+    "lat": 54.68056,
+    "lon": 25.29694
    },
    {
     "name": "Trakai Island Castle",
-    "city": "Trakai"
+    "city": "Trakai",
+    "lat": 54.6525,
+    "lon": 24.93306
    },
    {
     "name": "Hill of Crosses",
-    "city": "Vilnius"
+    "city": "Vilnius",
+    "lat": 56.01528,
+    "lon": 23.41667
    },
    {
     "name": "Curonian Spit",
-    "city": "Vilnius"
+    "city": "Vilnius",
+    "lat": 55.27444,
+    "lon": 20.97083
    },
    {
     "name": "Kaunas Old Town",
-    "city": "Vilnius"
+    "city": "Vilnius",
+    "lat": 54.89667,
+    "lon": 23.89111
    },
    {
     "name": "Lake Galvė",
-    "city": "Trakai"
+    "city": "Trakai",
+    "lat": 54.66,
+    "lon": 24.93
    }
   ],
   "Georgia": [
    {
     "name": "Narikala",
-    "city": "Tbilisi"
+    "city": "Tbilisi",
+    "lat": 41.68778,
+    "lon": 44.80861
    },
    {
     "name": "Old Tbilisi",
-    "city": "Tbilisi"
+    "city": "Tbilisi",
+    "lat": 41.69278,
+    "lon": 44.80639
    },
    {
     "name": "Abanotubani",
-    "city": "Tbilisi"
+    "city": "Tbilisi",
+    "lat": 41.68778,
+    "lon": 44.81111
    },
    {
     "name": "Bridge of Peace",
-    "city": "Tbilisi"
+    "city": "Tbilisi",
+    "lat": 41.6929,
+    "lon": 44.8082
    },
    {
     "name": "Gergeti Trinity Church",
-    "city": "Kazbegi"
+    "city": "Kazbegi",
+    "lat": 42.6625,
+    "lon": 44.62028
    },
    {
     "name": "Kazbek",
-    "city": "Kazbegi"
+    "city": "Kazbegi",
+    "lat": 42.69917,
+    "lon": 44.51833
    },
    {
     "name": "Ananuri",
-    "city": "Kazbegi"
+    "city": "Kazbegi",
+    "lat": 42.16361,
+    "lon": 44.70389
    },
    {
     "name": "Batumi Boulevard",
@@ -2968,87 +4084,127 @@
    },
    {
     "name": "Uplistsikhe",
-    "city": "Tbilisi"
+    "city": "Tbilisi",
+    "lat": 41.96833,
+    "lon": 44.20417
    }
   ],
   "Armenia": [
    {
     "name": "Tatev Monastery",
-    "city": "Yerevan"
+    "city": "Yerevan",
+    "lat": 39.37937,
+    "lon": 46.25003
    },
    {
     "name": "Geghard",
-    "city": "Yerevan"
+    "city": "Yerevan",
+    "lat": 40.14043,
+    "lon": 44.81851
    },
    {
     "name": "Garni Temple",
-    "city": "Yerevan"
+    "city": "Yerevan",
+    "lat": 40.11242,
+    "lon": 44.73028
    },
    {
     "name": "Khor Virap",
-    "city": "Yerevan"
+    "city": "Yerevan",
+    "lat": 39.87833,
+    "lon": 44.57611
    },
    {
     "name": "Lake Sevan",
-    "city": "Dilijan"
+    "city": "Dilijan",
+    "lat": 40.31667,
+    "lon": 45.35
    },
    {
     "name": "Sevanavank",
-    "city": "Dilijan"
+    "city": "Dilijan",
+    "lat": 40.56392,
+    "lon": 45.01081
    },
    {
     "name": "Yerevan Cascade",
-    "city": "Yerevan"
+    "city": "Yerevan",
+    "lat": 40.19111,
+    "lon": 44.51556
    },
    {
     "name": "Republic Square, Yerevan",
-    "city": "Yerevan"
+    "city": "Yerevan",
+    "lat": 40.17778,
+    "lon": 44.51278
    },
    {
     "name": "Haghartsin Monastery",
-    "city": "Dilijan"
+    "city": "Dilijan",
+    "lat": 40.76849,
+    "lon": 44.89088
    },
    {
     "name": "Dilijan National Park",
-    "city": "Dilijan"
+    "city": "Dilijan",
+    "lat": 40.65639,
+    "lon": 45.02139
    }
   ],
   "Azerbaijan": [
    {
     "name": "Icherisheher",
-    "city": "Baku"
+    "city": "Baku",
+    "lat": 40.365,
+    "lon": 49.83583
    },
    {
     "name": "Maiden Tower (Baku)",
-    "city": "Baku"
+    "city": "Baku",
+    "lat": 40.3661,
+    "lon": 49.8372
    },
    {
     "name": "Palace of the Shirvanshahs",
-    "city": "Baku"
+    "city": "Baku",
+    "lat": 40.36615,
+    "lon": 49.83344
    },
    {
     "name": "Flame Towers",
-    "city": "Baku"
+    "city": "Baku",
+    "lat": 40.35944,
+    "lon": 49.82667
    },
    {
     "name": "Heydar Aliyev Center",
-    "city": "Baku"
+    "city": "Baku",
+    "lat": 40.39528,
+    "lon": 49.86694
    },
    {
     "name": "Baku Boulevard",
-    "city": "Baku"
+    "city": "Baku",
+    "lat": 40.36,
+    "lon": 49.8371
    },
    {
     "name": "Gobustan National Park",
-    "city": "Baku"
+    "city": "Baku",
+    "lat": 40.125,
+    "lon": 49.375
    },
    {
     "name": "Yanar Dag",
-    "city": "Baku"
+    "city": "Baku",
+    "lat": 40.50183,
+    "lon": 49.89125
    },
    {
     "name": "Palace of Shaki Khans",
-    "city": "Sheki"
+    "city": "Sheki",
+    "lat": 41.20444,
+    "lon": 47.19756
    },
    {
     "name": "Sheki Caravanserai",
@@ -3058,11 +4214,15 @@
   "Moldova": [
    {
     "name": "Old Orhei",
-    "city": "Old Orhei"
+    "city": "Old Orhei",
+    "lat": 47.31667,
+    "lon": 28.96667
    },
    {
     "name": "Cricova (winery)",
-    "city": "Chișinău"
+    "city": "Chișinău",
+    "lat": 47.133,
+    "lon": 28.85
    },
    {
     "name": "Mileștii Mici",
@@ -3070,11 +4230,15 @@
    },
    {
     "name": "Stephen the Great Monument",
-    "city": "Chișinău"
+    "city": "Chișinău",
+    "lat": 47.02528,
+    "lon": 28.83083
    },
    {
     "name": "Nativity Cathedral, Chișinău",
-    "city": "Chișinău"
+    "city": "Chișinău",
+    "lat": 47.02606,
+    "lon": 28.83453
    },
    {
     "name": "Capriana Monastery",
@@ -3082,53 +4246,77 @@
    },
    {
     "name": "Soroca Fortress",
-    "city": "Chișinău"
+    "city": "Chișinău",
+    "lat": 48.16122,
+    "lon": 28.30548
    },
    {
     "name": "Saharna Monastery",
-    "city": "Old Orhei"
+    "city": "Old Orhei",
+    "lat": 47.695,
+    "lon": 28.96556
    }
   ],
   "Singapore": [
    {
     "name": "Gardens by the Bay",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.28472,
+    "lon": 103.865
    },
    {
     "name": "Marina Bay Sands",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.2825,
+    "lon": 103.86
    },
    {
     "name": "Universal Studios Singapore",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.254,
+    "lon": 103.824
    },
    {
     "name": "Singapore Zoo",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.40378,
+    "lon": 103.79414
    },
    {
     "name": "Sentosa",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.248,
+    "lon": 103.83
    },
    {
     "name": "Singapore Botanic Gardens",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.3151,
+    "lon": 103.8162
    },
    {
     "name": "Merlion",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.28681,
+    "lon": 103.8545
    },
    {
     "name": "Night Safari, Singapore",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.40226,
+    "lon": 103.78789
    },
    {
     "name": "Jewel Changi Airport",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.3644,
+    "lon": 103.9915
    },
    {
     "name": "S.E.A. Aquarium",
-    "city": "Singapore"
+    "city": "Singapore",
+    "lat": 1.25831,
+    "lon": 103.82056
    }
   ]
  }

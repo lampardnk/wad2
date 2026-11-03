@@ -29,7 +29,6 @@ import SchedulePanel from './SchedulePanel.vue'
 import ItineraryPlanner from './ItineraryPlanner.vue'
 import { prefs, loadPreferences } from '../preferences.js'
 import { getForecast } from '../crowd.js'
-import { fetchTravelTime } from '../services/maps.js'
 import { fetchWeatherForecast } from '../services/weatherService.js'
 import { trip, loadDemo, loadFromServer, savedShape, runtimeStop, newId } from '../itineraryStore.js'
 import { codeForDestination, COUNTRY_CODES } from '../destinations.js'
@@ -77,7 +76,6 @@ export default {
       // }
       climate: [], // typical weather by month for each destination (for days beyond the 5-day forecast)
       climateRetried: false,
-      mapsOff: false, // true once the server says Google Maps isn't set up
       saveStatus: '',
       notice: '',           // text of the pop-up (empty = hidden)
       noticeType: 'warning', // 'warning' (yellow) or 'info' (blue)
@@ -116,7 +114,6 @@ export default {
     // Load each tracked stop's forecast from our server (in parallel)
     await Promise.all(trip.stops.map((item) => this.loadForecast(item)))
 
-    await this.updateTransitTimes()
     this.reportItinerary()
 
     // From here on, changes are saved
@@ -395,7 +392,6 @@ export default {
         stop.hour = this.nextFreeHour(m.date)
         stop.date = m.date
       }
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
     // Day optimizer: new times (after Apply, or after dragging a stop)
@@ -404,7 +400,6 @@ export default {
         const stop = trip.stops.find((s) => s.id === c.id)
         if (stop) stop.hour = c.hour
       }
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
     // ---------- hotel and flights, set from the start / end of a day ----------
@@ -496,7 +491,6 @@ export default {
       if (!stop) return
       this.snapshotDays()
       stop.date = date
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
     // Rain: an indoor saved place takes this stop's time; the old stop goes back to Saved places
@@ -518,16 +512,17 @@ export default {
       stop.dataFrom = ''
       await this.loadForecast(stop)
       if (!stop.duration) stop.duration = 1.5
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
     async editStop(id, fields) {
       const stop = trip.stops.find((s) => s.id === id)
       if (!stop) return
       this.snapshotDays()
-      const placeChanged = fields.name !== stop.name || fields.address !== stop.address
+      const placeChanged = fields.name !== stop.name || fields.lat !== stop.lat || fields.lon !== stop.lon
       stop.name = fields.name
       stop.address = fields.address
+      stop.lat = fields.lat
+      stop.lon = fields.lon
       stop.outdoor = fields.outdoor
       // A different place needs its own crowd data
       if (placeChanged) {
@@ -536,7 +531,6 @@ export default {
         stop.error = ''
         await this.loadForecast(stop)
       }
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
     setLocked(id, locked) {
@@ -570,7 +564,6 @@ export default {
         trip.wishlist.push({ id: newId('w'), name: stop.name, address: stop.address, outdoor: stop.outdoor, type: 'custom', city, votes: [] })
       }
       trip.stops = trip.stops.filter((s) => s.id !== id)
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
     // ---------- adding / removing days (the planner has already asked to confirm) ----------
@@ -632,7 +625,6 @@ export default {
 
       this.$emit('set-end-date', newEnd)
 
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
     async undoDay() {
@@ -643,7 +635,6 @@ export default {
       if (u.endDate !== this.endDate) this.$emit('set-end-date', u.endDate)
       this.selectDay(u.selectedDate)
       await Promise.all(trip.stops.map((item) => this.loadForecast(item)))
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
     // "Add stop": places are found and saved in the Places tab, then dragged onto a day here
@@ -711,7 +702,6 @@ export default {
       this.tripVersion = saved.version
       this.lastSavedKey = this.persistKey // so this load doesn't trigger a save
       await Promise.all(trip.stops.map((item) => this.loadForecast(item)))
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
 
@@ -735,7 +725,6 @@ export default {
 
     async removeStop(stop) {
       trip.stops = trip.stops.filter((s) => s.id !== stop.id)
-      await this.updateTransitTimes()
       this.reportItinerary()
     },
 
@@ -747,13 +736,13 @@ export default {
     },
     async loadForecast(item) {
       if (item.kind === 'flight' || item.kind === 'hotel') return // no crowds or opening hours to look up
-      // No address: look it up by name in the trip's city (breaks like "Lunch" are skipped)
-      const where = item.address || (/^(breakfast|brunch|lunch|dinner|supper)( break)?$/i.test((item.name || '').trim()) ? '' : this.destination)
-      if (!where) return
+      // Only places on the map (picked from search, a pin or a Maps link); breaks and unset places have none
+      if (item.lat == null || item.lon == null) return
+      const where = item.address || this.destination
       item.loading = true
       item.error = ''
       try {
-        item.forecast = await getForecast(item.name, where)
+        item.forecast = await getForecast({ name: item.name, address: where, lat: item.lat, lon: item.lon })
         item.bestTime = item.forecast.bestTimeDefault
         if (item.duration === null) item.duration = item.forecast.durationDefault
       } catch (err) {
@@ -848,32 +837,6 @@ export default {
       )
     },
 
-    // ---------- transit ----------
-    // Travel time from every stop to the next (all requests run at once)
-    async updateTransitTimes() {
-      // Travel times come from Google Maps; without a Google key on the server, stop asking
-      // (the planner works out walking/transit times itself from the distance between stops)
-      if (this.mapsOff) return
-      const list = this.itinerary
-      const place = (s) => s.address || this.shortName(s.name) + (this.destination ? ', ' + this.destination : '')
-      await Promise.all(list.map(async (stop, i) => {
-        const next = list[i + 1]
-        if (!next) {
-          stop.transitToNext = null
-          stop.transitSecs = 0
-          return
-        }
-        try {
-          const t = await fetchTravelTime(place(stop), place(next))
-          stop.transitToNext = t.durationText
-          stop.transitSecs = t.durationValue
-        } catch (err) {
-          if (err.response && err.response.status === 503) this.mapsOff = true
-          stop.transitToNext = '30 mins (est)'
-          stop.transitSecs = 1800
-        }
-      }))
-    },
 
     // A clear message for any failed request
     errorText(err) {

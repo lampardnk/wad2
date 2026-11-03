@@ -10,9 +10,9 @@ import crowdRoutes from './routes/crowd.js'
 import preferenceRoutes from './routes/preferences.js'
 import tripRoutes from './routes/trips.js'
 import weatherRoutes from './routes/weather.js'
-import distanceRoutes from './routes/distance.js'
 import flightRoutes from './routes/flights.js'
 import placeRoutes from './routes/places.js'
+import pickRoutes from './routes/pick.js'
 import rateRoutes from './routes/rates.js'
 import photoRoutes from './routes/photos.js'
 import expenseRoutes from './routes/expenses.js'
@@ -67,7 +67,7 @@ app.use('/api/invites/users', searchLimit)
 app.use('/api/friends/search', searchLimit)
 // Routes that call outside services (weather, maps, crowds...) which have their own quotas
 const outsideLimit = rateLimit({ max: 120, message: 'Too many lookups. Please wait a moment and try again.' })
-for (const path of ['/api/crowd', '/api/weather', '/api/distance-matrix', '/api/travel', '/api/flights', '/api/places', '/api/rates', '/api/safety', '/api/maps', '/api/eat', '/api/discover']) {
+for (const path of ['/api/crowd', '/api/weather', '/api/travel', '/api/flights', '/api/places', '/api/place', '/api/rates', '/api/safety', '/api/eat', '/api/discover']) {
   app.use(path, outsideLimit)
 }
 
@@ -82,9 +82,9 @@ app.use('/api/friends', friendRoutes)
 app.use('/api/trips', tripRoutes)
 app.use('/api/groups', groupRoutes)
 app.use('/api/weather', weatherRoutes)
-app.use('/api/distance-matrix', distanceRoutes)
 app.use('/api/flights', flightRoutes)
 app.use('/api/places', placeRoutes)
+app.use('/api/place', pickRoutes)
 app.use('/api/travel', travelRoutes) // travel times between stops (itinerary, Other journeys)
 app.use('/api/rates', rateRoutes)
 app.use('/api/safety', safetyRoutes)

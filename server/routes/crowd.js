@@ -68,19 +68,9 @@ function typicalDays(category) {
 // Used when BestTime has no data, e.g. Namsan Park -> N Seoul Tower.
 const OSM_HEADERS = { 'User-Agent': 'ChuiseYourTrip/1.0 (SMU IS216 student project)' }
 
-async function findNearby(name, address, lat, lon) {
+async function findNearby(name, lat, lon) {
   try {
-    // 1. Get coordinates if BestTime didn't give them
-    if (typeof lat !== 'number' || typeof lon !== 'number') {
-      const url = 'https://nominatim.openstreetmap.org/search?' +
-        new URLSearchParams({ q: name + ', ' + address, format: 'json', limit: '1' })
-      const geo = await (await fetch(url, { headers: OSM_HEADERS, signal: AbortSignal.timeout(8000) })).json()
-      if (!geo.length) return []
-      lat = Number(geo[0].lat)
-      lon = Number(geo[0].lon)
-    }
-
-    // 2. Named attractions within 1 km
+    // 1. Named attractions within 1 km
     const query = '[out:json][timeout:10];(' +
       'nwr(around:1000,' + lat + ',' + lon + ')["tourism"~"attraction|viewpoint|museum|zoo|theme_park"]["name"];' +
       ');out tags 30;'
@@ -92,7 +82,7 @@ async function findNearby(name, address, lat, lon) {
     })
     const osm = await resp.json()
 
-    // 3. Keep up to 3 names, preferring English names, skipping the place itself
+    // 2. Keep up to 3 names, preferring English names, skipping the place itself
     const names = []
     for (const el of osm.elements || []) {
       const tags = el.tags || {}
@@ -109,17 +99,16 @@ async function findNearby(name, address, lat, lon) {
 }
 
 // Everything we save for a place BestTime can't forecast
-async function buildFallback(name, address, venueInfo) {
+// point = the place's own map point (what the user picked)
+async function buildFallback(name, point) {
   const defaults = guessDefaults(name, [])
-  const lat = venueInfo && venueInfo.venue_lat
-  const lon = venueInfo && venueInfo.venue_lon
   return {
     found: false,
     estimated: true,
     message: 'Not enough visitor data for this place, so this is a typical ' + defaults.category + ' pattern.',
     ...defaults,
     days: typicalDays(defaults.category),
-    nearby: await findNearby(name, address, lat, lon)
+    nearby: await findNearby(name, point.lat, point.lon)
   }
 }
 
@@ -192,13 +181,18 @@ function toClient(doc) {
   }
 }
 
-// GET /api/crowd?name=N Seoul Tower&address=105 Namsangongwon-gil, Seoul
+// GET /api/crowd?name=N Seoul Tower&address=105 Namsangongwon-gil, Seoul&lat=37.55&lon=126.99
+// Only for places with a map point (picked from search, a pin or a Maps link); the address is the one that came with it.
 // Logged-in users only, so strangers can't spend our BestTime credits.
 router.get('/', requireAuth, async (req, res) => {
   const name = (req.query.name || '').trim()
   const address = (req.query.address || '').trim()
+  const point = { lat: Number(req.query.lat), lon: Number(req.query.lon) }
   if (!name || !address) {
     return res.status(400).json({ message: 'Please give both a place name and an address.' })
+  }
+  if (!Number.isFinite(point.lat) || !Number.isFinite(point.lon) || Math.abs(point.lat) > 90 || Math.abs(point.lon) > 180) {
+    return res.status(400).json({ message: 'This place has no location yet. Set its location first.' })
   }
 
   const key = (name + '|' + address).toLowerCase()
@@ -209,7 +203,7 @@ router.get('/', requireAuth, async (req, res) => {
   if (cached && ageDays < CACHE_DAYS) {
     // Older "no data" entries were saved before estimates existed - add them now (free)
     if (!cached.found && !cached.estimated) {
-      const fallback = await buildFallback(name, address, null)
+      const fallback = await buildFallback(name, point)
       Object.assign(cached, fallback)
       await cached.save()
     }
@@ -249,7 +243,7 @@ router.get('/', requireAuth, async (req, res) => {
       console.error('BestTime error:', msg)
       return res.status(502).json({ message: 'Crowd data service error. Try again later.' })
     }
-    result = await buildFallback(name, address, data.venue_info)
+    result = await buildFallback(name, point)
   }
 
   // 3. Save it (note: BestTime echoes our private key back - we never store the raw response)

@@ -27,11 +27,11 @@ export function runtimeStop(s) {
     outdoor: !!s.outdoor,
     locked: !!s.locked,
     travel: s.travel || null, // how the group chose to get here: { mode, from (stop id), by }
-    lat: s.lat ?? null, lon: s.lon ?? null, // known map position (hotels, flights); others are looked up
+    lat: s.lat ?? null, lon: s.lon ?? null, // where it is on the map (null = location not set yet)
     kind: s.kind || null,     // 'flight' | 'hotel' | null (a place)
     flight: s.flight || null, // { from: { name, lat, lon }, to: {...}, dep: 'HH:mm', arr: 'HH:mm', number, intl }
     forecast: null, bestTime: null, loading: false, error: '', highlight: false, dataFrom: '',
-    transitToNext: null, transitSecs: 0, replacedFrom: null
+    replacedFrom: null
   }
 }
 
@@ -50,15 +50,15 @@ export function loadDemo() {
   const d = '2026-10-13'
   trip.stops = [
     runtimeStop({ id: 'd2-breakfast', date: d, hour: 10, duration: 1, name: 'Korean Street Food Breakfast', address: null, outdoor: false }),
-    runtimeStop({ id: 'd2-palace', date: d, hour: 12, duration: null, name: 'Gyeongbokgung Palace', address: '161 Sajik-ro, Jongno-gu, Seoul, South Korea', outdoor: true }),
-    runtimeStop({ id: 'd2-namsan', date: d, hour: 14, duration: null, name: 'Namsan Park (Outdoor)', address: '231 Samil-daero, Jung-gu, Seoul, South Korea', outdoor: true }),
-    runtimeStop({ id: 'd2-dinner', date: d, hour: 18, duration: 1.5, name: 'Dinner Reservation (Myeongdong Kyoja)', address: null, outdoor: false, locked: true }),
-    runtimeStop({ id: 'd2-itaewon', date: d, hour: 20, duration: null, name: 'Itaewon Street', address: 'Itaewon-ro, Yongsan-gu, Seoul, South Korea', outdoor: true })
+    runtimeStop({ id: 'd2-palace', date: d, hour: 12, duration: null, name: 'Gyeongbokgung Palace', address: '161 Sajik-ro, Jongno-gu, Seoul, South Korea', outdoor: true, lat: 37.57975, lon: 126.97668 }),
+    runtimeStop({ id: 'd2-namsan', date: d, hour: 14, duration: null, name: 'Namsan Park (Outdoor)', address: '231 Samil-daero, Jung-gu, Seoul, South Korea', outdoor: true, lat: 37.55046, lon: 126.9916 }),
+    runtimeStop({ id: 'd2-dinner', date: d, hour: 18, duration: 1.5, name: 'Dinner Reservation (Myeongdong Kyoja)', address: '29 Myeongdong 10-gil, Jung-gu, Seoul', outdoor: false, locked: true, lat: 37.56256, lon: 126.9856 }),
+    runtimeStop({ id: 'd2-itaewon', date: d, hour: 20, duration: null, name: 'Itaewon Street', address: 'Itaewon-ro, Yongsan-gu, Seoul, South Korea', outdoor: true, lat: 37.53447, lon: 126.99458 })
   ]
   trip.wishlist = [
-    { id: 'w-starfield', name: 'Starfield Library (Indoor Mall)', address: '513 Yeongdong-daero, Gangnam-gu, Seoul', outdoor: false, type: 'attraction', votes: ['Sarah', 'Amy'] },
-    { id: 'w-museum', name: 'National Museum of Korea', address: '137 Seobinggo-ro, Yongsan-gu, Seoul', outdoor: false, type: 'museum', votes: ['John'] },
-    { id: 'w-lotte', name: 'Lotte World Indoor Adventure', address: '240 Olympic-ro, Songpa-gu, Seoul', outdoor: false, type: 'theme_park', votes: ['Sarah', 'John', 'Amy'] }
+    { id: 'w-starfield', name: 'Starfield Library (Indoor Mall)', address: '513 Yeongdong-daero, Gangnam-gu, Seoul', outdoor: false, type: 'attraction', votes: ['Sarah', 'Amy'], lat: 37.51017, lon: 127.06009 },
+    { id: 'w-museum', name: 'National Museum of Korea', address: '137 Seobinggo-ro, Yongsan-gu, Seoul', outdoor: false, type: 'museum', votes: ['John'], lat: 37.52395, lon: 126.98032 },
+    { id: 'w-lotte', name: 'Lotte World Indoor Adventure', address: '240 Olympic-ro, Songpa-gu, Seoul', outdoor: false, type: 'theme_park', votes: ['Sarah', 'John', 'Amy'], lat: 37.51108, lon: 127.09812 }
   ]
 }
 
@@ -69,7 +69,8 @@ export function loadFromServer(saved) {
   trip.wishlist = (saved.wishlist || []).map((w) => ({
     id: w.id, name: w.name, address: w.address || null, outdoor: !!w.outdoor,
     type: w.type || null, city: w.city || null, votes: Array.isArray(w.votes) ? w.votes : [],
-    duration: w.duration || null, bookedVia: w.bookedVia || null, link: w.link || null
+    duration: w.duration || null, bookedVia: w.bookedVia || null, link: w.link || null,
+    lat: w.lat ?? null, lon: w.lon ?? null // where it is (null = location not set yet)
   }))
 }
 
@@ -77,7 +78,7 @@ export function loadFromServer(saved) {
 export function savedShape() {
   return {
     stops: trip.stops.map((s) => ({ id: s.id, name: s.name, address: s.address, date: s.date, hour: s.hour, duration: s.duration, outdoor: s.outdoor, locked: s.locked, travel: s.travel || null, lat: s.lat ?? null, lon: s.lon ?? null, kind: s.kind || null, flight: s.flight || null })),
-    wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address, outdoor: !!w.outdoor, type: w.type || null, city: w.city || null, votes: w.votes || [], duration: w.duration || null, bookedVia: w.bookedVia || null, link: w.link || null }))
+    wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address, outdoor: !!w.outdoor, type: w.type || null, city: w.city || null, votes: w.votes || [], duration: w.duration || null, bookedVia: w.bookedVia || null, link: w.link || null, lat: w.lat ?? null, lon: w.lon ?? null }))
   }
 }
 // Save the open trip's stops + wishlist (for pages that don't show the itinerary, e.g. trip setup)

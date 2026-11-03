@@ -642,7 +642,7 @@
           <div ref="mapEl" class="ip-map" role="region" aria-label="Map of the day"></div>
           <p v-if="mapError" class="ip-empty">{{ mapError }}</p>
           <p v-else-if="unmapped.length" class="ip-muted" role="status">
-            Not on the map yet: {{ unmapped.join(', ') }}. We're still looking {{ unmapped.length === 1 ? 'it' : 'them' }} up; adding an address under Details helps.
+            Not on the map yet: {{ unmapped.join(', ') }}. Open {{ unmapped.length === 1 ? 'it' : 'each one' }} and set its location under Details.
           </p>
 
           <article v-if="selected" class="ip-detail">
@@ -733,7 +733,7 @@
       :day-options="dayOptions" :weather="dayBlocks" :typical="typical" :crowd="sheetItem ? crowdOf(sheetItem) : {}"
       :wet="sheetItem ? weatherOf(sheetItem).tone === 'bad' : false"
       :quieter="sheetItem ? quieterTimes(sheetItem) : []" :dry="sheetItem ? dryTimes(sheetItem) : []"
-      :indoor-picks="indoorPicks" :can-change-day="!sampleMode"
+      :indoor-picks="indoorPicks" :can-change-day="!sampleMode" :near="sheetNear"
       @close="closeSheet" @move-time="sheetMoveTime" @move-day="sheetMoveDay" @swap="sheetSwap" @edit="sheetEdit" />
     <!-- Getting from one stop to the next: every way, and choosing one -->
     <LegSheet :leg="legView" @close="closeLeg" @choose="chooseTravel" />
@@ -1143,8 +1143,7 @@ function addPlace() {
   else emit('add-place')
 }
 
-// ---------- coordinates + photos (fetched once per place, shared by every planner) ----------
-const coords = ref({})
+// ---------- photos (fetched once per place, shared by every planner) ----------
 const photos = ref({})
 const photoKey = (s) => (s.name || '').toLowerCase()
 
@@ -1156,45 +1155,8 @@ function nearFor(s) {
   if (match && match.city) return match.city
   return props.destinations.length === 1 ? props.destinations[0] : ''
 }
-// What to look a stop up by: its address, or (no address) its name in the trip's city.
-// Breaks like "Lunch" are not real places, so they're skipped.
+// Breaks like "Lunch" are not real places, so they never need a location
 const MEAL_ONLY = /^(breakfast|brunch|lunch|dinner|supper)( break)?$/i
-function placeText(s) {
-  if (s.address) return s.address
-  if (!s.name || MEAL_ONLY.test(s.name.trim())) return ''
-  const near = nearFor(s)
-  return s.name + (near ? ', ' + near : '')
-}
-const coordKey = (s) => placeText(s) + '|' + nearFor(s)
-function coordsFor(s) {
-  return placeText(s) ? coords.value[coordKey(s)] : null
-}
-
-const locateTries = {} // how many times each place has been looked up
-function locate(list) {
-  for (const s of list) {
-    if (!placeText(s) || s.lat != null) continue
-    const key = coordKey(s)
-    if (coords.value[key] !== undefined) continue
-    coords.value = { ...coords.value, [key]: null }
-    locateTries[key] = (locateTries[key] || 0) + 1
-    axios.get('/api/safety/locate', { params: { place: placeText(s), near: nearFor(s) || undefined }, timeout: 20000, background: true })
-      .then((res) => {
-        if (res.data && res.data.lat != null) coords.value = { ...coords.value, [key]: { lat: res.data.lat, lon: res.data.lon } }
-      })
-      .catch((err) => {
-        // "Not found" stays not found. A busy map server: try again in 20 seconds (3 tries at most)
-        if (err.response && err.response.status === 404) return
-        if (locateTries[key] >= 3) return
-        setTimeout(() => {
-          const copy = { ...coords.value }
-          delete copy[key]
-          coords.value = copy
-          locate([s])
-        }, 20000)
-      })
-  }
-}
 function loadPhotos(list) {
   for (const s of list) {
     const key = photoKey(s)
@@ -1221,14 +1183,13 @@ function toWork(s) {
     return {
       id: s.id, name: s.name, address: null, hour: s.hour, outdoor: false, locked: true, kind: 'flight', flight: s.flight,
       duration: s.duration || 2, lat: s.flight.from.lat, lon: s.flight.from.lon, endLat: s.flight.to.lat, endLon: s.flight.to.lon,
-      crowd: null, popular: false, open: null, close: null, transitSecs: 0, travelMode: null, travelFrom: null, travelBy: ''
+      crowd: null, popular: false, open: null, close: null, travelMode: null, travelFrom: null, travelBy: ''
     }
   }
-  const c = s.lat != null ? { lat: s.lat, lon: s.lon } : coordsFor(s)
+  const c = s.lat != null ? { lat: s.lat, lon: s.lon } : null // no map point: location not set yet
   const day = s.forecast && s.forecast.days && s.forecast.days[props.dayName]
   return {
     id: s.id, name: s.name, address: s.address || null, hour: s.hour, outdoor: !!s.outdoor, locked: !!s.locked, kind: s.kind || null,
-  transitSecs: s.transitSecs || 0,
     // Your own time if you set one, else the place's typical visit time, else a guess from what it is
     duration: s.duration || (s.forecast && s.forecast.durationDefault) || defaultDuration(s),
     lat: c ? c.lat : null, lon: c ? c.lon : null,
@@ -1291,7 +1252,6 @@ const savedGroups = computed(() => {
 
 watch([work, unscheduled], () => {
   const all = props.stops.concat(unscheduled.value)
-  locate(all)
   loadPhotos(sampleMode.value ? sample.value.stops.concat(sample.value.wishlist) : all)
 }, { immediate: true })
 
@@ -2166,7 +2126,7 @@ function cityOf(stop) {
 // Uses the saved cities when both are known, otherwise the distance (over 40 km apart).
 function otherCityOnDay(w) {
   const wCity = w.city || null
-  const wPoint = w.lat != null ? w : coordsFor(w)
+  const wPoint = w.lat != null ? w : null
   for (const it of stopRows.value) {
     const sCity = cityOf(it.stop)
     if (wCity && sCity) {
@@ -2870,6 +2830,11 @@ const sheetStop = computed(() => {
   const list = sampleMode.value ? sample.value.stops : props.stops
   return list.find((s) => s.id === sheet.value.id) || null
 })
+// Where to search when setting a stop's location: around another stop of the day that is on the map
+const sheetNear = computed(() => {
+  const it = stopRows.value.find((x) => x.stop.lat != null)
+  return it ? { lat: it.stop.lat, lon: it.stop.lon } : null
+})
 const dayNameShown = computed(() => (dayShown.value ? new Date(dayShown.value + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }) : props.dayName))
 const dayOptions = computed(() => {
   const list = []
@@ -2947,7 +2912,8 @@ const mapRows = computed(() => stopRows.value.filter((it) => it.stop.lat != null
 const unmapped = computed(() => {
   const names = []
   for (const it of stopRows.value) {
-    if (it.stop.lat == null && placeText(it.stop)) names.push(it.stop.name)
+    const s = it.stop
+    if (s.lat == null && !s.kind && s.name && !MEAL_ONLY.test(s.name.trim())) names.push(s.name)
   }
   return names
 })
