@@ -27,12 +27,68 @@ function point(text) {
 // A failed request (e.g. too many at once) is not an answer: that way is just missing this time.
 async function lookUp(from, to) {
   const found = {}
-  const answers = await Promise.allSettled(Object.keys(MODES).map((m) => geoapifyRoute(from, to, MODES[m])))
   const names = Object.keys(MODES)
+  const answers = await Promise.allSettled(names.map((m) => geoapifyRoute(from, to, MODES[m], { withPath: m === 'walk' })))
   for (let i = 0; i < names.length; i++) {
     if (answers[i].status === 'fulfilled' && answers[i].value) found[names[i]] = answers[i].value
   }
-  return { found, complete: answers.every((a) => a.status === 'fulfilled') }
+  let complete = answers.every((a) => a.status === 'fulfilled')
+
+  // No road or line reaches one end (e.g. a pin inside palace grounds or a park), but you can walk there:
+  // ride to the closest point on the walking route that a taxi / train reaches, and walk the rest
+  const walk = found.walk
+  if (walk && walk.path) {
+    const missing = ['taxi', 'transit'].filter((m) => answers[names.indexOf(m)].status === 'fulfilled' && !found[m])
+    const tries = await Promise.allSettled(missing.map((m) => rideThenWalk(from, to, m, walk)))
+    tries.forEach((t, i) => {
+      if (t.status === 'rejected') complete = false
+      else if (t.value) found[missing[i]] = t.value
+    })
+    delete walk.path
+  }
+  if (found.walk && !found.taxi) found.triedNearby = true // (so it isn't looked up again below)
+  return { found, complete }
+}
+
+// ---------- riding as close as you can, then walking ----------
+const NEARBY_KM = [0.15, 0.4, 0.8] // how much walking we try, least first
+
+function distKm(a, b) {
+  const r = Math.PI / 180
+  const x = Math.sin((b.lat - a.lat) * r / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin((b.lon - a.lon) * r / 2) ** 2
+  return 2 * 6371 * Math.asin(Math.sqrt(x))
+}
+
+// The first point at least km along the path: { lat, lon, km } (km = how far along it really is)
+function along(path, km) {
+  let done = 0
+  for (let i = 1; i < path.length; i++) {
+    done += distKm(path[i - 1], path[i])
+    if (done >= km) return { lat: path[i].lat, lon: path[i].lon, km: done }
+  }
+  return null
+}
+
+// Ride, then walk the rest: { min, km, walkMin } or null. Tries walking the last bit, the first bit, or both.
+// The walk part takes its share of the walking route's time (walk.min × walked km / route km).
+async function rideThenWalk(from, to, mode, walk) {
+  const path = walk.path
+  let total = 0
+  for (let i = 1; i < path.length; i++) total += distKm(path[i - 1], path[i])
+  const back = path.slice().reverse()
+  for (const km of NEARBY_KM) {
+    if (2 * km >= total) break // that much walking is most of the way
+    const nearEnd = along(back, km)
+    const nearStart = along(path, km)
+    for (const [a, b, walked] of [[from, nearEnd, nearEnd.km], [nearStart, to, nearStart.km], [nearStart, nearEnd, nearStart.km + nearEnd.km]]) {
+      const ride = await geoapifyRoute(a, b, MODES[mode])
+      if (ride) {
+        const walkMin = Math.max(1, Math.round(walk.min * walked / total))
+        return { min: ride.min + walkMin, km: Math.round((ride.km + walked) * 10) / 10, walkMin }
+      }
+    }
+  }
+  return null
 }
 
 router.get('/leg', requireAuth, async (req, res) => {
@@ -42,7 +98,9 @@ router.get('/leg', requireAuth, async (req, res) => {
   if (!geoapifyReady()) return res.json({}) // the app estimates by itself
   const key = from.lat + ',' + from.lon + '>' + to.lat + ',' + to.lon
   const saved = await legs.get(key)
-  if (saved) return res.json(saved.value)
+  // Saved before rides could end with a short walk (a walk but no taxi): looked up once more
+  const walkOnly = saved && saved.value.walk && !saved.value.taxi && !saved.value.triedNearby
+  if (saved && !walkOnly) return res.json(saved.value)
   let job = running.get(key)
   if (!job) {
     job = lookUp(from, to).finally(() => running.delete(key))
