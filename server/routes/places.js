@@ -90,6 +90,9 @@ router.get('/', requireAuth, async (req, res) => {
 const HEADERS = { 'User-Agent': 'ChuiseYourTrip/1.0 (SMU IS216 student project)' }
 const TYPES = 'attraction|museum|gallery|viewpoint|zoo|theme_park|aquarium'
 const CACHE_DAYS = 30
+// Raise this when the way the list is built changes, so saved lists are looked up again
+// (2: no Wikipedia fallback or guessed types, whole-word matching of hand-picked sights)
+const LIST_VERSION = 2
 // Two public Overpass servers: if the first is busy or slow, try the second
 // Public Overpass servers: if one is busy, down or rate-limiting us, the next one is tried
 const OVERPASS_SERVERS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']
@@ -203,9 +206,8 @@ router.get('/attractions', requireAuth, async (req, res) => {
   const key = destination.toLowerCase()
   const saved = await Attraction.findOne({ key })
   // Use the saved list if it is recent and not empty (an empty list means an earlier lookup went wrong)
-  // (lists saved before places were ranked by fame have no "rank" and are looked up again)
-  // (and lists saved before places had map points)
-  const ranked = saved && saved.items.length && saved.items[0].rank !== undefined && saved.items[0].lat !== undefined
+  // (lists saved by an older version of the lookup are looked up again: see LIST_VERSION)
+  const ranked = saved && saved.items.length && saved.version === LIST_VERSION
   if (ranked && (Date.now() - saved.fetchedAt.getTime()) / 86400000 < CACHE_DAYS) return res.json(saved.items)
 
   // One lookup per place, however many people ask at the same time
@@ -361,7 +363,7 @@ async function lookupAttractions(destination, key) {
   // 5. Hand-picked top sights for this country (and city) go first
   const top = []
   for (const pick of topSightsFor(destination, isCountry)) {
-    const same = list.find((x) => plain(x.name).includes(plain(pick.name)) || plain(pick.name).includes(plain(x.name)))
+    const same = list.find((x) => sameName(x.name, pick.name) && (pick.lat == null || Math.abs(x.lat - pick.lat) + Math.abs(x.lon - pick.lon) < 0.03))
     if (same) {
       same.rank = 999 // keep its real map details, just move it to the top
       top.push(same)
@@ -384,7 +386,7 @@ async function lookupAttractions(destination, key) {
 
   // Saved only when OpenStreetMap answered. Otherwise the page is told it's a shorter list for now,
   // and the full lookup is tried again next time.
-  if (osmAnswered) await Attraction.findOneAndUpdate({ key }, { key, items: top, fetchedAt: new Date() }, { upsert: true })
+  if (osmAnswered) await Attraction.findOneAndUpdate({ key }, { key, items: top, version: LIST_VERSION, fetchedAt: new Date() }, { upsert: true })
   return { items: top, partial: !osmAnswered }
 }
 
@@ -553,6 +555,15 @@ async function getMapJson(url) {
     }
   }
   throw lastError
+}
+
+// Is one name the other, or the other plus whole words? ("Sentosa" = "Sentosa Island", but "Lion" ≠ "Merlion")
+// The place also has to be near the hand-picked sight (about 3 km), checked where it's used.
+function sameName(a, b) {
+  const words = (t) => ' ' + plain(t).split(/[^a-z0-9]+/).filter(Boolean).join(' ') + ' '
+  const x = words(a)
+  const y = words(b)
+  return x.trim() !== '' && y.trim() !== '' && (x.includes(y) || y.includes(x))
 }
 
 // "Café Mozart" -> "cafe mozart" (no accents or capitals, so "cafe" finds "Café")
