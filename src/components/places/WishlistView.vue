@@ -412,7 +412,7 @@ export default {
       return placeStyle(w.type).label + (w.outdoor === false ? ' · Indoor' : '') // only when the group marked it
     },
     commentCount(w) {
-      return commentsOn(w.id).length
+      return commentsOn(w.name).length
     },
     openComments(w) {
       if (this.commentsId === w.id) return this.closeComments()

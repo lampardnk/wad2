@@ -1,5 +1,6 @@
-// Comments on saved places, shared by Places > Wishlist and Places > Group decisions,
-// so a comment posted on one tab shows on the other without reloading.
+// Comments on places: one thread per place, shared by Places > Wishlist, Places > Group decisions
+// and the itinerary stop with the same name (a place is known by its name, in lowercase),
+// so a comment posted in one shows in the others without reloading.
 import { reactive } from 'vue'
 import axios from 'axios'
 import { notify, errorText } from '../ui/notify.js'
@@ -18,14 +19,19 @@ export async function loadPlaceComments(tripId) {
   }
 }
 
-export function commentsOn(wishId) {
-  return placeComments.list.filter((c) => c.wishId === wishId)
+export function placeKey(name) {
+  return String(name || '').trim().toLowerCase()
+}
+
+export function commentsOn(placeName) {
+  const key = placeKey(placeName)
+  return placeComments.list.filter((c) => c.place === key)
 }
 
 // true when it was saved
-export async function addPlaceComment(tripId, wishId, text) {
+export async function addPlaceComment(tripId, placeName, text) {
   try {
-    const res = await axios.post('/api/trips/' + tripId + '/place-comments', { wishId, text })
+    const res = await axios.post('/api/trips/' + tripId + '/place-comments', { place: placeName, text })
     placeComments.list.push(res.data)
     return true
   } catch (err) {

@@ -32,15 +32,15 @@ export default {
   inject: { readOnly: { default: false } },
   props: {
     tripId: { type: String, required: true },
-    wishId: { type: String, required: true },
-    placeName: { type: String, default: '' }
+    wishId: { type: String, required: true },     // for the input's id
+    placeName: { type: String, required: true }   // whose comments: the thread is per place name
   },
   data() {
     return { draft: '', busy: false, confirmId: null }
   },
   computed: {
     list() {
-      return commentsOn(this.wishId)
+      return commentsOn(this.placeName)
     }
   },
   methods: {
@@ -51,7 +51,7 @@ export default {
       const text = this.draft.trim()
       if (!text) return
       this.busy = true
-      if (await addPlaceComment(this.tripId, this.wishId, text)) this.draft = ''
+      if (await addPlaceComment(this.tripId, this.placeName, text)) this.draft = ''
       this.busy = false
     },
     async remove(c) {

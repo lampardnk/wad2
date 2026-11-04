@@ -120,7 +120,7 @@
               </section>
 
               <!-- ===== Notes from the crew ===== -->
-              <StopNotes v-else-if="tab === 'notes'" :stop-id="stop.id || ''" @count="noteCount = $event" />
+              <StopNotes v-else-if="tab === 'notes'" :place-name="stop.name || ''" @count="noteCount = $event" />
 
               <!-- ===== Time & details ===== -->
               <section v-else-if="!readOnly" aria-label="Time and details">
