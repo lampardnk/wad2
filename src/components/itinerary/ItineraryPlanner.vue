@@ -202,7 +202,7 @@
             <template v-for="(it, i) in timeline" :key="it.stop.id">
               <!-- Between stops: how to get there, or a drop slot while dragging -->
               <li class="ip-gap" :data-gap="i" :class="{ active: dropAt === i, first: i === 0 }"
-                @dragover.prevent="dropAt = i" @dragleave="dropAt = null" @drop.prevent="dropInto(slotOf(i))">
+                @dragover.prevent="dropAt = i" @dragleave="dropAt = null" @drop.prevent="dropInto(i)">
                 <span v-if="drag" class="ip-drop">Drop here</span>
                 <!-- How to get here: the suggested (or the group's chosen) way. Tap to see every way and change it. -->
                 <button v-else-if="i > 0 && legText(it)" type="button" class="ip-leg" :class="{ picked: legEntry(it).picked, clickable: it.mode !== 'unknown' && !readOnly }"
@@ -213,13 +213,13 @@
                 </button>
               </li>
 
-              <li v-if="!it.stop.virtual" class="ip-stop" :data-i="i" :class="{ first: i === 0, last: i === timeline.length - 1, moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
+              <li class="ip-stop" :data-i="i" :class="{ first: i === 0, last: i === timeline.length - 1, moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
                 <article class="ip-card" :class="[{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }, voteClass(wishFor(it.stop))]"
                   :draggable="!it.stop.locked && !previewing && !readOnly" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag"
                   @touchstart="touchStart($event, it, i)" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchCancel"
-                  @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(slotOf(dropAt == null ? i : dropAt))" @click="cardClick($event, it)">
+                  @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(dropAt == null ? i : dropAt)" @click="cardClick($event, it)">
                   <!-- Move: drag the dots, or tap the arrows (works on phones and keyboards too) -->
                   <div v-if="!it.stop.locked && !previewing && !readOnly" class="ip-move">
                     <button type="button" class="ip-move-btn" :disabled="numberOf(it) === 0"
@@ -451,7 +451,7 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, inject } from 'vue'
 import axios from 'axios'
 import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, crowdAt, rainDuring,
-  travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf } from '../../lib/itinerary/dayOptimizer.js'
+  travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf, CROWD_LIMIT } from '../../lib/itinerary/dayOptimizer.js'
 import { loadLeaflet } from '../../services/leaflet.js'
 import StopSheet from './StopSheet.vue'
 import { codeForDestination } from '../../lib/trip/destinations.js'
@@ -852,7 +852,7 @@ function toWork(s) {
     durationUnset: !s.duration && !(s.forecast && s.forecast.durationDefault),
     lat: c ? c.lat : null, lon: c ? c.lon : null,
     crowd: crowdCurve(s.forecast), // BestTime's curve for this weekday, or null (no crowd data)
-    open: day && !day.closed ? day.open : null, close: day && !day.closed ? day.close : null,
+    open: day && !day.closed ? day.open : null, close: day && !day.closed ? day.close : null, closedToday: !!(day && day.closed),
     // How the group chose to get here (only counts when coming from that same stop)
     travelMode: s.travel ? s.travel.mode : null, travelFrom: s.travel ? s.travel.from : null, travelBy: s.travel ? s.travel.by : ''
   }
@@ -1013,8 +1013,7 @@ const opts = computed(() => ({
   dayStart: props.prefs.dayStart || 8,
   dayEnd: Math.min(24, props.prefs.dayEnd || 23),
   buffer: props.prefs.travelBuffer || 0,
-  meals: false, // no lunch/dinner breaks in the day
-  crowdWeight: { low: 0.5, medium: 1, high: 2 }[props.prefs.crowdSensitivity] || 1
+  crowdLimit: CROWD_LIMIT[props.prefs.crowdSensitivity] !== undefined ? CROWD_LIMIT[props.prefs.crowdSensitivity] : 80
 }))
 // ---------- where the day starts and ends (hotel or airport) ----------
 const cityName = computed(() => (props.dayCity ? props.dayCity.split(', ')[0] : ''))
@@ -1103,7 +1102,7 @@ const dayEndReason = computed(() => {
 })
 function endsLate(items) {
   for (const it of items) {
-    if (!it.stop.virtual && it.start + (it.stop.duration || 1) > dayOpts.value.dayEnd + 0.01) return true
+    if (it.start + (it.stop.duration || 1) > dayOpts.value.dayEnd + 0.01) return true
   }
   return false
 }
@@ -1137,7 +1136,7 @@ function bestDayFor(stop, taken) {
 function stopToMove(items) {
   let pick = null
   for (const it of items) {
-    if (it.stop.virtual || it.stop.locked) continue
+    if (it.stop.locked) continue
     if (it.stop.outdoor && it.start >= 18) return it.stop
     if (!pick || it.start > pick.start) pick = it
   }
@@ -1222,7 +1221,7 @@ const current = computed(() => scheduleAsIs(work.value, matrix.value))
 const preview = ref(null)
 const previewing = computed(() => !!(preview.value && preview.value.better))
 // stopRows = the real stops in time order; timeline = the same, for showing
-const stopRows = computed(() => (previewing.value ? preview.value.after.items.filter((it) => !it.stop.virtual) : current.value))
+const stopRows = computed(() => (previewing.value ? preview.value.after.items : current.value))
 const timeline = computed(() => (previewing.value ? preview.value.after.items : current.value))
 // (here, not next to overflow: watching it reads previewing, which only exists from this point)
 watch(overflow, (o) => { if (!o) overflowOpen.value = false })
@@ -1303,15 +1302,9 @@ function removeAnchor() {
   else emit('save-flight', a.kind, null)
 }
 
-// Number shown in a stop's circle (meal breaks aren't counted)
+// Number shown in a stop's circle
 function numberOf(it) {
   return stopRows.value.findIndex((x) => x.stop.id === it.stop.id)
-}
-// A drop slot in the timeline -> position among the real stops
-function slotOf(i) {
-  let n = 0
-  for (let k = 0; k < i; k++) if (!timeline.value[k].stop.virtual) n++
-  return n
 }
 watch(() => dayShown.value + '|' + props.stops.map((s) => s.id + s.hour + s.locked).join(), () => { preview.value = null })
 
@@ -1337,7 +1330,7 @@ function fitDayToPrefs(note) {
   // Say what moved (shown in the Smart Schedule status strip)
   let first = null
   for (const it of items) {
-    if (!it.stop.virtual && Math.abs(it.start - it.stop.hour) > 0.01) { first = it; break }
+    if (Math.abs(it.start - it.stop.hour) > 0.01) { first = it; break }
   }
   save(changes)
   if (note && first) noteChange(note + ': ' + first.stop.name + ' now starts at ' + formatHour(first.start))
@@ -1442,7 +1435,6 @@ function explainLocked(items, what) {
   let late = null
   let over = null
   for (const it of items) {
-    if (it.stop.virtual) continue
     if (it.stop.locked && it.lateMin > 0 && !late) late = it
     if (it.start + (it.stop.duration || 1) > opts.value.dayEnd + 0.01) over = it
   }
@@ -1451,7 +1443,7 @@ function explainLocked(items, what) {
   else noteChange(what + '. The rest of the day was re-timed.')
 }
 function lastFlexible(items) {
-  for (let k = items.length - 1; k >= 0; k--) if (!items[k].stop.virtual && !items[k].stop.locked) return items[k].stop.name
+  for (let k = items.length - 1; k >= 0; k--) if (!items[k].stop.locked) return items[k].stop.name
   return 'a stop'
 }
 
@@ -1488,12 +1480,12 @@ function replanFrom(it, newDuration, what) {
   const rest = all.slice(i + 1)
   const leaveAt = it.start + newDuration
   const items = scheduleInOrder(rest.filter((s) => !s.locked), rest.filter((s) => s.locked), travelMatrix(all, travelPrefs.value),
-    { ...dayOpts.value, dayStart: leaveAt, from: current, allStops: all })
+    { ...dayOpts.value, dayStart: leaveAt, from: current })
   const changes = [{ id: current.id, hour: it.start }]
   let moved = 0
   for (const x of items) {
     changes.push({ id: x.stop.id, hour: x.start })
-    if (!x.stop.virtual && Math.abs(x.start - x.stop.hour) > 0.01) moved++
+    if (Math.abs(x.start - x.stop.hour) > 0.01) moved++
   }
   saveDuration(current.id, newDuration, changes)
   if (!rest.length) noteChange(what + '. That was the last stop of the day.')
@@ -1611,7 +1603,7 @@ function touchEnd(e) {
   touch = null
   if (!was.dragging) return // just a tap (or a scroll)
   e.preventDefault() // not a click on the card
-  dropInto(slotOf(dropAt.value == null ? was.i : dropAt.value))
+  dropInto(dropAt.value == null ? was.i : dropAt.value)
 }
 function touchCancel() {
   if (!touch) return
@@ -1821,7 +1813,6 @@ function legIcon(it) {
   return TRAVEL_MODES[it.mode] ? TRAVEL_MODES[it.mode].icon : 'map-pin'
 }
 function legText(it) {
-  if (it.mode === 'break') return ''
   if (it.mode === 'unknown') {
     const e = legEntry(it)
     if (e.missing === 'place') return 'Not on the map · travel time not counted'
@@ -1917,7 +1908,7 @@ function chooseTravel(mode) {
   }
   const items = retime(list)
   const changes = []
-  for (const it of items) if (!it.stop.virtual) changes.push({ id: it.stop.id, hour: Math.min(it.start, 23.75) })
+  for (const it of items) changes.push({ id: it.stop.id, hour: Math.min(it.start, 23.75) })
   emit('travel', leg.toId, travel, changes)
   legOpen.value = null
   explainLocked(items, mode ? TRAVEL_MODES[mode].label + ' to ' + name : 'Suggested way to ' + name)
@@ -1939,14 +1930,11 @@ function dayWarnings(it) {
   const landing = s && s.kind === 'arrive'
   const leaving = e && e.kind === 'depart'
   const out = []
-  if (it.stop.virtual) return out
-  if (it.start < o.dayStart - 0.01) {
-    if (landing) out.push({ icon: '✈️', text: 'Starts before you land (' + formatHour(s.hour) + ')' })
-    else if (!it.stop.locked) out.push({ icon: '🌅', text: 'Before your day starts' })
-  }
   for (const w of warningsFor(it, rain.value, o)) {
-    if (w.icon === '🌅' && landing) continue
-    if (w.icon === '🍽' && leaving && e.early) continue // no day today at all: "no time for lunch" is beside the point
+    if (w.icon === '🌅' && landing) {
+      out.push({ icon: '✈️', text: 'Starts before you land (' + formatHour(s.hour) + ')' })
+      continue
+    }
     if (w.icon === '⏰' && leaving) {
       out.push({ icon: '✈️', text: e.early ? 'No time today: your flight home leaves at ' + formatHour(e.hour) : 'Too late for your ' + formatHour(e.hour) + ' flight home' })
       continue
@@ -2177,7 +2165,7 @@ const totals = computed(() => {
   let ride = 0 // minutes on transit, in taxis or on bikes (and legs we couldn't place)
   for (const it of stopRows.value) {
     if (it.mode === 'walk') walk += it.km || 0
-    else if (it.mode !== 'start' && it.mode !== 'break') ride += it.travelMin || 0
+    else if (it.mode !== 'start') ride += it.travelMin || 0
   }
   return { walkKm: walk.toFixed(1), transitMin: ride }
 })
