@@ -2154,7 +2154,7 @@ function otherCityOnDay(w) {
   return null
 }
 
-function scheduleWish(w, slot, confirmed = false, roomOk = false) {
+async function scheduleWish(w, slot, confirmed = false, roomOk = false) {
   if (previewing.value) return
   // Two cities on one day? Ask first (travel between cities eats the day)
   const other = confirmed ? null : otherCityOnDay(w)
@@ -2174,6 +2174,9 @@ function scheduleWish(w, slot, confirmed = false, roomOk = false) {
   const fresh = toWork({ id: '__new', name: w.name, address: w.address || null, outdoor: w.outdoor ?? null, duration: w.duration || 1, lat: w.lat, lon: w.lon, hour: 0 })
   const list = stopRows.value.map((it) => it.stop)
   list.splice(slot, 0, fresh)
+  // Real travel times to and from the new stop first: an unknown leg counts as 0 min,
+  // which would put the next stop too early
+  await Promise.all([fetchLeg(list[slot - 1], fresh), fetchLeg(fresh, list[slot + 1])])
   const items = retime(list)
   const changes = items.map((it) => ({ id: it.stop.id, hour: it.start }))
   // Doesn't fit before the day ends? Suggest a day with room (or add it anyway)

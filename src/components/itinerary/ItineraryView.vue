@@ -501,13 +501,13 @@ export default {
     // (date = another day, when this one was full: the stop goes after that day's last stop)
     async scheduleWish(w, changes, date) {
       if (date && date !== this.selectedDate) {
-        const later = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date, hour: this.nextFreeHour(date), duration: w.duration || null, outdoor: !!w.outdoor })
+        const later = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date, hour: this.nextFreeHour(date), duration: w.duration || null, outdoor: w.outdoor ?? null })
         trip.stops.push(later)
         await this.applyOptimized([])
         this.loadForecast(later)
         return
       }
-      const stop = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date: this.selectedDate, hour: 0, duration: w.duration || null, outdoor: !!w.outdoor })
+      const stop = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date: this.selectedDate, hour: 0, duration: w.duration || null, outdoor: w.outdoor ?? null })
       trip.stops.push(stop)
       await this.applyOptimized(changes.map((c) => (c.id === '__new' ? { ...c, id: stop.id } : c)))
       this.loadForecast(stop)
