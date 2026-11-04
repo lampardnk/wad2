@@ -126,7 +126,7 @@
               <AppIcon name="chevron-left" :size="16" /> {{ newSaved ? 'Done, back to ' + returnTo.day : 'Back to ' + returnTo.day }}
             </button>
           </div>
-          <WishlistView v-if="placesTab === 'wishlist'" key="w" :destinations="itineraryInfo.destinations"
+          <WishlistView v-if="placesTab === 'wishlist'" key="w" :trip-id="id" :destinations="itineraryInfo.destinations"
             :start-date="itineraryInfo.startDate" :end-date="itineraryInfo.endDate" />
           <PlacesVoting v-else key="v" :trip-id="id" :travellers="itineraryInfo.travellers" :me="myName" :can-vote-for="canVoteFor" @go-wishlist="placesTab = 'wishlist'" />
       </div>

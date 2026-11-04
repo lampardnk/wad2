@@ -21,7 +21,8 @@ export async function fetchWeatherForecast({ q, lat, lon }) {
       span: 3,
       condition,
       temp: item.main ? Math.round(item.main.temp) : null, // °C
-      rain: RAIN.includes(condition) || item.pop >= 0.6
+      rain: RAIN.includes(condition) || item.pop >= 0.6,
+      pop: typeof item.pop === 'number' ? item.pop : null // OpenWeather's chance of rain, 0-1
     }
   })
 }

@@ -33,7 +33,6 @@
                 </p>
                 <CrowdChart v-if="hasChart" :forecast="stop.forecast" :day-name="dayName"
                   :planned-hour="Math.floor(start)" :suggest-hour="quieter.length ? Math.floor(quieter[0].hour) : null" />
-                <p v-if="crowd.value != null && !hasChart" class="ss-note">Estimate for this kind of place.</p>
 
                 <template v-if="quieter.length && !readOnly">
                   <h4 class="ss-h">Quieter times that fit your day</h4>
@@ -91,6 +90,9 @@
                       No dry time fits this day. Try moving it to another day under <button type="button" class="ss-link" @click="tab = 'time'">Details</button>.
                     </p>
                   </div>
+                  <p v-else-if="rainWhileHere && stop.outdoor == null" class="ss-note">
+                    Rain is likely while you're here. Is it indoors or outdoors? Set it under <button type="button" class="ss-link" @click="tab = 'time'">Details</button>.
+                  </p>
                   <p v-else-if="rainWhileHere" class="ss-good">✓ Rain is possible, but this one is indoors.</p>
                   <p v-else class="ss-good">✓ Dry while you're here.</p>
                 </template>
@@ -121,8 +123,8 @@
                   <PlaceInput id="ss-name" v-model="form.name" v-model:place="form.place" label="Name" keep-place pin :near="near || form.place"
                     hint="No location yet: pick a suggestion, paste a Google Maps link, or drop a pin." />
                   <div class="ss-seg" role="group" aria-label="Indoor or outdoor">
-                    <button type="button" :class="{ on: form.outdoor }" :aria-pressed="form.outdoor" @click="form.outdoor = true"><AppIcon name="trees" :size="15" /> Outdoor</button>
-                    <button type="button" :class="{ on: !form.outdoor }" :aria-pressed="!form.outdoor" @click="form.outdoor = false"><AppIcon name="landmark" :size="15" /> Indoor</button>
+                    <button type="button" :class="{ on: form.outdoor === true }" :aria-pressed="form.outdoor === true" @click="form.outdoor = true"><AppIcon name="trees" :size="15" /> Outdoor</button>
+                    <button type="button" :class="{ on: form.outdoor === false }" :aria-pressed="form.outdoor === false" @click="form.outdoor = false"><AppIcon name="landmark" :size="15" /> Indoor</button>
                   </div>
                   <button type="submit" class="ss-btn primary" :disabled="!detailsChanged || !form.name.trim()">Save details</button>
                 </form>
@@ -203,7 +205,7 @@ function shortHour(h) {
 const timeText = ref('')
 const timeError = ref('')
 const dayPick = ref('')
-const form = ref({ name: '', place: null, outdoor: false })
+const form = ref({ name: '', place: null, outdoor: null }) // outdoor: true / false / null (not set)
 
 function toText(h) {
   const m = Math.round(h * 60)
@@ -225,7 +227,7 @@ function moveTime() {
 }
 
 const moved = computed(() => !!form.value.place && (form.value.place.lat !== props.stop.lat || form.value.place.lon !== props.stop.lon))
-const detailsChanged = computed(() => form.value.name.trim() !== props.stop.name || moved.value || form.value.outdoor !== !!props.stop.outdoor)
+const detailsChanged = computed(() => form.value.name.trim() !== props.stop.name || moved.value || form.value.outdoor !== (props.stop.outdoor ?? null))
 function saveDetails() {
   const p = moved.value ? form.value.place : null
   emit('edit', {
@@ -241,7 +243,7 @@ function reset() {
   timeError.value = ''
   dayPick.value = props.selectedDate
   const s = props.stop
-  form.value = { name: s.name || '', place: s.lat != null ? { name: s.name, address: s.address || '', lat: s.lat, lon: s.lon } : null, outdoor: !!s.outdoor }
+  form.value = { name: s.name || '', place: s.lat != null ? { name: s.name, address: s.address || '', lat: s.lat, lon: s.lon } : null, outdoor: s.outdoor ?? null }
 }
 watch(() => props.open, (open) => {
   if (!open) return

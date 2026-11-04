@@ -1,23 +1,16 @@
 <template>
   <div>
-    <!-- Indoor / outdoor filter (the "Find a place" box below is the only search) -->
-    <div class="wl-filters" role="group" aria-label="Show">
-      <button v-for="f in filterOptions" :key="f.value" type="button" class="wl-chip" :class="{ active: filter === f.value }"
-        :aria-pressed="filter === f.value" @click="filter = f.value"><AppIcon v-if="f.icon" :name="f.icon" :size="15" /> {{ f.label }}</button>
-    </div>
-
     <!-- ===== Your wishlist ===== -->
     <h3 class="wl-heading">Your wishlist <span class="wl-count">{{ wishlist.length }}</span></h3>
 
     <div v-if="shownWishlist.length" class="wl-grid" data-testid="wishlist">
-      <article v-for="w in shownWishlist" :key="w.id" :data-wish="w.id" class="wl-card mine" :class="{ 'has-photo': photoOf(w), editing: editId === w.id }" :style="{ '--tint': tintFor(w.type) }">
+      <article v-for="w in shownWishlist" :key="w.id" :data-wish="w.id" class="wl-card mine" :class="{ 'has-photo': photoOf(w), 'has-link': !!w.link, editing: editId === w.id || commentsId === w.id }" :style="{ '--tint': tintFor(w.type) }">
         <!-- A real photo of the place when Wikipedia has one, otherwise a simple icon -->
         <div class="wl-photo" :class="{ loading: photos[photoTitle(w)] === '' }" :style="photoOf(w) ? { backgroundImage: 'url(' + photoOf(w) + ')' } : null" aria-hidden="true">
           <AppIcon v-if="!photoOf(w)" :name="iconFor(w.type)" :size="44" class="wl-ph-icon" />
         </div>
-        <span class="wl-type"><AppIcon :name="iconFor(w.type)" :size="13" />
-          <template v-if="w.type === 'tour'">{{ w.bookedVia ? 'Booked · ' + w.bookedVia : 'Tour' }}<template v-if="w.duration"> · {{ lengthText(w.duration) }}</template></template>
-          <template v-else>{{ placeStyle(w.type).label }}<template v-if="!w.outdoor"> · Indoor</template></template>
+        <span class="wl-type" :title="typeText(w)"><AppIcon :name="iconFor(w.type)" :size="13" />
+          <span class="wl-type-text">{{ typeText(w) }}</span>
         </span>
         <div class="wl-actions">
           <a v-if="w.link" :href="w.link" target="_blank" rel="noopener" class="wl-round" :aria-label="'Open booking for ' + w.name" title="Open booking">↗</a>
@@ -30,13 +23,28 @@
             <template v-if="w.city"><FlagImg :code="flagFor(w.city)" :size="12" /> {{ w.city.split(', ')[0] }}</template><template v-if="w.city && streetOf(w)"> · </template>{{ streetOf(w) }}
           </span>
           <button v-if="needsPoint(w) && !readOnly" type="button" class="wl-setloc" @click="startEdit(w)"><AppIcon name="map-pin" :size="12" /> Set location</button>
-          <span v-if="w.votes && w.votes.length" class="wl-votes" :title="w.votes.join(', ') + ' want to go'"><AppIcon name="thumbs-up" :size="12" /> {{ w.votes.length }} want to go</span>
+          <div class="wl-pills">
+            <span v-if="w.votes && w.votes.length" class="wl-votes" :title="w.votes.join(', ') + ' want to go'"><AppIcon name="thumbs-up" :size="12" /> {{ w.votes.length }} want to go</span>
+            <button v-if="!readOnly || commentCount(w)" type="button" class="wl-comment-btn" :class="{ on: commentsId === w.id }" :aria-expanded="commentsId === w.id"
+:aria-label="commentCount(w) + ' comment' + (commentCount(w) === 1 ? '' : 's') + ' on ' + w.name" data-testid="wish-comments" @click="openComments(w)">
+              <AppIcon name="message" :size="12" /> {{ commentCount(w) }}
+            </button>
+          </div>
         </div>
       </article>
     </div>
     <p v-else class="wl-empty">
-      {{ wishlist.length ? 'No saved places match this filter.' : readOnly ? 'No places were saved for this trip.' : 'No places yet. Tap the heart on a popular place below, or add your own.' }}
+      {{ readOnly ? 'No places were saved for this trip.' : 'No places yet. Tap the heart on a popular place below, or add your own.' }}
     </p>
+
+    <!-- Comments panel: opened from a card's comment button -->
+    <section v-if="commentsWish" ref="commentsPanel" class="wl-panel" aria-labelledby="wl-comments-title" @keydown.esc="closeComments">
+      <div class="wl-comments-head">
+        <strong id="wl-comments-title">Comments on {{ commentsWish.name }}</strong>
+        <button type="button" class="wl-round wl-comments-x" aria-label="Close comments" @click="closeComments"><AppIcon name="x" :size="14" /></button>
+      </div>
+      <PlaceComments ref="comments" :trip-id="tripId" :wish-id="commentsWish.id" :place-name="commentsWish.name" />
+    </section>
 
     <!-- Edit panel -->
       <!-- Opening it scrolls here; Save or Cancel scrolls back to the card -->
@@ -112,8 +120,8 @@
 
         <span class="wl-tour-label">Mostly</span>
         <div class="wl-seg" role="group" aria-label="Indoor or outdoor">
-          <button type="button" :class="{ on: tour.outdoor }" :aria-pressed="tour.outdoor" @click="tour.outdoor = true"><AppIcon name="trees" :size="15" /> Outdoor</button>
-          <button type="button" :class="{ on: !tour.outdoor }" :aria-pressed="!tour.outdoor" @click="tour.outdoor = false"><AppIcon name="landmark" :size="15" /> Indoor</button>
+          <button type="button" :class="{ on: tour.outdoor === true }" :aria-pressed="tour.outdoor === true" @click="tour.outdoor = true"><AppIcon name="trees" :size="15" /> Outdoor</button>
+          <button type="button" :class="{ on: tour.outdoor === false }" :aria-pressed="tour.outdoor === false" @click="tour.outdoor = false"><AppIcon name="landmark" :size="15" /> Indoor</button>
         </div>
 
         <div v-if="tripDays.length" class="wl-tour-row">
@@ -190,7 +198,7 @@
             <div class="wl-photo" :class="{ loading: photos[photoTitle(p)] === '' }" :style="photoOf(p) ? { backgroundImage: 'url(' + photoOf(p) + ')' } : null" aria-hidden="true">
               <AppIcon v-if="!photoOf(p)" :name="iconFor(p.type)" :size="44" class="wl-ph-icon" />
             </div>
-            <span class="wl-type"><AppIcon :name="iconFor(p.type)" :size="13" /> {{ placeStyle(p.type).label }}<template v-if="p.indoor"> · Indoor</template></span>
+            <span class="wl-type"><AppIcon :name="iconFor(p.type)" :size="13" /> <span class="wl-type-text">{{ placeStyle(p.type).label }}</span></span>
             <span class="wl-heart" :class="{ filled: isAdded(p) }" aria-hidden="true"><AppIcon name="heart" :size="17" :filled="isAdded(p)" /></span>
             <div class="wl-info">
               <h4 class="wl-name" :title="p.name">{{ p.name }}</h4>
@@ -218,10 +226,11 @@ import CustomDropdown from '../common/CustomDropdown.vue'
 import AppIcon from '../common/AppIcon.vue'
 import FlagImg from '../common/FlagImg.vue'
 import PlaceInput from '../common/PlaceInput.vue'
+import PlaceComments from './PlaceComments.vue'
+import { loadPlaceComments, commentsOn } from '../../lib/trip/placeComments.js'
 import { cityCentre } from '../../services/cityCentre.js'
 
 // Geoapify's kind of place ('catering.cafe', 'entertainment.museum'...) -> our card types
-const INDOOR_TYPES = ['museum', 'gallery', 'aquarium', 'food', 'shop']
 function typeForKind(kind) {
   const k = String(kind || '')
   if (k.includes('museum')) return 'museum'
@@ -238,17 +247,18 @@ function typeForKind(kind) {
 }
 
 function emptyTour() {
-  return { name: '', bookedVia: '', link: '', address: '', place: null, duration: 3, outdoor: true, date: '', time: '' }
+  return { name: '', bookedVia: '', link: '', address: '', place: null, duration: 3, outdoor: null, date: '', time: '' }
 }
 
 export default {
-  components: { FlagImg, AppIcon, CustomDropdown, PlaceInput },
+  components: { FlagImg, AppIcon, CustomDropdown, PlaceInput, PlaceComments },
   inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
     // All of the trip's destinations, e.g. ['Tokyo, Japan', 'Kyoto, Japan']
     destinations: { type: Array, default: () => [] },
     startDate: { type: String, default: '' },
-    endDate: { type: String, default: '' }
+    endDate: { type: String, default: '' },
+    tripId: { type: String, required: true } // where comments are saved
   },
 
   data() {
@@ -257,16 +267,11 @@ export default {
       photos: {},        // 'Juche Tower, Pyongyang' -> photo URL ('' = looking, null = none)
       kindFilter: {},    // destination -> place type shown ('' = all)
       status: {}, // destination -> { loading, error, shown }
-      filter: 'all',
-      filterOptions: [
-        { value: 'all', label: 'All' },
-        { value: 'indoor', label: 'Indoor', icon: 'landmark' },
-        { value: 'outdoor', label: 'Outdoor', icon: 'trees' }
-      ],
       form: { name: '', place: null }, // "Find a place": the text, and the real place picked
       searchIn: '',      // which destination "Find a place" searches in
       centres: {},       // destination -> { lat, lon }, so search looks around that city
       editId: null,
+      commentsId: null, // the place whose comments are open
       editForm: { name: '', place: null, link: '', isTour: false },
       tourOpen: false,
       tour: emptyTour(),
@@ -347,12 +352,11 @@ export default {
       return trip.wishlist
     },
 
+    commentsWish() {
+      return this.wishlist.find((w) => w.id === this.commentsId) || null
+    },
     shownWishlist() {
-      const list = []
-      for (const w of this.wishlist) {
-        if (this.matches(w.name, !w.outdoor)) list.push(w)
-      }
-      return list
+      return this.wishlist
     },
 
     // One section per destination, with the search + filter applied
@@ -363,7 +367,7 @@ export default {
         const list = []
         for (const p of this.popularByDest[d] || []) {
           if (this.kindFilter[d] && p.type !== this.kindFilter[d]) continue
-          if (this.matches(p.name, p.indoor)) list.push(p)
+          list.push(p)
         }
         result.push({
           dest: d,
@@ -397,7 +401,38 @@ export default {
     }
   },
 
+  mounted() {
+    loadPlaceComments(this.tripId)
+  },
+
   methods: {
+    // e.g. "Attraction · Indoor", "Booked · Klook · 3 hrs"
+    typeText(w) {
+      if (w.type === 'tour') return (w.bookedVia ? 'Booked · ' + w.bookedVia : 'Tour') + (w.duration ? ' · ' + this.lengthText(w.duration) : '')
+      return placeStyle(w.type).label + (w.outdoor === false ? ' · Indoor' : '') // only when the group marked it
+    },
+    commentCount(w) {
+      return commentsOn(w.id).length
+    },
+    openComments(w) {
+      if (this.commentsId === w.id) return this.closeComments()
+      this.commentsId = w.id
+      this.$nextTick(() => {
+        const panel = this.$refs.commentsPanel
+        if (!panel) return
+        panel.scrollIntoView({ behavior: this.smoothScroll(), block: 'center' })
+        if (this.$refs.comments) this.$refs.comments.focus()
+      })
+    },
+    closeComments() {
+      const id = this.commentsId
+      this.commentsId = null
+      this.$nextTick(() => {
+        const card = this.$el.querySelector('[data-wish="' + id + '"]')
+        if (card) card.scrollIntoView({ behavior: this.smoothScroll(), block: 'center' })
+      })
+    },
+
     placeStyle,
 
     lengthText(h) {
@@ -448,13 +483,6 @@ export default {
       }
       this.form.name = ''
       this.tourOpen = false
-    },
-
-    // Indoor/Outdoor filter
-    matches(name, indoor) {
-      if (this.filter === 'indoor' && !indoor) return false
-      if (this.filter === 'outdoor' && indoor) return false
-      return true
     },
 
     // First part of the address, e.g. "13 Okazaki Park" (skipped if it is just the place's name)
@@ -580,7 +608,7 @@ export default {
 
     addPopular(p) {
       if (this.isAdded(p)) return
-      trip.wishlist.push({ id: newId('w'), name: p.name, address: p.address || null, outdoor: !p.indoor, type: p.type, city: p.city || null, votes: [], lat: p.lat ?? null, lon: p.lon ?? null })
+      trip.wishlist.push({ id: newId('w'), name: p.name, address: p.address || null, outdoor: null, type: p.type, city: p.city || null, votes: [], lat: p.lat ?? null, lon: p.lon ?? null })
       this.clearForm()
     },
 
@@ -592,7 +620,7 @@ export default {
       const popular = (this.popularByDest[this.searchIn] || []).find(same)
       if (popular) return this.addPopular(popular)
       const type = typeForKind(pl.kind)
-      trip.wishlist.push({ id: newId('w'), name: pl.name, address: pl.address || null, outdoor: !INDOOR_TYPES.includes(type), type,
+      trip.wishlist.push({ id: newId('w'), name: pl.name, address: pl.address || null, outdoor: null, type,
         city: this.searchIn || null, votes: [], lat: pl.lat, lon: pl.lon })
       this.clearForm()
     },
@@ -609,6 +637,7 @@ export default {
     remove(w) {
       trip.wishlist = trip.wishlist.filter((x) => x.id !== w.id)
       if (this.editId === w.id) this.editId = null
+      if (this.commentsId === w.id) this.commentsId = null
     },
 
     startEdit(w) {
@@ -676,24 +705,6 @@ export default {
 </script>
 
 <style scoped>
-.wl-filters {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.wl-chip {
-  border: 1px solid #e2dacb;
-  background: #fbf5ea;
-  border-radius: 999px;
-  padding: 7px 16px;
-  font-size: 14px;
-}
-.wl-chip.active {
-  background: var(--app-ink, #003d5b);
-  border-color: var(--app-ink, #003d5b);
-  color: #fff;
-}
-
 .wl-heading {
   font-family: var(--font-display);
   font-size: 1.4rem;
@@ -769,7 +780,11 @@ export default {
   pointer-events: none;
 }
 .wl-ph-icon {
-  margin-bottom: 30%;
+  /* Centred on the glow and rings, which are drawn at 50% 32% of the card */
+  position: absolute;
+  left: 50%;
+  top: 32%;
+  transform: translate(-50%, -50%);
   padding: 18px;
   box-sizing: content-box;
   border-radius: 50%;
@@ -812,7 +827,16 @@ export default {
   text-overflow: ellipsis;
 }
 .wl-card.mine .wl-type {
-  max-width: calc(100% - 100px); /* leave room for the edit and heart buttons */
+  max-width: calc(100% - 102px); /* leave room for the edit and heart buttons */
+}
+.wl-card.mine.has-link .wl-type {
+  max-width: calc(100% - 142px); /* and the booking link */
+}
+/* The text, not the chip, shortens with "…" (text-overflow doesn't work on a flex box) */
+.wl-type-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .wl-info {
   position: absolute;
@@ -839,11 +863,16 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.wl-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
 .wl-votes {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: 6px;
   padding: 2px 9px;
   border-radius: 999px;
   background: #edae49;
@@ -923,8 +952,7 @@ export default {
   color: #5b6b75;
 }
 .wl-heart:focus-visible,
-.wl-round:focus-visible,
-.wl-chip:focus-visible {
+.wl-round:focus-visible {
   outline: 3px solid rgba(0, 121, 140, 0.45);
   outline-offset: 2px;
 }
@@ -1101,6 +1129,34 @@ export default {
   .wl-name { font-size: 0.95rem; }
 }
 
+.wl-comment-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #001d2c;
+  font-size: 11px;
+  font-weight: 700;
+}
+.wl-comment-btn:hover,
+.wl-comment-btn.on {
+  background: #fff;
+  box-shadow: 0 0 0 2px #edae49;
+}
+.wl-comments-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.wl-comments-x {
+  flex: none;
+  border: 1px solid #e2dacb;
+}
 .wl-setloc {
   display: inline-flex;
   align-items: center;

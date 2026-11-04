@@ -3,7 +3,7 @@
        <CrowdChart :forecast="f" day-name="Tuesday" :planned-hour="14" :suggest-hour="21" /> -->
   <figure class="crowd-chart" data-testid="crowd-chart">
     <figcaption class="crowd-chart-caption">
-      <span>{{ forecast.estimated ? 'Estimated crowds' : 'Crowds' }} on {{ dayName }} (hover a bar)</span>
+      <span>Crowds on {{ dayName }} (hover a bar)</span>
       <span class="crowd-chart-readout" aria-live="polite">{{ readout }}</span>
     </figcaption>
 

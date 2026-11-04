@@ -91,6 +91,15 @@
               </span>
             </template>
           </div>
+
+          <!-- Comments: anyone on the trip can add one, and delete their own (the organiser can delete any). No editing. -->
+          <div class="pv-comments">
+            <button type="button" class="pv-comments-toggle" :class="{ on: openComments[w.id] }" :aria-expanded="!!openComments[w.id]" @click="toggleComments(w.id)" data-testid="comments-toggle"
+              :aria-label="commentsFor(w).length + ' comment' + (commentsFor(w).length === 1 ? '' : 's') + ' on ' + w.name">
+              <AppIcon name="message" :size="12" /> {{ commentsFor(w).length }}
+            </button>
+            <PlaceComments v-if="openComments[w.id]" class="pv-comments-body" :trip-id="tripId" :wish-id="w.id" :place-name="w.name" />
+          </div>
         </div>
 
         <span class="pv-count" :aria-hidden="true">{{ w.votes.length }}/{{ travellers.length }}</span>
@@ -106,11 +115,13 @@ import { trip } from '../../lib/itinerary/itineraryStore.js'
 import { placeStyle } from '../../lib/itinerary/placeStyle.js'
 import CustomDropdown from '../common/CustomDropdown.vue'
 import AppIcon from '../common/AppIcon.vue'
+import PlaceComments from './PlaceComments.vue'
+import { loadPlaceComments, commentsOn } from '../../lib/trip/placeComments.js'
 import axios from 'axios'
 import { notify, errorText } from '../../lib/ui/notify.js'
 
 export default {
-  components: { AppIcon, CustomDropdown },
+  components: { AppIcon, CustomDropdown, PlaceComments },
   inject: { readOnly: { default: false } }, // an archived trip: look, don't change (see TripView)
   props: {
     travellers: { type: Array, default: () => [] },
@@ -125,6 +136,7 @@ export default {
       sortBy: 'votes',
       undoInfo: null, // { text, before } after "Yes to all", for the Undo button
       undoTimer: null,
+      openComments: {},    // which places have their comments open
       sortOptions: [{ value: 'votes', label: 'Most votes', icon: '👍' }, { value: 'name', label: 'Name (A–Z)', icon: '🔤' }]
     }
   },
@@ -178,7 +190,17 @@ export default {
     clearTimeout(this.undoTimer)
   },
 
+  mounted() {
+    loadPlaceComments(this.tripId)
+  },
+
   methods: {
+    commentsFor(w) {
+      return commentsOn(w.id)
+    },
+    toggleComments(id) {
+      this.openComments = { ...this.openComments, [id]: !this.openComments[id] }
+    },
     placeStyle,
     // e.g. "Kyoto · 13 Okazaki Park"
     whereOf(w) {
@@ -378,6 +400,13 @@ export default {
   background: #edae49;
   border-radius: 999px;
 }
+.pv-comments { margin-top: 10px; }
+/* Same counter pill as the wishlist cards: icon + number */
+.pv-comments-toggle { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border: 1.5px solid #e3cfa9; border-radius: 999px; background: #fff; color: #001d2c; font-size: 11px; font-weight: 700; }
+.pv-comments-toggle:hover,
+.pv-comments-toggle.on { border-color: #edae49; box-shadow: 0 0 0 1px #edae49; }
+.pv-comments-body { margin-top: 8px; }
+
 .pv-voters {
   display: flex;
   flex-wrap: wrap;

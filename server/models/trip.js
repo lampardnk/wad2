@@ -62,6 +62,15 @@ const tripSchema = new mongoose.Schema({
     name: String,                              // traveller name of whoever wrote it
     text: { type: String, trim: true, maxlength: 500 },
     editedAt: Date
+  }, { timestamps: true })],
+
+  // Comments the crew leave on a saved place while deciding ("too touristy?"). Add or delete, no edit.
+  // Removed when their place is removed from the wishlist.
+  placeComments: [new mongoose.Schema({
+    wishId: { type: String, required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    name: String,                              // traveller name of whoever wrote it
+    text: { type: String, trim: true, maxlength: 500 }
   }, { timestamps: true })]
 }, { timestamps: true, optimisticConcurrency: true }) // a save based on an old copy fails (see VersionError in app.js)
 

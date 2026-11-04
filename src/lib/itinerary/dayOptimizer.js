@@ -42,31 +42,24 @@ export function haversineKm(a, b) {
 }
 
 // ---------- getting from one stop to the next ----------
-// Every way to get there, with its time. Real times come from the server's route lookup (tp.real);
-// until they arrive (or without a map key) we estimate from the straight-line distance.
+// Every way to get there, with its time. Times only come from the server's route lookup (Geoapify, tp.real):
+// until they arrive, or if there's no route, the leg has no options and its travel time isn't counted.
 // tp ("travel preferences", from Settings → Transport):
 //   { modes: ['walk', 'transit', 'taxi', 'bike'], maxWalk: 20, priority: 'balanced' | 'fastest' | 'cheapest',
 //     group: 4 (people sharing a taxi), real: { 'lat,lon>lat,lon': { walk: { min, km }, taxi: {...}, ... } } }
+// cost = order only, for "Cheapest" (walking is free, a taxi costs more than a bus or bike share).
+// We have no fare data, so no prices are shown.
 export const TRAVEL_MODES = {
-  walk: { label: 'Walk', icon: 'footprints', cost: 0, costText: 'Free', maps: 'walking' },
-  bike: { label: 'Bike', icon: 'bike', cost: 1, costText: '$ bike share', maps: 'bicycling' },
-  transit: { label: 'Transit', icon: 'train', cost: 1, costText: '$ fare', maps: 'transit' },
-  taxi: { label: 'Taxi', icon: 'car', cost: 3, costText: '$$$', maps: 'driving' }
+  walk: { label: 'Walk', icon: 'footprints', cost: 0, maps: 'walking' },
+  bike: { label: 'Bike', icon: 'bike', cost: 1, maps: 'bicycling' },
+  transit: { label: 'Transit', icon: 'train', cost: 1, maps: 'transit' },
+  taxi: { label: 'Taxi', icon: 'car', cost: 3, maps: 'driving' }
 }
 export const DEFAULT_TRAVEL = { modes: ['walk', 'transit', 'taxi'], maxWalk: 20, priority: 'balanced', group: 1, real: {} }
 
 // The key a route is saved under: both ends, to about 10 m
 export function legKey(a, b) {
   return a.lat.toFixed(4) + ',' + a.lon.toFixed(4) + '>' + b.lat.toFixed(4) + ',' + b.lon.toFixed(4)
-}
-
-// Straight-line guesses (minutes). Walking and cycling paths are ~25% longer than a straight line,
-// roads ~30%. Transit adds ~8 min of walking to the stop and waiting; a taxi ~5 min to arrive.
-function estimateMin(mode, km) {
-  if (mode === 'walk') return Math.max(3, Math.round((km * 1.25) / 4.8 * 60))
-  if (mode === 'bike') return Math.round(3 + (km * 1.25) / 14 * 60)
-  if (mode === 'transit') return Math.round(8 + (km * 1.3) / 22 * 60)
-  return Math.round(5 + (km * 1.3) / 24 * 60)
 }
 
 // Every way from a to b: [{ mode, min, km, live (a real route, not a guess), allowed (in your preferences) }]
@@ -84,10 +77,9 @@ export function travelOptions(a, b, tp = DEFAULT_TRAVEL) {
   for (const mode of ['walk', 'transit', 'taxi', 'bike']) {
     if (mode === 'transit' && km < 0.6) continue // a bus for a few hundred metres? just walk
     const r = real[mode]
-    let min = r ? r.min : estimateMin(mode, km)
-    if (r && mode === 'taxi') min += 5 // the route is driving time; add the wait for the car
-    // Transit times from the route lookup are still approximate (no timetables)
-    list.push({ mode, min, km: r && r.km != null ? r.km : km, live: !!r && mode !== 'transit', allowed: tp.modes.includes(mode) })
+    if (!r) continue // no route for this way: not shown (never guessed)
+    // Transit times from the route lookup are Geoapify's own approximation (no timetables), so not "live"
+    list.push({ mode, min: r.min, km: r.km != null ? r.km : km, live: mode !== 'transit', allowed: tp.modes.includes(mode) })
   }
   return list
 }
@@ -125,23 +117,19 @@ export function recommendTravel(options, tp = DEFAULT_TRAVEL) {
     if (taxi && transit.min > 40 && transit.min - taxi.min >= 20) {
       return { option: taxi, reason: 'saves ' + (transit.min - taxi.min) + ' min over transit' }
     }
-    return { option: transit, reason: tooFar || 'good value' }
+    return { option: transit, reason: tooFar || 'public transport' }
   }
   return { option: fastest, reason: tooFar || 'fastest' }
 }
 
 // How you'll get from a to b: the way the group picked (b.travelMode, if it was picked for coming
-// from a), otherwise the suggestion. Without tp it's the old simple rule (walk up to 1.3 km, else transit).
-// Unknown places (not on the map) count as 15 min.
-export function travelBetween(a, b, tp) {
+// from a), otherwise the suggestion. No map point or no route yet: mode 'unknown', and its time
+// isn't counted (min 0). missing = 'place' (not on the map) | 'route' (no route found yet).
+export function travelBetween(a, b, tp = DEFAULT_TRAVEL) {
   a = exitOf(a)
-  if (!a || !b || a.lat == null || b.lat == null) return { min: 15, mode: 'unknown', km: null }
-  if (!tp) {
-    const km = haversineKm(a, b)
-    if (km <= 1.3) return { min: estimateMin('walk', km), mode: 'walk', km }
-    return { min: estimateMin('transit', km), mode: 'transit', km }
-  }
+  if (!a || !b || a.lat == null || b.lat == null) return { min: 0, mode: 'unknown', km: null, missing: 'place' }
   const options = travelOptions(a, b, tp)
+  if (!options.length) return { min: 0, mode: 'unknown', km: null, missing: 'route' }
   const rec = recommendTravel(options, tp)
   const picked = b.travelMode && b.travelFrom === a.id ? options.find((o) => o.mode === b.travelMode) : null
   const use = picked || rec.option
@@ -159,12 +147,9 @@ export function travelMatrix(stops, tp) {
 }
 
 // ---------- crowds & weather ----------
-// Typical crowd curve when we have no real data: outdoor sights peak 11 AM - 3 PM
-const OUTDOOR_CURVE = [5, 5, 5, 5, 5, 5, 10, 20, 30, 45, 65, 85, 95, 95, 85, 65, 50, 40, 35, 30, 20, 10, 5, 5]
-const INDOOR_CURVE = [5, 5, 5, 5, 5, 5, 5, 10, 20, 35, 50, 60, 70, 70, 65, 60, 50, 40, 35, 25, 15, 10, 5, 5]
-
+// Crowd % from the stop's BestTime curve (stop.crowd). No data = 0, so crowds don't count for that stop.
 export function crowdAt(stop, start) {
-  const curve = stop.crowd || (stop.popular === false ? null : stop.outdoor ? OUTDOOR_CURVE : INDOOR_CURVE)
+  const curve = stop.crowd
   if (!curve) return 0
   const hours = Math.max(1, Math.round(stop.duration || 1))
   let total = 0
@@ -224,19 +209,6 @@ function mealBreak(m, start) {
     stop: { id: 'meal-' + m.key, name: m.label + ' break', virtual: true, meal: m.key, icon: m.icon, duration: m.duration },
     start, travelMin: 0, mode: 'break', km: 0, waitMin: 0, lateMin: 0
   }
-}
-
-// How long a stop usually takes when nothing better is known (hours)
-export function defaultDuration(stop) {
-  const kind = mealOf(stop)
-  if (MEALS[kind]) return MEALS[kind].duration
-  if (kind === 'food') return 1
-  const name = (stop.name || '').toLowerCase()
-  if (/museum|gallery|palace|castle|zoo|aquarium|theme park|disney|universal/.test(name)) return 2
-  if (/park|garden|hike|trail|mountain|beach|forest|grove|lake/.test(name)) return 1.5
-  if (/temple|shrine|church|mosque|cathedral|-ji|dera|taisha|statue|monument|tower|viewpoint/.test(name)) return 1
-  if (/mall|market|shopping|street|outlet/.test(name)) return 1.5
-  return 1.5
 }
 
 // ---------- building a day from an order ----------
@@ -386,15 +358,17 @@ export function measure(items, rainByHour, opts) {
     const busy = crowdAt(s, it.start)
     const rain = rainDuring(rainByHour, it.start, dur)
     if (!s.locked) {
-      m.crowd += busy * (s.outdoor ? 1 : 0.5)
+      m.crowd += busy * (s.outdoor === false ? 0.5 : 1)
       if (s.outdoor) m.rainOutdoor += rain
     }
     if ((s.open != null && it.start < s.open) || (s.close != null && it.start + dur > s.close)) m.closed++
     m.end = Math.max(m.end, it.start + dur)
     // Starting before the day does (e.g. before your flight lands) costs like running over
     if (it.start < opts.dayStart - 0.01) m.earlyMin += Math.round((opts.dayStart - it.start) * 60)
-    m.cost += (s.locked ? 0 : busy * WEIGHTS.crowd * (opts.crowdWeight || 1) * (s.outdoor ? 1 : 0.5))
-    m.cost += s.outdoor ? rain * WEIGHTS.rain : -rain * WEIGHTS.dryIndoor
+    m.cost += (s.locked ? 0 : busy * WEIGHTS.crowd * (opts.crowdWeight || 1) * (s.outdoor === false ? 0.5 : 1))
+    // Rain only counts for stops the group marked outdoor (or indoor); not set = we don't know, so no effect
+    if (s.outdoor === true) m.cost += rain * WEIGHTS.rain
+    else if (s.outdoor === false) m.cost -= rain * WEIGHTS.dryIndoor
   }
   m.overtimeMin = Math.max(0, Math.round((m.end - opts.dayEnd) * 60))
   m.cost += m.travelMin * WEIGHTS.travel + m.waitMin * WEIGHTS.wait + m.lateMin * WEIGHTS.late +
@@ -462,11 +436,9 @@ export function reasonsFor(it, index, rainByHour, dayHasRain) {
   } else {
     const rain = rainDuring(rainByHour, it.start, s.duration)
     const busy = Math.round(crowdAt(s, it.start))
-    if (!s.outdoor && rain >= 0.5) reasons.push({ icon: '🌧️', text: fmt(it.start) + ' slot: indoors during predicted rain', kind: 'rain' })
+    if (s.outdoor === false && rain >= 0.5) reasons.push({ icon: '🌧️', text: fmt(it.start) + ' slot: indoors during predicted rain', kind: 'rain' })
     else if (s.outdoor && dayHasRain && rain < 0.3) reasons.push({ icon: '🌤️', text: 'Dry window for an outdoor visit', kind: 'rain' })
-    if (s.outdoor && it.start + (s.duration || 1) <= 11.01) reasons.push({ icon: '☀️', text: 'Morning slot: beats the 11 AM crowd rush', kind: 'crowd' })
-    else if (s.outdoor && it.start >= 15) reasons.push({ icon: '🌇', text: 'Late slot: crowds thin out after 3 PM', kind: 'crowd' })
-    else if (busy && busy < 45) reasons.push({ icon: '👥', text: 'Quieter time (~' + busy + '% busy)', kind: 'crowd' })
+    if (busy && busy < 45) reasons.push({ icon: '👥', text: 'Quieter time (~' + busy + '% busy)', kind: 'crowd' })
   }
   if (index === 0) reasons.push({ icon: '📍', text: 'First stop of the day', kind: 'travel' })
   else if (it.mode === 'walk') reasons.push({ icon: '🚶', text: it.travelMin + ' min walk from the previous stop', kind: 'travel' })
@@ -573,10 +545,12 @@ function summarize(before, after, options = {}) {
 }
 
 // 3-hour forecast blocks ({ time, span, rain }) -> chance of rain for each hour
+// Uses OpenWeather's own chance of rain (pop). Hours without a forecast count as 0 (no data, no rain counted).
 export function rainFromBlocks(blocks) {
-  const hours = new Array(24).fill(0.1)
+  const hours = new Array(24).fill(0)
   for (const b of blocks || []) {
-    for (let h = b.time; h < b.time + (b.span || 3) && h < 24; h++) hours[h] = b.rain ? 0.8 : 0.1
+    const chance = typeof b.pop === 'number' ? b.pop : b.rain ? 1 : 0
+    for (let h = b.time; h < b.time + (b.span || 3) && h < 24; h++) hours[h] = chance
   }
   return hours
 }

@@ -1,5 +1,5 @@
 <template>
-  <!-- Every way to make one journey, best first: time, cost, live route or estimate, and a Choose button.
+  <!-- Every way to make one journey, best first: time, distance, live route or estimate, and a Choose button.
        Used by the itinerary's travel panel (LegSheet) and by Other journeys. -->
   <ol class="tc" aria-label="Ways to get there">
     <li v-for="o in ranked" :key="o.mode" class="tc-row" :class="{ picked: o.mode === inUse, off: !o.allowed }">
@@ -12,7 +12,7 @@
           <span v-if="o.mode === chosen" class="tc-badge pick">{{ chosenBy ? 'Picked by ' + chosenBy : 'Picked' }}</span>
         </p>
         <p class="tc-sub">
-          {{ costText(o) }} · {{ kmText(o.km) }}
+          {{ kmText(o.km) }}
           <span class="tc-src" :class="{ live: o.live }">{{ o.live ? 'Live route' : 'Estimate' }}</span>
           <span v-if="!o.allowed" class="tc-off">Off in your settings</span>
         </p>
@@ -36,7 +36,6 @@ const props = defineProps({
   recommended: { type: String, default: '' },
   chosen: { type: String, default: '' },        // the way the group picked ('' = none, the suggestion is used)
   chosenBy: { type: String, default: '' },
-  group: { type: Number, default: 1 },          // people sharing a taxi
   mapsUrl: { type: Function, default: null },   // mode -> Google Maps directions link
   actionLabel: { type: String, default: 'Choose' },
   markInUse: { type: Boolean, default: true },   // false: every way gets the button (e.g. Save in Other journeys)
@@ -63,10 +62,6 @@ function durationText(min) {
 function kmText(km) {
   if (km == null) return ''
   return km < 1 ? Math.round(km * 1000 / 50) * 50 + ' m' : km.toFixed(1) + ' km'
-}
-function costText(o) {
-  const base = MODES[o.mode].costText
-  return o.mode === 'taxi' && props.group > 1 ? base + ' (split ' + props.group + ' ways)' : base
 }
 </script>
 
