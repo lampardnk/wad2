@@ -4,7 +4,7 @@ Files: `src/lib/itinerary/dayOptimizer.js` (algorithm, no Vue), `src/components/
 
 ## Algorithm (`optimizeDay(stops, rainByHour, { dayStart, dayEnd, buffer, crowdWeight, travel, from, end })`)
 1. Travel matrix (`travelMatrix`): every pair of stops, using `travelBetween` (see Getting around). Without travel preferences: walk up to 1.3 km, otherwise transit. No location → 15 min.
-2. `scheduleInOrder`: flexible stops in a given order, each starting when you arrive (rounded up to 15 min), waiting for opening time if early. Locked stops keep their time; a flexible stop only goes before a locked one if it fits (travel + buffer included). Lunch / dinner breaks are slotted in when the day has no meal planned (`mealsNeeded`, `MEALS`).
+2. `scheduleInOrder`: flexible stops in a given order, each starting when you arrive (rounded up to 15 min), waiting for opening time if early. Locked stops keep their time; a flexible stop only goes before a locked one if it fits (travel + buffer included). Lunch / dinner breaks (`mealsNeeded`) are off in the app (`meals: false`): the itinerary shows only real stops.
 3. `measure` cost (lower = better), weights in `WEIGHTS`:
    - travel min ×1 + waiting ×0.3 + minutes late for a locked stop ×5
    - crowd % ×0.5 × `crowdWeight` (outdoor ×1, indoor ×0.5; locked stops not counted)
