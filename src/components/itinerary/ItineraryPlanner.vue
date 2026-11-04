@@ -17,7 +17,7 @@
               :tabindex="d === dayShown ? 0 : -1" :title="longDate(d) + (countFor(d) ? ' · ' + countFor(d) + ' stops' : ' · nothing planned') + (issuesOn(d) ? ' · ' + issuesOn(d) + ' to check' : '')"
               @click="pickDay(d)">
               <span class="ip-day-n">D{{ n + 1 }}</span>
-              <small>{{ weekday(d) }}</small>
+              <span class="ip-day-wd">{{ weekday(d) }}</span>
               <strong>{{ dayOfMonth(d) }}</strong>
               <span class="ip-day-dots" aria-hidden="true">
                 <i v-for="k in Math.min(countFor(d), 4)" :key="k"></i>
@@ -2568,14 +2568,14 @@ watch(dayShown, () => {
   line-height: 1.1;
   white-space: nowrap;
 }
-.ip-day small { font-size: 11px; font-weight: 600; color: var(--muted); }
+.ip-day-wd { font-size: 11px; font-weight: 600; color: var(--muted); }
 .ip-day strong { font-size: 14px; }
 .ip-day-n { font-size: 10.5px; font-weight: 700; color: var(--muted); }
 .ip-day:hover { border-color: var(--primary); }
-.ip-day.weekend:not(.on) small { color: var(--active); }
+.ip-day.weekend:not(.on) .ip-day-wd { color: var(--active); }
 .ip-day.today:not(.on) { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
 .ip-day.on { background: var(--primary); border-color: var(--primary); color: #fff; }
-.ip-day.on small, .ip-day.on .ip-day-n { color: rgba(255, 255, 255, 0.9); }
+.ip-day.on .ip-day-wd, .ip-day.on .ip-day-n { color: rgba(255, 255, 255, 0.9); }
 .ip-day.flagged::after {
   content: '';
   position: absolute;
