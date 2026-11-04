@@ -17,8 +17,8 @@
 
     <!-- The itinerary: day navigator, timeline with weather + crowd icons, saved places drawer -->
     <ItineraryPlanner :days="dayList" :selected-date="selectedDate" :stops="itinerary"
-      :wishlist="allWishlist" :scheduled-names="scheduledNames" :day-name="tripDay" :weather-blocks="dayWeather" :typical="typicalWeather" :prefs="dayPrefs"
-      :can-add-day="!!startDate" :day-counts="dayCounts" :day-issues="dayIssues" :destinations="destinations" :travellers="travellers" :me="me"
+      :wishlist="allWishlist" :scheduled-days="scheduledDays" :day-name="tripDay" :weather-blocks="dayWeather" :typical="typicalWeather" :prefs="dayPrefs"
+      :can-add-day="!!startDate" :day-counts="dayCounts" :locked-days="lockedDays" :day-issues="dayIssues" :destinations="destinations" :travellers="travellers" :me="me"
       :day-city="dayCities[selectedDate] || ''" :day-cities="dayCities" :stays="staysByDate" :my-flight="myFlight"
       :day-stay="stayOn(selectedDate)" :morning-stay="morningStayOn(selectedDate)"
       @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @notice="showNotice" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
@@ -173,8 +173,21 @@ export default {
       for (const s of trip.stops) counts[s.date] = (counts[s.date] || 0) + 1
       return counts
     },
-    scheduledNames() {
-      return trip.stops.map((s) => s.name)
+    // Days with a locked booking (a day can't be removed when it would move one of these)
+    lockedDays() {
+      const days = []
+      for (const s of trip.stops) if (s.locked && !days.includes(s.date)) days.push(s.date)
+      return days
+    },
+    // { 'senso-ji': ['2026-12-10', ...] }: the days each place is on (a place can be on the plan more than once)
+    scheduledDays() {
+      const map = {}
+      for (const s of trip.stops) {
+        const key = (s.name || '').toLowerCase()
+        if (!map[key]) map[key] = []
+        if (!map[key].includes(s.date)) map[key].push(s.date)
+      }
+      return map
     },
     // The selected day is too far ahead for a forecast: what's the weather usually like that month?
     typicalWeather() {
@@ -544,58 +557,59 @@ export default {
     },
     // Remember how things were, for Undo
     snapshotDays() {
-      this.dayUndo = { ...savedShape(), endDate: this.endDate, selectedDate: this.selectedDate }
+      this.dayUndo = { ...savedShape(), endDate: this.endDate, selectedDate: this.selectedDate, stays: this.stays }
     },
     addDay() {
       this.snapshotDays()
       this.$emit('set-end-date', this.shiftDate(this.endDate || this.startDate, 1))
     },
-    // Stops on the day go back to the wishlist; later days move one day earlier; the trip gets a day shorter
+    // Any day can go (the planner has checked no locked booking is on it or after it):
+    // its stops go back to Saved places, later days move one day earlier, the trip gets a day shorter
     async removeDay(date) {
       this.snapshotDays()
       const keep = []
-
       for (const s of trip.stops) {
-        // Locked bookings always stay on their original calendar date.
-        if (s.locked) {
-          keep.push(s)
+        if (s.date === date) {
+          const known = trip.wishlist.some((w) => w.name.toLowerCase() === s.name.toLowerCase())
+          if (!known && !s.kind) { // (flights and hotel visits aren't places to save)
+            trip.wishlist.push({ id: newId('w'), name: s.name, address: s.address, outdoor: s.outdoor, type: 'custom', city: this.dayCities[date] || null, votes: [] })
+          }
           continue
         }
-
-        if (s.date === date) {
-          const known = trip.wishlist.some(
-            (w) => w.name.toLowerCase() === s.name.toLowerCase()
-          )
-
-          if (!known) {
-            trip.wishlist.push({
-              id: newId('w'),
-              name: s.name,
-              address: s.address,
-              outdoor: s.outdoor,
-              type: 'custom',
-              city: null,
-              votes: []
-            })
-          }
+        if (s.date > date) s.date = this.shiftDate(s.date, -1)
+        keep.push(s)
+      }
+      trip.stops = keep
+      // Hotels move with their days: one that started on the removed day now starts on the next one
+      // (unless that day already has its own hotel change)
+      const later = this.shiftDate(date, 1)
+      const stays = []
+      let staysMoved = false
+      for (const st of this.stays) {
+        if (!st.from || st.from < date) {
+          stays.push(st)
+        } else if (st.from === date) {
+          staysMoved = true
+          if (!this.stays.some((x) => x.from === later)) stays.push(st)
         } else {
-          // Only unlocked stops on later days move earlier.
-          if (s.date > date) {
-            s.date = this.shiftDate(s.date, -1)
-          }
-
-          keep.push(s)
+          staysMoved = true
+          stays.push({ ...st, from: this.shiftDate(st.from, -1) })
         }
       }
-
-      trip.stops = keep
-
+      if (staysMoved) this.putStays(stays)
       const newEnd = this.shiftDate(this.endDate, -1)
       if (this.selectedDate > newEnd) this.selectDay(newEnd)
-
       this.$emit('set-end-date', newEnd)
-
       this.reportItinerary()
+    },
+    async putStays(list) {
+      if (this.readOnly) return
+      try {
+        const res = await axios.put('/api/trips/' + this.tripId + '/stays', list)
+        this.$emit('stays-change', res.data)
+      } catch (err) {
+        notify(errorText(err, 'Could not save the hotels.'), () => this.putStays(list))
+      }
     },
     async undoDay() {
       const u = this.dayUndo
@@ -603,6 +617,7 @@ export default {
       this.dayUndo = null
       loadFromServer({ stops: u.stops, wishlist: u.wishlist, version: this.tripVersion })
       if (u.endDate !== this.endDate) this.$emit('set-end-date', u.endDate)
+      if (u.stays !== this.stays) this.putStays(u.stays)
       this.selectDay(u.selectedDate)
       await Promise.all(trip.stops.map((item) => this.loadForecast(item)))
       this.reportItinerary()

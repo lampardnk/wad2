@@ -47,6 +47,11 @@ export const DEFAULT_TRAVEL = { modes: ['walk', 'transit', 'taxi'], maxWalk: 20,
 export function legKey(a, b) {
   return a.lat.toFixed(4) + ',' + a.lon.toFixed(4) + '>' + b.lat.toFixed(4) + ',' + b.lon.toFixed(4)
 }
+// Two names for one spot (same point to 4 decimals, about 10 m)
+export function samePoint(a, b) {
+  const [from, to] = legKey(a, b).split('>')
+  return from === to
+}
 
 // Every way from a to b: [{ mode, min, km, live (a real route, not a guess), allowed (in your preferences) }]
 // Where you are when you leave a stop: a flight ends at another airport (endLat/endLon), everything else where it is
@@ -114,6 +119,8 @@ export function recommendTravel(options, tp = DEFAULT_TRAVEL) {
 export function travelBetween(a, b, tp = DEFAULT_TRAVEL) {
   a = exitOf(a)
   if (!a || !b || a.lat == null || b.lat == null) return { min: 0, mode: 'unknown', km: null, missing: 'place' }
+  // The same spot twice (a place on the day again, or a hotel visit at your hotel): nothing to travel
+  if (samePoint(a, b)) return { min: 0, mode: 'same', km: 0, live: true }
   const options = travelOptions(a, b, tp)
   if (!options.length) return { min: 0, mode: 'unknown', km: null, missing: 'route' }
   const rec = recommendTravel(options, tp)

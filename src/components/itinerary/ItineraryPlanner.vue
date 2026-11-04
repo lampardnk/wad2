@@ -46,7 +46,7 @@
         </div>
         <button v-if="canAddDay && !readOnly" type="button" class="ip-small add" title="Add a day at the end of the trip" @click="askAddDay">+ Add day</button>
         <button v-if="canAddDay && !readOnly && dayList.length > 1" type="button" class="ip-small remove"
-          :title="'Remove the last day (Day ' + dayList.length + ')'" :aria-label="'Remove the last day, Day ' + dayList.length" @click="askRemoveDay">− Day {{ dayList.length }}</button>
+          :title="'Remove Day ' + (dayIndex + 1) + ' (' + longDate(dayShown) + ')'" :aria-label="'Remove Day ' + (dayIndex + 1)" @click="askRemoveDay">− Day {{ dayIndex + 1 }}</button>
       </div>
     </div>
 
@@ -195,7 +195,7 @@
           <ol class="ip-list" :class="{ dragging: !!drag }">
             <!-- Where the day starts (set in the bar above): just the trip from there to the first stop -->
             <li v-if="startLeg" class="ip-anchor-row start">
-              <button type="button" class="ip-leg" :class="{ clickable: !readOnly && startLeg.mode !== 'unknown' }" :disabled="readOnly || startLeg.mode === 'unknown'" :aria-label="'Getting from ' + startAnchor.name + ' to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
+              <button type="button" class="ip-leg" :class="{ clickable: !readOnly && !!TRAVEL_MODES[startLeg.mode] }" :disabled="readOnly || !TRAVEL_MODES[startLeg.mode]" :aria-label="'Getting from ' + startAnchor.name + ' to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
                 <AppIcon :name="startAnchor.kind === 'arrive' ? 'plane' : 'door'" :size="13" /> From {{ startAnchor.name }} · <AppIcon :name="modeIcon(startLeg.mode)" :size="13" /> {{ anchorLegText(startLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
             </li>
@@ -329,7 +329,7 @@
             </li>
             <!-- Where the day ends (set in the bar above): just the trip from the last stop to there -->
             <li v-if="stopRows.length && endLeg" class="ip-anchor-row end">
-              <button type="button" class="ip-leg" :class="{ clickable: !readOnly && endLeg.mode !== 'unknown' }" :disabled="readOnly || endLeg.mode === 'unknown'" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
+              <button type="button" class="ip-leg" :class="{ clickable: !readOnly && !!TRAVEL_MODES[endLeg.mode] }" :disabled="readOnly || !TRAVEL_MODES[endLeg.mode]" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
                 <AppIcon :name="modeIcon(endLeg.mode)" :size="13" /> {{ anchorLegText(endLeg) }} · to {{ endAnchor.name }} <AppIcon :name="endAnchor.kind === 'depart' ? 'plane' : 'door'" :size="13" /><AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
             </li>
@@ -382,7 +382,7 @@
         </button>
         <div v-show="drawerOpen" class="ip-drawer-body">
           <p v-if="drag && drag.kind === 'stop'" class="ip-unschedule">Drop here to unschedule</p>
-          <p v-else-if="!unscheduled.length" class="ip-muted">Places you save in Places → Wishlist wait here.</p>
+          <p v-else-if="!unscheduled.length" class="ip-muted">{{ added.length ? 'Every saved place is on a day. Show added to put one on the plan again.' : 'Places you save in Places → Wishlist wait here.' }}</p>
           <!-- Group trips: votes are a signal, not a gate. Any place can go on a day; its colour says how the group feels. -->
           <template v-else-if="votingOn && !(drag && drag.kind === 'stop')">
             <p class="ip-vote-legend">
@@ -403,7 +403,7 @@
           <!-- One group per destination -->
           <section v-for="g in savedGroups" :key="g.city" class="ip-group" :aria-label="'Saved in ' + g.label">
             <h5 class="ip-group-head">
-              <FlagImg :code="g.flag" :size="12" /> {{ g.label }} <span class="ip-group-count">{{ g.items.length }}</span>
+              <AppIcon v-if="g.added" name="check" :size="12" /><FlagImg v-else :code="g.flag" :size="12" /> {{ g.label }} <span class="ip-group-count">{{ g.items.length }}</span>
             </h5>
             <!-- The whole card adds it to the end of the day (the + does the same, for keyboards) -->
             <div v-for="w in g.items" :key="w.id" class="ip-wish clickable" :class="voteClass(w)" draggable="true" :title="'Add ' + w.name + ' to the end of the day'"
@@ -413,12 +413,17 @@
               </div>
               <div class="ip-wish-text">
                 <span class="ip-wish-name">{{ w.name }}</span>
-                <small>{{ categoryOf(w).label }}<template v-if="votingOn"> · {{ voteCount(w) }} of {{ travellers.length }} want to go</template></small>
+                <small v-if="g.added">{{ addedOn(w) }} · add again</small>
+                <small v-else>{{ categoryOf(w).label }}<template v-if="votingOn"> · {{ voteCount(w) }} of {{ travellers.length }} want to go</template></small>
               </div>
               <button type="button" class="ip-add" :aria-label="'Add ' + w.name + ' to the end of the day'" title="Add to the end of the day"
                 @click="scheduleWish(w, stopRows.length)">+</button>
             </div>
           </section>
+          <!-- Places already on a day stay out of the list until asked for (a place can go on the plan twice) -->
+          <button v-if="added.length && !(drag && drag.kind === 'stop')" type="button" class="ip-chip-btn ip-added-btn" :aria-pressed="showAdded" @click="showAdded = !showAdded">
+            <AppIcon name="check" :size="12" /> {{ showAdded ? 'Hide added' : 'Show added' }} <span class="ip-group-count">{{ added.length }}</span>
+          </button>
         </div>
       </aside>
     </div>
@@ -451,7 +456,7 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, inject } from 'vue'
 import axios from 'axios'
 import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, crowdAt, rainDuring,
-  travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf, CROWD_LIMIT } from '../../lib/itinerary/dayOptimizer.js'
+  travelOptions, recommendTravel, travelBetween, legKey, samePoint, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf, CROWD_LIMIT } from '../../lib/itinerary/dayOptimizer.js'
 import { loadLeaflet } from '../../services/leaflet.js'
 import StopSheet from './StopSheet.vue'
 import { codeForDestination } from '../../lib/trip/destinations.js'
@@ -470,7 +475,7 @@ const props = defineProps({
   selectedDate: { type: String, default: '' },
   stops: { type: Array, default: () => [] },            // the selected day's stops (itinerary store)
   wishlist: { type: Array, default: () => [] },         // the trip's wishlist
-  scheduledNames: { type: Array, default: () => [] },   // names already on any day (hidden from the drawer)
+  scheduledDays: { type: Object, default: () => ({}) },  // { lowercased name: [dates] }: places already on a day (the drawer's "Added")
   dayName: { type: String, default: '' },
   weatherBlocks: { type: Array, default: () => [] },
   typical: { type: Object, default: null }, // { month, place, temp, rainyDays }: usual weather when there's no forecast yet
@@ -478,6 +483,7 @@ const props = defineProps({
   canAddDay: { type: Boolean, default: false },
   destinations: { type: Array, default: () => [] },     // the trip's cities (helps place stops on the map)
   dayCounts: { type: Object, default: () => ({}) },      // { '2026-10-22': 3 } stops per day
+  lockedDays: { type: Array, default: () => [] },       // days with a locked booking (they can't move, so their days can't go)
   dayIssues: { type: Object, default: () => ({}) },     // { '2026-10-22': { issues: 2, load: 0.8 } } for the day strip
   travellers: { type: Array, default: () => [] },       // everyone on the trip (for the majority vote rule)
   me: { type: String, default: '' },                    // my traveller name (shown on travel choices I make)
@@ -596,54 +602,24 @@ function askAddDay() {
   })
 }
 
-// Only the last day can be removed, so no other day's date ever changes
+// Remove the open day: its stops go back to Saved places and the days after it move one day earlier.
+// Not when that would move a locked booking (it's fixed to its date).
 function askRemoveDay() {
-  const n = dayList.value.length
-  const date = dayList.value[n - 1]
-
-  // Get the stops on the day being removed.
-  const stopsOnDay = props.stops.filter((s) => s.date === date)
-
-  // A day containing a locked booking cannot be removed.
-  const lockedStops = stopsOnDay.filter((s) => s.locked)
-
-  if (lockedStops.length > 0) {
-    emit(
-      'notice',
-      'Day ' + n +
-        ' cannot be removed because it contains ' +
-        lockedStops.length +
-        ' locked booking' +
-        (lockedStops.length === 1 ? '' : 's') +
-        '. Unlock or move the booking first.'
-    )
+  const date = dayShown.value
+  const n = dayIndex.value + 1
+  const last = dayList.value.length
+  const locked = props.lockedDays.filter((d) => d >= date).sort()
+  if (locked.length) {
+    const on = locked[0] === date ? 'it has' : 'Day ' + (dayList.value.indexOf(locked[0]) + 1) + ' has'
+    emit('notice', 'Day ' + n + ' can\'t be removed: ' + on + ' a locked booking' + (locked[0] === date ? '' : ' that would move to an earlier date') + '. Unlock or move the booking first.')
     return
   }
-
-  if (stopsOnDay.length > 0) {
-    emit(
-      'notice',
-      stopsOnDay.length +
-        (stopsOnDay.length === 1 ? ' stop is' : ' stops are') +
-        ' planned outside the shortened trip dates. Move ' +
-        (stopsOnDay.length === 1 ? 'it' : 'them') +
-        ' in the itinerary first.'
-    )
-    return
-  }
-
-  const count = stopsOnDay.length
+  const places = props.stops.filter((s) => !s.kind).length
+  const others = props.stops.length - places
   const lines = []
-
-  if (count) {
-    lines.push(
-      count +
-        ' stop' +
-        (count === 1 ? '' : 's') +
-        ' on this day go back to Saved places (nothing is deleted).'
-    )
-  }
-
+  if (places) lines.push(places + (places === 1 ? ' stop on this day goes' : ' stops on this day go') + ' back to Saved places (nothing is deleted).')
+  if (others) lines.push(others + ' hotel visit' + (others === 1 ? '' : 's') + ' on this day ' + (others === 1 ? 'is' : 'are') + ' removed.')
+  if (n < last) lines.push('Day ' + (n + 1) + (n + 1 < last ? ' to Day ' + last + ' move' : ' moves') + ' one day earlier, and the trip ends on ' + longDate(shiftDate(dayList.value[last - 1], -1)) + '.')
   openConfirm({
     kind: 'remove',
     title: 'Remove Day ' + n + ' (' + longDate(date) + ')?',
@@ -670,7 +646,7 @@ function doConfirm() {
     emit('add-day')
     showToast('Day ' + n + ' added')
   } else {
-    const n = dayList.value.length
+    const n = dayList.value.indexOf(c.date) + 1
     emit('remove-day', c.date)
     showToast('Day ' + n + ' removed')
   }
@@ -864,10 +840,20 @@ const work = computed(() => {
     return a ? { ...w, crowd: assumedCurve(w, a), crowdAssumed: true } : w
   })
 })
-const unscheduled = computed(() => {
-  const taken = props.scheduledNames.map((n) => n.toLowerCase())
-  return props.wishlist.filter((w) => !taken.includes(w.name.toLowerCase()))
-})
+const unscheduled = computed(() => props.wishlist.filter((w) => !props.scheduledDays[w.name.toLowerCase()]))
+// Saved places already on a day: hidden until "Show added", then they can go on another day (or this one) again
+const added = computed(() => props.wishlist.filter((w) => props.scheduledDays[w.name.toLowerCase()]))
+const showAdded = ref(false)
+// "Day 1, Day 3": where an added place already is
+function addedOn(w) {
+  const days = []
+  for (const d of props.scheduledDays[w.name.toLowerCase()] || []) {
+    const n = dayList.value.indexOf(d)
+    if (n >= 0) days.push(n + 1)
+  }
+  days.sort((a, b) => a - b)
+  return days.length ? 'On Day ' + days.join(', ') : 'On the plan'
+}
 // Saved places grouped by destination (e.g. Tokyo, Kyoto), in the order they first appear.
 // Places saved before multi-city trips have no city and go under "Other places".
 // ---------- votes: a signal, not a gate ----------
@@ -938,6 +924,11 @@ const savedGroups = computed(() => {
   }
   // Places without a city go last
   groups.sort((a, b) => (a.city ? 0 : 1) - (b.city ? 0 : 1))
+  // Already on the plan: last, and only when asked for
+  if (showAdded.value && added.value.length) {
+    const items = added.value.slice().sort((a, b) => a.name.localeCompare(b.name))
+    groups.push({ city: '@added', label: 'Added', flag: '', added: true, items })
+  }
   return groups
 })
 
@@ -990,7 +981,7 @@ const travelPrefs = computed(() => ({
 const legJobs = {} // legKey -> the lookup that is running
 function fetchLeg(a, b) {
   a = exitOf(a) // after a flight: from the airport it lands at
-  if (!a || !b || a.lat == null || b.lat == null) return Promise.resolve()
+  if (!a || !b || a.lat == null || b.lat == null || samePoint(a, b)) return Promise.resolve() // (same spot: nothing to look up)
   const key = legKey(a, b)
   if (realLegs.value[key]) return Promise.resolve()
   if (legJobs[key]) return legJobs[key]
@@ -1249,6 +1240,7 @@ function modeIcon(mode) {
 }
 function anchorLegText(leg) {
   if (leg.mode === 'unknown') return 'No route yet · travel time not counted'
+  if (leg.mode === 'same') return 'Same place'
   return TRAVEL_MODES[leg.mode].label + ' · ' + leg.min + ' min' + (leg.live ? '' : ' (approx.)')
 }
 function openAnchorLeg(which) {
@@ -1722,6 +1714,11 @@ function unschedule(stop) {
   emit('unschedule', stop.id)
   // A flight or a hotel visit just comes off the day; places go back to Saved places
   if (stop.kind === 'flight' || stop.kind === 'hotel') return showToast(stop.name + ' removed from the day')
+  // A place that's on the plan more than once stays under Added (its other visits keep it there)
+  const name = stop.name.toLowerCase()
+  const elsewhere = (props.scheduledDays[name] || []).some((d) => d !== dayShown.value) ||
+    props.stops.some((s) => s.id !== stop.id && s.name.toLowerCase() === name)
+  if (elsewhere) return showToast(stop.name + ' removed from this day (still on the plan)')
   drawerOpen.value = true
   showToast(stop.name + ' moved back to Saved places')
 }
@@ -2745,8 +2742,19 @@ watch(dayShown, () => {
 .ip-leg .ip-leg-go { padding: 0 !important; background: none !important; color: inherit !important; }
 
 /* Hotel / airport rows */
-.ip-anchor-row { list-style: none; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0 0 8px; }
+/* Same spacing as the travel pills between stops: in line with the cards, 6px above and below, on the chain */
+.ip-anchor-row { position: relative; list-style: none; display: flex; flex-direction: column; align-items: flex-start; margin: 0; padding-left: 44px; }
 .ip-anchor-row.end { margin: 0 0 12px; }
+.ip-anchor-row::before { content: ''; position: absolute; left: 15px; border-left: 2px dashed var(--edge-strong); }
+.ip-anchor-row.start::before { top: 50%; bottom: 0; }
+.ip-anchor-row.end::before { top: 0; bottom: 50%; }
+.ip-anchor-row::after { content: ''; position: absolute; left: 11px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: #fff; border: 2px solid var(--edge-strong); }
+/* The chain runs on into the hotel / airport rows */
+.ip-list:has(.ip-anchor-row.start) .ip-stop.first::before { display: block; top: 0; }
+.ip-list:has(.ip-anchor-row.start) .ip-gap.first::before { display: block; }
+.ip-list:not(.dragging):has(.ip-anchor-row.start) .ip-gap.first { min-height: 0; }
+.ip-list:has(.ip-anchor-row.end) .ip-stop.last::before { display: block; bottom: 0; }
+.ip-list:has(.ip-anchor-row.end) .ip-gap.end::before { display: block; }
 
 /* A day with more than it can hold */
 .ip-overflow {
@@ -2987,6 +2995,7 @@ watch(dayShown, () => {
 .ip-chip-btn.on { background: var(--vote-tint, var(--primary-tint)); border-color: var(--vote, var(--primary)); color: var(--vote-ink, var(--ink)); }
 .ip-sort-btn { margin-left: auto; }
 .ip-group { display: flex; flex-direction: column; gap: 8px; }
+.ip-added-btn { align-self: flex-start; }
 .ip-group + .ip-group { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
 .ip-group-head { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); }
 .ip-group-count { font-size: 11px; font-weight: 600; padding: 0 7px; border-radius: var(--bs-border-radius-sm, 0.25rem); background: var(--tag); }
