@@ -16,9 +16,8 @@
               :class="{ on: d === dayShown, today: isTodayDate(d), weekend: isWeekend(d), flagged: issuesOn(d) }" :aria-selected="d === dayShown"
               :tabindex="d === dayShown ? 0 : -1" :title="longDate(d) + (countFor(d) ? ' · ' + countFor(d) + ' stops' : ' · nothing planned') + (issuesOn(d) ? ' · ' + issuesOn(d) + ' to check' : '')"
               @click="pickDay(d)">
-              <span class="ip-day-n">D{{ n + 1 }}</span>
-              <span class="ip-day-wd">{{ weekday(d) }}</span>
-              <strong>{{ dayOfMonth(d) }}</strong>
+              <span class="ip-day-n">Day {{ n + 1 }}</span>
+              <span class="ip-day-date"><span class="ip-day-wd">{{ weekday(d) }}</span> {{ dayOfMonth(d) }}</span>
               <span class="ip-day-dots" aria-hidden="true">
                 <i v-for="k in Math.min(countFor(d), 4)" :key="k"></i>
               </span>
@@ -2453,11 +2452,7 @@ watch(dayShown, () => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--bs-border-radius-lg, 0.5rem);
-  background: var(--soft);
+  gap: 8px 10px;
 }
 .ip-daynav-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .ip-small {
@@ -2525,20 +2520,32 @@ watch(dayShown, () => {
 .ip-flag { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
 .ip-flag.inline { position: static; display: inline-block; }
 
-.ip-strip-row { flex: 1 1 320px; min-width: 0; display: flex; align-items: center; gap: 4px; }
+/* the days sit in one white track, like a segmented control */
+.ip-strip-row {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 40, 62, 0.05);
+}
 .ip-arrow {
   flex: none;
+  display: grid;
+  place-items: center;
   width: 30px;
   height: 30px;
-  border-radius: var(--bs-border-radius, 0.375rem);
-  border: 1px solid var(--line);
-  background: #fff;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   color: var(--ink);
-  font-size: 20px;
-  line-height: 1;
 }
-.ip-arrow:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
-.ip-arrow:disabled { opacity: 0.3; }
+.ip-arrow:hover:not(:disabled) { background: var(--soft); color: var(--primary); }
+.ip-arrow:disabled { opacity: 0.25; }
 .ip-strip-wrap { flex: 1; min-width: 0; }
 .ip-strip-wrap.fade-r .ip-days {
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
@@ -2558,38 +2565,45 @@ watch(dayShown, () => {
   position: relative;
   flex: none;
   display: flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 5px 9px 7px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 58px;
+  height: 46px;
+  padding: 0 10px 4px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
   color: var(--ink);
   line-height: 1.1;
   white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
-.ip-day-wd { font-size: 11px; font-weight: 600; color: var(--muted); }
-.ip-day strong { font-size: 14px; }
-.ip-day-n { font-size: 10.5px; font-weight: 700; color: var(--muted); }
-.ip-day:hover { border-color: var(--primary); }
+.ip-day-n { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ip-day-date { font-size: 14px; font-weight: 700; }
+.ip-day-wd { font-weight: 500; color: var(--muted); }
+.ip-day:hover:not(.on) { background: var(--soft); }
 .ip-day.weekend:not(.on) .ip-day-wd { color: var(--active); }
-.ip-day.today:not(.on) { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
-.ip-day.on { background: var(--primary); border-color: var(--primary); color: #fff; }
-.ip-day.on .ip-day-wd, .ip-day.on .ip-day-n { color: rgba(255, 255, 255, 0.9); }
+/* today: a gold ring */
+.ip-day.today:not(.on) { box-shadow: inset 0 0 0 2px var(--gold); }
+.ip-day.on { background: var(--primary); color: #fff; box-shadow: 0 4px 10px -4px rgba(0, 40, 62, 0.5); }
+.ip-day.on .ip-day-wd, .ip-day.on .ip-day-n { color: rgba(255, 255, 255, 0.8); }
+/* something to check that day */
 .ip-day.flagged::after {
   content: '';
   position: absolute;
-  top: 2px;
-  right: 4px;
-  width: 7px;
-  height: 7px;
+  top: 5px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--gold);
 }
-/* how many stops: small dots along the pill's bottom edge */
-.ip-day-dots { position: absolute; left: 0; right: 0; bottom: 2px; display: flex; justify-content: center; gap: 2px; height: 4px; }
-.ip-day-dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--primary); }
-.ip-day.on .ip-day-dots i { background: #fff; }
+/* how many stops: small dots under the date */
+.ip-day-dots { position: absolute; left: 0; right: 0; bottom: 5px; display: flex; justify-content: center; gap: 3px; height: 3px; }
+.ip-day-dots i { width: 3px; height: 3px; border-radius: 50%; background: var(--primary); opacity: 0.6; }
+.ip-day.on .ip-day-dots i { background: #fff; opacity: 0.9; }
 
 /* ---------- Action bar ---------- */
 .ip-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
