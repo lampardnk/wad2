@@ -2,7 +2,7 @@
 // GET /api/travel/leg?from=34.6937,135.5023&to=34.6650,135.4320
 //   -> { walk: { min, km }, bike: {...}, taxi: {...}, transit: {...} }  (only the ones we could look up)
 // Real routes come from Geoapify (needs GEOAPIFY_KEY). Without it, or if a lookup fails, the answer
-// has fewer modes (or none) and the app shows its own estimate instead. Answers are kept in the database.
+// has fewer modes (or none) and the app says it has no route. Complete answers are kept in the database.
 import express from 'express'
 import { requireAuth } from './auth.js'
 import { geoapifyReady, geoapifyRoute } from '../geoapify.js'
@@ -23,14 +23,16 @@ function point(text) {
   return { lat: Math.round(lat * 1e4) / 1e4, lon: Math.round(lon * 1e4) / 1e4 } // about 10 m
 }
 
+// -> { found: { walk: {...}, ... }, complete: every way got an answer (a route, or "no route") }
+// A failed request (e.g. too many at once) is not an answer: that way is just missing this time.
 async function lookUp(from, to) {
-  const out = {}
+  const found = {}
   const answers = await Promise.allSettled(Object.keys(MODES).map((m) => geoapifyRoute(from, to, MODES[m])))
   const names = Object.keys(MODES)
   for (let i = 0; i < names.length; i++) {
-    if (answers[i].status === 'fulfilled' && answers[i].value) out[names[i]] = answers[i].value
+    if (answers[i].status === 'fulfilled' && answers[i].value) found[names[i]] = answers[i].value
   }
-  return out
+  return { found, complete: answers.every((a) => a.status === 'fulfilled') }
 }
 
 router.get('/leg', requireAuth, async (req, res) => {
@@ -46,8 +48,9 @@ router.get('/leg', requireAuth, async (req, res) => {
     job = lookUp(from, to).finally(() => running.delete(key))
     running.set(key, job)
   }
-  const found = await job
-  if (Object.keys(found).length) await legs.set(key, found) // nothing found = try again next time
+  const { found, complete } = await job
+  // Kept only when every way got an answer (a failed request is asked again next time)
+  if (complete && Object.keys(found).length) await legs.set(key, found)
   res.json(found)
 })
 

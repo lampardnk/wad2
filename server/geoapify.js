@@ -14,9 +14,16 @@ export function geoapifyReady() {
 
 async function getJson(path, params, ms) {
   const url = BASE + path + '?' + new URLSearchParams({ ...params, apiKey: apiKey() })
-  const res = await fetch(url, { signal: AbortSignal.timeout(ms || 8000) })
-  if (!res.ok) throw new Error('Geoapify ' + res.status)
-  return res.json()
+  // Too many requests at once (429): wait a moment and ask again, twice at most
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, { signal: AbortSignal.timeout(ms || 8000) })
+    if (res.status === 429 && attempt < 2) {
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+      continue
+    }
+    if (!res.ok) throw new Error('Geoapify ' + res.status)
+    return res.json()
+  }
 }
 
 // Find a place by text. Answers in Photon's shape ({ features: [...] }), so code written for Photon works with it.
