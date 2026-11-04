@@ -1,0 +1,371 @@
+﻿/* ===== Scrapbook kit =====
+   The look of the Home and Login pages, shared by every trip tab:
+   cream paper, one navy ink for outlines and text, hard offset shadows (things press down like toys),
+   sunny amber for the main action, Lilita One for headings and Plus Jakarta Sans for reading.
+   Components use these variables in their own styles; the .sb-* classes are ready-made pieces. */
+:root {
+  --sb-ink: #12324a;          /* outlines, text, shadows */
+  --sb-ink-soft: #3a5266;
+  --sb-muted: #5a6b78;
+  --sb-paper: #faf6ee;        /* the page */
+  --sb-cream: #fffaf0;        /* cards */
+  --sb-card: #fffdf8;         /* fields and inner panels */
+  --sb-edge: #efdcbc;         /* soft borders inside cards */
+  --sb-stitch: #e2cfa8;       /* dashed "stitching" */
+  --sb-amber: #ffbf3c;
+  --sb-amber-hi: #ffd36e;
+  --sb-amber-lo: #f5a922;
+  --sb-teal: #2fa7b8;
+  --sb-teal-soft: #dff6f3;
+  --sb-peach: #ffe6dc;
+  --sb-coral: #ff7a5c;
+  --sb-red: #d1495b;
+  --sb-line: 2.5px solid var(--sb-ink);
+  --sb-pop: 0 5px 0 var(--sb-ink);
+  --sb-pop-sm: 0 3px 0 var(--sb-ink);
+  --sb-display: 'Lilita One', var(--font-display);
+  --sb-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* A cream card with a navy outline and a hard shadow */
+.sb-card {
+  background: var(--sb-cream);
+  border: var(--sb-line);
+  border-radius: 22px;
+  box-shadow: var(--sb-pop);
+}
+
+/* Buttons: amber (main action) and cream (everything else). They press down when clicked. */
+.sb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: var(--sb-line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--sb-amber-hi), var(--sb-amber) 55%, var(--sb-amber-lo));
+  color: var(--sb-ink);
+  font-family: var(--sb-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), var(--sb-pop-sm);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.sb-btn.cream {
+  background: var(--sb-cream);
+  box-shadow: var(--sb-pop-sm);
+}
+.sb-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 5px 0 var(--sb-ink);
+}
+.sb-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--sb-ink);
+}
+.sb-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.sb-btn:focus-visible {
+  outline: 3px solid var(--sb-teal);
+  outline-offset: 3px;
+}
+
+/* A small rounded tag (filters, labels) */
+.sb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 2px solid var(--sb-ink);
+  border-radius: 12px;
+  background: var(--sb-cream);
+  color: var(--sb-ink);
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: var(--sb-pop-sm);
+}
+
+/* Dropdown menus open on <body>, outside the page's own styles. On scrapbook pages (body.sb-page,
+   set by the trip page) they become cream cards too, instead of the dark glass used elsewhere. */
+body.sb-page .dd-menu.dd-menu {
+  border: var(--sb-line);
+  border-radius: 14px;
+  background: var(--sb-card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--sb-pop), 0 18px 34px -14px rgba(18, 50, 74, 0.4);
+  color: var(--sb-ink);
+}
+body.sb-page .dd-menu.dd-menu .dd-header {
+  color: var(--sb-ink-soft);
+}
+body.sb-page .dd-menu.dd-menu .dd-search {
+  border: 2px solid var(--sb-ink);
+  border-radius: 10px;
+  background: var(--sb-cream);
+  color: var(--sb-muted);
+}
+body.sb-page .dd-menu.dd-menu .dd-search input {
+  color: var(--sb-ink);
+}
+body.sb-page .dd-menu.dd-menu .dd-list li {
+  color: var(--sb-ink);
+}
+body.sb-page .dd-menu.dd-menu .dd-list li.active {
+  background: rgba(255, 191, 60, 0.25);
+}
+body.sb-page .dd-menu.dd-menu .dd-list li.selected {
+  color: var(--sb-ink);
+  font-weight: 800;
+}
+body.sb-page .dd-menu.dd-menu .dd-list li.selected.active {
+  background: rgba(255, 191, 60, 0.4);
+}
+body.sb-page .dd-menu.dd-menu .dd-desc,
+body.sb-page .dd-menu.dd-menu .dd-empty {
+  color: var(--sb-muted);
+}
+body.sb-page .dd-menu.dd-menu .dd-check {
+  color: var(--sb-ink);
+  filter: none;
+}
+
+/* ===== Notebook form =====
+   The fields and buttons of the "Plan a new trip" notebook, for any form shown in a <NotebookModal>
+   (Places ΓåÆ "Add a tour" uses them; Home keeps its own copy for the trip form). */
+.nbf {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 18px;
+}
+.nbf-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+/* two fields side by side (one under the other on phones) */
+.nbf-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px 14px;
+}
+.nbf-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--sb-ink);
+}
+.nbf-label small {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6b7f8e;
+}
+/* chunky, rounded "notebook entry" fields */
+.nbf-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  padding: 12px 16px;
+  border: var(--sb-line);
+  border-radius: 18px;
+  background: #fbf5ea;
+  color: var(--sb-ink);
+  font: inherit;
+  font-size: 16px; /* 16px: phones don't zoom in */
+  font-weight: 600;
+  box-shadow: 0 4px 0 rgba(18, 50, 74, 0.18);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.nbf-input::placeholder {
+  color: #8a9aa6;
+  font-weight: 500;
+}
+.nbf-input:focus {
+  outline: none;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 var(--sb-amber), 0 0 0 4px rgba(255, 191, 60, 0.3);
+}
+.nbf-input:disabled {
+  border-style: dashed;
+  background: var(--sb-cream);
+  box-shadow: none;
+  opacity: 0.7;
+}
+/* a dropdown that looks like the fields */
+.nbf .nbf-dd .dd-trigger,
+.nbf .nbf-dd .dd-trigger:hover:not(:disabled) {
+  min-height: 52px;
+  border: var(--sb-line);
+  border-radius: 18px;
+  background: #fbf5ea;
+  color: var(--sb-ink);
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 0 rgba(18, 50, 74, 0.18);
+}
+.nbf .nbf-dd .dd-value,
+.nbf .nbf-dd .dd-chevron {
+  color: var(--sb-ink);
+}
+.nbf .nbf-dd.open .dd-trigger,
+.nbf .nbf-dd .dd-trigger:focus-visible {
+  box-shadow: 0 5px 0 var(--sb-amber), 0 0 0 4px rgba(255, 191, 60, 0.3);
+}
+/* a row of small choices (1 h, 2 h...): the picked one is amber */
+.nbf-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nbf-choice {
+  min-height: 42px;
+  padding: 0 16px;
+  border: var(--sb-line);
+  border-radius: 14px;
+  background: #fbf5ea;
+  color: var(--sb-ink);
+  font: inherit;
+  font-weight: 800;
+  box-shadow: 0 4px 0 var(--sb-ink);
+  transition: transform 0.2s var(--sb-spring), box-shadow 0.15s, background 0.15s;
+}
+.nbf-choice:hover {
+  transform: translateY(-2px);
+}
+.nbf-choice:active,
+.nbf-choice.on {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--sb-ink);
+}
+.nbf-choice.on {
+  background: var(--sb-amber);
+}
+/* big picture tiles (trip vibes, indoor / outdoor) */
+.nbf-vibes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.nbf-vibes.two {
+  grid-template-columns: repeat(2, minmax(0, 160px));
+}
+.nbf-vibe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  border: var(--sb-line);
+  border-radius: 20px;
+  background: #fbf5ea;
+  color: var(--sb-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--sb-ink);
+  transition: transform 0.2s var(--sb-spring), background 0.15s, box-shadow 0.15s;
+}
+.nbf-vibe:hover {
+  transform: translateY(-3px);
+}
+.nbf-vibe:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--sb-ink);
+}
+.nbf-vibe.on {
+  background: var(--sb-teal-soft);
+  border-color: #0f8d9b;
+  box-shadow: 0 4px 0 #0f8d9b;
+}
+.nbf-note {
+  margin: 0;
+  padding: 10px 14px;
+  border: 2px dashed var(--sb-stitch);
+  border-radius: 14px;
+  color: var(--sb-ink-soft);
+  font-size: 14px;
+  font-weight: 600;
+}
+.nbf-msg {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+.nbf-msg.is-error {
+  color: #c43a4b;
+}
+/* "Maybe later" and the big 3D amber button */
+.nbf-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.nbf-later {
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #4a6274;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.nbf-later:hover {
+  background: rgba(18, 50, 74, 0.06);
+}
+.nbf-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border: var(--sb-line);
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--sb-amber-hi), var(--sb-amber) 55%, var(--sb-amber-lo));
+  color: var(--sb-ink);
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -3px 0 rgba(0, 0, 0, 0.08), 0 7px 0 var(--sb-ink), 0 16px 24px -10px rgba(18, 50, 74, 0.45);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.nbf-go:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -3px 0 rgba(0, 0, 0, 0.08), 0 9px 0 var(--sb-ink), 0 18px 26px -10px rgba(18, 50, 74, 0.45);
+}
+.nbf-go:active:not(:disabled) {
+  transform: translateY(6px);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.15), 0 1px 0 var(--sb-ink);
+}
+.nbf-go:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.nbf button:focus-visible {
+  outline: 3px solid #19b3c4;
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .nbf-pair { grid-template-columns: minmax(0, 1fr); }
+  .nbf-actions { flex-direction: column-reverse; align-items: stretch; }
+  .nbf-go { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nbf-input, .nbf-choice, .nbf-vibe, .nbf-go { transition: none; }
+}

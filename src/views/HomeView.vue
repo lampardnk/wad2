@@ -36,27 +36,71 @@
     </section>
 
     <!-- ===== Hero: you, your travel map (dotted routes for every trip) and your numbers ===== -->
+    
+    <!-- ===== Hero: you, your travel map and your numbers ===== -->
     <section class="hero" aria-labelledby="hero-title">
+
+      <button type="button" class="hero-sun"
+        :class="{ shine: sunShine }"
+        aria-label="Make the sun shine"
+        @click="shineSun">
+        <span class="hero-sun-glow" aria-hidden="true"></span>
+        <DoodleIcon name="sun" :size="62" />
+      </button>
+
+      <button ref="plane" type="button" class="hero-plane"
+        :class="{ flying: planeFlying }"
+        aria-label="Send the plane for a spin"
+        @click="flyPlane">
+        <span class="hero-plane-body" :style="planeStyle">
+          <DoodleIcon name="plane" :size="46" />
+        </span>
+      </button>
+
       <div class="hero-top">
         <div class="hero-me">
-          <span class="hero-avatar" aria-hidden="true">{{ (firstName || '?').charAt(0).toUpperCase() }}</span>
+          <span class="hero-avatar" aria-hidden="true">
+            {{ (firstName || '?').charAt(0).toUpperCase() }}
+          </span>
           <div>
-            <p class="hero-hello">Hi{{ firstName ? ', ' + firstName : '' }}! Where to next?</p>
+            <p class="hero-hello">
+              Hi{{ firstName ? ', ' + firstName : '' }}! Where to next?
+            </p>
             <h1 id="hero-title" class="hero-title">Your travels</h1>
           </div>
         </div>
-        <!-- Hidden while there are no trips: the "No trips yet" box below has the same two buttons -->
+
         <div v-if="!noTrips" class="hero-btns">
-          <button class="pl-btn" @click="openForm" data-testid="new-trip-btn"><DoodleIcon name="plus" :size="22" tint="cream" /> Plan a new trip</button>
+          <button class="pl-btn" @click="openForm" data-testid="new-trip-btn">
+            <DoodleIcon name="plus" :size="22" tint="cream" />
+            Plan a new trip
+          </button>
         </div>
       </div>
-      <ul class="hero-stats" aria-label="Your travel numbers">
-        <li v-for="(st, i) in travelStats" :key="st.label" :class="'tint-' + i">
-          <DoodleIcon :name="STAT_ICONS[i]" :size="26" />
-          <b>{{ st.value }}</b><span>{{ st.label }}</span>
-        </li>
-      </ul>
+
+      <div class="hero-grid">
+        <TravelMap
+          class="hero-map"
+          :trips="mapTrips"
+          :active-id="mapActive"
+          :hover-id="hoverTrip"
+          @hover="hoverTrip = $event"
+          @open="(id) => $router.push('/trip/' + id)"
+        />
+
+        <ul class="hero-stats" aria-label="Your travel numbers">
+          <li v-for="(st, i) in travelStats"
+            :key="st.label"
+            class="pl-hover-bounce"
+            :class="'tint-' + i">
+            <DoodleIcon :name="STAT_ICONS[i]" :size="26" />
+            <b>{{ st.value }}</b>
+            <span>{{ st.label }}</span>
+          </li>
+        </ul>
+      </div>
     </section>
+
 
     <!-- ===== Plan a new trip: the "Traveler's adventure notebook" pop-up ===== -->
     <NotebookModal :open="showCreateForm" title="Plan a new trip" :tip="notebookTip" @close="closeForm">
@@ -363,6 +407,8 @@ import { auth } from '../auth.js'
 import { POPULAR_DESTINATIONS, codeForDestination } from '../lib/trip/destinations.js'
 import AppIcon from '../components/common/AppIcon.vue'
 import DoodleIcon from '../components/common/DoodleIcon.vue'
+import TravelMap from '../components/trip/TravelMap.vue'
+import ExplorerMascot from '../components/auth/ExplorerMascot.vue'
 import PassportBook from '../components/home/PassportBook.vue'
 import NotebookModal from '../components/home/NotebookModal.vue'
 import FlagImg from '../components/common/FlagImg.vue'
@@ -395,10 +441,20 @@ const CARD_TILT = ['-1deg', '1.2deg', '-0.6deg', '1.5deg']
 const STATUS_DOODLE = { none: 'map', upcoming: 'plane', ongoing: 'sun', past: 'check' }
 
 export default {
-  components: { AppIcon, DoodleIcon, PassportBook, NotebookModal, FlagImg },
+  components: { AppIcon, DoodleIcon, PassportBook, NotebookModal, FlagImg, TravelMap, ExplorerMascot},
   data() {
     return {
-      STAT_ICONS: ['suitcase', 'pin', 'map', 'calendar'],
+
+      planeStyle: {},
+      planeFlying: false,
+      sunShine: false,
+      hoverTrip: '',
+      places: {},
+
+      places: {},
+      hoverTrip: '',
+
+      STAT_ICONS: ['suitcase', 'pin', 'map', 'calendar', 'plane'],
       showSetup: needsSetup(auth.user && auth.user.id), // just signed up: "set up your needs" card
       trips: [],
       loading: true,
@@ -499,6 +555,34 @@ export default {
         { value: cities.length, label: cities.length === 1 ? 'Place' : 'Places' },
         { value: days, label: 'Days away' }
       ]
+    },
+    mapTrips() {
+      return this.allTrips.map((t) => {
+        const points = t.destinations
+          .filter((d) => this.places[d])
+          .map((d) => ({
+            label: d,
+            lat: this.places[d].lat,
+            lon: this.places[d].lon
+          }))
+
+        return {
+          id: t.id,
+          name: t.name,
+          done: this.stageOf(t) === 'archive',
+          points
+        }
+      })
+    },
+
+    mapActive() {
+      const next = this.allTrips.find(
+        (t) => this.stageOf(t) !== 'archive'
+      )
+
+      return next
+        ? next.id
+        : (this.allTrips[0] ? this.allTrips[0].id : '')
     },
     countryCount() {
       const countries = []
@@ -783,6 +867,124 @@ export default {
       this.pickStartStage()
       this.loadPhotos()
       this.loadInvites()
+      this.loadPlaces()
+    },
+
+
+
+    // ---------- hero doodles ----------
+
+    flyPlane() {
+      if (
+        this.planeFlying ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) return
+
+      const hero = this.$refs.plane && this.$refs.plane.parentElement
+      if (!hero) return
+
+      this.planeFlying = true
+
+      const box = hero.getBoundingClientRect()
+      const me = this.$refs.plane.getBoundingClientRect()
+
+      const left = -(me.left - box.left) + 20
+      const right = box.right - me.right - 10
+      const bottom = Math.min(box.height - 70, 320)
+
+      const rand = (a, b) => a + Math.random() * (b - a)
+
+      const pts = [{ x: 0, y: 0 }, { x: 0, y: 0 }]
+      const stops = 3 + Math.floor(Math.random() * 2)
+
+      for (let i = 1; i <= stops; i++) {
+        const depth = (i / stops) * bottom
+        pts.push({
+          x: rand(left, right),
+          y: rand(depth * 0.5, depth) + 30
+        })
+      }
+
+      pts.push(
+        { x: rand(left * 0.3, 0), y: rand(20, 60) },
+        { x: 0, y: 0 },
+        { x: 0, y: 0 }
+      )
+
+      const NOSE = 25
+      const DURATION = 1100 + stops * 600
+      const segs = pts.length - 3
+
+      const at = (t) => {
+        const f = Math.min(t, 0.9999) * segs
+        const i = Math.floor(f)
+        const u = f - i
+
+        const p0 = pts[i]
+        const p1 = pts[i + 1]
+        const p2 = pts[i + 2]
+        const p3 = pts[i + 3]
+
+        const c = (a, b, cc, d) =>
+          0.5 * (
+            2 * b +
+            (-a + cc) * u +
+            (2 * a - 5 * b + 4 * cc - d) * u * u +
+            (-a + 3 * b - 3 * cc + d) * u * u * u
+          )
+
+        return {
+          x: c(p0.x, p1.x, p2.x, p3.x),
+          y: c(p0.y, p1.y, p2.y, p3.y)
+        }
+      }
+
+      const t0 = performance.now()
+      let angle = 0
+
+      const step = (now) => {
+        const k = Math.min((now - t0) / DURATION, 1)
+        const eased = 0.5 - Math.cos(Math.PI * k) / 2
+
+        const p = at(eased)
+        const ahead = at(Math.min(eased + 0.01, 1))
+
+        if (Math.hypot(ahead.x - p.x, ahead.y - p.y) > 0.3) {
+          angle = Math.atan2(
+            ahead.y - p.y,
+            ahead.x - p.x
+          ) * 180 / Math.PI
+        }
+
+        const grow = 1 + Math.sin(Math.PI * k) * 0.2
+
+        this.planeStyle = {
+          transform:
+            'translate(' + p.x.toFixed(1) + 'px, ' +
+            p.y.toFixed(1) + 'px) rotate(' +
+            (angle + NOSE).toFixed(1) + 'deg) scale(' +
+            grow.toFixed(3) + ')'
+        }
+
+        if (k < 1) {
+          requestAnimationFrame(step)
+        } else {
+          this.planeStyle = {}
+          this.planeFlying = false
+        }
+      }
+
+      requestAnimationFrame(step)
+    },
+
+    shineSun() {
+      if (this.sunShine) return
+
+      this.sunShine = true
+
+      setTimeout(() => {
+        this.sunShine = false
+      }, 1300)
     },
 
     // ---------- passport stamps ----------
@@ -1013,7 +1215,44 @@ export default {
       let sum = 0
       for (let i = 0; i < destination.length; i++) sum += destination.charCodeAt(i)
       return sum % 4
-    }
+    },
+    async loadPlaces() {
+      const names = []
+
+      for (const t of this.allTrips) {
+        for (const d of t.destinations) {
+          if (!this.places[d] && !names.includes(d)) {
+            names.push(d)
+          }
+        }
+      }
+
+      for (let i = 0; i < names.length; i += 20) {
+        const batch = names.slice(i, i + 20)
+        const codes = batch.map(
+          (n) => codeForDestination(n) || ''
+        )
+
+        try {
+          const res = await axios.get('/api/discover/cities', {
+            params: {
+              names: batch.join('|'),
+              codes: codes.join('|')
+            },
+            background: true
+          })
+
+          for (const c of res.data) {
+            this.places[c.label] = {
+              lat: c.lat,
+              lon: c.lon
+            }
+          }
+        } catch (err) {
+          console.warn('Could not load map coordinates:', err)
+        }
+      }
+    },
   }
 }
 </script>

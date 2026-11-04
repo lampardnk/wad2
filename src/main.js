@@ -4,6 +4,7 @@ import router from './router'
 import axios from 'axios'
 import { setOffline, notify } from './lib/ui/notify.js'
 import './assets/style.css'
+import './assets/scrapbook.css'
 import './assets/playful.css' // the playful look: colours, chunky buttons, cards
 
 // ---------- A "background lane" for slow lookups ----------
