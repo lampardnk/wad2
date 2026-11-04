@@ -233,7 +233,7 @@
                 <article class="ip-card" :class="[{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }, voteClass(wishFor(it.stop))]"
                   :draggable="!it.stop.locked && !previewing && !readOnly" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag"
                   @touchstart="touchStart($event, it, i)" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchCancel"
-                  @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(slotOf(dropAt == null ? i : dropAt))">
+                  @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(slotOf(dropAt == null ? i : dropAt))" @click="cardClick($event, it)">
                   <!-- Move: drag the dots, or tap the arrows (works on phones and keyboards too) -->
                   <div v-if="!it.stop.locked && !previewing && !readOnly" class="ip-move">
                     <button type="button" class="ip-move-btn" :disabled="numberOf(it) === 0"
@@ -280,7 +280,8 @@
                       </span>
                       <small v-if="wasAt(it) !== null" class="ip-was">was {{ formatHour(wasAt(it)) }}</small>
                     </span>
-                    <h4 class="ip-name">{{ it.stop.name }}
+                    <!-- The name is the keyboard way in; a click anywhere else on the card does the same -->
+                    <h4 class="ip-name"><button type="button" class="ip-name-btn" :aria-label="'Details of ' + it.stop.name" @click="openSheet(it, detailsTab)">{{ it.stop.name }}</button>
                       <span v-if="voteLevel(wishFor(it.stop))" class="ip-vote-tag" :class="'v-' + voteLevel(wishFor(it.stop))"
                         :title="VOTE_LABEL[voteLevel(wishFor(it.stop))]">{{ voteCount(wishFor(it.stop)) }}/{{ travellers.length }}</span>
                     </h4>
@@ -2186,6 +2187,13 @@ function openSheet(it, section) {
   sheetOpener = document.activeElement
   sheet.value = { id: it.stop.id, section }
 }
+// A click on a stop's card (not on one of its buttons) opens its details
+const detailsTab = computed(() => (readOnly.value ? 'crowd' : 'time')) // an archived trip has no Details tab
+function cardClick(e, it) {
+  if (e.target.closest('button, a, input, select, textarea, label, [role="menu"], [role="listbox"]')) return
+  if (window.getSelection && String(window.getSelection())) return // selecting the name's text
+  openSheet(it, detailsTab.value)
+}
 function closeSheet() {
   sheet.value = null
   nextTick(() => { if (sheetOpener && sheetOpener.focus) sheetOpener.focus() })
@@ -2848,6 +2856,9 @@ watch(dayShown, () => {
 .ip-when small { font-weight: 500; color: var(--muted); }
 .ip-when .ip-was { color: var(--primary); font-weight: 600; margin-left: 4px; }
 .ip-name { font-size: 15px; font-weight: 700; margin: 2px 0 6px; }
+.ip-card { cursor: pointer; }
+.ip-name-btn { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ip-name-btn:hover { text-decoration: underline; }
 .ip-flight-times { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--warn-ink); }
 .ip-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
