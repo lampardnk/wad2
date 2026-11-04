@@ -5,7 +5,7 @@
 // has fewer modes (or none) and the app says it has no route. Complete answers are kept in the database.
 import express from 'express'
 import { requireAuth } from './auth.js'
-import { geoapifyReady, geoapifyRoute } from '../geoapify.js'
+import { geoapifyReady, geoapifyRoute, tooShort } from '../geoapify.js'
 import { sharedCache } from '../sharedCache.js'
 
 const router = express.Router()
@@ -100,7 +100,9 @@ router.get('/leg', requireAuth, async (req, res) => {
   const saved = await legs.get(key)
   // Saved before rides could end with a short walk (a walk but no taxi): looked up once more
   const walkOnly = saved && saved.value.walk && !saved.value.taxi && !saved.value.triedNearby
-  if (saved && !walkOnly) return res.json(saved.value)
+  // Saved with a route too short to be real (e.g. transit 0 m, 1 min): looked up again
+  const bad = saved && ['walk', 'bike', 'taxi', 'transit'].some((m) => saved.value[m] && tooShort(from, to, saved.value[m].km))
+  if (saved && !walkOnly && !bad) return res.json(saved.value)
   let job = running.get(key)
   if (!job) {
     job = lookUp(from, to).finally(() => running.delete(key))
@@ -110,7 +112,7 @@ router.get('/leg', requireAuth, async (req, res) => {
   // Kept only when every way got an answer (a failed request is asked again next time)
   if (complete && Object.keys(found).length) await legs.set(key, found)
   // A second look that didn't finish: keep what was saved, plus anything new
-  res.json(saved && !complete ? { ...saved.value, ...found } : found)
+  res.json(saved && !complete && !bad ? { ...saved.value, ...found } : found)
 })
 
 export default router
