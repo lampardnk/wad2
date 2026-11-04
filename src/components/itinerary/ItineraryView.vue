@@ -471,7 +471,6 @@ export default {
       stop.forecast = null
       stop.dataFrom = ''
       await this.loadForecast(stop)
-      if (!stop.duration) stop.duration = 1.5
       this.reportItinerary()
     },
     async editStop(id, fields) {
@@ -504,13 +503,14 @@ export default {
         const later = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date, hour: this.nextFreeHour(date), duration: w.duration || null, outdoor: w.outdoor ?? null })
         trip.stops.push(later)
         await this.applyOptimized([])
-        this.loadForecast(later)
+        // the copy in trip.stops (reactive), so the planner sees the forecast when it arrives
+        this.loadForecast(trip.stops.find((s) => s.id === later.id))
         return
       }
       const stop = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date: this.selectedDate, hour: 0, duration: w.duration || null, outdoor: w.outdoor ?? null })
       trip.stops.push(stop)
       await this.applyOptimized(changes.map((c) => (c.id === '__new' ? { ...c, id: stop.id } : c)))
-      this.loadForecast(stop)
+      this.loadForecast(trip.stops.find((s) => s.id === stop.id))
     },
     // Planner: a stop goes back to the wishlist (Undo restores it via undoDay)
     async unscheduleStop(id) {
