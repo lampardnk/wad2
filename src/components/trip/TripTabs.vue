@@ -77,6 +77,7 @@ const emit = defineEmits(['update:modelValue'])
 
 const PHONE = 640 // the menu button at this width and below
 const GAP = 2      // px between tabs (.tt-track gap)
+const BOLD = 12    // px extra for the open tab's bold label
 
 const width = ref(typeof window !== 'undefined' ? window.innerWidth : 1600)
 function onResize() {
@@ -118,7 +119,8 @@ function remeasure() {
   if (track.value) room.value = track.value.clientWidth
 }
 function widthOf(list, withMore) {
-  let total = withMore ? (tabWidths.value.__more || 0) + GAP : 0
+  // + BOLD: the open tab is bold, so a little wider than measured
+  let total = BOLD + (withMore ? (tabWidths.value.__more || 0) + GAP : 0)
   for (const t of list) total += (tabWidths.value[t.key] || 0) + GAP
   return total
 }
