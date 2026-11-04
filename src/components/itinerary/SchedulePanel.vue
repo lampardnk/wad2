@@ -61,9 +61,9 @@ const props = defineProps({
 })
 
 const CROWD = [
-  { value: 'low', label: 'Relaxed', hint: "Crowds don't bother me much" },
-  { value: 'medium', label: 'Balanced', hint: 'Avoid the worst peaks' },
-  { value: 'high', label: 'Strict', hint: 'Avoid busy times wherever possible' }
+  { value: 'low', label: 'Relaxed', hint: 'Never warn about crowds' },
+  { value: 'medium', label: 'Balanced', hint: 'Warn at peak crowds (80%+ busy)' },
+  { value: 'high', label: 'Strict', hint: 'Warn when busy (55%+ busy)' }
 ]
 const BUFFER = [
   { value: 0, label: '0m' },

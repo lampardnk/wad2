@@ -1,36 +1,22 @@
 // =====================================================================
-// Day optimizer: puts one day's stops in a better order and time.
+// Day optimizer: puts one day's stops in a better order.
 //
-//   import { optimizeDay, scheduleInOrder } from './dayOptimizer.js'
-//   const result = optimizeDay(stops, rainByHour, { dayStart: 9, dayEnd: 21 })
+//   import { optimizeDay } from './dayOptimizer.js'
+//   const result = optimizeDay(stops, rainByHour, { dayStart: 9, dayEnd: 21, from, end, travel })
 //   result.after.items  -> [{ stop, start, travelMin, mode, reasons: [...] }]
-//   result.summary      -> "Saves 38 mins of travel and avoids afternoon rain"
+//   result.summary      -> "Route optimized: 15.0 → 10.5 km."
 //
 // A stop: { id, name, lat, lon, duration (hours), outdoor, locked, hour,
-//           crowd: [24 numbers 0-100] or null, popular, open, close }
+//           crowd: [24 numbers 0-100] or null, open, close, closedToday }
 // rainByHour: 24 numbers, chance of rain 0-1 for each hour of the day.
 //
 // How it works:
-//  1. Travel times between every pair of stops (straight-line distance -> walk or transit minutes).
-//  2. For an order of the flexible stops, build the day: each stop starts when you arrive
-//     (rounded up to 15 min); locked stops keep their time and the others fit around them.
-//  3. Give that day a cost: travel + waiting + crowds (outdoor sights count more) + rain on
-//     outdoor stops + being closed / running late. Lower is better.
-//  4. Try every order (up to 7 flexible stops = 5040 orders), or 2-opt swaps for longer days,
-//     and keep the cheapest. Then explain each stop's time with short "reason" pills.
+//  1. Try every order of the flexible stops (locked stops keep their time).
+//  2. Time each order: a stop starts when you get there (rounded up to 15 min), or when it opens.
+//  3. Pick the order with the fewest warnings (the ⚠ list: closed, outside your day, late for a
+//     fixed time, outdoors in rain, peak crowds). Equal warnings: the shortest distance wins.
+//     Distance = road km of every leg (hotel -> stops -> hotel), the same whichever way you travel.
 // =====================================================================
-
-// How much each problem counts (in "minutes of travel" so they can be added up)
-export const WEIGHTS = {
-  travel: 1,     // per minute travelling
-  wait: 0.3,     // per minute waiting for a locked stop
-  crowd: 0.5,    // per % busy (outdoor), half for indoor
-  rain: 90,      // outdoor stop in certain rain
-  dryIndoor: 8,  // small bonus for an indoor stop during rain
-  closed: 300,   // visiting outside opening hours
-  late: 5,       // per minute late for a locked stop
-  overtime: 2    // per minute past the end of the day
-}
 
 // ---------- distances ----------
 export function haversineKm(a, b) {
@@ -167,55 +153,29 @@ export function rainDuring(rainByHour, start, duration) {
 
 const quarter = (h) => Math.ceil(h * 4 - 1e-9) / 4 // round up to the next 15 minutes
 
-// ---------- meals ----------
-// from = earliest start, latest = last sensible start, duration in hours
-export const MEALS = {
-  breakfast: { key: 'breakfast', label: 'Breakfast', icon: '🥐', from: 7, latest: 10, duration: 0.75 },
-  lunch: { key: 'lunch', label: 'Lunch', icon: '🍜', from: 11.5, latest: 13.5, duration: 1 },
-  dinner: { key: 'dinner', label: 'Dinner', icon: '🍽', from: 17.5, latest: 20, duration: 1.25 }
-}
-const FOOD_WORDS = ['restaurant', 'market', 'cafe', 'café', 'food', 'ramen', 'sushi', 'izakaya', 'bbq', 'hawker', 'bistro', 'eatery', 'kyoja', 'noodle']
-
-// 'breakfast' | 'lunch' | 'dinner' (named meals), 'food' (somewhere to eat, any meal) or null
-export function mealOf(stop) {
-  const name = (stop.name || '').toLowerCase()
-  if (/breakfast|brunch/.test(name)) return 'breakfast'
-  if (/lunch/.test(name)) return 'lunch'
-  if (/dinner|supper/.test(name)) return 'dinner'
-  for (const w of FOOD_WORDS) if (name.includes(w)) return 'food'
-  return null
+// ---------- distance (what Optimize Route compares) ----------
+// Road km from a to b: the length of the driving route if we have it, else the straight line.
+// It doesn't depend on how you'll travel, so a taxi or a bus can't change which order wins.
+export function legKm(a, b, tp = DEFAULT_TRAVEL) {
+  a = exitOf(a)
+  if (!a || !b || a.lat == null || b.lat == null) return 0
+  const real = tp.real && tp.real[legKey(a, b)]
+  return real && real.taxi && real.taxi.km != null ? real.taxi.km : haversineKm(a, b)
 }
 
-// Which meal breaks the day needs: lunch unless a lunch (or a food place) is planned,
-// dinner unless a dinner (or a second food place) is planned. Only meals inside your day count.
-// Breakfast is assumed at the hotel. opts.meals === false turns breaks off.
-export function mealsNeeded(stops, opts) {
-  if (opts.meals === false) return []
-  let food = 0
-  const named = {}
-  for (const s of stops) {
-    const m = mealOf(s)
-    if (m === 'food') food++
-    else if (m) named[m] = true
-  }
-  const out = []
-  if (!named.lunch && food < 1) out.push(MEALS.lunch)
-  if (!named.dinner && food < 2) out.push(MEALS.dinner)
-  return out.filter((m) => opts.dayStart <= m.latest && opts.dayEnd >= m.from + m.duration)
-}
-
-function mealBreak(m, start) {
-  return {
-    stop: { id: 'meal-' + m.key, name: m.label + ' break', virtual: true, meal: m.key, icon: m.icon, duration: m.duration },
-    start, travelMin: 0, mode: 'break', km: 0, waitMin: 0, lateMin: 0
-  }
+// Total km for stops in this order, from where the day starts to where it ends
+export function routeKm(stops, opts = {}) {
+  const path = [opts.from, ...stops, opts.end].filter(Boolean)
+  let km = 0
+  for (let i = 1; i < path.length; i++) km += legKm(path[i - 1], path[i], opts.travel || DEFAULT_TRAVEL)
+  return Math.round(km * 10) / 10
 }
 
 // ---------- building a day from an order ----------
 // order: flexible stops in visiting order. locked: stops with a fixed time.
-// opts: { dayStart, dayEnd, buffer (hours kept free between stops, from Preferences),
-//         from (stop you're leaving from, for re-planning the rest of a day),
-//         allStops (the whole day, so meals already planned earlier still count) }
+// opts: { dayStart, buffer (hours kept free between stops, from Preferences),
+//         from (where you leave from: hotel / airport, or the stop you're at when re-planning) }
+// A flexible stop goes before the next locked one only if it fits (getting there and the buffer included).
 export function scheduleInOrder(order, locked, matrix, opts) {
   const anchors = locked.slice().sort((a, b) => a.hour - b.hour)
   const items = []
@@ -225,34 +185,16 @@ export function scheduleInOrder(order, locked, matrix, opts) {
   let prev = opts.from || null
   let li = 0
   const travel = (a, b) => (a ? matrix[a.id][b.id] : { min: 0, mode: 'start', km: 0 })
-  // Meal breaks still to fit in (lunch, dinner)
-  const breaks = mealsNeeded(opts.allStops || order.concat(locked), opts)
-  let bi = 0
-  const takeBreak = () => {
-    const m = breaks[bi++]
-    const start = quarter(Math.max(time, m.from))
-    items.push(mealBreak(m, start))
-    time = start + m.duration
-  }
 
   while (queue.length || li < anchors.length) {
     const lock = anchors[li]
-    while (bi < breaks.length && time > breaks[bi].latest + 1e-9) bi++ // too late for that meal now
-    const meal = breaks[bi]
     if (queue.length) {
       const s = queue[0]
       const t = travel(prev, s)
       const arrive = time + t.min / 60 + (prev ? buffer : 0)
-
       // If we arrive before the place opens, wait until opening time.
       const start = quarter(Math.max(arrive, s.open ?? arrive))
       const end = start + (s.duration || 1)
-      // Would this stop run past the latest time to eat? Eat first.
-      if (meal && end > meal.latest + 1e-9 && (!lock || Math.max(time, meal.from) + meal.duration <= lock.hour)) {
-        takeBreak()
-        continue
-      }
-      // Fits before the next locked stop (including getting there and the buffer)?
       if (!lock || end + travel(s, lock).min / 60 + buffer <= lock.hour + 1e-9) {
         items.push({ stop: s, start, travelMin: t.min, mode: t.mode, km: t.km, waitMin: 0, lateMin: 0 })
         time = end
@@ -261,60 +203,19 @@ export function scheduleInOrder(order, locked, matrix, opts) {
         continue
       }
     }
-    if (lock) {
-      // Room to eat before a locked stop that starts after the meal window?
-      if (meal && lock.hour > meal.latest && Math.max(time, meal.from) + meal.duration + travel(prev, lock).min / 60 <= lock.hour + 1e-9 &&
-          !(mealOf(lock) === meal.key)) {
-        takeBreak()
-        continue
-      }
-      const t = travel(prev, lock)
-      const arrive = time + t.min / 60
-      items.push({
-        stop: lock, start: lock.hour, travelMin: t.min, mode: t.mode, km: t.km,
-        waitMin: Math.max(0, Math.round((lock.hour - arrive) * 60)),
-        lateMin: Math.max(0, Math.round((arrive - lock.hour) * 60))
-      })
-      time = Math.max(arrive, lock.hour) + (lock.duration || 1)
-      prev = lock
-      li++
-    }
+    const t = travel(prev, lock)
+    const arrive = time + t.min / 60
+    items.push({
+      stop: lock, start: lock.hour, travelMin: t.min, mode: t.mode, km: t.km,
+      waitMin: Math.max(0, Math.round((lock.hour - arrive) * 60)),
+      lateMin: Math.max(0, Math.round((arrive - lock.hour) * 60))
+    })
+    time = Math.max(arrive, lock.hour) + (lock.duration || 1)
+    prev = lock
+    li++
   }
   // Always in clock order (a locked stop set before the day starts would otherwise come out of order)
   return items.sort((a, b) => a.start - b.start)
-}
-
-// Meal breaks for a timeline that already has times: put each needed meal in the first gap
-// that fits it; if the stops run straight through mealtime, flag the stop that's in the way.
-export function addMealBreaks(items, stops, opts) {
-  const out = items.slice()
-  for (const m of mealsNeeded(stops, opts)) {
-    let placed = false
-    for (let i = 0; i <= out.length && !placed; i++) {
-      const before = out[i - 1]
-      const after = out[i]
-      if (!before && !after) break
-      const gapStart = before ? before.start + (before.stop.duration || 1) : opts.dayStart
-      const gapEnd = after ? after.start - (after.travelMin || 0) / 60 : opts.dayEnd
-      if (!before || !after) continue // only between two stops (not before the day starts / after it ends)
-      const start = quarter(Math.max(gapStart, m.from))
-      if (start <= m.latest + 1e-9 && start + m.duration <= gapEnd + 1e-9) {
-        out.splice(i, 0, mealBreak(m, start))
-        placed = true
-      }
-    }
-    if (!placed) {
-      // Something is planned right through the meal: say so on that stop
-      const mid = m.from + 1
-      for (const it of out) {
-        if (!it.stop.virtual && it.start <= mid && it.start + (it.stop.duration || 1) >= mid) {
-          it.skipsMeal = m.label
-          break
-        }
-      }
-    }
-  }
-  return out
 }
 
 // Timeline from the times the stops already have (the "before" picture)
@@ -336,87 +237,27 @@ export function scheduleAsIs(stops, matrix) {
   return items
 }
 
-// ---------- scoring ----------
-export function measure(items, rainByHour, opts) {
-  const m = { cost: 0, travelMin: 0, waitMin: 0, lateMin: 0, crowd: 0, rainOutdoor: 0, closed: 0, overtimeMin: 0, earlyMin: 0, end: opts.dayStart }
-  for (const it of items) {
-    const s = it.stop
-    if (s.virtual) continue // meal breaks
-    const dur = s.duration || 1
-    const kind = mealOf(s)
-    const offFrom = (meal) => (it.start < meal.from ? meal.from - it.start : it.start > meal.latest ? it.start - meal.latest : 0)
-    if (MEALS[kind]) {
-      // e.g. "Lunch at …" at 4 PM: costs 2 per minute outside its window
-      m.cost += offFrom(MEALS[kind]) * 60 * 2
-    } else if (kind === 'food') {
-      // A restaurant or food market: best at lunch or dinner time (whichever is closer)
-      m.cost += Math.min(offFrom(MEALS.lunch), offFrom(MEALS.dinner)) * 60
-    }
-    m.travelMin += it.travelMin
-    m.waitMin += it.waitMin
-    m.lateMin += it.lateMin
-    const busy = crowdAt(s, it.start)
-    const rain = rainDuring(rainByHour, it.start, dur)
-    if (!s.locked) {
-      m.crowd += busy * (s.outdoor === false ? 0.5 : 1)
-      if (s.outdoor) m.rainOutdoor += rain
-    }
-    if ((s.open != null && it.start < s.open) || (s.close != null && it.start + dur > s.close)) m.closed++
-    m.end = Math.max(m.end, it.start + dur)
-    // Starting before the day does (e.g. before your flight lands) costs like running over
-    if (it.start < opts.dayStart - 0.01) m.earlyMin += Math.round((opts.dayStart - it.start) * 60)
-    m.cost += (s.locked ? 0 : busy * WEIGHTS.crowd * (opts.crowdWeight || 1) * (s.outdoor === false ? 0.5 : 1))
-    // Rain only counts for stops the group marked outdoor (or indoor); not set = we don't know, so no effect
-    if (s.outdoor === true) m.cost += rain * WEIGHTS.rain
-    else if (s.outdoor === false) m.cost -= rain * WEIGHTS.dryIndoor
-  }
-  m.overtimeMin = Math.max(0, Math.round((m.end - opts.dayEnd) * 60))
-  m.cost += m.travelMin * WEIGHTS.travel + m.waitMin * WEIGHTS.wait + m.lateMin * WEIGHTS.late +
-    m.closed * WEIGHTS.closed + (m.overtimeMin + m.earlyMin) * WEIGHTS.overtime
-  return m
-}
+// ---------- warnings (the ⚠ list, and what Optimize Route counts) ----------
+// Crowd warnings follow "Avoid peak crowds" (Preferences): Relaxed never, Balanced at Peak (80%+), Strict at Busy (55%+)
+export const CROWD_LIMIT = { low: null, medium: 80, high: 55 }
 
-// ---------- searching for the best order ----------
-function permutations(list) {
-  if (list.length <= 1) return [list.slice()]
+export function warningsFor(it, rainByHour, opts) {
+  const s = it.stop
+  const dur = s.duration || 1
   const out = []
-  for (let i = 0; i < list.length; i++) {
-    const rest = list.slice(0, i).concat(list.slice(i + 1))
-    for (const p of permutations(rest)) out.push([list[i]].concat(p))
-  }
+  if (opts && it.start + dur > opts.dayEnd + 0.01) out.push({ icon: '⏰', text: 'Ends after your day ends' })
+  if (opts && it.start < opts.dayStart - 0.01) out.push({ icon: '🌅', text: 'Before your day starts' })
+  if (s.outdoor && rainDuring(rainByHour, it.start, dur) >= 0.5) out.push({ icon: '🌧️', text: 'Outdoors during predicted rain' })
+  const crowdLimit = opts && opts.crowdLimit !== undefined ? opts.crowdLimit : 80
+  const busy = crowdAt(s, it.start)
+  if (!s.locked && crowdLimit != null && busy >= crowdLimit) out.push({ icon: '👥', text: (busy >= 80 ? 'Peak crowds' : 'Busy') + ' at this time' })
+  if (s.closedToday) out.push({ icon: '🚪', text: 'Closed all day' })
+  else if ((s.open != null && it.start < s.open) || (s.close != null && it.start + dur > s.close)) out.push({ icon: '🚪', text: 'Closed at this time' })
+  if (it.lateMin > 0) out.push({ icon: '⚠️', text: "Can't get here in time from the previous stop" })
   return out
 }
 
-// Longer days: start from nearest-neighbour, then keep reversing chunks (2-opt) while it helps
-function twoOpt(flex, locked, matrix, rain, opts) {
-  const order = [flex[0]]
-  const left = flex.slice(1)
-  while (left.length) {
-    const last = order[order.length - 1]
-    left.sort((a, b) => matrix[last.id][a.id].min - matrix[last.id][b.id].min)
-    order.push(left.shift())
-  }
-  let best = order
-  let bestCost = measure(scheduleInOrder(best, locked, matrix, opts), rain, opts).cost
-  let improved = true
-  while (improved) {
-    improved = false
-    for (let i = 0; i < best.length - 1; i++) {
-      for (let j = i + 1; j < best.length; j++) {
-        const next = best.slice(0, i).concat(best.slice(i, j + 1).reverse(), best.slice(j + 1))
-        const c = measure(scheduleInOrder(next, locked, matrix, opts), rain, opts).cost
-        if (c < bestCost - 0.01) {
-          best = next
-          bestCost = c
-          improved = true
-        }
-      }
-    }
-  }
-  return best
-}
-
-// ---------- the "why" pills ----------
+// ---------- the "why" pills (shown on the preview) ----------
 const fmt = (h) => {
   const hour = Math.floor(h) % 24
   const min = Math.round((h - Math.floor(h)) * 60)
@@ -426,11 +267,6 @@ const fmt = (h) => {
 export function reasonsFor(it, index, rainByHour, dayHasRain) {
   const s = it.stop
   const reasons = []
-  if (s.virtual) return reasons
-  const kind = mealOf(s)
-  const inWindow = (meal) => it.start >= meal.from - 0.01 && it.start <= meal.latest + 0.01
-  const meal = MEALS[kind] || (kind === 'food' ? [MEALS.lunch, MEALS.dinner].find(inWindow) : null)
-  if (meal && inWindow(meal)) reasons.push({ icon: meal.icon, text: meal.label + ' time', kind: 'crowd' })
   if (s.locked) {
     reasons.push({ icon: '🔒', text: 'Fixed time', kind: 'lock' })
   } else {
@@ -449,100 +285,76 @@ export function reasonsFor(it, index, rainByHour, dayHasRain) {
   return reasons
 }
 
-// Problems with the current plan, shown before optimizing
-export function warningsFor(it, rainByHour, opts) {
-  const s = it.stop
+// ---------- the main function ----------
+function permutations(list) {
+  if (list.length <= 1) return [list.slice()]
   const out = []
-  if (s.virtual) return out
-  if (it.skipsMeal) out.push({ icon: '🍽', text: 'No time for ' + it.skipsMeal.toLowerCase() })
-  const meal = MEALS[mealOf(s)]
-  if (meal && (it.start < meal.from - 0.01 || it.start > meal.latest + 0.01)) out.push({ icon: meal.icon, text: 'Not at a usual ' + meal.label.toLowerCase() + ' time' })
-  if (opts && it.start + (s.duration || 1) > opts.dayEnd + 0.01) out.push({ icon: '⏰', text: 'Ends after your day ends' })
-  if (opts && s.locked && it.start < opts.dayStart - 0.01) out.push({ icon: '🌅', text: 'Before your day starts' })
-  if (s.outdoor && rainDuring(rainByHour, it.start, s.duration) >= 0.5) out.push({ icon: '🌧️', text: 'Outdoors during predicted rain' })
-  if (!s.locked && crowdAt(s, it.start) >= 80) out.push({ icon: '👥', text: 'Peak crowds at this time' })
-  if ((s.open != null && it.start < s.open) || (s.close != null && it.start + (s.duration || 1) > s.close)) out.push({ icon: '🚪', text: 'Closed at this time' })
-  if (it.lateMin > 0) out.push({ icon: '⚠️', text: "Can't get here in time from the previous stop" })
+  for (let i = 0; i < list.length; i++) {
+    const rest = list.slice(0, i).concat(list.slice(i + 1))
+    for (const p of permutations(rest)) out.push([list[i]].concat(p))
+  }
   return out
 }
 
-// ---------- the main function ----------
 export function optimizeDay(stops, rainByHour, opts = {}) {
   const options = { dayStart: 9, dayEnd: 21, ...opts }
   // options.from / options.end: where the day starts and ends (your hotel, or the airport), if known
   const ends = [options.from, options.end].filter(Boolean)
-  const matrix = travelMatrix(stops.concat(ends), options.travel) // uses each person's way of getting around (Settings)
+  const matrix = travelMatrix(stops.concat(ends), options.travel) // times use each person's way of getting around (Settings)
   const locked = stops.filter((s) => s.locked)
   const flex = stops.filter((s) => !s.locked)
-  // The trip back to the hotel (or to the airport) at the end of the day counts too
-  const homeLeg = (items) => {
-    if (!options.end) return 0
-    let last = null
-    for (const it of items) if (!it.stop.virtual && (!last || it.start > last.start)) last = it
-    return last ? matrix[last.stop.id][options.end.id].min : 0
-  }
-  const score = (items, startLeg) => {
-    const m = measure(items, rainByHour, options)
-    const extra = homeLeg(items) + startLeg
-    m.travelMin += extra
-    m.cost += extra * WEIGHTS.travel
-    return m
-  }
 
-  const beforeItems = scheduleAsIs(stops, matrix)
-  // (the "before" times don't include getting from the hotel to the first stop, so add it for a fair comparison)
-  const firstBefore = beforeItems.find((it) => !it.stop.virtual)
-  const before = score(beforeItems, options.from && firstBefore ? matrix[options.from.id][firstBefore.stop.id].min : 0)
+  // The two numbers every plan is judged by
+  const rate = (items) => ({
+    items,
+    warnings: items.reduce((n, it) => n + warningsFor(it, rainByHour, options).length, 0),
+    km: routeKm(items.map((it) => it.stop), options)
+  })
+  const beats = (x, y) => x.warnings < y.warnings || (x.warnings === y.warnings && x.km < y.km - 0.05)
 
-  let bestOrder = flex
-  if (flex.length <= 7) {
-    let bestCost = Infinity
-    for (const order of permutations(flex)) {
-      const c = score(scheduleInOrder(order, locked, matrix, options), 0).cost
-      if (c < bestCost) {
-        bestCost = c
-        bestOrder = order
+  const before = rate(scheduleAsIs(stops, matrix))
+  // Every order of the flexible stops. A day with more than 8 would be too many orders
+  // (9 stops = 362,880): those keep reversing stretches of the order while that helps (2-opt).
+  let best = null
+  const consider = (order) => {
+    const r = rate(scheduleInOrder(order, locked, matrix, options))
+    if (!best || beats(r, best)) best = r
+    return r === best
+  }
+  if (flex.length <= 8) {
+    for (const order of permutations(flex)) consider(order)
+  } else {
+    let order = flex.slice().sort((a, b) => a.hour - b.hour)
+    consider(order)
+    for (let improved = true; improved;) {
+      improved = false
+      for (let i = 0; i < order.length - 1; i++) {
+        for (let j = i + 1; j < order.length; j++) {
+          const next = order.slice(0, i).concat(order.slice(i, j + 1).reverse(), order.slice(j + 1))
+          if (consider(next)) { order = next; improved = true }
+        }
       }
     }
-  } else {
-    bestOrder = twoOpt(flex, locked, matrix, rainByHour, options)
   }
 
-  const afterItems = scheduleInOrder(bestOrder, locked, matrix, options)
-  const after = score(afterItems, 0)
-  // Anything still worth a look after optimizing (shown with the result)
-  const hasWarnings = afterItems.some((it) => warningsFor(it, rainByHour, options).length > 0)
+  const better = beats(best, before)
+  const after = better ? best : before
   const dayHasRain = (rainByHour || []).some((p) => p >= 0.5)
-  let real = 0
-  for (const it of afterItems) {
-    it.reasons = reasonsFor(it, real, rainByHour, dayHasRain)
-    if (!it.stop.virtual) real++
-  }
+  after.items.forEach((it, i) => { it.reasons = reasonsFor(it, i, rainByHour, dayHasRain) })
 
-  return {
-    before: { items: beforeItems, ...before },
-    after: { items: afterItems, ...after },
-    better: after.cost < before.cost - 1,
-    hasWarnings,
-    summary: summarize(before, after, options)
-  }
+  return { before, after, better, hasWarnings: after.warnings > 0, summary: summarize(before, after) }
 }
 
-function summarize(before, after, options = {}) {
+// e.g. "Route optimized: 1 fewer warning, 15.0 → 10.5 km."
+function summarize(before, after) {
   const parts = []
-  const flight = (options.from && options.from.kind === 'arrive') || (options.end && options.end.kind === 'depart')
-  if (before.earlyMin + before.overtimeMin > after.earlyMin + after.overtimeMin) parts.push(flight ? 'fits the day around your flight' : 'fits the day into your hours')
-  const saved = before.travelMin - after.travelMin
-  if (saved >= 5) parts.push('saves ' + saved + ' min of travel')
-  if (before.rainOutdoor - after.rainOutdoor >= 0.4) parts.push('keeps outdoor stops out of the rain')
-  if (before.crowd - after.crowd >= 30) parts.push('dodges the midday crowds')
-  if (before.closed > after.closed) parts.push('visits places while they are open')
-  if (before.lateMin > after.lateMin) parts.push('gets you to your fixed plans on time')
+  const fixed = before.warnings - after.warnings
+  if (fixed > 0) parts.push(fixed + ' fewer warning' + (fixed === 1 ? '' : 's'))
+  if (Math.abs(before.km - after.km) >= 0.05) parts.push(before.km.toFixed(1) + ' → ' + after.km.toFixed(1) + ' km')
   if (!parts.length) return 'Your day is already in a good order.'
-  parts.splice(3) // the three biggest wins are enough
-  const text = parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0]
-  return 'Route optimized: ' + text + '.'
+  return 'Route optimized: ' + parts.join(', ') + '.'
 }
+
 
 // 3-hour forecast blocks ({ time, span, rain }) -> chance of rain for each hour
 // Uses OpenWeather's own chance of rain (pop). Hours without a forecast count as 0 (no data, no rain counted).
