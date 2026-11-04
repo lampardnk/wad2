@@ -2,7 +2,7 @@
   <!-- Transport > Other journeys: trips that aren't between two stops on the plan
        (airport to hotel, a day trip to another city). Between-stop travel lives in the itinerary. -->
   <section class="mb-4" aria-labelledby="oj-title">
-    <h2 id="oj-title" class="h4 mb-3">{{ readOnly ? 'Journeys' : 'Plan Journeys' }}</h2>
+    <h2 id="oj-title" class="visually-hidden">{{ readOnly ? 'Journeys' : 'Plan Journeys' }}</h2>
  
     <!-- Plan a journey (or change a saved one). Not on an archived trip: it's read only. -->
     <template v-if="!readOnly">

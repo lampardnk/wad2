@@ -1,38 +1,13 @@
 <template>
   <section class="ip" aria-label="Itinerary planner">
-    <!-- ===== Day navigator =====
-         Where you are ("Day 8 of 15"), ‹ › to step, a scrolling strip that keeps the open day in view
-         (faded edges = more days that way), "All days" grid to jump anywhere, and Add/Remove that never scroll away. -->
+    <!-- ===== Day navigator: one row =====
+         ‹ › to step, a scrolling strip of days that keeps the open day in view (faded edges = more days that way),
+         "All days" grid to jump anywhere, and Add/Remove that never scroll away. -->
     <div class="ip-daynav">
-      <div class="ip-daynav-top">
-        <p class="ip-daynav-where" aria-live="polite">
-          <template v-if="dayList.length && dayShown"><strong>Day {{ dayIndex + 1 }}</strong> of {{ dayList.length }} · {{ longDate(dayShown) }}</template>
-          <template v-else>No days yet</template>
-        </p>
-        <div class="ip-daynav-actions">
-          <div class="ip-allwrap">
-            <button type="button" class="ip-small" :aria-expanded="gridOpen" aria-haspopup="dialog" @click.stop="gridOpen = !gridOpen">
-              <span aria-hidden="true">▦</span> All days
-            </button>
-            <!-- Grid of every day: jump straight to one -->
-            <div v-if="gridOpen" class="ip-grid" role="dialog" aria-label="All days" @click.stop @keydown.esc="gridOpen = false">
-              <p class="ip-grid-key"><span class="ip-load"><i style="width: 60%"></i></span> how full · <i class="ip-flag inline"></i> something to check</p>
-              <button v-for="(d, n) in dayList" :key="d" type="button" class="ip-grid-day" :class="{ on: d === dayShown, today: isTodayDate(d) }"
-                :aria-current="d === dayShown ? 'date' : null" @click="pickDay(d); gridOpen = false">
-                <strong>{{ n + 1 }}</strong>
-                <span>{{ weekday(d) }} {{ dayOfMonth(d) }}</span>
-                <small>{{ countFor(d) ? countFor(d) + ' stop' + (countFor(d) === 1 ? '' : 's') : '—' }}</small>
-                <span class="ip-load" :title="loadText(d)"><i :class="{ over: loadOf(d) > 1 }" :style="{ width: Math.min(100, loadOf(d) * 100) + '%' }"></i></span>
-                <i v-if="issuesOn(d)" class="ip-flag" :aria-label="issuesOn(d) + ' to check'"></i>
-              </button>
-            </div>
-          </div>
-          <button v-if="canAddDay && !readOnly" type="button" class="ip-small add" title="Add a day at the end of the trip" @click="askAddDay">+ Add day</button>
-          <button v-if="canAddDay && !readOnly && dayList.length > 1" type="button" class="ip-small remove"
-            :title="'Remove the last day (Day ' + dayList.length + ')'" :aria-label="'Remove the last day, Day ' + dayList.length" @click="askRemoveDay">− Day {{ dayList.length }}</button>
-        </div>
-      </div>
-
+      <p class="visually-hidden" aria-live="polite">
+        <template v-if="dayList.length && dayShown">Day {{ dayIndex + 1 }} of {{ dayList.length }}, {{ longDate(dayShown) }}</template>
+        <template v-else>No days yet</template>
+      </p>
       <div class="ip-strip-row">
         <button type="button" class="ip-arrow" :disabled="dayIndex <= 0" aria-label="Previous day" @click="stepDay(-1)"><AppIcon name="chevron-left" :size="18" /></button>
         <div class="ip-strip-wrap" :class="{ 'fade-l': fadeL, 'fade-r': fadeR }">
@@ -41,9 +16,9 @@
               :class="{ on: d === dayShown, today: isTodayDate(d), weekend: isWeekend(d), flagged: issuesOn(d) }" :aria-selected="d === dayShown"
               :tabindex="d === dayShown ? 0 : -1" :title="longDate(d) + (countFor(d) ? ' · ' + countFor(d) + ' stops' : ' · nothing planned') + (issuesOn(d) ? ' · ' + issuesOn(d) + ' to check' : '')"
               @click="pickDay(d)">
+              <span class="ip-day-n">D{{ n + 1 }}</span>
               <small>{{ weekday(d) }}</small>
               <strong>{{ dayOfMonth(d) }}</strong>
-              <span class="ip-day-n">Day {{ n + 1 }}</span>
               <span class="ip-day-dots" aria-hidden="true">
                 <i v-for="k in Math.min(countFor(d), 4)" :key="k"></i>
               </span>
@@ -51,6 +26,28 @@
           </div>
         </div>
         <button type="button" class="ip-arrow" :disabled="dayIndex >= dayList.length - 1" aria-label="Next day" @click="stepDay(1)"><AppIcon name="chevron" :size="18" /></button>
+      </div>
+      <div class="ip-daynav-actions">
+        <div class="ip-allwrap">
+          <button type="button" class="ip-small" :aria-expanded="gridOpen" aria-haspopup="dialog" @click.stop="gridOpen = !gridOpen">
+            <span aria-hidden="true">▦</span> All days
+          </button>
+          <!-- Grid of every day: jump straight to one -->
+          <div v-if="gridOpen" class="ip-grid" role="dialog" aria-label="All days" @click.stop @keydown.esc="gridOpen = false">
+            <p class="ip-grid-key"><span class="ip-load"><i style="width: 60%"></i></span> how full · <i class="ip-flag inline"></i> something to check</p>
+            <button v-for="(d, n) in dayList" :key="d" type="button" class="ip-grid-day" :class="{ on: d === dayShown, today: isTodayDate(d) }"
+              :aria-current="d === dayShown ? 'date' : null" @click="pickDay(d); gridOpen = false">
+              <strong>{{ n + 1 }}</strong>
+              <span>{{ weekday(d) }} {{ dayOfMonth(d) }}</span>
+              <small>{{ countFor(d) ? countFor(d) + ' stop' + (countFor(d) === 1 ? '' : 's') : '—' }}</small>
+              <span class="ip-load" :title="loadText(d)"><i :class="{ over: loadOf(d) > 1 }" :style="{ width: Math.min(100, loadOf(d) * 100) + '%' }"></i></span>
+              <i v-if="issuesOn(d)" class="ip-flag" :aria-label="issuesOn(d) + ' to check'"></i>
+            </button>
+          </div>
+        </div>
+        <button v-if="canAddDay && !readOnly" type="button" class="ip-small add" title="Add a day at the end of the trip" @click="askAddDay">+ Add day</button>
+        <button v-if="canAddDay && !readOnly && dayList.length > 1" type="button" class="ip-small remove"
+          :title="'Remove the last day (Day ' + dayList.length + ')'" :aria-label="'Remove the last day, Day ' + dayList.length" @click="askRemoveDay">− Day {{ dayList.length }}</button>
       </div>
     </div>
 
@@ -2453,21 +2450,16 @@ watch(dayShown, () => {
 
 /* ---------- Day navigator ---------- */
 .ip-daynav {
-  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: var(--bs-border-radius-lg, 0.5rem);
   background: var(--soft);
 }
-.ip-daynav-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.ip-daynav-where { margin: 0; font-size: 14px; color: var(--muted); }
-.ip-daynav-where strong { color: var(--ink); }
-.ip-daynav-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ip-daynav-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .ip-small {
   border: 1px solid var(--line);
   border-radius: var(--bs-border-radius, 0.375rem);
@@ -2533,11 +2525,11 @@ watch(dayShown, () => {
 .ip-flag { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
 .ip-flag.inline { position: static; display: inline-block; }
 
-.ip-strip-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.ip-strip-row { flex: 1 1 320px; min-width: 0; display: flex; align-items: center; gap: 4px; }
 .ip-arrow {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--bs-border-radius, 0.375rem);
   border: 1px solid var(--line);
   background: #fff;
@@ -2560,25 +2552,25 @@ watch(dayShown, () => {
   -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
 }
-.ip-days { display: flex; gap: 6px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding: 2px; }
+.ip-days { display: flex; gap: 4px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding: 2px; }
 .ip-days::-webkit-scrollbar { display: none; }
 .ip-day {
   position: relative;
   flex: none;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 56px;
-  padding: 6px 2px;
+  align-items: baseline;
+  gap: 4px;
+  padding: 5px 9px 7px;
   border: 1px solid var(--line);
-  border-radius: var(--bs-border-radius, 0.375rem);
+  border-radius: 999px;
   background: #fff;
   color: var(--ink);
-  line-height: 1.15;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 .ip-day small { font-size: 11px; font-weight: 600; color: var(--muted); }
-.ip-day strong { font-size: 17px; }
-.ip-day-n { font-size: 10px; color: var(--muted); }
+.ip-day strong { font-size: 14px; }
+.ip-day-n { font-size: 10.5px; font-weight: 700; color: var(--muted); }
 .ip-day:hover { border-color: var(--primary); }
 .ip-day.weekend:not(.on) small { color: var(--active); }
 .ip-day.today:not(.on) { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
@@ -2587,14 +2579,15 @@ watch(dayShown, () => {
 .ip-day.flagged::after {
   content: '';
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 2px;
+  right: 4px;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--gold);
 }
-.ip-day-dots { display: flex; gap: 2px; height: 5px; margin-top: 3px; }
+/* how many stops: small dots along the pill's bottom edge */
+.ip-day-dots { position: absolute; left: 0; right: 0; bottom: 2px; display: flex; justify-content: center; gap: 2px; height: 4px; }
 .ip-day-dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--primary); }
 .ip-day.on .ip-day-dots i { background: #fff; }
 
@@ -3087,7 +3080,6 @@ watch(dayShown, () => {
 }
 @media (max-width: 560px) {
   .ip-grid { grid-template-columns: repeat(4, 62px); }
-  .ip-arrow { width: 30px; height: 30px; }
   .ip-views { margin-left: 0; }
   .ip-map { height: 320px; }
   .ip-detail { flex-direction: column; }
