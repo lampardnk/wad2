@@ -13,27 +13,25 @@
     </div>
  
     <form ref="formEl" class="card card-body mb-3" :class="{ 'border-warning': !!editing }" @submit.prevent="findWays">
-      <div class="row g-2 align-items-start">
-        <div class="col-12 col-md">
-          <PlaceInput id="oj-from" v-model="fromText" v-model:place="fromPlace" label="From" :placeholder="fromHint" :groups="placeGroups" :near="centre" pin />
-        </div>
-        <div class="col-auto">
-          <button type="button" class="btn btn-outline-secondary" aria-label="Swap from and to" title="Swap" @click="swap">
+      <!-- From ⇄ To on one line (the swap button sits level with the boxes), then Day and Find ways -->
+      <div class="oj-route">
+        <PlaceInput id="oj-from" v-model="fromText" v-model:place="fromPlace" label="From" :placeholder="fromHint" :groups="placeGroups" :near="centre" pin />
+        <div class="oj-swap-col">
+          <span class="oj-label" aria-hidden="true">&nbsp;</span>
+          <button type="button" class="oj-swap" aria-label="Swap from and to" title="Swap" @click="swap">
             <AppIcon name="swap" :size="16" />
           </button>
         </div>
-        <div class="col-12 col-md">
-          <PlaceInput id="oj-to" v-model="toText" v-model:place="toPlace" label="To" :placeholder="toHint" :groups="placeGroups" :near="centre" pin />
-        </div>
-        <div v-if="dayOptions.length" class="col-12 col-md-3">
-          <label for="oj-day" class="form-label mb-1">Day</label>
+        <PlaceInput id="oj-to" v-model="toText" v-model:place="toPlace" label="To" :placeholder="toHint" :groups="placeGroups" :near="centre" pin />
+      </div>
+      <div class="oj-go">
+        <div v-if="dayOptions.length" class="oj-day">
+          <label for="oj-day" class="oj-label">Day</label>
           <CustomDropdown id="oj-day" v-model="day" :options="[{ value: '', label: 'Any day' }].concat(dayOptions)" block aria-label="Day" />
         </div>
-        <div class="col-12 col-md-auto">
-          <button type="submit" class="btn btn-primary w-100" :disabled="!fromPlace || !toPlace">
-            Find ways
-          </button>
-        </div>
+        <button type="submit" class="btn btn-primary oj-find" :disabled="!fromPlace || !toPlace">
+          Find ways
+        </button>
       </div>
     </form>
  
@@ -78,14 +76,14 @@
           <strong>{{ j.from }} → {{ j.to }}</strong><br>
           <small class="text-muted">{{ MODES[j.mode].label }}, {{ durationText(j.min) }}<template v-if="j.date">, {{ dayLabel(j.date) }}</template><template v-if="j.by">, added by {{ j.by }}</template></small>
         </div>
-        <template v-if="!readOnly">
-        <button type="button" class="btn btn-outline-primary btn-sm me-2" :aria-label="'Change ' + j.from + ' to ' + j.to" @click="editJourney(j)">
-          <AppIcon name="pencil" :size="16" /> Change
-        </button>
-        <button type="button" class="btn btn-outline-danger btn-sm" :aria-label="'Delete ' + j.from + ' to ' + j.to" @click="removeJourney(j)">
-          <AppIcon name="trash" :size="16" /> Delete
-        </button>
-        </template>
+        <div v-if="!readOnly" class="oj-row-btns">
+          <button type="button" class="oj-icon-btn" title="Change" :aria-label="'Change ' + j.from + ' to ' + j.to" @click="editJourney(j)">
+            <AppIcon name="pencil" :size="15" />
+          </button>
+          <button type="button" class="oj-icon-btn danger" title="Delete" :aria-label="'Delete ' + j.from + ' to ' + j.to" @click="removeJourney(j)">
+            <AppIcon name="trash" :size="15" />
+          </button>
+        </div>
       </li>
     </ul>
   </section>
@@ -336,4 +334,105 @@ function removeJourney(j) {
 </script>
 
 <style scoped>
+.oj-route {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0 10px;
+  align-items: start;
+}
+/* Same text and gap as PlaceInput's label, so the button lines up with the boxes */
+.oj-label {
+  display: block;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #003d5b;
+}
+.oj-swap-col,
+.oj-day {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.oj-swap {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #e6dfd2;
+  border-radius: 12px;
+  background: #fff;
+  color: #003d5b;
+}
+.oj-swap:hover {
+  border-color: #003d5b;
+}
+.oj-go {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+.oj-day {
+  width: 240px;
+}
+.oj-day :deep(.dd-trigger) {
+  height: 44px;
+}
+.oj-find {
+  height: 44px;
+  padding: 0 18px;
+  white-space: nowrap;
+}
+.oj-row-btns {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+.oj-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e6dfd2;
+  border-radius: 10px;
+  background: #fff;
+  color: #003d5b;
+}
+.oj-icon-btn:hover {
+  border-color: #003d5b;
+}
+.oj-icon-btn.danger {
+  color: #d1495b;
+}
+.oj-icon-btn.danger:hover {
+  border-color: #d1495b;
+}
+.oj-swap:focus-visible,
+.oj-icon-btn:focus-visible {
+  outline: 3px solid rgba(237, 174, 73, 0.7);
+  outline-offset: 2px;
+}
+/* Phones: From, then a small swap, then To */
+@media (max-width: 767.98px) {
+  .oj-route {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .oj-swap-col {
+    align-items: center;
+    margin: 2px 0 6px;
+  }
+  .oj-swap-col .oj-label {
+    display: none;
+  }
+  .oj-swap {
+    width: 34px;
+    height: 34px;
+    transform: rotate(90deg);
+  }
+  .oj-day {
+    flex: 1;
+    min-width: 0;
+  }
+}
 </style>
