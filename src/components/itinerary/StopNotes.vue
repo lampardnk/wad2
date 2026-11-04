@@ -1,5 +1,6 @@
 <template>
-  <!-- Notes the crew leave on one stop: add, edit your own, delete your own (the organiser can delete any) -->
+  <!-- Comments on this stop's place (the same thread as on the Places tab): add, edit your own,
+       delete your own (the organiser can delete any) -->
   <section class="sn" aria-label="Comments on this stop">
     <p v-if="loading" class="sn-empty">Loading comments…</p>
     <p v-else-if="loadError" class="sn-error" role="alert">
@@ -64,10 +65,11 @@
 import { ref, watch, nextTick, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import { placeComments } from '../../lib/trip/placeComments.js'
 
 const readOnly = inject('readOnly', ref(false)) // an archived trip: notes can be read, not added
 const props = defineProps({
-  stopId: { type: String, default: '' }
+  placeName: { type: String, default: '' } // the thread is per place name, shared with the Places tab
 })
 const emit = defineEmits(['count'])
 
@@ -84,18 +86,22 @@ const confirmId = ref(null)
 const editBox = ref(null)
 
 function url(extra) {
-  return '/api/trips/' + route.params.id + '/comments' + (extra || '')
+  return '/api/trips/' + route.params.id + '/place-comments' + (extra || '')
+}
+// Keep the Places tab's copy of the comments in step (when it has loaded this trip's)
+function shared(change) {
+  if (placeComments.tripId === route.params.id) change(placeComments.list)
 }
 function messageOf(err, fallback) {
   return (err.response && err.response.data && err.response.data.message) || fallback
 }
 
 async function load() {
-  if (!props.stopId) return
+  if (!props.placeName) return
   loading.value = true
   loadError.value = ''
   try {
-    const res = await axios.get(url(), { params: { stop: props.stopId } })
+    const res = await axios.get(url(), { params: { place: props.placeName } })
     notes.value = res.data
     emit('count', notes.value.length)
   } catch (err) {
@@ -110,8 +116,9 @@ async function add() {
   busy.value = true
   error.value = ''
   try {
-    const res = await axios.post(url(), { stopId: props.stopId, text })
+    const res = await axios.post(url(), { place: props.placeName, text })
     notes.value.push(res.data)
+    shared((list) => list.push(res.data))
     newText.value = ''
     emit('count', notes.value.length)
   } catch (err) {
@@ -139,6 +146,7 @@ async function saveEdit(n) {
     const res = await axios.put(url('/' + n.id), { text })
     n.text = res.data.text
     n.editedAt = res.data.editedAt
+    shared((list) => { const c = list.find((x) => x.id === n.id); if (c) Object.assign(c, res.data) })
     editingId.value = null
   } catch (err) {
     error.value = messageOf(err, 'Could not save the comment.')
@@ -152,6 +160,7 @@ async function remove(n) {
   try {
     await axios.delete(url('/' + n.id))
     notes.value = notes.value.filter((x) => x.id !== n.id)
+    shared((list) => { const i = list.findIndex((x) => x.id === n.id); if (i >= 0) list.splice(i, 1) })
     confirmId.value = null
     emit('count', notes.value.length)
   } catch (err) {
@@ -170,7 +179,7 @@ function timeAgo(at) {
 }
 
 // A different stop opened: start fresh
-watch(() => props.stopId, () => {
+watch(() => props.placeName, () => {
   notes.value = []
   newText.value = ''
   editingId.value = null

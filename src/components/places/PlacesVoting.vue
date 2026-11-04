@@ -196,7 +196,7 @@ export default {
 
   methods: {
     commentsFor(w) {
-      return commentsOn(w.id)
+      return commentsOn(w.name)
     },
     toggleComments(id) {
       this.openComments = { ...this.openComments, [id]: !this.openComments[id] }

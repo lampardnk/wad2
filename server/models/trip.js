@@ -54,23 +54,26 @@ const tripSchema = new mongoose.Schema({
   // "Other journeys" (Transport tab): { id, from, to, mode, min, date, by }
   journeys: { type: [mongoose.Schema.Types.Mixed], default: [] },
 
-  // Notes the crew leave on a stop ("book ahead, it sells out"). Kept apart from the stops,
-  // so saving the itinerary never touches them. Removed when their stop is removed.
+  // Older comments, saved per stop. Read together with placeComments (see "Comments on places" in routes/trips.js);
+  // new comments go to placeComments.
   comments: [new mongoose.Schema({
     stopId: { type: String, required: true },
+    place: String,                             // the place's name in lowercase, once known
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     name: String,                              // traveller name of whoever wrote it
     text: { type: String, trim: true, maxlength: 500 },
     editedAt: Date
   }, { timestamps: true })],
 
-  // Comments the crew leave on a saved place while deciding ("too touristy?"). Add or delete, no edit.
-  // Removed when their place is removed from the wishlist.
+  // Comments the crew leave on a place ("too touristy?", "book ahead"). One thread per place, shown on the
+  // Places tab and on the itinerary stop with the same name. Removed when no stop or saved place has that name.
   placeComments: [new mongoose.Schema({
-    wishId: { type: String, required: true },
+    place: String,                             // the place's name in lowercase
+    wishId: String,                            // older comments: the saved place they were left on
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     name: String,                              // traveller name of whoever wrote it
-    text: { type: String, trim: true, maxlength: 500 }
+    text: { type: String, trim: true, maxlength: 500 },
+    editedAt: Date
   }, { timestamps: true })]
 }, { timestamps: true, optimisticConcurrency: true }) // a save based on an old copy fails (see VersionError in app.js)
 

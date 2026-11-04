@@ -369,11 +369,24 @@ router.put('/:id/itinerary', requireAuth, async (req, res) => {
     const latest = await Trip.findById(trip._id)
     return res.status(409).json({ message: 'Someone else changed this trip. Showing their latest version.', trip: toClient(latest, req.userId) })
   }
-  // Notes on stops that were just removed go too
-  const stopIds = stops.map((st) => st.id)
-  await Trip.updateOne({ _id: trip._id }, { $pull: { comments: { stopId: { $nin: stopIds } } } })
-  // Comments on places that were just removed from the wishlist go too
-  await Trip.updateOne({ _id: trip._id }, { $pull: { placeComments: { wishId: { $nin: wishlist.map((w) => w.id) } } } })
+  // Comments follow their place (worked out from the trip as it was before this save):
+  // a renamed stop takes its comments along, and a place no stop or saved place has any more loses them
+  const live = new Set(stops.concat(wishlist).map((x) => placeKey(x.name)))
+  const renamed = {}
+  for (const st of stops) {
+    const before = (trip.stops || []).find((x) => x.id === st.id)
+    if (before && !live.has(placeKey(before.name))) renamed[placeKey(before.name)] = placeKey(st.name)
+  }
+  for (const field of ['placeComments', 'comments']) {
+    const gone = []
+    for (const c of trip[field] || []) {
+      const was = placeOf(c, trip)
+      const now = renamed[was] || was
+      if (!live.has(now)) gone.push(c._id)
+      else if (c.place !== now) await Trip.updateOne({ _id: trip._id, [field + '._id']: c._id }, { $set: { [field + '.$.place']: now } })
+    }
+    if (gone.length) await Trip.updateOne({ _id: trip._id }, { $pull: { [field]: { _id: { $in: gone } } } })
+  }
   res.json({ ok: true, version: updated.version })
 })
 
@@ -795,58 +808,78 @@ router.put('/:id', requireAuth, async (req, res) => {
   res.json({ ...toClient(trip, req.userId), movedStops: shift ? stops.length : 0, shiftDays: shift })
 })
 
-// ---------- Notes on stops ----------
-// GET    /api/trips/:id/comments?stop=<stopId>  -> notes on that stop, oldest first
-// POST   /api/trips/:id/comments  { stopId, text }
-// PUT    /api/trips/:id/comments/:commentId  { text }   (your own notes only)
-// DELETE /api/trips/:id/comments/:commentId             (your own, or any if you're the organiser)
-function commentJson(c, trip, userId) {
+// ---------- Comments on places ----------
+// One thread per place: the Places tab and the itinerary stop with the same name share it
+// (the app knows a saved place and the stop made from it by their name, in lowercase).
+// GET    /api/trips/:id/place-comments[?place=<name>]  -> oldest first: { id, place, name, text, at, editedAt, mine, canDelete }
+// POST   /api/trips/:id/place-comments  { place, text }
+// PUT    /api/trips/:id/place-comments/:commentId  { text }   (your own only)
+// DELETE /api/trips/:id/place-comments/:commentId             (your own, or any if you're the organiser)
+// Older comments were saved per stop (trip.comments + stopId) or per saved place (wishId): placeOf finds their place.
+function placeKey(name) {
+  return String(name || '').trim().toLowerCase()
+}
+function placeOf(c, trip) {
+  if (c.place) return c.place
+  const owner = c.wishId
+    ? (trip.wishlist || []).find((w) => w.id === c.wishId)
+    : (trip.stops || []).find((st) => st.id === c.stopId)
+  return owner ? placeKey(owner.name) : ''
+}
+function allComments(trip) {
+  return (trip.placeComments || []).concat(trip.comments || [])
+}
+function findComment(trip, id) {
+  if (!mongoose.isValidObjectId(id)) return null
+  return trip.placeComments.id(id) || trip.comments.id(id)
+}
+function placeCommentJson(c, trip, userId) {
   const mine = String(c.user) === String(userId)
   return {
-    id: c._id, stopId: c.stopId, name: c.name, text: c.text,
-    at: c.createdAt, editedAt: c.editedAt || null,
+    id: c._id, place: placeOf(c, trip), name: c.name, text: c.text, at: c.createdAt, editedAt: c.editedAt || null,
     mine, canDelete: mine || roleOf(trip, userId) === 'owner'
   }
 }
 function cleanCommentText(v) {
   const text = typeof v === 'string' ? v.trim() : ''
   if (!text) return { error: 'Write something first.' }
-  if (text.length > 500) return { error: 'Notes can be up to 500 characters.' }
+  if (text.length > 500) return { error: 'Comments can be up to 500 characters.' }
   return { text }
 }
 
-router.get('/:id/comments', requireAuth, async (req, res) => {
+router.get('/:id/place-comments', requireAuth, async (req, res) => {
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  const stopId = String(req.query.stop || '')
+  const only = req.query.place ? placeKey(req.query.place) : null
   const list = []
-  for (const c of trip.comments || []) {
-    if (!stopId || c.stopId === stopId) list.push(commentJson(c, trip, req.userId))
+  for (const c of allComments(trip)) {
+    const json = placeCommentJson(c, trip, req.userId)
+    if (json.place && (!only || json.place === only)) list.push(json)
   }
+  list.sort((x, y) => new Date(x.at) - new Date(y.at))
   res.json(list)
 })
 
-router.post('/:id/comments', requireAuth, async (req, res) => {
+router.post('/:id/place-comments', requireAuth, async (req, res) => {
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  const stopId = String(req.body.stopId || '')
-  if (!(trip.stops || []).some((st) => st.id === stopId)) {
-    return res.status(404).json({ message: 'That stop is no longer on the itinerary.' })
-  }
+  const place = placeKey(req.body.place)
+  const known = (trip.stops || []).concat(trip.wishlist || []).some((x) => placeKey(x.name) === place)
+  if (!place || !known) return res.status(404).json({ message: 'That place is no longer on this trip.' })
   const { text, error } = cleanCommentText(req.body.text)
   if (error) return res.status(400).json({ message: error })
-  if ((trip.comments || []).filter((c) => c.stopId === stopId).length >= 50) {
-    return res.status(400).json({ message: 'This stop already has 50 comments. Delete some first.' })
+  if (allComments(trip).filter((c) => placeOf(c, trip) === place).length >= 50) {
+    return res.status(400).json({ message: 'This place already has 50 comments. Delete some first.' })
   }
-  trip.comments.push({ stopId, user: req.userId, name: memberName(trip, req.userId) || 'Someone', text })
+  trip.placeComments.push({ place, user: req.userId, name: memberName(trip, req.userId) || 'Someone', text })
   await trip.save()
-  res.status(201).json(commentJson(trip.comments[trip.comments.length - 1], trip, req.userId))
+  res.status(201).json(placeCommentJson(trip.placeComments[trip.placeComments.length - 1], trip, req.userId))
 })
 
-router.put('/:id/comments/:commentId', requireAuth, async (req, res) => {
+router.put('/:id/place-comments/:commentId', requireAuth, async (req, res) => {
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  const comment = mongoose.isValidObjectId(req.params.commentId) ? trip.comments.id(req.params.commentId) : null
+  const comment = findComment(trip, req.params.commentId)
   if (!comment) return res.status(404).json({ message: 'That comment was deleted.' })
   if (String(comment.user) !== String(req.userId)) return res.status(403).json({ message: 'You can only edit your own comments.' })
   const { text, error } = cleanCommentText(req.body.text)
@@ -854,59 +887,13 @@ router.put('/:id/comments/:commentId', requireAuth, async (req, res) => {
   comment.text = text
   comment.editedAt = new Date()
   await trip.save()
-  res.json(commentJson(comment, trip, req.userId))
-})
-
-router.delete('/:id/comments/:commentId', requireAuth, async (req, res) => {
-  const trip = await findTripFor(req.userId, req.params.id)
-  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  const comment = mongoose.isValidObjectId(req.params.commentId) ? trip.comments.id(req.params.commentId) : null
-  if (!comment) return res.json({ ok: true }) // already gone
-  if (String(comment.user) !== String(req.userId) && roleOf(trip, req.userId) !== 'owner') {
-    return res.status(403).json({ message: 'You can only delete your own comments.' })
-  }
-  comment.deleteOne()
-  await trip.save()
-  res.json({ ok: true })
-})
-
-// ---------- Comments on saved places (Places > Group decisions) ----------
-// GET    /api/trips/:id/place-comments                 -> every place's comments, oldest first
-// POST   /api/trips/:id/place-comments  { wishId, text }
-// DELETE /api/trips/:id/place-comments/:commentId      (your own, or any if you're the organiser)
-// No editing: delete and write a new one.
-function placeCommentJson(c, trip, userId) {
-  const mine = String(c.user) === String(userId)
-  return { id: c._id, wishId: c.wishId, name: c.name, text: c.text, at: c.createdAt, mine, canDelete: mine || roleOf(trip, userId) === 'owner' }
-}
-
-router.get('/:id/place-comments', requireAuth, async (req, res) => {
-  const trip = await findTripFor(req.userId, req.params.id)
-  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  res.json((trip.placeComments || []).map((c) => placeCommentJson(c, trip, req.userId)))
-})
-
-router.post('/:id/place-comments', requireAuth, async (req, res) => {
-  const trip = await findTripFor(req.userId, req.params.id)
-  if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  const wishId = String(req.body.wishId || '')
-  if (!(trip.wishlist || []).some((w) => w.id === wishId)) {
-    return res.status(404).json({ message: 'That place is no longer on the wishlist.' })
-  }
-  const { text, error } = cleanCommentText(req.body.text)
-  if (error) return res.status(400).json({ message: error.replace('Notes', 'Comments') })
-  if ((trip.placeComments || []).filter((c) => c.wishId === wishId).length >= 50) {
-    return res.status(400).json({ message: 'This place already has 50 comments. Delete some first.' })
-  }
-  trip.placeComments.push({ wishId, user: req.userId, name: memberName(trip, req.userId) || 'Someone', text })
-  await trip.save()
-  res.status(201).json(placeCommentJson(trip.placeComments[trip.placeComments.length - 1], trip, req.userId))
+  res.json(placeCommentJson(comment, trip, req.userId))
 })
 
 router.delete('/:id/place-comments/:commentId', requireAuth, async (req, res) => {
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
-  const comment = mongoose.isValidObjectId(req.params.commentId) ? trip.placeComments.id(req.params.commentId) : null
+  const comment = findComment(trip, req.params.commentId)
   if (!comment) return res.json({ ok: true }) // already gone
   if (String(comment.user) !== String(req.userId) && roleOf(trip, req.userId) !== 'owner') {
     return res.status(403).json({ message: 'You can only delete your own comments.' })

@@ -62,7 +62,7 @@ Removed or leaving people stay on the trip as a (dashed) traveller name so balan
   409 with their latest trip, and the page shows it instead of overwriting.
 - Packing sends the list as this person last saw it (`base`); only their own changes are applied on top of the latest.
 - Votes: you can only change your own (the organiser also for people without an account).
-- Stop notes (`/api/trips/:id/comments`) are kept apart from the stops, so saving the itinerary never touches them.
+- Comments (`/api/trips/:id/place-comments`) are one thread per place, shared by the Places tab and the itinerary stop with the same name. They are kept apart from the stops; saving the itinerary only moves them when a stop is renamed, and removes them when no stop or saved place has that name any more.
 - Photos and reactions are always recorded as the logged-in member (the server decides, not the browser).
 
 ## Seeing others' changes
