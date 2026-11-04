@@ -109,7 +109,8 @@ router.get('/leg', requireAuth, async (req, res) => {
   const { found, complete } = await job
   // Kept only when every way got an answer (a failed request is asked again next time)
   if (complete && Object.keys(found).length) await legs.set(key, found)
-  res.json(found)
+  // A second look that didn't finish: keep what was saved, plus anything new
+  res.json(saved && !complete ? { ...saved.value, ...found } : found)
 })
 
 export default router
