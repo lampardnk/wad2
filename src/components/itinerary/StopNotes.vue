@@ -1,14 +1,14 @@
 <template>
   <!-- Notes the crew leave on one stop: add, edit your own, delete your own (the organiser can delete any) -->
-  <section class="sn" aria-label="Notes on this stop">
-    <p v-if="loading" class="sn-empty">Loading notes…</p>
+  <section class="sn" aria-label="Comments on this stop">
+    <p v-if="loading" class="sn-empty">Loading comments…</p>
     <p v-else-if="loadError" class="sn-error" role="alert">
       {{ loadError }} <button type="button" class="sn-link" @click="load">Try again</button>
     </p>
     <template v-else>
-      <p v-if="!notes.length && readOnly" class="sn-empty">No notes were left on this stop.</p>
+      <p v-if="!notes.length && readOnly" class="sn-empty">No comments were left on this stop.</p>
       <p v-else-if="!notes.length" class="sn-empty">
-        No notes yet. Leave one for the group, like "book tickets ahead" or "cash only".
+        No comments yet. Leave one for the group, like "book tickets ahead" or "cash only".
       </p>
       <ol v-else class="sn-list">
         <li v-for="n in notes" :key="n.id" class="sn-note" :class="{ mine: n.mine }">
@@ -21,7 +21,7 @@
 
             <!-- Editing this note -->
             <form v-if="editingId === n.id" class="sn-edit" @submit.prevent="saveEdit(n)">
-              <label :for="'sn-edit-' + n.id" class="visually-hidden">Edit your note</label>
+              <label :for="'sn-edit-' + n.id" class="visually-hidden">Edit your comment</label>
               <textarea :id="'sn-edit-' + n.id" ref="editBox" v-model="editText" class="sn-input" rows="2" maxlength="500"
                 @keydown.esc.stop="editingId = null"></textarea>
               <div class="sn-actions">
@@ -33,7 +33,7 @@
 
             <!-- Deleting: ask once, right on the note -->
             <div v-if="confirmId === n.id" class="sn-confirm" role="alert">
-              <span>Delete this note?</span>
+              <span>Delete this comment?</span>
               <button type="button" class="sn-btn danger" :disabled="busy" @click="remove(n)">Delete</button>
               <button type="button" class="sn-btn" @click="confirmId = null">Keep</button>
             </div>
@@ -47,9 +47,9 @@
 
       <!-- New note -->
       <form v-if="!readOnly" class="sn-new" @submit.prevent="add">
-        <label for="sn-new-text" class="visually-hidden">Add a note</label>
+        <label for="sn-new-text" class="visually-hidden">Add a comment</label>
         <textarea id="sn-new-text" v-model="newText" class="sn-input" rows="2" maxlength="500"
-          placeholder="Add a note for the group…" @keydown.enter.exact.prevent="add"></textarea>
+          placeholder="Add a comment for the group…" @keydown.enter.exact.prevent="add"></textarea>
         <div class="sn-new-foot">
           <small :class="{ warn: newText.length > 450 }">{{ newText.length }}/500 · Enter to post</small>
           <button type="submit" class="sn-btn primary" :disabled="!newText.trim() || busy">Post</button>
@@ -99,7 +99,7 @@ async function load() {
     notes.value = res.data
     emit('count', notes.value.length)
   } catch (err) {
-    loadError.value = messageOf(err, 'Could not load the notes.')
+    loadError.value = messageOf(err, 'Could not load the comments.')
   }
   loading.value = false
 }
@@ -115,7 +115,7 @@ async function add() {
     newText.value = ''
     emit('count', notes.value.length)
   } catch (err) {
-    error.value = messageOf(err, 'Could not post the note.')
+    error.value = messageOf(err, 'Could not post the comment.')
   }
   busy.value = false
 }
@@ -141,7 +141,7 @@ async function saveEdit(n) {
     n.editedAt = res.data.editedAt
     editingId.value = null
   } catch (err) {
-    error.value = messageOf(err, 'Could not save the note.')
+    error.value = messageOf(err, 'Could not save the comment.')
   }
   busy.value = false
 }
@@ -155,7 +155,7 @@ async function remove(n) {
     confirmId.value = null
     emit('count', notes.value.length)
   } catch (err) {
-    error.value = messageOf(err, 'Could not delete the note.')
+    error.value = messageOf(err, 'Could not delete the comment.')
   }
   busy.value = false
 }

@@ -302,8 +302,8 @@
                           <AppIcon name="users" :size="14" /> {{ crowdOf(it).text }}
                         </button>
                         <!-- Notes the crew left on this stop -->
-                        <button type="button" class="ip-sig" :aria-label="'Notes on ' + it.stop.name" @click="openSheet(it, 'notes')">
-                          <AppIcon name="message" :size="14" /> Notes
+                        <button type="button" class="ip-sig" :aria-label="'Comments on ' + it.stop.name" @click="openSheet(it, 'notes')">
+                          <AppIcon name="message" :size="14" /> Comments
                         </button>
                       </template>
                       <span v-for="(p, k) in cardPills(it)" :key="k" class="ip-pill" :class="p.kind"><AppIcon :name="lineIconFor(p.icon)" :size="13" /> {{ p.text }}</span>

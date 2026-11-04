@@ -836,7 +836,7 @@ router.post('/:id/comments', requireAuth, async (req, res) => {
   const { text, error } = cleanCommentText(req.body.text)
   if (error) return res.status(400).json({ message: error })
   if ((trip.comments || []).filter((c) => c.stopId === stopId).length >= 50) {
-    return res.status(400).json({ message: 'This stop already has 50 notes. Delete some first.' })
+    return res.status(400).json({ message: 'This stop already has 50 comments. Delete some first.' })
   }
   trip.comments.push({ stopId, user: req.userId, name: memberName(trip, req.userId) || 'Someone', text })
   await trip.save()
@@ -847,8 +847,8 @@ router.put('/:id/comments/:commentId', requireAuth, async (req, res) => {
   const trip = await findTripFor(req.userId, req.params.id)
   if (!trip) return res.status(404).json({ message: 'Trip not found.' })
   const comment = mongoose.isValidObjectId(req.params.commentId) ? trip.comments.id(req.params.commentId) : null
-  if (!comment) return res.status(404).json({ message: 'That note was deleted.' })
-  if (String(comment.user) !== String(req.userId)) return res.status(403).json({ message: 'You can only edit your own notes.' })
+  if (!comment) return res.status(404).json({ message: 'That comment was deleted.' })
+  if (String(comment.user) !== String(req.userId)) return res.status(403).json({ message: 'You can only edit your own comments.' })
   const { text, error } = cleanCommentText(req.body.text)
   if (error) return res.status(400).json({ message: error })
   comment.text = text
@@ -863,7 +863,7 @@ router.delete('/:id/comments/:commentId', requireAuth, async (req, res) => {
   const comment = mongoose.isValidObjectId(req.params.commentId) ? trip.comments.id(req.params.commentId) : null
   if (!comment) return res.json({ ok: true }) // already gone
   if (String(comment.user) !== String(req.userId) && roleOf(trip, req.userId) !== 'owner') {
-    return res.status(403).json({ message: 'You can only delete your own notes.' })
+    return res.status(403).json({ message: 'You can only delete your own comments.' })
   }
   comment.deleteOne()
   await trip.save()

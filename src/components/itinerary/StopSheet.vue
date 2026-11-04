@@ -194,7 +194,7 @@ const TABS = [
   { key: 'crowd', icon: '👥', label: 'Crowds' },
   { key: 'weather', icon: '⛅', label: 'Weather' },
   { key: 'time', icon: '🕒', label: 'Details' }, // start time, day, name and address
-  { key: 'notes', icon: '💬', label: 'Notes' }
+  { key: 'notes', icon: '💬', label: 'Comments' }
 ]
 // Archived trips: no Details tab (it's only for changing the stop)
 const tabs = computed(() => (props.canChangeDay ? TABS : TABS.slice(0, 3)).filter((t) => !(readOnly.value && t.key === 'time')))
