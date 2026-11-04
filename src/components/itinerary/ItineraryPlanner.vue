@@ -213,17 +213,7 @@
                 </button>
               </li>
 
-              <!-- Lunch / dinner break (kept free when no meal is planned) -->
-              <li v-if="it.stop.virtual" class="ip-stop ip-meal-row" :class="{ first: i === 0, last: i === timeline.length - 1 }">
-                <span class="ip-num meal" aria-hidden="true"><AppIcon :name="lineIconFor(it.stop.icon)" :size="16" /></span>
-                <div class="ip-meal">
-                  <span class="ip-when">{{ formatHour(it.start) }} <small>· {{ durationText(it.stop.duration) }}</small></span>
-                  <strong class="ip-meal-name">{{ it.stop.name }}</strong>
-                  <button v-if="!readOnly" type="button" class="ip-link" @click="openEat(it, i)">Find somewhere to eat</button>
-                </div>
-              </li>
-
-              <li v-else class="ip-stop" :data-i="i" :class="{ first: i === 0, last: i === timeline.length - 1, moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
+              <li v-if="!it.stop.virtual" class="ip-stop" :data-i="i" :class="{ first: i === 0, last: i === timeline.length - 1, moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
                 <article class="ip-card" :class="[{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }, voteClass(wishFor(it.stop))]"
@@ -432,8 +422,6 @@
         </div>
       </aside>
     </div>
-    <!-- Places to eat for a lunch/dinner break -->
-    <EatDrawer :open="!!eat" :context="eat || {}" @close="eat = null" @add="addMeal" />
     <StopSheet :open="!!sheetItem" :stop="sheetStop || {}" :start="sheetItem ? sheetItem.start : 0"
       :duration="sheetItem ? sheetItem.stop.duration || 1 : 1" :section="sheet ? sheet.section : 'crowd'"
       :day-name="dayNameShown" :day-label="'Day ' + (dayIndex + 1) + ' · ' + longDate(dayShown)" :selected-date="dayShown"
@@ -462,10 +450,9 @@
 // Times are worked out by dayOptimizer.js: flexible stops follow each other, locked ones keep their time.
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, inject } from 'vue'
 import axios from 'axios'
-import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, addMealBreaks, crowdAt, rainDuring,
+import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, crowdAt, rainDuring,
   travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf } from '../../lib/itinerary/dayOptimizer.js'
 import { loadLeaflet } from '../../services/leaflet.js'
-import EatDrawer from './EatDrawer.vue'
 import StopSheet from './StopSheet.vue'
 import { codeForDestination } from '../../lib/trip/destinations.js'
 import FlagImg from '../common/FlagImg.vue'
@@ -1026,6 +1013,7 @@ const opts = computed(() => ({
   dayStart: props.prefs.dayStart || 8,
   dayEnd: Math.min(24, props.prefs.dayEnd || 23),
   buffer: props.prefs.travelBuffer || 0,
+  meals: false, // no lunch/dinner breaks in the day
   crowdWeight: { low: 0.5, medium: 1, high: 2 }[props.prefs.crowdSensitivity] || 1
 }))
 // ---------- where the day starts and ends (hotel or airport) ----------
@@ -1233,9 +1221,9 @@ const current = computed(() => scheduleAsIs(work.value, matrix.value))
 // ---------- optimize ----------
 const preview = ref(null)
 const previewing = computed(() => !!(preview.value && preview.value.better))
-// stopRows = the real stops in time order; timeline = the same plus lunch/dinner breaks (for showing)
+// stopRows = the real stops in time order; timeline = the same, for showing
 const stopRows = computed(() => (previewing.value ? preview.value.after.items.filter((it) => !it.stop.virtual) : current.value))
-const timeline = computed(() => (previewing.value ? preview.value.after.items : addMealBreaks(current.value, work.value, opts.value)))
+const timeline = computed(() => (previewing.value ? preview.value.after.items : current.value))
 // (here, not next to overflow: watching it reads previewing, which only exists from this point)
 watch(overflow, (o) => { if (!o) overflowOpen.value = false })
 // Look up real travel times for each leg of the day as it's shown
@@ -1418,44 +1406,6 @@ function applyPreview() {
   save(preview.value.after.items.map((it) => ({ id: it.stop.id, hour: it.start })))
   preview.value = null
   noteChange(summary.replace(/^Route optimized: /, 'Route optimized: '))
-}
-
-// ---------- "Find somewhere to eat" (meal break -> slide-over with places nearby) ----------
-const eat = ref(null) // { label, icon, start, duration, date, fromName, from, city, slot }
-function openEat(breakItem, index) {
-  // The stop before the break is where you'll be (or the one after, for a break at the start)
-  let before = null
-  for (let k = index - 1; k >= 0; k--) if (!timeline.value[k].stop.virtual) { before = timeline.value[k].stop; break }
-  if (!before) for (let k = index + 1; k < timeline.value.length; k++) if (!timeline.value[k].stop.virtual) { before = timeline.value[k].stop; break }
-  const meal = breakItem.stop.name.replace(/ break$/, '')
-  eat.value = {
-    label: meal,
-    icon: breakItem.stop.icon,
-    start: breakItem.start,
-    duration: breakItem.stop.duration,
-    date: dayShown.value,
-    fromName: before ? before.name : '',
-    from: before && before.lat != null ? { lat: before.lat, lon: before.lon } : null,
-    city: (before && nearFor(before)) || (props.destinations[0] || ''),
-    slot: slotOf(index)
-  }
-}
-// Picked a place: it takes the break's spot ("Lunch at …" so it counts as the meal)
-function addMeal(place) {
-  const c = eat.value
-  eat.value = null
-  const city = c.city ? c.city.split(', ')[0] : ''
-  scheduleWish({
-    name: c.label + ' at ' + place.name,
-    address: place.name + (place.address ? ', ' + place.address : '') + (city ? ', ' + city : ''),
-    outdoor: null,
-    city: c.city || null,
-    lat: place.lat,
-    lon: place.lon,
-    duration: c.duration,
-    type: 'food'
-  }, c.slot, true)
-  noteChange(c.label + ' at ' + place.name + ' added at ' + formatHour(c.start))
 }
 
 // ---------- how long you stay (tap the ⏱ chip) ----------
@@ -2769,7 +2719,6 @@ watch(dayShown, () => {
   box-shadow: 0 0 0 4px #fff;
 }
 .ip-num.sm { position: absolute; top: 8px; left: 8px; width: 26px; height: 26px; font-size: 12px; box-shadow: none; }
-.ip-num.meal { background: #fff; border: 2px dashed var(--edge-strong); font-size: 15px; }
 .ip-gap { position: relative; min-height: 12px; padding-left: 44px; display: flex; align-items: center; }
 .ip-gap.end:not(.show) { min-height: 0; }
 .ip-list.dragging .ip-gap { min-height: 40px; }
@@ -2979,12 +2928,6 @@ watch(dayShown, () => {
 .ip-lock:hover:not(:disabled), .ip-go:hover { background: var(--soft); color: var(--ink); }
 .ip-lock.on { background: var(--warn-bg); color: var(--warn-ink); }
 .ip-back:disabled, .ip-lock:disabled { opacity: 0.4; }
-
-/* Meal break */
-.ip-meal { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 12px 14px; border: 1px dashed var(--edge-strong); border-radius: var(--bs-border-radius-lg, 0.5rem); color: var(--muted); }
-.ip-meal-name { color: var(--ink); }
-.ip-meal .ip-when { display: inline; }
-.ip-meal .ip-link { margin-left: auto; font-size: 13px; }
 
 .ip-add-stop {
   display: flex;
