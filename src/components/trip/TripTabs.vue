@@ -22,7 +22,12 @@
 
   <!-- Wider: as many tabs as fit, the rest under "More" (the open tab is always one of the visible ones) -->
    <div v-else class="tt">
-    <div class="tt-track" role="tablist" :aria-label="label">
+    <!-- Every tab, invisible, only to measure how wide each one is -->
+    <div ref="measure" class="tt-measure" aria-hidden="true">
+      <span v-for="t in tabs" :key="t.key" class="tt-tab" :data-key="t.key"><TabIcon :name="t.key" /><span class="tt-label">{{ t.label }}</span></span>
+      <span class="tt-tab" data-key="__more"><AppIcon name="more" :size="16" /><span class="tt-label">More</span></span>
+    </div>
+    <div ref="track" class="tt-track" role="tablist" :aria-label="label">
       <button v-for="t in visibleTabs" :key="t.key" :ref="(el) => setTabRef(t.key, el)" type="button" role="tab" class="tt-tab"
         :class="{ active: modelValue === t.key }" :aria-selected="modelValue === t.key" :aria-controls="'pane-' + t.key"
         :tabindex="modelValue === t.key ? 0 : -1" :data-testid="t.testid || null"
@@ -52,13 +57,12 @@
 </template>
 
 <script setup>
-// Trip section tabs, by the window's width:
-//   1400px and wider: every tab
-//   every 100px narrower: one more tab moves into "More" (from the end), always keeping at least one tab
-//   phones (640px and narrower): one menu button
+// Trip section tabs: the bar takes the full width and shows as many tabs as fit in it;
+// the rest go under "More" (from the end, always keeping at least one tab).
+// Phones (640px and narrower): one menu button.
 // The tab you're on is always one of the visible ones.
 // <TripTabs v-model="activeTab" :tabs="tabs" :alert-key="safetyWarning ? 'safety' : ''" />
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import TabIcon from './TabIcon.vue'
 import AppIcon from '../common/AppIcon.vue'
 import CustomDropdown from '../common/CustomDropdown.vue'
@@ -71,13 +75,13 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 
-const FULL = 1400  // all tabs from this width up
-const STEP = 100   // one tab into "More" for every this many px narrower
-const PHONE = 640  // the menu button at this width and below
+const PHONE = 640 // the menu button at this width and below
+const GAP = 2      // px between tabs (.tt-track gap)
 
 const width = ref(typeof window !== 'undefined' ? window.innerWidth : 1600)
 function onResize() {
   width.value = window.innerWidth
+  nextTick(remeasure)
 }
 
 const compact = computed(() => width.value <= PHONE)
@@ -88,14 +92,8 @@ const menuOptions = computed(() => {
   return list
 })
 
-// How many tabs show: all of them on a big window, one fewer per 100px narrower (at least one)
-const shownCount = computed(() => {
-  const fewer = width.value >= FULL ? 0 : Math.ceil((FULL - width.value) / STEP)
-  return Math.max(1, props.tabs.length - fewer)
-})
-// The first ones in order; if the open tab is further along, it takes the last visible spot
-const visibleTabs = computed(() => {
-  const n = Math.min(shownCount.value, props.tabs.length)
+// The first n tabs in order; if the open tab is further along, it takes the last visible spot
+function firstTabs(n) {
   const list = props.tabs.slice(0, n)
   if (list.some((t) => t.key === props.modelValue)) return list
   const open = props.tabs.find((t) => t.key === props.modelValue)
@@ -104,7 +102,36 @@ const visibleTabs = computed(() => {
     list.push(open)
   }
   return list
+}
+
+// Measured: each tab's width, and the room the bar has
+const measure = ref(null)
+const track = ref(null)
+const tabWidths = ref({}) // key -> px ('__more' is the "More" button)
+const room = ref(0)
+function remeasure() {
+  if (measure.value) {
+    const w = {}
+    for (const el of measure.value.children) w[el.dataset.key] = el.getBoundingClientRect().width
+    tabWidths.value = w
+  }
+  if (track.value) room.value = track.value.clientWidth
+}
+function widthOf(list, withMore) {
+  let total = withMore ? (tabWidths.value.__more || 0) + GAP : 0
+  for (const t of list) total += (tabWidths.value[t.key] || 0) + GAP
+  return total
+}
+// As many as fit (all of them before anything is measured)
+const shownCount = computed(() => {
+  const all = props.tabs.length
+  if (!room.value) return all
+  if (widthOf(props.tabs, false) <= room.value) return all
+  let n = all - 1
+  while (n > 1 && widthOf(firstTabs(n), true) > room.value) n--
+  return n
 })
+const visibleTabs = computed(() => firstTabs(Math.min(shownCount.value, props.tabs.length)))
 const moreTabs = computed(() => props.tabs.filter((t) => !visibleTabs.value.some((v) => v.key === t.key)))
 const moreOptions = computed(() => moreTabs.value.map((t) => ({ value: t.key, label: t.label })))
 const moreHasAlert = computed(() => !!props.alertKey && moreTabs.value.some((t) => t.key === props.alertKey))
@@ -135,12 +162,25 @@ function onKey(e, key) {
   nextTick(() => tabEls[nextKey] && tabEls[nextKey].focus())
 }
 
+let observer = null
 onMounted(() => {
   onResize()
   window.addEventListener('resize', onResize)
+  // the bar's own width can change without the window's (the profile menu, fonts loading)
+  if (typeof ResizeObserver !== 'undefined') {
+    observer = new ResizeObserver(() => remeasure())
+    nextTick(() => track.value && observer.observe(track.value))
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure)
 })
+// the tab list changes (Recap appears after the trip), or the bar comes back from the phone menu
+watch(() => [props.tabs.map((t) => t.key + t.label).join(), compact.value], () => nextTick(() => {
+  if (observer && track.value) { observer.disconnect(); observer.observe(track.value) }
+  remeasure()
+}))
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
+  if (observer) observer.disconnect()
 })
 </script>
 
@@ -155,6 +195,7 @@ onBeforeUnmount(() => {
 }
 .tt {
   position: relative;
+  flex: 1;
   min-width: 0;
   border-radius: 9999px;
   background: rgba(0, 38, 58, 0.85);
@@ -170,6 +211,18 @@ onBeforeUnmount(() => {
   padding: 2px 0 4px;
   border-radius: 9999px;
   overflow: hidden;
+}
+/* Measuring row: laid out like the real tabs, never seen */
+.tt-measure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  width: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
 }
 /* "More": looks like one more tab */
 .tt-more {

@@ -59,10 +59,6 @@
       <!-- The open section -->
       <!-- (keyed by readOnly: if the trip ends while open, every section starts again from what was saved) -->
       <main ref="panel" :key="readOnly ? 'panel-archived' : 'panel'" class="trip-panel">
-        <div class="trip-panel-head">
-          <h2 class="trip-panel-title"><span class="trip-panel-icon"><TabIcon :name="currentTab.key" :size="18" /></span> {{ currentTab.title }}</h2>
-        </div>
-
         <!-- Archived: the trip has ended, so every section is look-only (the server refuses changes too) -->
         <div v-if="readOnly" class="alert alert-secondary d-flex align-items-center gap-2" role="status" data-testid="archived-banner">
           <AppIcon name="archive" :size="16" /> This trip has ended, so it's archived and read only.
@@ -200,7 +196,6 @@ import { prefs } from '../preferences.js'
 import TripShare from '../components/trip/TripShare.vue'
 import CrewView from '../components/crew/CrewView.vue'
 import TripTabs from '../components/trip/TripTabs.vue'
-import TabIcon from '../components/trip/TabIcon.vue'
 import { auth } from '../auth.js'
 import { trip as store } from '../lib/itinerary/itineraryStore.js'
 import { codeForDestination } from '../lib/trip/destinations.js'
@@ -214,7 +209,7 @@ import DoodleIcon from '../components/common/DoodleIcon.vue'
 import UserProfileMenu from '../components/account/UserProfileMenu.vue'
 
 export default {
-  components: { DoodleIcon, UserProfileMenu, FlagImg, LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, OtherJourneys, TripShare, CrewView, TripTabs, TabIcon },
+  components: { DoodleIcon, UserProfileMenu, FlagImg, LoadingSkeleton, TripRecap, TripEditModal, AppIcon, ItineraryView, WishlistView, PlacesVoting, GroupVoting, PackingView, PhotosView, ExpensesView, SafetyLayer, OtherJourneys, TripShare, CrewView, TripTabs },
   props: { id: { type: String, required: true } }, // from the route /trip/:id
   data() {
     return {
@@ -272,12 +267,6 @@ export default {
         list.push(t)
       }
       return list
-    },
-    currentTab() {
-      for (const t of this.tabs) {
-        if (t.key === this.activeTab) return t
-      }
-      return this.tabs[0]
     },
     dateText() {
       const t = this.itineraryInfo
@@ -692,26 +681,6 @@ export default {
   padding: 32px;
   box-shadow: 0 16px 40px rgba(0, 40, 62, 0.08);
 }
-.trip-panel-head {
-  margin-bottom: 20px;
-}
-.trip-panel-title {
-  font-family: var(--font-display);
-  font-size: 1.6rem;
-  margin-bottom: 2px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.trip-panel-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: rgba(237, 174, 73, 0.14);
-  color: #00798c;
-}
 
 /* Wishlist | Group decisions: same pill style as the header switch */
 .has-return {
@@ -812,16 +781,6 @@ export default {
   .trip-panel {
     padding: 20px 16px;
     border-radius: 22px;
-  }
-  .trip-panel-head {
-    margin-bottom: 14px;
-  }
-  .trip-panel-title {
-    font-size: 1.3rem;
-  }
-  .trip-panel-icon {
-    width: 30px;
-    height: 30px;
   }
 }
 /* Phones: no logo, the name and basics get the room; the sections are one menu button */
