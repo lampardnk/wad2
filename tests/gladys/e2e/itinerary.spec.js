@@ -7,8 +7,8 @@ test('user can open a trip and switch to Day 2', async ({ page }) => {
 
 
   // 2. Log in
-  await page.getByTestId('login-username').fill(process.env.TEST_USERNAME)
-  await page.getByTestId('login-password').fill(process.env.TEST_PASSWORD)
+  await page.getByTestId('login-username').fill(process.env.E2E_USERNAME)
+  await page.getByTestId('login-password').fill(process.env.E2E_PASSWORD)
   await page.getByTestId('login-submit').click()
 
 
@@ -53,8 +53,8 @@ test('user can lock and unlock an itinerary stop', async ({ page }) => {
 
 
   // 2. Log in
-  await page.getByTestId('login-username').fill(process.env.TEST_USERNAME)
-  await page.getByTestId('login-password').fill(process.env.TEST_PASSWORD)
+  await page.getByTestId('login-username').fill(process.env.E2E_USERNAME)
+  await page.getByTestId('login-password').fill(process.env.E2E_PASSWORD)
   await page.getByTestId('login-submit').click()
 
 
@@ -124,8 +124,8 @@ test('simulated rainy weather generates an itinerary replan', async ({ page }) =
   await page.goto('/login')
 
 
-  await page.getByTestId('login-username').fill(process.env.TEST_USERNAME)
-  await page.getByTestId('login-password').fill(process.env.TEST_PASSWORD)
+  await page.getByTestId('login-username').fill(process.env.E2E_USERNAME)
+  await page.getByTestId('login-password').fill(process.env.E2E_PASSWORD)
   await page.getByTestId('login-submit').click()
 
 
