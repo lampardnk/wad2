@@ -44,6 +44,16 @@
                   <p class="ss-note">Moving it keeps your other stops where they are. You can undo it.</p>
                 </template>
                 <p v-else-if="crowd.value != null" class="ss-good">✓ This is already one of the quietest times that fits your day.</p>
+
+                <!-- What if: heard it's packed (or empty)? Only you see it; Optimize Route plans around it -->
+                <div v-if="!readOnly" class="ss-whatif">
+                  <span>What if it's</span>
+                  <div class="ss-seg" role="group" aria-label="Assume a crowd level at this time">
+                    <button v-for="l in ['Quiet', 'Busy', 'Peak']" :key="l" type="button" :class="{ on: assumed.crowd === l }"
+                      :aria-pressed="assumed.crowd === l" @click="emit('simulate', { kind: 'crowd', value: assumed.crowd === l ? null : l })">{{ l }}</button>
+                  </div>
+                  <p class="ss-note">Only you see this and nothing is saved. Optimize Route plans around it. Tap it again for the real data.</p>
+                </div>
               </section>
 
               <!-- ===== Weather ===== -->
@@ -96,6 +106,17 @@
                   <p v-else-if="rainWhileHere" class="ss-good">✓ Rain is possible, but this one is indoors.</p>
                   <p v-else class="ss-good">✓ Dry while you're here.</p>
                 </template>
+
+                <!-- What if: forecast looks unsure? Only you see it; Optimize Route plans around it -->
+                <div v-if="!readOnly" class="ss-whatif">
+                  <span>What if it</span>
+                  <div class="ss-seg" role="group" aria-label="Assume the weather while you're here">
+                    <button v-for="c in [{ value: 'Rain', label: 'Rains' }, { value: 'Clear', label: 'Stays dry' }]" :key="c.value" type="button"
+                      :class="{ on: assumed.weather === c.value }" :aria-pressed="assumed.weather === c.value"
+                      @click="emit('simulate', { kind: 'weather', value: assumed.weather === c.value ? null : c.value })">{{ c.label }}</button>
+                  </div>
+                  <p class="ss-note">Only you see this and nothing is saved. Optimize Route plans around it. Tap it again for the forecast.</p>
+                </div>
               </section>
 
               <!-- ===== Notes from the crew ===== -->
@@ -164,9 +185,10 @@ const props = defineProps({
   dry: { type: Array, default: () => [] },
   indoorPicks: { type: Array, default: () => [] },
   canChangeDay: { type: Boolean, default: true },
-  near: { type: Object, default: null }                 // { lat, lon }: search for places around here
+  near: { type: Object, default: null },                // { lat, lon }: search for places around here
+  assumed: { type: Object, default: () => ({}) }        // what-ifs at this stop: { crowd: 'Quiet'|'Busy'|'Peak'|null, weather: 'Rain'|'Clear'|null }
 })
-const emit = defineEmits(['close', 'move-time', 'move-day', 'swap', 'edit'])
+const emit = defineEmits(['close', 'move-time', 'move-day', 'swap', 'edit', 'simulate'])
 
 const TABS = [
   { key: 'crowd', icon: '👥', label: 'Crowds' },
@@ -594,6 +616,24 @@ watch(() => [props.start, props.stop.name, props.stop.lat, props.stop.lon, props
 .ss-muted {
   font-size: 13px;
   opacity: 0.75;
+}
+.ss-whatif {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid #ece4d6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 10px;
+}
+.ss-whatif > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a6b78;
+}
+.ss-whatif .ss-note {
+  flex-basis: 100%;
+  margin-top: 0;
 }
 .ss-sim-tag {
   margin-left: 6px;
