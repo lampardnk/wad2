@@ -109,21 +109,21 @@
       </div>
       <!-- The day's setup, kept out of the chain: flight, where the day starts and ends, Smart Schedule -->
       <div v-if="!readOnly" class="ip-setup" role="group" aria-label="Day setup">
-        <button v-if="dayIndex === 0" type="button" class="ip-chip" :class="{ set: arrivalToday }" @click="editAnchor('arrive')"
+        <button v-if="dayIndex === 0" type="button" class="ip-setup-chip" :class="{ set: arrivalToday }" @click="editAnchor('arrive')"
           :title="arrivalToday ? startCaption : 'Landing today? The day starts after you land'">
           <AppIcon name="plane" :size="14" /> {{ arrivalToday ? 'Land ' + formatHour(startAnchor.hour) : 'Flight' }}
         </button>
-        <button v-if="!(startAnchor && startAnchor.kind === 'arrive')" type="button" class="ip-chip" :class="{ set: startAnchor }" @click="editAnchor('start')" :title="startCaption">
+        <button v-if="!(startAnchor && startAnchor.kind === 'arrive')" type="button" class="ip-setup-chip" :class="{ set: startAnchor }" @click="editAnchor('start')" :title="startCaption">
           <AppIcon name="door" :size="14" /> {{ startAnchor ? 'Start: ' + startAnchor.name : 'Start' }}
         </button>
-        <button v-if="isLastDay" type="button" class="ip-chip" :class="{ set: endAnchor && endAnchor.kind === 'depart' }" @click="editAnchor('depart')"
+        <button v-if="isLastDay" type="button" class="ip-setup-chip" :class="{ set: endAnchor && endAnchor.kind === 'depart' }" @click="editAnchor('depart')"
           :title="endAnchor && endAnchor.kind === 'depart' ? endCaption : 'Flying home today? The day ends in time to get to the airport'">
           <AppIcon name="plane" :size="14" /> {{ endAnchor && endAnchor.kind === 'depart' ? 'Fly ' + formatHour(endAnchor.hour) : 'Flight home' }}
         </button>
-        <button v-if="!(endAnchor && endAnchor.kind === 'depart')" type="button" class="ip-chip" :class="{ set: endAnchor }" @click="editAnchor('end')" :title="endCaption">
+        <button v-if="!(endAnchor && endAnchor.kind === 'depart')" type="button" class="ip-setup-chip" :class="{ set: endAnchor }" @click="editAnchor('end')" :title="endCaption">
           <AppIcon name="door" :size="14" /> {{ endAnchor ? 'End: ' + endAnchor.name : 'End' }}
         </button>
-        <button type="button" class="ip-chip" @click="emit('open-schedule')" title="Active hours, crowds and transit buffer">
+        <button type="button" class="ip-setup-chip" @click="emit('open-schedule')" title="Active hours, crowds and transit buffer">
           <AppIcon name="sparkles" :size="14" /> Schedule
         </button>
       </div>
@@ -2594,9 +2594,9 @@ watch(dayShown, () => {
 .ip-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .ip-totals { display: inline-flex; gap: 6px; font-size: 12px; }
 .ip-setup { display: flex; flex-wrap: wrap; gap: 6px; }
-.ip-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 220px; padding: 5px 10px; border: 1px dashed var(--line); border-radius: 999px; background: #fff; color: var(--muted); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-.ip-chip.set { border-style: solid; color: var(--ink); }
-.ip-chip:hover { border-color: var(--primary); color: var(--primary); }
+.ip-setup-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 220px; padding: 5px 10px; border: 1px dashed var(--line); border-radius: 999px; background: #fff; color: var(--muted); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.ip-setup-chip.set { border-style: solid; color: var(--ink); }
+.ip-setup-chip:hover { border-color: var(--primary); color: var(--primary); }
 .ip-totals span { padding: 4px 8px; border-radius: var(--bs-border-radius-sm, 0.25rem); background: #fff; border: 1px solid var(--line); color: var(--muted); }
 .ip-issues-wrap { position: relative; }
 .ip-issues-btn {
