@@ -107,6 +107,26 @@
           <button v-if="stopRows.length > 1 && !readOnly" type="button" class="ip-outline small ip-issues-all" @click="issuesOpen = false; optimize()"><AppIcon name="sparkles" :size="15" /> Let Optimize Route sort these out</button>
         </div>
       </div>
+      <!-- The day's setup, kept out of the chain: flight, where the day starts and ends, Smart Schedule -->
+      <div v-if="!readOnly" class="ip-setup" role="group" aria-label="Day setup">
+        <button v-if="dayIndex === 0" type="button" class="ip-chip" :class="{ set: arrivalToday }" @click="editAnchor('arrive')"
+          :title="arrivalToday ? startCaption : 'Landing today? The day starts after you land'">
+          <AppIcon name="plane" :size="14" /> {{ arrivalToday ? 'Land ' + formatHour(startAnchor.hour) : 'Flight' }}
+        </button>
+        <button v-if="!(startAnchor && startAnchor.kind === 'arrive')" type="button" class="ip-chip" :class="{ set: startAnchor }" @click="editAnchor('start')" :title="startCaption">
+          <AppIcon name="door" :size="14" /> {{ startAnchor ? 'Start: ' + startAnchor.name : 'Start' }}
+        </button>
+        <button v-if="isLastDay" type="button" class="ip-chip" :class="{ set: endAnchor && endAnchor.kind === 'depart' }" @click="editAnchor('depart')"
+          :title="endAnchor && endAnchor.kind === 'depart' ? endCaption : 'Flying home today? The day ends in time to get to the airport'">
+          <AppIcon name="plane" :size="14" /> {{ endAnchor && endAnchor.kind === 'depart' ? 'Fly ' + formatHour(endAnchor.hour) : 'Flight home' }}
+        </button>
+        <button v-if="!(endAnchor && endAnchor.kind === 'depart')" type="button" class="ip-chip" :class="{ set: endAnchor }" @click="editAnchor('end')" :title="endCaption">
+          <AppIcon name="door" :size="14" /> {{ endAnchor ? 'End: ' + endAnchor.name : 'End' }}
+        </button>
+        <button type="button" class="ip-chip" @click="emit('open-schedule')" title="Active hours, crowds and transit buffer">
+          <AppIcon name="sparkles" :size="14" /> Schedule
+        </button>
+      </div>
       <!-- List or map of this day's stops (the sliding highlight shows which one you're on) -->
       <div class="ip-views" :class="{ right: view === 'map' }" role="group" aria-label="Show this day as">
         <span class="ip-views-thumb" aria-hidden="true"></span>
@@ -177,27 +197,10 @@
             <button v-if="!readOnly" type="button" class="ip-cta small" @click="overflowOpen = true">Choose where they go</button>
           </div>
           <ol class="ip-list" :class="{ dragging: !!drag }">
-            <!-- Where the day starts: your hotel, or the airport on the day you land -->
-            <li class="ip-anchor-row start">
-              <!-- Day 1: landing comes first, so the flight goes above the hotel -->
-              <button v-if="dayIndex === 0 && !arrivalToday && !readOnly" type="button" class="ip-flight-card" @click="editAnchor('arrive')">
-                <span class="ip-flight-icon" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
-                <span class="ip-anchor-text">
-                  <strong>Landing today?</strong>
-                  <small>Add your flight and the day starts after you land</small>
-                </span>
-                <span class="ip-flight-btn">Add flight</span>
-              </button>
-              <button type="button" class="ip-anchor" :class="{ empty: !startAnchor }" :disabled="readOnly" @click="editAnchor('start')">
-                <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="startAnchor && startAnchor.kind === 'arrive' ? 'plane' : 'door'" :size="16" /></span>
-                <span class="ip-anchor-text">
-                  <small>{{ startCaption }}</small>
-                  <strong>{{ startAnchor ? startAnchor.name : 'Add where you\'re staying' }}</strong>
-                </span>
-                <span v-if="!readOnly" class="ip-anchor-edit">{{ startAnchor ? 'Change' : 'Add' }}</span>
-              </button>
-              <button v-if="startLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly && startLeg.mode !== 'unknown' }" :disabled="readOnly || startLeg.mode === 'unknown'" :aria-label="'Getting to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
-                <AppIcon :name="modeIcon(startLeg.mode)" :size="13" /> {{ anchorLegText(startLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
+            <!-- Where the day starts (set in the bar above): just the trip from there to the first stop -->
+            <li v-if="startLeg" class="ip-anchor-row start">
+              <button type="button" class="ip-leg" :class="{ clickable: !readOnly && startLeg.mode !== 'unknown' }" :disabled="readOnly || startLeg.mode === 'unknown'" :aria-label="'Getting from ' + startAnchor.name + ' to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
+                <AppIcon :name="startAnchor.kind === 'arrive' ? 'plane' : 'door'" :size="13" /> From {{ startAnchor.name }} · <AppIcon :name="modeIcon(startLeg.mode)" :size="13" /> {{ anchorLegText(startLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
             </li>
             <template v-for="(it, i) in timeline" :key="it.stop.id">
@@ -337,45 +340,11 @@
               @dragover.prevent="dropAt = timeline.length" @dragleave="dropAt = null" @drop.prevent="dropInto(stopRows.length)">
               <span v-if="drag" class="ip-drop">Drop here</span>
             </li>
-            <!-- Where the day ends: back to the hotel, or the airport on the day you fly home -->
-            <li v-if="stopRows.length" class="ip-anchor-row end">
-              <button v-if="endLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly && endLeg.mode !== 'unknown' }" :disabled="readOnly || endLeg.mode === 'unknown'" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
-                <AppIcon :name="modeIcon(endLeg.mode)" :size="13" /> {{ anchorLegText(endLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
+            <!-- Where the day ends (set in the bar above): just the trip from the last stop to there -->
+            <li v-if="stopRows.length && endLeg" class="ip-anchor-row end">
+              <button type="button" class="ip-leg" :class="{ clickable: !readOnly && endLeg.mode !== 'unknown' }" :disabled="readOnly || endLeg.mode === 'unknown'" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
+                <AppIcon :name="modeIcon(endLeg.mode)" :size="13" /> {{ anchorLegText(endLeg) }} · to {{ endAnchor.name }} <AppIcon :name="endAnchor.kind === 'depart' ? 'plane' : 'door'" :size="13" /><AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
-              <!-- Last day, nothing set yet: one question, two answers (the flight home first: most people fly out) -->
-              <div v-if="isLastDay && !endAnchor && !readOnly" class="ip-end-choice" role="group" aria-labelledby="ip-end-q">
-                <p id="ip-end-q" class="ip-end-q">Where does the day end?</p>
-                <div class="ip-end-options">
-                  <button type="button" class="ip-end-option main" @click="editAnchor('depart')">
-                    <span class="ip-flight-icon" aria-hidden="true"><AppIcon name="plane" :size="18" /></span>
-                    <span class="ip-anchor-text">
-                      <strong>Flight home</strong>
-                      <small>The day ends in time to get to the airport</small>
-                    </span>
-                  </button>
-                  <button type="button" class="ip-end-option" @click="editAnchor('end')">
-                    <span class="ip-anchor-icon" aria-hidden="true"><AppIcon name="door" :size="16" /></span>
-                    <span class="ip-anchor-text">
-                      <strong>Back to the hotel</strong>
-                      <small>Staying on, or flying out another day</small>
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <template v-else>
-                <button type="button" class="ip-anchor" :class="{ empty: !endAnchor }" :disabled="readOnly" @click="editAnchor('end')">
-                  <span class="ip-anchor-icon" aria-hidden="true"><AppIcon :name="endAnchor && endAnchor.kind === 'depart' ? 'plane' : 'door'" :size="16" /></span>
-                  <span class="ip-anchor-text">
-                    <small>{{ endCaption }}</small>
-                    <strong>{{ endAnchor ? endAnchor.name : 'Add where you\'re staying' }}</strong>
-                  </span>
-                  <span v-if="!readOnly" class="ip-anchor-edit">{{ endAnchor ? 'Change' : 'Add' }}</span>
-                </button>
-                <!-- Last day ending at the hotel: switching to the flight home is one tap -->
-                <button v-if="isLastDay && endAnchor && endAnchor.kind === 'stay' && !readOnly" type="button" class="ip-end-switch" @click="editAnchor('depart')">
-                  <AppIcon name="plane" :size="14" /> Flying home today? Add your flight
-                </button>
-              </template>
             </li>
           </ol>
 
@@ -535,7 +504,7 @@ const props = defineProps({
   morningStay: { type: Object, default: null },         // last night's hotel (where the day starts)
   myFlight: { type: Object, default: () => ({}) }       // { arrival: { date, time, flight, place }, departure: {...} } (mine, from Crew)
 })
-const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote', 'travel', 'save-stay', 'save-flight', 'move-stops', 'notice'])
+const emit = defineEmits(['select-day', 'add-day', 'remove-day', 'undo-day', 'add-place', 'apply', 'lock', 'schedule', 'unschedule', 'status', 'duration', 'move-day', 'swap', 'edit', 'go-vote', 'travel', 'save-stay', 'save-flight', 'move-stops', 'notice', 'open-schedule'])
 const dayList = computed(() => props.days)
 const dayShown = computed(() => props.selectedDate)
 function pickDay(d) {
@@ -2624,6 +2593,10 @@ watch(dayShown, () => {
 /* ---------- Action bar ---------- */
 .ip-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .ip-totals { display: inline-flex; gap: 6px; font-size: 12px; }
+.ip-setup { display: flex; flex-wrap: wrap; gap: 6px; }
+.ip-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 220px; padding: 5px 10px; border: 1px dashed var(--line); border-radius: 999px; background: #fff; color: var(--muted); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.ip-chip.set { border-style: solid; color: var(--ink); }
+.ip-chip:hover { border-color: var(--primary); color: var(--primary); }
 .ip-totals span { padding: 4px 8px; border-radius: var(--bs-border-radius-sm, 0.25rem); background: #fff; border: 1px solid var(--line); color: var(--muted); }
 .ip-issues-wrap { position: relative; }
 .ip-issues-btn {
@@ -2821,72 +2794,6 @@ watch(dayShown, () => {
 /* Hotel / airport rows */
 .ip-anchor-row { list-style: none; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0 0 8px; }
 .ip-anchor-row.end { margin: 0 0 12px; }
-.ip-anchor, .ip-flight-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  max-width: 520px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--bs-border-radius-lg, 0.5rem);
-  background: var(--soft);
-  text-align: left;
-  color: var(--ink);
-}
-.ip-anchor:hover:not(:disabled) { border-color: var(--primary); }
-.ip-anchor:disabled { cursor: default; color: var(--ink); opacity: 1; }
-.ip-anchor.empty { border-style: dashed; background: transparent; }
-.ip-flight-card { background: var(--warn-bg); border-color: var(--warn-line); margin-bottom: 4px; }
-.ip-flight-card:hover { border-color: var(--gold); }
-.ip-anchor-icon, .ip-flight-icon {
-  flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--bs-border-radius, 0.375rem);
-  display: grid;
-  place-items: center;
-  background: var(--primary);
-  color: #fff;
-}
-.ip-flight-icon { background: var(--gold); color: var(--ink); }
-.ip-anchor.empty .ip-anchor-icon { background: var(--warn-bg); color: var(--warn-ink); }
-.ip-anchor-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.ip-anchor-text small { font-size: 12px; color: var(--muted); }
-.ip-anchor-text strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ip-flight-card .ip-anchor-text strong { white-space: normal; }
-.ip-flight-card .ip-anchor-text small { color: var(--warn-ink); }
-.ip-anchor-edit { flex: none; font-size: 13px; font-weight: 700; color: var(--primary); }
-.ip-flight-btn { flex: none; padding: 6px 12px; border-radius: var(--bs-border-radius, 0.375rem); background: var(--primary); color: #fff; font-size: 13px; font-weight: 700; }
-.ip-end-choice { width: 100%; max-width: 520px; padding: 12px; border: 1px dashed var(--edge-strong); border-radius: var(--bs-border-radius-lg, 0.5rem); }
-.ip-end-q { margin: 0 0 8px 4px; font-size: 13px; color: var(--muted); }
-.ip-end-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.ip-end-option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--bs-border-radius, 0.375rem);
-  background: var(--soft);
-  text-align: left;
-  color: var(--ink);
-}
-.ip-end-option.main { background: var(--warn-bg); border-color: var(--warn-line); }
-.ip-end-option:hover { border-color: var(--primary); }
-.ip-end-option .ip-anchor-text strong { white-space: normal; }
-.ip-end-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--warn-line);
-  border-radius: var(--bs-border-radius, 0.375rem);
-  background: var(--warn-bg);
-  color: var(--warn-ink);
-  font-size: 13px;
-  font-weight: 700;
-}
 
 /* A day with more than it can hold */
 .ip-overflow {
@@ -3174,7 +3081,6 @@ watch(dayShown, () => {
   .ip-map { height: 320px; }
   .ip-detail { flex-direction: column; }
   .ip-detail-photo { width: 100%; min-height: 140px; }
-  .ip-end-options { grid-template-columns: 1fr; }
 }
 @media (pointer: coarse), (max-width: 560px) {
   .ip-arrow { min-width: 40px; min-height: 40px; }

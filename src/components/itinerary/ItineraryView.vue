@@ -6,9 +6,14 @@
       <button type="button" class="btn-close" aria-label="Close" @click="notice = ''"></button>
     </div>
 
-    <!-- Smart Schedule: hours, crowds, buffer, and what the scheduler is doing -->
-    <!-- (not on an archived trip: its settings re-time the days) -->
-    <SchedulePanel v-if="!readOnly" :save-status="saveStatus" :status="plannerStatus" />
+    <!-- Smart Schedule: hours, crowds, buffer, and what the scheduler is doing. Opened from the planner's
+         "Schedule" chip, so the page stays on the day's stops (not on an archived trip: its settings re-time the days) -->
+    <div v-if="scheduleOpen && !readOnly" class="sched-backdrop" @click.self="scheduleOpen = false" @keydown.esc="scheduleOpen = false">
+      <div class="sched-dialog" role="dialog" aria-modal="true" aria-label="Smart Schedule">
+        <button type="button" ref="schedX" class="btn-close btn-close-white sched-x" aria-label="Close" @click="scheduleOpen = false"></button>
+        <SchedulePanel :save-status="saveStatus" :status="plannerStatus" />
+      </div>
+    </div>
 
     <!-- The itinerary: day navigator, timeline with weather + crowd icons, saved places drawer -->
     <ItineraryPlanner :days="dayList" :selected-date="selectedDate" :stops="itinerary"
@@ -19,7 +24,7 @@
       @select-day="selectDay" @add-day="addDay" @remove-day="removeDay" @notice="showNotice" @undo-day="undoDay" @add-place="openAddPlace" @go-vote="openVote"
       @apply="applyOptimized" @lock="setLocked" @schedule="scheduleWish" @unschedule="unscheduleStop" @status="plannerStatus = $event"
       @duration="setDuration" @move-day="moveToDay" @move-stops="moveStops" @swap="swapWithWish" @edit="editStop" @travel="setTravel"
-      @save-stay="saveStay" @save-flight="saveFlight" />
+      @save-stay="saveStay" @save-flight="saveFlight" @open-schedule="scheduleOpen = true" />
   </div>
 </template>
 
@@ -67,6 +72,7 @@ export default {
   data() {
     return {
       selectedDate: '', // 'YYYY-MM-DD'
+      scheduleOpen: false, // the Smart Schedule pop-up
       plannerStatus: { kind: 'idle', text: 'Add places to this day and the schedule balances itself.' },
       weather: [], // every forecast entry: { date, time, span, condition, rain }
       weatherError: false,
@@ -134,6 +140,10 @@ export default {
   },
 
   watch: {
+    // Smart Schedule pop-up: focus starts inside it, so Esc and Tab work there
+    scheduleOpen(open) {
+      if (open) this.$nextTick(() => this.$refs.schedX && this.$refs.schedX.focus())
+    },
     // If typical weather couldn't load (e.g. the server was restarting), try again when the day changes
     selectedDate() {
       if (!this.climate.length) this.loadClimate()
@@ -791,6 +801,28 @@ export default {
 </script>
 
 <style scoped>
+.sched-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 20, 30, 0.45);
+}
+.sched-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+.sched-x {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 1;
+}
 .notice-popup {
   position: fixed;
   top: 70px;                 /* just below the navbar */
