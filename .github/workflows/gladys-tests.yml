@@ -1,0 +1,46 @@
+name: Gladys tests
+
+on: [push, pull_request]
+
+jobs:
+  gladys-tests:
+    name: Gladys tests (unit, integration, E2E)
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7 # mongo 8 can't start on the runner's Linux kernel (SERVER-121912)
+        ports: ['27017:27017']
+    env:
+      MONGODB_URI: mongodb://localhost:27017/ci
+      JWT_SECRET: ci-only-secret
+      E2E_USERNAME: citester
+      E2E_PASSWORD: Travel#2026ok
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile && pnpm install --frozen-lockfile --dir server
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start the server and create the test account
+        run: |
+          for i in $(seq 30); do (echo > /dev/tcp/localhost/27017) 2>/dev/null && break; sleep 1; done
+          (cd server && node index.js > ../server.log 2>&1 &)
+          for i in $(seq 30); do curl -sf http://localhost:3000/api/health && break; sleep 1; done
+          curl -sf -X POST http://localhost:3000/api/auth/register -H 'Content-Type: application/json' \
+            -d "{\"name\":\"Test User\",\"username\":\"$E2E_USERNAME\",\"email\":\"$E2E_USERNAME@example.com\",\"password\":\"$E2E_PASSWORD\"}"
+
+      # Each step runs even if the one before failed, so every result shows
+      - name: Unit test
+        if: always()
+        run: pnpm exec vitest run tests/gladys/unit
+      - name: Integration test
+        if: always()
+        run: pnpm exec vitest run tests/gladys/integration
+      - name: E2E tests
+        if: always()
+        run: pnpm exec playwright test tests/gladys/e2e
+
+      - if: failure()
+        run: cat server.log
