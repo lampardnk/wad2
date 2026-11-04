@@ -21,7 +21,7 @@ async function getJson(path, params, ms) {
       await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
       continue
     }
-    if (!res.ok) throw new Error('Geoapify ' + res.status)
+    if (!res.ok) throw Object.assign(new Error('Geoapify ' + res.status), { status: res.status })
     return res.json()
   }
 }
@@ -99,11 +99,18 @@ export async function geoapifyAttractions({ placeId, lat, lon, radius, tourismTy
 // How long a route takes: { min, km } or null. from/to = { lat, lon }.
 // mode: 'walk' | 'bicycle' | 'drive' | 'approximated_transit' (public transport worked out from
 // OpenStreetMap's bus/train lines; no timetables, so it's an estimate).
+// null = Geoapify says there's no route this way (e.g. no road to that point); a failed request throws
 export async function geoapifyRoute(from, to, mode) {
-  const data = await getJson('/v1/routing', {
-    waypoints: from.lat + ',' + from.lon + '|' + to.lat + ',' + to.lon,
-    mode
-  }, 10000)
+  let data
+  try {
+    data = await getJson('/v1/routing', {
+      waypoints: from.lat + ',' + from.lon + '|' + to.lat + ',' + to.lon,
+      mode
+    }, 10000)
+  } catch (err) {
+    if (err.status === 400) return null // "No path could be found for input"
+    throw err
+  }
   const p = data.features && data.features[0] && data.features[0].properties
   if (!p || p.time == null) return null
   return { min: Math.max(1, Math.round(p.time / 60)), km: Math.round((p.distance || 0) / 100) / 10 }
