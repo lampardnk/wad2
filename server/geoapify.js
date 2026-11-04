@@ -100,7 +100,8 @@ export async function geoapifyAttractions({ placeId, lat, lon, radius, tourismTy
 // mode: 'walk' | 'bicycle' | 'drive' | 'approximated_transit' (public transport worked out from
 // OpenStreetMap's bus/train lines; no timetables, so it's an estimate).
 // null = Geoapify says there's no route this way (e.g. no road to that point); a failed request throws
-export async function geoapifyRoute(from, to, mode) {
+// withPath: also return the route's points, path: [{ lat, lon }, ...] from start to end
+export async function geoapifyRoute(from, to, mode, { withPath = false } = {}) {
   let data
   try {
     data = await getJson('/v1/routing', {
@@ -111,9 +112,16 @@ export async function geoapifyRoute(from, to, mode) {
     if (err.status === 400) return null // "No path could be found for input"
     throw err
   }
-  const p = data.features && data.features[0] && data.features[0].properties
+  const f = data.features && data.features[0]
+  const p = f && f.properties
   if (!p || p.time == null) return null
-  return { min: Math.max(1, Math.round(p.time / 60)), km: Math.round((p.distance || 0) / 100) / 10 }
+  const route = { min: Math.max(1, Math.round(p.time / 60)), km: Math.round((p.distance || 0) / 100) / 10 }
+  if (withPath && f.geometry) {
+    // LineString: [[lon, lat], ...]; MultiLineString (one line per leg): [[[lon, lat], ...], ...]
+    const lines = f.geometry.type === 'LineString' ? [f.geometry.coordinates] : f.geometry.coordinates
+    route.path = lines.flat().map(([lon, lat]) => ({ lat, lon }))
+  }
+  return route
 }
 
 // One place as the app stores it: { name, address, lat, lon, kind, city, countryCode }
