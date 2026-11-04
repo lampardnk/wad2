@@ -383,268 +383,6 @@
             <span aria-hidden="true">⊕</span> Add stop
           </button>
 
-          <!-- ===== What if: weather. Assume rain or sun during one stop; Optimize Route,
-               the warnings and the suggestions plan around it until it's reset (nothing is saved) ===== -->
-          <section v-if="stopRows.length && !readOnly" class="ip-weather-sim">
-            <div class="ip-sim-heading">
-              <div>
-                <h4>Simulate weather conditions</h4>
-                <p>Forecast looks unsure? Assume rain or sun during a stop, and Optimize Route plans around it. Only you see this, and nothing is saved until you apply a change.</p>
-              </div>
-            </div>
-
-            <div class="ip-sim-fields">
-              <div class="ip-sim-field">
-                <label for="ip-sim-stop">Itinerary stop</label>
-                <CustomDropdown id="ip-sim-stop" v-model="simulationStopId" :options="simStopOptions" block
-                  placeholder="Choose a stop" aria-label="Itinerary stop" />
-              </div>
-
-              <div class="ip-sim-field">
-                <label for="ip-sim-weather">Simulate weather</label>
-                <CustomDropdown id="ip-sim-weather" v-model="simulationCondition" :options="SIM_WEATHER" block
-                  aria-label="Simulate weather" />
-              </div>
-            </div>
-
-            <div class="ip-sim-actions">
-              <button
-                type="button"
-                class="ip-sim-button"
-                @click="applyWeatherSimulation"
-              >
-                Simulate weather
-              </button>
-
-              <button
-                v-if="weatherSimulation"
-                type="button"
-                class="ip-sim-reset"
-                @click="resetWeatherSimulation"
-              >
-                Reset
-              </button>
-            </div>
-
-            <div v-if="weatherSimulation" class="ip-sim-active">
-              Simulating
-              <strong>{{ weatherSimulation.condition === 'Rain' ? 'rainy' : 'sunny' }}</strong>
-              weather at
-              <strong>{{ weatherSimulation.stopName }}</strong>
-              ({{ formatHour(weatherSimulation.start) }}–{{ formatHour(weatherSimulation.start + weatherSimulation.duration) }}).
-              <button type="button" class="ip-sim-button ip-sim-optimize" @click="optimizeWithAssumptions">Optimize Route with this</button>
-              <div
-                v-if="weatherSimulation?.condition === 'Rain'"
-                class="ip-weather-alternatives"
-              >
-                <div class="ip-alt-heading">
-                  <strong>Try a clearer time</strong>
-                  <span>
-                    Move this stop to a time without simulated rain.
-                  </span>
-                </div>
-
-                <div
-                  v-if="clearTimeOptions.length > 0"
-                  class="ip-alt-options"
-                >
-                  <!-- The whole card is the button -->
-                  <button
-                    v-for="option in clearTimeOptions"
-                    :key="option.hour"
-                    type="button"
-                    class="ip-alt-option"
-                    :class="{ chosen: weatherMovePreview && weatherMovePreview.toHour === option.hour }"
-                    :aria-label="'Preview moving it to ' + formatHour(option.hour) + (option.requiresAdjustment ? ', moves ' + option.conflicts.join(', ') : ', no conflicts')"
-                    @click="previewWeatherMove(option)"
-                  >
-                    <span class="ip-alt-body">
-                      <span class="ip-alt-time">
-                        {{ formatHour(option.hour) }}
-                      </span>
-
-                      <span>
-                        {{ option.temp }}°
-                      </span>
-
-                      <span
-                        v-if="option.requiresAdjustment"
-                        class="ip-alt-conflict"
-                      >
-                        Requires itinerary adjustment:
-                        {{ option.conflicts.join(', ') }}
-                      </span>
-
-                      <span
-                        v-else
-                        class="ip-alt-clear"
-                      >
-                        ✓ No itinerary conflicts
-                      </span>
-                    </span>
-
-                    <span class="ip-preview-btn" aria-hidden="true">
-                      Preview →
-                    </span>
-                  </button>
-                </div>
-
-                <div
-                  v-else
-                  class="ip-alt-empty"
-                >
-                  No suitable clear time is available today.
-                </div>
-
-                <div
-                  v-if="weatherMovePreview"
-                  class="ip-move-preview"
-                >
-                  <div class="ip-preview-title">
-                    <strong>Proposed itinerary change</strong>
-                  </div>
-
-                  <p>
-                    Move
-                    <strong>{{ weatherMovePreview.stopName }}</strong>
-                    from
-                    <strong>{{ formatHour(weatherMovePreview.fromHour) }}</strong>
-                    to
-                    <strong>{{ formatHour(weatherMovePreview.toHour) }}</strong>.
-                  </p>
-
-                  <p>
-                    Expected weather:
-                    {{ weatherMovePreview.temp }}°
-                  </p>
-
-                  <div
-                    v-if="weatherMovePreview.requiresAdjustment"
-                    class="ip-preview-warning"
-                  >
-                    This would affect:
-                    <strong>
-                      {{ weatherMovePreview.conflicts.join(', ') }}
-                    </strong>
-                  </div>
-                  <div
-                    v-if="weatherMovePreview.cascade?.length"
-                    class="ip-cascade-preview"
-                  >
-                    <strong>Suggested adjustments</strong>
-
-                    <div
-                      v-for="item in weatherMovePreview.cascade"
-                      :key="item.id"
-                      class="ip-cascade-item"
-                    >
-                      <span>
-                        {{ item.name }}
-                      </span>
-
-                      <span v-if="item.toHour != null">
-                        {{ formatHour(item.fromHour) }}
-                        →
-                        <strong>{{ formatHour(item.toHour) }}</strong>
-                      </span>
-
-                      <span
-                        v-else
-                        class="ip-cascade-unavailable"
-                      >
-                        No available time found
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
-                    v-else
-                    class="ip-preview-safe"
-                  >
-                    ✓ No other itinerary stops need adjustment.
-                  </div>
-
-                  <div
-                    v-if="
-                      weatherMovePreview.requiresAdjustment &&
-                      !weatherMovePreview.cascadeFeasible
-                    "
-                    class="ip-preview-impossible"
-                  >
-                    <strong>This replan cannot be completed safely.</strong>
-                    At least one affected stop has no available time today.
-                  </div>
-
-                  <div
-                    v-else-if="weatherMovePreview.cascadeFeasible"
-                    class="ip-preview-feasible"
-                  >
-                    ✓ <strong>This replan is feasible.</strong>
-                  </div>
-
-                  <div class="ip-preview-actions">
-                    <button
-                      type="button"
-                      class="ip-preview-cancel"
-                      @click="weatherMovePreview = null"
-                    >
-                      Cancel
-                    </button>
-
-                    <button
-                      v-if="weatherMovePreview.cascadeFeasible"
-                      type="button"
-                      class="ip-preview-apply"
-                      @click="applyWeatherReplan"
-                    >
-                      Apply changes
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- ===== What if: crowds. Assume a stop is quieter or busier than the crowd data says;
-               Optimize Route, the warnings and "quieter times" use it until it's reset (nothing is saved) ===== -->
-          <section v-if="stopRows.length && !readOnly" class="ip-weather-sim">
-            <div class="ip-sim-heading">
-              <div>
-                <h4>Simulate crowd conditions</h4>
-                <p>Heard it's packed (or empty) today? Assume a crowd level at a stop's planned time, and Optimize Route plans around it. Only you see this, and nothing is saved until you apply a change.</p>
-              </div>
-            </div>
-
-            <!-- Form Controls -->
-            <div class="ip-sim-fields">
-              <div class="ip-sim-field">
-                <label for="ip-crowd-stop">Itinerary stop</label>
-                <CustomDropdown id="ip-crowd-stop" v-model="crowdStopId" :options="simStopOptions" block placeholder="Choose a stop" aria-label="Itinerary stop" />
-              </div>
-
-              <div class="ip-sim-field">
-                <label for="ip-crowd-level">Simulate crowd level</label>
-                <CustomDropdown id="ip-crowd-level" v-model="simulationCrowdLevel" :options="SIM_CROWD" block aria-label="Simulate crowd level" />
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="ip-sim-actions">
-              <button type="button" class="ip-sim-button" @click="applyCrowdSimulation">
-                Simulate crowd
-              </button>
-
-              <button v-if="crowdSimulation" type="button" class="ip-sim-reset" @click="resetCrowdSimulation">
-                Reset
-              </button>
-            </div>
-
-            <div v-if="crowdSimulation" class="ip-sim-active">
-              Simulating <strong>{{ crowdSimulation.level.toLowerCase() }}</strong> crowds at
-              <strong>{{ crowdSimulation.stopName }}</strong> around {{ formatHour(crowdSimulation.hour) }}.
-              <button type="button" class="ip-sim-button ip-sim-optimize" @click="optimizeWithAssumptions">Optimize Route with this</button>
-            </div>
-          </section>
         </template>
 
         <!-- ===== Map: numbered pins, the route, and the picked stop ===== -->
@@ -736,8 +474,8 @@
       :day-options="dayOptions" :weather="dayBlocks" :typical="typical" :crowd="sheetItem ? crowdOf(sheetItem) : {}"
       :wet="sheetItem ? weatherOf(sheetItem).tone === 'bad' : false"
       :quieter="sheetItem ? quieterTimes(sheetItem) : []" :dry="sheetItem ? dryTimes(sheetItem) : []"
-      :indoor-picks="indoorPicks" :near="sheetNear"
-      @close="closeSheet" @move-time="sheetMoveTime" @move-day="sheetMoveDay" @swap="sheetSwap" @edit="sheetEdit" />
+      :indoor-picks="indoorPicks" :near="sheetNear" :assumed="sheetAssumed"
+      @close="closeSheet" @move-time="sheetMoveTime" @move-day="sheetMoveDay" @swap="sheetSwap" @edit="sheetEdit" @simulate="sheetSimulate" />
     <!-- Getting from one stop to the next: every way, and choosing one -->
     <LegSheet :leg="legView" @close="closeLeg" @choose="chooseTravel" />
     <!-- Your hotel in this city, or your airport -->
@@ -769,7 +507,6 @@ import AppIcon from '../common/AppIcon.vue'
 import LegSheet from './LegSheet.vue'
 import AnchorSheet from './AnchorSheet.vue'
 import OverflowSheet from './OverflowSheet.vue'
-import CustomDropdown from '../common/CustomDropdown.vue'
 import AddStopSheet from './AddStopSheet.vue'
 import { lineIconFor } from '../../lib/ui/emojiIcons.js'
 
@@ -1256,153 +993,27 @@ watch([work, unscheduled], () => {
   loadPhotos(all)
 }, { immediate: true })
 
-// ---------- what if: weather (see the panel under the timeline) ----------
-const simulationStopId = ref('')
-// For the two dropdowns (the app's own CustomDropdown, like everywhere else)
-const SIM_WEATHER = [{ value: 'Rain', label: 'Rainy', icon: '🌧️' }, { value: 'Clear', label: 'Sunny', icon: '☀️' }]
-const simStopOptions = computed(() => {
-  const list = []
-  for (const it of stopRows.value) list.push({ value: it.stop.id, label: it.stop.name, description: formatHour(it.start) })
-  return list
-})
-const simulationCondition = ref('Rain')
-const weatherSimulation = ref(null)
-const weatherMovePreview = ref(null)
-
-function originalWeatherForStop(stopId) {
-  const it = stopRows.value.find(
-    (row) => row.stop.id === stopId
-  )
-
-  if (!it) return null
-
-  const hour = Math.floor(it.start)
-
-  return props.weatherBlocks.find(
-    (block) =>
-      hour >= block.time &&
-      hour < block.time + (block.span || 3)
-  ) || null
-}
-
-watch(simulationStopId, (stopId) => {
-  const original = originalWeatherForStop(stopId)
-
-  if (!original) {
-    simulationCondition.value = 'Rain'
-    return
-  }
-
-  // Automatically suggest the opposite condition.
-  simulationCondition.value =
-    original.rain ? 'Clear' : 'Rain'
-})
-
-function applyWeatherSimulation() {
-  const it = stopRows.value.find(
-    (row) => row.stop.id === simulationStopId.value
-  )
-
-  if (!it) return
-
-  weatherSimulation.value = {
-    date: dayShown.value,
-    stopId: it.stop.id,
-    stopName: it.stop.name,
-    start: it.start,
-    duration: it.stop.duration || 1,
-    condition: simulationCondition.value
-  }
-}
-
-function previewWeatherMove(option) {
-  if (!weatherSimulation.value) return
-
-  const it = stopRows.value.find(
-    (row) => row.stop.id === weatherSimulation.value.stopId
-  )
-
-  if (!it) return
-
-  const cascade = previewCascadeForMove(
-    it,
-    option.hour
-  )
-  
-  const cascadeFeasible = cascade.every(
-    (item) => item.toHour != null
-  )
-
-  weatherMovePreview.value = {
-    stopId: it.stop.id,
-    stopName: it.stop.name,
-    fromHour: it.start,
-    toHour: option.hour,
-    temp: option.temp,
-    conflicts: option.conflicts,
-    requiresAdjustment: option.requiresAdjustment,
-    cascade,
-    cascadeFeasible
-  }
-}
-
-function applyWeatherReplan() {
-  const preview = weatherMovePreview.value
-
-  if (!preview || !preview.cascadeFeasible) return
-
-  const changes = [
-    {
-      id: preview.stopId,
-      hour: preview.toHour
-    },
-
-    ...preview.cascade
-      .filter((item) => item.toHour != null)
-      .map((item) => ({
-        id: item.id,
-        hour: item.toHour
-      }))
-  ]
-
-  save(changes)
-
-  weatherMovePreview.value = null
-  weatherSimulation.value = null
-}
-
-function resetWeatherSimulation() {
-  weatherSimulation.value = null
-  weatherMovePreview.value = null
-}
+// ---------- what if: weather (set from a stop's Weather tab; only you see it, nothing is saved) ----------
+// { stopId: { condition: 'Rain' | 'Clear', start, duration } }: "assume rain (or dry weather) while I'm there"
+const weatherOverrides = ref({})
 
 const effectiveWeatherBlocks = computed(() => {
-  if (!weatherSimulation.value) {
-    return props.weatherBlocks
+  let blocks = props.weatherBlocks
+  for (const o of Object.values(weatherOverrides.value)) {
+    const end = o.start + o.duration
+    const rainy = o.condition === 'Rain'
+    const what = { condition: rainy ? 'Rain' : 'Clear', rain: rainy, pop: rainy ? 1 : 0, simulated: true } // the what-if, not a forecast
+    const during = (b) => b.time < end && b.time + (b.span || 3) > o.start
+    if (blocks.some(during)) {
+      blocks = blocks.map((b) => (during(b) ? { ...b, ...what } : b))
+    } else {
+      // No forecast for this day yet: the what-if is the only weather there is
+      blocks = blocks.slice()
+      for (let h = Math.floor(o.start / 3) * 3; h < end; h += 3) blocks.push({ time: h, span: 3, temp: null, ...what })
+      blocks.sort((a, b) => a.time - b.time)
+    }
   }
-
-  const sim = weatherSimulation.value
-  if (sim.date !== dayShown.value) return props.weatherBlocks
-
-  return props.weatherBlocks.map((block) => {
-    const overlaps =
-      block.time < sim.start + sim.duration &&
-      block.time + (block.span || 3) > sim.start
-
-    if (!overlaps) {
-      return block
-    }
-
-    const rainy = sim.condition === 'Rain'
-
-    return {
-      ...block,
-      condition: rainy ? 'Rain' : 'Clear',
-      rain: rainy,
-      pop: rainy ? 1 : 0, // the what-if you chose, not a forecast
-      simulated: true
-    }
-  })
+  return blocks
 })
 
 const rain = computed(() =>
@@ -1658,21 +1269,6 @@ const preview = ref(null)
 const previewing = computed(() => !!(preview.value && preview.value.better))
 // stopRows = the real stops in time order; timeline = the same plus lunch/dinner breaks (for showing)
 const stopRows = computed(() => (previewing.value ? preview.value.after.items.filter((it) => !it.stop.virtual) : current.value))
-watch(stopRows, (rows) => {
-  if (!rows.length) {
-    simulationStopId.value = ''
-    return
-  }
-
-  const stillExists = rows.some(
-    (it) => it.stop.id === simulationStopId.value
-  )
-
-  if (!stillExists) {
-    simulationStopId.value = rows[0].stop.id
-  }
-}, { immediate: true })
-
 const timeline = computed(() => (previewing.value ? preview.value.after.items : addMealBreaks(current.value, work.value, opts.value)))
 // (here, not next to overflow: watching it reads previewing, which only exists from this point)
 watch(overflow, (o) => { if (!o) overflowOpen.value = false })
@@ -2491,12 +2087,6 @@ function weatherOf(it) {
     title: b.condition + (temp ? ', ' + temp + 'C' : '') + (wet ? ' · outdoors in the rain' : '')
   }
 }
-// The crowd panel (see "what if: crowds" above)
-const crowdStopId = ref('')
-const simulationCrowdLevel = ref('Peak')
-const SIM_CROWD = [{ value: 'Quiet', label: 'Quiet', icon: '🟢' }, { value: 'Busy', label: 'Busy', icon: '🟠' }, { value: 'Peak', label: 'Peak', icon: '🔴' }]
-const crowdSimulation = ref(null) // the last one set, for the "Simulating …" line
-
 function crowdOf(it) {
   const s = it.stop
   if (!s.crowd) return { value: null, text: '–', tone: 'none', title: 'No crowd data' }
@@ -2535,115 +2125,6 @@ function freeTimes(it, isGood) {
   return out.slice(0, 3)
 }
 
-function previewCascadeForMove(it, newHour) {
-  const movedDuration = it.stop.duration || 1
-
-  // Create a temporary imaginary schedule.
-  const proposedRows = stopRows.value.map((row) => ({
-    id: row.stop.id,
-    name: row.stop.name,
-    hour:
-      row.stop.id === it.stop.id
-        ? newHour
-        : row.start,
-    duration: row.stop.duration || 1,
-    open: row.stop.open,
-    close: row.stop.close
-  }))
-
-  // Find stops that clash with the moved stop.
-  const affected = proposedRows
-    .filter((row) => {
-      if (row.id === it.stop.id) return false
-
-      return (
-        newHour < row.hour + row.duration + 0.25 &&
-        newHour + movedDuration + 0.25 > row.hour
-      )
-    })
-    // Handle earlier affected activities first
-    .sort((a, b) => a.hour - b.hour)
-
-  const suggestions = []
-
-  // Start looking AFTER the moved stop finishes
-  let nextAvailableHour =
-    newHour + movedDuration + 0.25
-
-  // Round up to nearest 30 minutes
-  nextAvailableHour =
-    Math.ceil(nextAvailableHour * 2) / 2
-
-  for (const affectedStop of affected) {
-    let suggestedHour = null
-
-    for (
-      let h = nextAvailableHour;
-      h + affectedStop.duration <= opts.value.dayEnd + 0.01;
-      h += 0.5
-    ) {
-      // Respect opening hours
-      if (
-        affectedStop.open != null &&
-        h < affectedStop.open
-      ) {
-        continue
-      }
-
-      if (
-        affectedStop.close != null &&
-        h + affectedStop.duration > affectedStop.close
-      ) {
-        continue
-      }
-
-      // Check against the temporary schedule
-      const clash = proposedRows.some((other) => {
-        if (other.id === affectedStop.id) return false
-
-        return (
-          h < other.hour + other.duration + 0.25 &&
-          h + affectedStop.duration + 0.25 > other.hour
-        )
-      })
-
-      if (clash) continue
-
-      suggestedHour = h
-      break
-    }
-
-    suggestions.push({
-      id: affectedStop.id,
-      name: affectedStop.name,
-      fromHour: affectedStop.hour,
-      toHour: suggestedHour
-    })
-
-    // IMPORTANT:
-    // Update the imaginary schedule with the suggested time.
-    if (suggestedHour != null) {
-      const row = proposedRows.find(
-        (r) => r.id === affectedStop.id
-      )
-
-      if (row) {
-        row.hour = suggestedHour
-      }
-
-      // Next affected stop must come after this one.
-      nextAvailableHour =
-        suggestedHour +
-        affectedStop.duration +
-        0.25
-
-      nextAvailableHour =
-        Math.ceil(nextAvailableHour * 2) / 2
-    }
-  }
-
-  return suggestions
-}
 
 function quieterTimes(it) {
   // if (!it.stop.crowd && !it.stop.popular) return []
@@ -2662,115 +2143,6 @@ function dryTimes(it) {
   return freeTimes(it, (h) => rainDuring(rain.value, h, it.stop.duration) < 0.5)
 }
 
-const clearTimeOptions = computed(() => {
-  if (
-    !weatherSimulation.value ||
-    weatherSimulation.value.condition !== 'Rain'
-  ) {
-    return []
-  }
-
-  const sim = weatherSimulation.value
-
-  const it = stopRows.value.find(
-    (row) => row.stop.id === sim.stopId
-  )
-
-  if (!it) return []
-
-  const s = it.stop
-  const dur = s.duration || 1
-  const options = []
-
-  for (
-    let h = opts.value.dayStart;
-    h + dur <= opts.value.dayEnd + 0.01;
-    h += 0.5
-  ) {
-    // Don't suggest its current time
-    if (Math.abs(h - it.start) < 0.01) continue
-
-    // Must be within opening hours
-    if (s.open != null && h < s.open) continue
-    if (s.close != null && h + dur > s.close) continue
-
-    const activityEnd = h + dur
-
-    // Find all weather blocks overlapping the proposed activity
-    const weatherDuringActivity =
-      effectiveWeatherBlocks.value.filter((block) => {
-        const blockStart = block.time
-        const blockEnd = block.time + (block.span || 3)
-
-        return (
-          blockStart < activityEnd &&
-          blockEnd > h
-        )
-      })
-
-    if (!weatherDuringActivity.length) continue
-
-    // Entire activity must be dry
-    if (weatherDuringActivity.some((block) => block.rain)) {
-      continue
-    }
-
-    // Find itinerary stops that would conflict with this new time
-    const conflicts = stopRows.value.filter((other) => {
-      if (other.stop.id === s.id) return false
-
-      const otherDur = other.stop.duration || 1
-
-      return (
-        h < other.start + otherDur + 0.25 &&
-        h + dur + 0.25 > other.start
-      )
-    })
-
-    const startWeather =
-      weatherDuringActivity.find(
-        (block) =>
-          h >= block.time &&
-          h < block.time + (block.span || 3)
-      ) || weatherDuringActivity[0]
-
-    options.push({
-      hour: h,
-      temp: startWeather.temp,
-      condition: startWeather.condition,
-
-      // NEW:
-      conflicts: conflicts.map((row) => row.stop.name),
-      requiresAdjustment: conflicts.length > 0
-    })
-  }
-
-  // Prefer options with no conflicts first
-  options.sort((a, b) => {
-    if (a.requiresAdjustment !== b.requiresAdjustment) {
-      return a.requiresAdjustment ? 1 : -1
-    }
-
-    return a.hour - b.hour
-  })
-
-  // Avoid showing several almost-identical times
-  const variedOptions = []
-
-  for (const option of options) {
-    const tooClose = variedOptions.some(
-      (chosen) => Math.abs(chosen.hour - option.hour) < 1.5
-    )
-
-    if (!tooClose) {
-      variedOptions.push(option)
-    }
-
-    if (variedOptions.length === 3) break
-  }
-
-  return variedOptions
-})
 
 // ---------- things to check (the ⚠ pill next to Optimize Route) ----------
 const issues = computed(() => {
@@ -2987,46 +2359,37 @@ function hoursText(stop) {
   return 'Open ' + formatHour(stop.open) + ' – ' + formatHour(stop.close)
 }
 
-// Set "this stop is <level> at its planned time" (see assumedCurve)
-function applyCrowdSimulation() {
-  const it = stopRows.value.find((row) => row.stop.id === crowdStopId.value)
+// From a stop's Crowds / Weather tab: assume a crowd level ('Quiet' | 'Busy' | 'Peak') or weather
+// ('Rain' | 'Clear') at its planned time. value null = back to the real data.
+const CROWD_LEVELS = { Quiet: 25, Busy: 65, Peak: 90 }
+function sheetSimulate({ kind, value }) {
+  const it = sheetItem.value
   if (!it) return
-  const LEVELS = { Quiet: 25, Busy: 65, Peak: 90 }
-  const level = simulationCrowdLevel.value
-  crowdOverrides.value = { ...crowdOverrides.value, [it.stop.id]: { level: LEVELS[level], hour: it.start } }
-  crowdSimulation.value = { stopId: it.stop.id, stopName: it.stop.name, level, hour: it.start }
+  const id = it.stop.id
+  if (kind === 'crowd') {
+    const copy = { ...crowdOverrides.value }
+    if (value) copy[id] = { level: CROWD_LEVELS[value], name: value, hour: it.start }
+    else delete copy[id]
+    crowdOverrides.value = copy
+  } else {
+    const copy = { ...weatherOverrides.value }
+    if (value) copy[id] = { condition: value, start: it.start, duration: it.stop.duration || 1 }
+    else delete copy[id]
+    weatherOverrides.value = copy
+  }
 }
+const sheetAssumed = computed(() => {
+  const id = sheetItem.value ? sheetItem.value.stop.id : null
+  return {
+    crowd: (id && crowdOverrides.value[id] && crowdOverrides.value[id].name) || null,
+    weather: (id && weatherOverrides.value[id] && weatherOverrides.value[id].condition) || null
+  }
+})
 
-// Back to the real crowd data
-function resetCrowdSimulation() {
-  crowdOverrides.value = {}
-  crowdSimulation.value = null
-  crowdStopId.value = ''
-}
-
-// select the first stop
-watch(
-  () => stopRows.value,
-  (newRows) => {
-    if (newRows && newRows.length > 0 && !crowdStopId.value) {
-      crowdStopId.value = newRows[0].stop.id
-    }
-  },
-  { immediate: true, deep: true }
-)
-
-// Run Optimize Route with the simulated weather / crowds, and bring its suggestion into view
-async function optimizeWithAssumptions() {
-  await optimize()
-  await nextTick()
-  const el = document.querySelector('.ip-preview')
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-}
-
-// Simulations belong to the day they were made on: opening another day starts from the real data again
+// What-ifs belong to the day they were made on: opening another day starts from the real data again
 watch(dayShown, () => {
-  resetCrowdSimulation()
-  resetWeatherSimulation()
+  crowdOverrides.value = {}
+  weatherOverrides.value = {}
 })
 
 </script>
@@ -3714,44 +3077,6 @@ watch(dayShown, () => {
 .ip-add-stop span { font-size: 18px; line-height: 1; }
 .ip-add-stop:hover { background: var(--bs-primary-border-subtle, #9ec5fe); }
 
-/* ---------- What-if panels (simulated weather / crowds) ---------- */
-.ip-weather-sim { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--bs-border-radius-lg, 0.5rem); background: var(--soft); }
-.ip-sim-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-.ip-sim-heading h4 { margin: 0; font-size: 15px; font-weight: 700; }
-.ip-sim-heading p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
-.ip-sim-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.ip-sim-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; }
-.ip-sim-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-.ip-sim-button, .ip-sim-reset, .ip-preview-apply, .ip-preview-cancel { padding: 8px 14px; border-radius: var(--bs-border-radius, 0.375rem); font-weight: 700; cursor: pointer; }
-.ip-sim-button, .ip-preview-apply { border: 1px solid var(--primary); background: var(--primary); color: #fff; }
-.ip-sim-button:hover, .ip-preview-apply:hover { background: var(--primary-dark); }
-.ip-sim-reset, .ip-preview-cancel { border: 1px solid var(--line); background: #fff; color: var(--ink); }
-.ip-sim-active { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--warn-line); border-radius: var(--bs-border-radius, 0.375rem); background: var(--warn-bg); color: var(--ink); font-size: 12.5px; }
-.ip-sim-optimize { display: block; margin-top: 8px; }
-.ip-weather-alternatives { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--warn-line); }
-.ip-alt-heading { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
-.ip-alt-heading span { color: var(--muted); font-size: 12px; font-weight: 400; }
-.ip-alt-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.ip-alt-option { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--bs-border-radius, 0.375rem); background: #fff; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.ip-alt-option:hover { border-color: var(--primary); }
-.ip-alt-option.chosen { border-color: var(--primary); box-shadow: 0 0 0 3px var(--bs-primary-border-subtle, #9ec5fe); }
-.ip-alt-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
-.ip-alt-time { font-size: 14px; font-weight: 700; }
-.ip-alt-conflict, .ip-alt-clear { flex-basis: 100%; font-size: 12.5px; }
-.ip-alt-conflict { color: var(--warn-ink); }
-.ip-alt-clear { color: var(--ok-ink); }
-.ip-preview-btn { font-weight: 700; }
-.ip-move-preview { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: var(--bs-border-radius-lg, 0.5rem); background: #fff; }
-.ip-preview-title { margin-bottom: 8px; }
-.ip-preview-warning { margin-top: 8px; color: var(--warn-ink); }
-.ip-preview-safe { margin-top: 8px; color: var(--ok-ink); }
-.ip-cascade-preview { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
-.ip-cascade-item { display: flex; justify-content: space-between; gap: 16px; margin-top: 6px; }
-.ip-cascade-unavailable { color: var(--danger-ink); }
-.ip-preview-impossible { margin-top: 12px; padding: 10px 12px; border-radius: var(--bs-border-radius, 0.375rem); background: var(--danger-tint); color: var(--danger-ink); }
-.ip-preview-feasible { margin-top: 12px; padding: 10px 12px; border-radius: var(--bs-border-radius, 0.375rem); background: var(--ok-tint); color: var(--ok-ink); }
-.ip-preview-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
-
 /* ---------- Map ---------- */
 .ip-map { isolation: isolate; height: 400px; border-radius: var(--bs-border-radius-lg, 0.5rem); overflow: hidden; border: 1px solid var(--line); background: var(--tag); }
 .ip-map :deep(.ip-pin) {
@@ -3841,9 +3166,6 @@ watch(dayShown, () => {
 @media (max-width: 900px) {
   .ip-body, .ip-body.drawer-closed { grid-template-columns: 1fr; }
   .ip-drawer { position: static; order: 1; }
-}
-@media (max-width: 650px) {
-  .ip-alt-options, .ip-sim-fields { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
   .ip-grid { grid-template-columns: repeat(4, 62px); }

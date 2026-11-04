@@ -22,11 +22,10 @@ Crowd data comes from the stop's BestTime forecast (`src/lib/itinerary/crowd.js`
 **Optimize Route** (Analyzing route… → Checking forecast… → Reordering…) → preview with the summary + **Apply** / **Dismiss**. If nothing better is found: "Your day is already in a good order." (or a note that warnings remain) + **OK**. Lock per stop; drag (or arrow keys on the handle) re-times the day in the new order.
 
 ## What if: simulated weather and crowds
-Two panels under the day's timeline ("Simulate weather conditions", "Simulate crowd conditions"). They change what the planner *assumes* for the day you're looking at, so you can see how Optimize Route would react. Only you see them, nothing is saved, and opening another day (or Reset) goes back to the real data.
+At the bottom of a stop's **Crowds** and **Weather** tabs (`StopSheet.vue` → `sheetSimulate` in the planner). They change what the planner *assumes* about that stop on the day you're looking at, so you can see how Optimize Route would react. Only you see them, nothing is saved, tapping the same choice again goes back to the real data, and opening another day clears them all.
 
-- **Weather**: pick a stop and Rainy / Sunny. The forecast blocks that overlap that stop's planned time are replaced (`effectiveWeatherBlocks` → `rain`). Everything that reads `rain` uses it: Optimize Route, the 🌧️ warnings, the timeline icons and "dry times". With rain assumed, "Try a clearer time" lists dry slots; **Preview → Apply changes** moves the stop (and anything in the way) for real.
-- **Crowds**: pick a stop and Quiet (25%) / Busy (65%) / Peak (90%). The stop's crowd curve for the day is scaled so its planned hour has that level (`assumedCurve`; the other hours keep their shape). It goes into the stops the optimizer gets (`work`), so Optimize Route, the 👥 warnings, the crowd badge ("Simulated") and "quieter times" all use it.
-- **Optimize Route with this** runs Optimize Route straight away and scrolls to its suggestion; **Apply** saves it as usual.
+- **Weather**: "What if it Rains / Stays dry". The forecast blocks that overlap that stop's planned time are replaced (`weatherOverrides` → `effectiveWeatherBlocks` → `rain`); with no forecast yet for that day, the what-if adds its own blocks. Everything that reads `rain` uses it: Optimize Route, the 🌧️ warnings, the timeline icons and "dry times".
+- **Crowds**: "What if it's Quiet (25%) / Busy (65%) / Peak (90%)". The stop's crowd curve for the day is scaled so its planned hour has that level (`crowdOverrides` → `assumedCurve`; the other hours keep their shape). It goes into the stops the optimizer gets (`work`), so Optimize Route, the 👥 warnings, the crowd badge ("Simulated") and "quieter times" all use it.
 
 ## Getting around (travel between stops)
 Files: `src/lib/itinerary/dayOptimizer.js` (travel model), `src/components/itinerary/LegSheet.vue` (panel), `TravelChoices.vue` (option list),
