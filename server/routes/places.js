@@ -80,7 +80,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 // ---------------------------------------------------------------------
 // GET /api/places/attractions?destination=Kyoto, Japan
-// -> up to 100 popular attractions there: [{ name, type, indoor, address }]
+// -> up to 100 popular attractions there: [{ name, type, address }]
 //
 // 1. Photon finds the destination (city or country).
 // 2. Overpass (OpenStreetMap) lists named tourist places inside it.
@@ -89,7 +89,6 @@ router.get('/', requireAuth, async (req, res) => {
 // ---------------------------------------------------------------------
 const HEADERS = { 'User-Agent': 'ChuiseYourTrip/1.0 (SMU IS216 student project)' }
 const TYPES = 'attraction|museum|gallery|viewpoint|zoo|theme_park|aquarium'
-const INDOOR_TYPES = ['museum', 'gallery', 'aquarium']
 const CACHE_DAYS = 30
 // Two public Overpass servers: if the first is busy or slow, try the second
 // Public Overpass servers: if one is busy, down or rate-limiting us, the next one is tried
@@ -159,41 +158,6 @@ async function askAllOverpass(query, waitSeconds) {
   }
 }
 
-// Backup source: Wikipedia articles within 10 km that look like places to visit
-// (titles are checked for words like museum, park, mosque, so streets and schools are left out)
-const WIKI_KINDS = [
-  { words: ['museum'], type: 'museum', indoor: true },
-  { words: ['gallery'], type: 'gallery', indoor: true },
-  { words: ['zoo'], type: 'zoo', indoor: false },
-  { words: ['aquarium'], type: 'aquarium', indoor: true },
-  { words: ['theatre', 'theater', 'opera', 'philharmonic', 'circus'], type: 'attraction', indoor: true },
-  { words: ['bazaar', 'market', 'mall'], type: 'shop', indoor: true },
-  { words: ['mosque', 'church', 'cathedral', 'temple', 'shrine', 'monastery', 'synagogue'], type: 'heritage', indoor: true },
-  { words: ['park', 'garden', 'lake', 'gorge', 'waterfall', 'canyon', 'national park', 'reserve'], type: 'park', indoor: false },
-  { words: ['monument', 'memorial', 'square', 'palace', 'tower', 'fortress', 'castle', 'statue', 'gate'], type: 'attraction', indoor: false }
-]
-
-async function wikiNearby(lat, lon, destination) {
-  const url = 'https://en.wikipedia.org/w/api.php?' + new URLSearchParams({
-    action: 'query', list: 'geosearch', gscoord: lat + '|' + lon, gsradius: '10000', gslimit: '100', format: 'json'
-  })
-  const response = await wikiFetch(url, { headers: HEADERS, signal: AbortSignal.timeout(8000) })
-  if (!response.ok) throw new Error('Wikipedia ' + response.status)
-  const data = await response.json()
-  const out = []
-  for (const g of (data.query && data.query.geosearch) || []) {
-    const title = g.title.toLowerCase()
-    let kind = null
-    for (const k of WIKI_KINDS) {
-      for (const w of k.words) {
-        if (!kind && title.includes(w)) kind = k
-      }
-    }
-    if (kind) out.push({ name: g.title, type: kind.type, indoor: kind.indoor, address: g.title + ', ' + destination, wiki: 'en:' + g.title, rank: 0, lat: g.lat, lon: g.lon })
-  }
-  return out
-}
-
 // Fame of each place = how many Wikipedia languages have an article on it (Wikidata "sitelinks")
 async function addFame(list) {
   const ids = []
@@ -232,15 +196,6 @@ function topSightsFor(destination, isCountry) {
   if (isCountry || !city) return picks
   return picks.filter((p) => !p.city || plain(p.city) === plain(city))
 }
-function guessType(name) {
-  const n = name.toLowerCase()
-  for (const k of WIKI_KINDS) {
-    for (const w of k.words) if (n.includes(w)) return k.type
-  }
-  if (/studios|disney|world|land\b/.test(n)) return 'theme_park'
-  return 'attraction'
-}
-
 router.get('/attractions', requireAuth, async (req, res) => {
   const destination = (req.query.destination || '').trim()
   if (!destination || destination.length > 80) return res.json([])
@@ -302,13 +257,13 @@ function pickedSights(destination) {
   const list = []
   for (const pick of topSightsFor(destination, !destination.includes(', '))) {
     if (pick.lat == null) continue // only places we know the map point of
-    list.push({ name: pick.name, type: guessType(pick.name), indoor: false, address: pick.name + ', ' + (pick.city || destination),
+    list.push({ name: pick.name, type: 'attraction', address: pick.name + ', ' + (pick.city || destination),
       wiki: 'en:' + pick.name, wikidata: null, rank: 999, lat: pick.lat, lon: pick.lon })
   }
   return list
 }
 
-// The full lookup: OpenStreetMap places ranked by fame, hand-picked sights first, Wikipedia as a backup.
+// The full lookup: OpenStreetMap places ranked by fame, hand-picked sights first.
 // Returns { items, partial }; partial = OpenStreetMap didn't answer (so nothing is saved, it's tried again next time)
 async function lookupAttractions(destination, key) {
   // 1. Where is it? (Geoapify if there's a key, else Photon, or Nominatim if Photon is busy)
@@ -320,7 +275,6 @@ async function lookupAttractions(destination, key) {
   // 2. Geoapify first (about a second, with our own allowance). If there's no key or it fails,
   //    ask OpenStreetMap (Overpass). Each try can fail (busy servers), so we fall back step by step:
   //    a) inside the boundary, famous places only   b) 15 km around the centre, any named tourist place
-  //    c) if Overpass is down completely: Wikipedia articles near the centre (see wikiNearby)
   let osm = { elements: [] }
   let source = 'osm'
   if (geoapifyReady()) {
@@ -383,7 +337,6 @@ async function lookupAttractions(destination, key) {
     list.push({
       name,
       type,
-      indoor: INDOOR_TYPES.includes(type),
       address,
       // Where its photo can be found (used by /photos): "en:Arch of Triumph (Pyongyang)", "Q1234"
       wiki: t.wikipedia || null,
@@ -413,7 +366,7 @@ async function lookupAttractions(destination, key) {
       same.rank = 999 // keep its real map details, just move it to the top
       top.push(same)
     } else if (pick.lat != null) {
-      top.push({ name: pick.name, type: guessType(pick.name), indoor: false, address: pick.name + ', ' + (pick.city || destination),
+      top.push({ name: pick.name, type: 'attraction', address: pick.name + ', ' + (pick.city || destination),
         wiki: 'en:' + pick.name, wikidata: null, rank: 999, lat: pick.lat, lon: pick.lon })
     }
   }
@@ -423,21 +376,10 @@ async function lookupAttractions(destination, key) {
   }
   for (let i = 0; i < top.length; i++) {
     const it = top[i]
-    top[i] = { name: it.name, type: it.type, indoor: it.indoor, address: it.address, wiki: it.wiki, wikidata: it.wikidata, rank: it.rank, src: source, lat: it.lat, lon: it.lon }
+    top[i] = { name: it.name, type: it.type, address: it.address, wiki: it.wiki, wikidata: it.wikidata, rank: it.rank, src: source, lat: it.lat, lon: it.lon }
   }
-  // c) OpenStreetMap didn't answer: add famous places from Wikipedia near the centre
-  //    (after the hand-picked sights, without repeating them)
+  // OpenStreetMap didn't answer: only the hand-picked sights for now (marked partial, tried again next time)
   const osmAnswered = (osm.elements || []).length > 0
-  if (!osmAnswered) {
-    try {
-      for (const item of await wikiNearby(lat, lon, destination)) {
-        if (top.length >= 100) break
-        if (!top.some((x) => plain(x.name) === plain(item.name))) top.push(item)
-      }
-    } catch (err) {
-      console.error('Wikipedia fallback failed for "' + destination + '":', err.message)
-    }
-  }
   if (!top.length) throw new Error('no source answered')
 
   // Saved only when OpenStreetMap answered. Otherwise the page is told it's a shorter list for now,

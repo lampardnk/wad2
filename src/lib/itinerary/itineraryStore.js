@@ -7,26 +7,29 @@ export function newId(prefix) {
   return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
 }
 
+// Indoor/outdoor is only what the group set: true, false, or null (not set)
+const outdoorOf = (v) => (typeof v === 'boolean' ? v : null)
+
 // Turn a saved stop into a live one (adds the fields the screen needs)
 export function runtimeStop(s) {
   return {
     id: s.id, name: s.name, date: s.date, hour: s.hour,
     duration: s.duration ?? null,
     address: s.address || null,
-    outdoor: !!s.outdoor,
+    outdoor: outdoorOf(s.outdoor),
     locked: !!s.locked,
     travel: s.travel || null, // how the group chose to get here: { mode, from (stop id), by }
     lat: s.lat ?? null, lon: s.lon ?? null, // where it is on the map (null = location not set yet)
     kind: s.kind || null,     // 'flight' | 'hotel' | null (a place)
     flight: s.flight || null, // { from: { name, lat, lon }, to: {...}, dep: 'HH:mm', arr: 'HH:mm', number, intl }
-    forecast: null, bestTime: null, loading: false, error: '', highlight: false, dataFrom: '',
+    forecast: null, loading: false, error: '', highlight: false, dataFrom: '',
     replacedFrom: null
   }
 }
 
 export const trip = reactive({
   stops: [],     // every stop of the open trip, all days (each has a date)
-  wishlist: []   // [{ id, name, address, outdoor: false }]
+  wishlist: []   // [{ id, name, address, outdoor: true | false | null }]
 })
 
 // A saved trip from the server
@@ -34,7 +37,7 @@ export function loadFromServer(saved) {
   trip.version = saved.version || 0 // sent back when saving, so we never overwrite someone else's changes
   trip.stops = (saved.stops || []).map(runtimeStop)
   trip.wishlist = (saved.wishlist || []).map((w) => ({
-    id: w.id, name: w.name, address: w.address || null, outdoor: !!w.outdoor,
+    id: w.id, name: w.name, address: w.address || null, outdoor: outdoorOf(w.outdoor),
     type: w.type || null, city: w.city || null, votes: Array.isArray(w.votes) ? w.votes : [],
     duration: w.duration || null, bookedVia: w.bookedVia || null, link: w.link || null,
     lat: w.lat ?? null, lon: w.lon ?? null // where it is (null = location not set yet)
@@ -45,7 +48,7 @@ export function loadFromServer(saved) {
 export function savedShape() {
   return {
     stops: trip.stops.map((s) => ({ id: s.id, name: s.name, address: s.address, date: s.date, hour: s.hour, duration: s.duration, outdoor: s.outdoor, locked: s.locked, travel: s.travel || null, lat: s.lat ?? null, lon: s.lon ?? null, kind: s.kind || null, flight: s.flight || null })),
-    wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address, outdoor: !!w.outdoor, type: w.type || null, city: w.city || null, votes: w.votes || [], duration: w.duration || null, bookedVia: w.bookedVia || null, link: w.link || null, lat: w.lat ?? null, lon: w.lon ?? null }))
+    wishlist: trip.wishlist.map((w) => ({ id: w.id, name: w.name, address: w.address, outdoor: outdoorOf(w.outdoor), type: w.type || null, city: w.city || null, votes: w.votes || [], duration: w.duration || null, bookedVia: w.bookedVia || null, link: w.link || null, lat: w.lat ?? null, lon: w.lon ?? null }))
   }
 }
 // Save the open trip's stops + wishlist (for pages that don't show the itinerary, e.g. trip setup)

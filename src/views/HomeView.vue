@@ -1821,7 +1821,7 @@ export default {
   transform: scale(1.06);
 }
 
-.trip-art svg {
+.trip-art > svg {
   width: 100%;
   height: 100%;
   display: block;
@@ -2054,11 +2054,11 @@ export default {
 }
 /* finished trips look a little faded until you hover */
 .trip-card.archived .trip-photo,
-.trip-card.archived .trip-art svg {
+.trip-card.archived .trip-art > svg {
   filter: grayscale(0.6);
 }
 .trip-card.archived:hover .trip-photo,
-.trip-card.archived:hover .trip-art svg {
+.trip-card.archived:hover .trip-art > svg {
   filter: none;
 }
 /* ---------- "New trip": a blank postcard (same frame as the trip cards), the whole card is the button ---------- */

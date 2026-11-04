@@ -30,7 +30,7 @@
             <p v-if="leg.checking" class="ls-checking" role="status"><span class="ls-dot" aria-hidden="true"></span> Checking live routes…</p>
 
             <TravelChoices :options="leg.options" :recommended="leg.recommended" :chosen="leg.chosen || ''" :chosen-by="leg.chosenBy"
-              :group="leg.group" :maps-url="mapsUrl" :choosable="!leg.readonly" @choose="(m) => emit('choose', m)" />
+              :maps-url="mapsUrl" :choosable="!leg.readonly" @choose="(m) => emit('choose', m)" />
 
             <p v-if="leg.readonly" class="ls-note">Travel to and from your hotel or airport follows your Transport settings.</p>
             <p v-else class="ls-note">Choosing a way re-times the rest of the day. Everyone on the trip sees the choice.</p>

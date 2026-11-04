@@ -153,14 +153,14 @@
             <div class="ip-start-text">
               <strong>Nothing planned for Day {{ dayIndex + 1 }} yet</strong>
               <small v-if="readOnly">This trip has ended.</small>
-              <small v-else-if="picks.length">Add one of your saved places, or find new ones to visit.</small>
+              <small v-else-if="unscheduled.length">Add one of your saved places, or find new ones to visit.</small>
               <small v-else>Find places to visit and save them. Then add them to this day.</small>
             </div>
             <div v-if="!readOnly" class="ip-start-btns">
-              <button v-if="picks.length" type="button" class="ip-cta small" @click="showSaved">
-                Choose from {{ picks.length }} saved place{{ picks.length === 1 ? '' : 's' }}
+              <button v-if="unscheduled.length" type="button" class="ip-cta small" @click="showSaved">
+                Choose from {{ unscheduled.length }} saved place{{ unscheduled.length === 1 ? '' : 's' }}
               </button>
-              <button type="button" :class="picks.length ? 'ip-outline small' : 'ip-cta small'" @click="addPlace">Find new places</button>
+              <button type="button" :class="unscheduled.length ? 'ip-outline small' : 'ip-cta small'" @click="addPlace">Find new places</button>
             </div>
           </div>
 
@@ -196,7 +196,7 @@
                 </span>
                 <span v-if="!readOnly" class="ip-anchor-edit">{{ startAnchor ? 'Change' : 'Add' }}</span>
               </button>
-              <button v-if="startLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly }" :disabled="readOnly" :aria-label="'Getting to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
+              <button v-if="startLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly && startLeg.mode !== 'unknown' }" :disabled="readOnly || startLeg.mode === 'unknown'" :aria-label="'Getting to ' + stopRows[0].stop.name + ': ' + anchorLegText(startLeg)" @click="openAnchorLeg('start')">
                 <AppIcon :name="modeIcon(startLeg.mode)" :size="13" /> {{ anchorLegText(startLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
             </li>
@@ -227,7 +227,7 @@
               <li v-else class="ip-stop" :data-i="i" :class="{ first: i === 0, last: i === timeline.length - 1, moving: drag && drag.item.id === it.stop.id, 'menu-open': durFor === it.stop.id }">
                 <span class="ip-num" :style="{ background: numberColor(numberOf(it)) }" aria-hidden="true">{{ numberOf(it) + 1 }}</span>
 
-                <article class="ip-card" :class="{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }"
+                <article class="ip-card" :class="[{ locked: it.stop.locked, moved: wasAt(it) !== null, 'rain-warning-card': isRainAffected(it) }, voteClass(wishFor(it.stop))]"
                   :draggable="!it.stop.locked && !previewing && !readOnly" @dragstart="startDrag($event, 'stop', it.stop)" @dragend="endDrag"
                   @touchstart="touchStart($event, it, i)" @touchmove="touchMove" @touchend="touchEnd" @touchcancel="touchCancel"
                   @dragover.prevent="overCard($event, i)" @drop.prevent="dropInto(slotOf(dropAt == null ? i : dropAt))">
@@ -259,9 +259,9 @@
                       <!-- Tap the duration to change it; the rest of the day re-times -->
                       <span class="ip-dur-wrap">
                         <button type="button" class="ip-dur" :disabled="previewing || readOnly" :aria-expanded="durFor === it.stop.id"
-                          :aria-label="'How long at ' + it.stop.name + ': ' + durationText(it.stop.duration) + '. Change'"
+                          :aria-label="'How long at ' + it.stop.name + ': ' + (it.stop.durationUnset ? 'not set (1 hr held)' : durationText(it.stop.duration)) + '. Change'"
                           title="Change how long you stay" @click.stop="toggleDur(it.stop.id)">
-                          <AppIcon name="clock" :size="13" /> {{ durationText(it.stop.duration) }} <span v-if="!readOnly" aria-hidden="true">▾</span>
+                          <AppIcon name="clock" :size="13" /> {{ it.stop.durationUnset ? 'How long?' : durationText(it.stop.duration) }} <span v-if="!readOnly" aria-hidden="true">▾</span>
                         </button>
                         <span v-if="durFor === it.stop.id" class="ip-dur-menu" role="dialog" :aria-label="'Time at ' + it.stop.name" @click.stop @keydown.esc="durFor = null">
                           <span class="ip-dur-step">
@@ -277,7 +277,10 @@
                       </span>
                       <small v-if="wasAt(it) !== null" class="ip-was">was {{ formatHour(wasAt(it)) }}</small>
                     </span>
-                    <h4 class="ip-name">{{ it.stop.name }}</h4>
+                    <h4 class="ip-name">{{ it.stop.name }}
+                      <span v-if="voteLevel(wishFor(it.stop))" class="ip-vote-tag" :class="'v-' + voteLevel(wishFor(it.stop))"
+                        :title="VOTE_LABEL[voteLevel(wishFor(it.stop))]">{{ voteCount(wishFor(it.stop)) }}/{{ travellers.length }}</span>
+                    </h4>
                     <p v-if="it.stop.kind === 'flight' && it.stop.flight" class="ip-flight-times">
                       <AppIcon name="plane" :size="13" /> Takes off {{ formatHour(hourOf(it.stop.flight.dep)) }} · lands {{ formatHour(hourOf(it.stop.flight.arr)) }}<template v-if="it.stop.flight.number"> · {{ it.stop.flight.number }}</template>
                       · be at the airport {{ it.stop.flight.intl ? '2.5 h' : '1.5 h' }} before
@@ -336,7 +339,7 @@
             </li>
             <!-- Where the day ends: back to the hotel, or the airport on the day you fly home -->
             <li v-if="stopRows.length" class="ip-anchor-row end">
-              <button v-if="endLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly }" :disabled="readOnly" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
+              <button v-if="endLeg" type="button" class="ip-leg" :class="{ clickable: !readOnly && endLeg.mode !== 'unknown' }" :disabled="readOnly || endLeg.mode === 'unknown'" :aria-label="'Getting to ' + endAnchor.name + ': ' + anchorLegText(endLeg)" @click="openAnchorLeg('end')">
                 <AppIcon :name="modeIcon(endLeg.mode)" :size="13" /> {{ anchorLegText(endLeg) }}<AppIcon name="chevron" :size="12" class="ip-leg-go" />
               </button>
               <!-- Last day, nothing set yet: one question, two answers (the flight home first: most people fly out) -->
@@ -678,7 +681,7 @@
           <span class="ip-drawer-icon" aria-hidden="true"><AppIcon name="map-pin" :size="20" /></span>
           <span class="ip-drawer-title">
             <strong>{{ unscheduled.length }} saved place{{ unscheduled.length === 1 ? '' : 's' }}</strong>
-            <small v-if="votingOn && unscheduled.length">{{ picks.length }} ready to add · {{ waiting.length }} waiting for votes</small>
+            <small v-if="votingOn && unscheduled.length">{{ picks.length }} group pick{{ picks.length === 1 ? '' : 's' }} · {{ unscheduled.length - picks.length }} still voting</small>
             <small v-else>Not on a day yet</small>
           </span>
           <span class="ip-chev" aria-hidden="true">{{ drawerOpen ? '−' : '+' }}</span>
@@ -686,47 +689,40 @@
         <div v-show="drawerOpen" class="ip-drawer-body">
           <p v-if="drag && drag.kind === 'stop'" class="ip-unschedule">Drop here to unschedule</p>
           <p v-else-if="!unscheduled.length" class="ip-muted">Places you save in Places → Wishlist wait here.</p>
-          <!-- Group trips: only places most of the group voted for can go on a day -->
-          <p v-else-if="votingOn" class="ip-vote-rule">
-            <AppIcon name="thumbs-up" :size="15" />
-            <span>Only <strong>group picks</strong> can go on a day: places {{ needed }} of {{ travellers.length }} travellers voted for.</span>
-          </p>
+          <!-- Group trips: votes are a signal, not a gate. Any place can go on a day; its colour says how the group feels. -->
+          <template v-else-if="votingOn && !(drag && drag.kind === 'stop')">
+            <p class="ip-vote-legend">
+              <span class="ip-vote-key v-pick">Group pick ({{ needed }}+ of {{ travellers.length }})</span>
+              <span class="ip-vote-key v-some">Some votes</span>
+              <span class="ip-vote-key v-none">No votes yet</span>
+              <button type="button" class="ip-vote" @click="emit('go-vote')">Vote</button>
+            </p>
+            <div class="ip-vote-filter" role="group" aria-label="Show saved places">
+              <button v-for="f in voteFilters" :key="f.value" type="button" class="ip-chip-btn" :class="[{ on: voteFilter === f.value }, f.value !== 'all' && 'v-' + f.value]"
+                :aria-pressed="voteFilter === f.value" @click="voteFilter = f.value">{{ f.label }} <span class="ip-group-count">{{ f.count }}</span></button>
+              <button type="button" class="ip-chip-btn ip-sort-btn" @click="voteSort = voteSort === 'votes' ? 'name' : 'votes'">
+                <AppIcon name="swap" :size="12" /> {{ voteSort === 'votes' ? 'Most votes' : 'A–Z' }}
+              </button>
+            </div>
+            <p v-if="!shownSaved.length" class="ip-muted">No saved places match this filter.</p>
+          </template>
           <!-- One group per destination -->
-          <p v-if="votingOn && unscheduled.length && !picks.length && !(drag && drag.kind === 'stop')" class="ip-muted">
-            No group picks yet. Vote on the places below, and they can be added once {{ needed }} people say yes.
-          </p>
           <section v-for="g in savedGroups" :key="g.city" class="ip-group" :aria-label="'Saved in ' + g.label">
             <h5 class="ip-group-head">
               <FlagImg :code="g.flag" :size="12" /> {{ g.label }} <span class="ip-group-count">{{ g.items.length }}</span>
             </h5>
             <!-- The whole card adds it to the end of the day (the + does the same, for keyboards) -->
-            <div v-for="w in g.items" :key="w.id" class="ip-wish clickable" draggable="true" :title="'Add ' + w.name + ' to the end of the day'"
+            <div v-for="w in g.items" :key="w.id" class="ip-wish clickable" :class="voteClass(w)" draggable="true" :title="'Add ' + w.name + ' to the end of the day'"
               @dragstart="startDrag($event, 'wish', w)" @dragend="endDrag" @click="wishClick(w, $event)">
               <div class="ip-thumb sm" :class="'cat-' + categoryOf(w).key" :style="thumbStyle(w)" aria-hidden="true">
                 <span v-if="!photos[photoKey(w)]"><AppIcon :name="lineIconFor(categoryOf(w).icon)" :size="16" /></span>
               </div>
               <div class="ip-wish-text">
                 <span class="ip-wish-name">{{ w.name }}</span>
-                <small>{{ categoryOf(w).label }}</small>
+                <small>{{ categoryOf(w).label }}<template v-if="votingOn"> · {{ voteCount(w) }} of {{ travellers.length }} want to go</template></small>
               </div>
               <button type="button" class="ip-add" :aria-label="'Add ' + w.name + ' to the end of the day'" title="Add to the end of the day"
                 @click="scheduleWish(w, stopRows.length)">+</button>
-            </div>
-          </section>
-          <!-- Not enough votes yet: shown, but can't be added (no drag, no +) -->
-          <section v-if="waiting.length && !(drag && drag.kind === 'stop')" class="ip-group ip-waiting" aria-label="Waiting for votes">
-            <h5 class="ip-group-head">
-              <AppIcon name="clock" :size="13" /> Waiting for votes <span class="ip-group-count">{{ waiting.length }}</span>
-            </h5>
-            <div v-for="w in waiting" :key="w.id" class="ip-wish waiting">
-              <div class="ip-thumb sm" :class="'cat-' + categoryOf(w).key" :style="thumbStyle(w)" aria-hidden="true">
-                <span v-if="!photos[photoKey(w)]"><AppIcon :name="lineIconFor(categoryOf(w).icon)" :size="16" /></span>
-              </div>
-              <div class="ip-wish-text">
-                <span class="ip-wish-name">{{ w.name }}</span>
-                <small>{{ (w.votes || []).length }} of {{ needed }} votes needed</small>
-              </div>
-              <button type="button" class="ip-vote" :aria-label="'Vote on ' + w.name + ' in Group decisions'" @click="emit('go-vote')">Vote</button>
             </div>
           </section>
         </div>
@@ -762,7 +758,7 @@
 // Times are worked out by dayOptimizer.js: flexible stops follow each other, locked ones keep their time.
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, inject } from 'vue'
 import axios from 'axios'
-import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, addMealBreaks, defaultDuration, crowdAt, rainDuring,
+import { optimizeDay, scheduleInOrder, scheduleAsIs, travelMatrix, warningsFor, rainFromBlocks, haversineKm, addMealBreaks, crowdAt, rainDuring,
   travelOptions, recommendTravel, travelBetween, legKey, TRAVEL_MODES, DEFAULT_TRAVEL, exitOf } from '../../lib/itinerary/dayOptimizer.js'
 import { loadLeaflet } from '../../services/leaflet.js'
 import EatDrawer from './EatDrawer.vue'
@@ -1058,7 +1054,11 @@ const hotelChoices = computed(() => {
 })
 const placeChoices = computed(() => {
   const list = []
-  for (const w of picks.value) list.push({ ...w, icon: categoryOf(w).icon, sub: categoryOf(w).label + (w.city ? ' · ' + w.city.split(', ')[0] : '') })
+  const saved = unscheduled.value.slice().sort((a, b) => voteCount(b) - voteCount(a)) // most-wanted first
+  for (const w of saved) {
+    const votes = votingOn.value ? ' · ' + voteCount(w) + '/' + props.travellers.length + ' votes' : ''
+    list.push({ ...w, icon: categoryOf(w).icon, sub: categoryOf(w).label + (w.city ? ' · ' + w.city.split(', ')[0] : '') + votes })
+  }
   return list
 })
 function addFromSheet(w) {
@@ -1149,17 +1149,19 @@ function toWork(s) {
     return {
       id: s.id, name: s.name, address: null, hour: s.hour, outdoor: false, locked: true, kind: 'flight', flight: s.flight,
       duration: s.duration || 2, lat: s.flight.from.lat, lon: s.flight.from.lon, endLat: s.flight.to.lat, endLon: s.flight.to.lon,
-      crowd: null, popular: false, open: null, close: null, travelMode: null, travelFrom: null, travelBy: ''
+      crowd: null, open: null, close: null, travelMode: null, travelFrom: null, travelBy: ''
     }
   }
   const c = s.lat != null ? { lat: s.lat, lon: s.lon } : null // no map point: location not set yet
   const day = s.forecast && s.forecast.days && s.forecast.days[props.dayName]
   return {
-    id: s.id, name: s.name, address: s.address || null, hour: s.hour, outdoor: !!s.outdoor, locked: !!s.locked, kind: s.kind || null,
-    // Your own time if you set one, else the place's typical visit time, else a guess from what it is
-    duration: s.duration || (s.forecast && s.forecast.durationDefault) || defaultDuration(s),
+    id: s.id, name: s.name, address: s.address || null, hour: s.hour, outdoor: s.outdoor ?? null, locked: !!s.locked, kind: s.kind || null,
+    // Your own time if you set one, else BestTime's average visit. Neither: it holds 1 hr on the timeline
+    // and shows "How long?" until someone sets it (durationUnset)
+    duration: s.duration || (s.forecast && s.forecast.durationDefault) || 1,
+    durationUnset: !s.duration && !(s.forecast && s.forecast.durationDefault),
     lat: c ? c.lat : null, lon: c ? c.lon : null,
-    crowd: crowdCurve(s.forecast), popular: !!c || !!s.address, // a place we found on the map gets the typical crowd curve
+    crowd: crowdCurve(s.forecast), // BestTime's curve for this weekday, or null (no crowd data)
     open: day && !day.closed ? day.open : null, close: day && !day.closed ? day.close : null,
     // How the group chose to get here (only counts when coming from that same stop)
     travelMode: s.travel ? s.travel.mode : null, travelFrom: s.travel ? s.travel.from : null, travelBy: s.travel ? s.travel.by : ''
@@ -1178,28 +1180,59 @@ const unscheduled = computed(() => {
 })
 // Saved places grouped by destination (e.g. Tokyo, Kyoto), in the order they first appear.
 // Places saved before multi-city trips have no city and go under "Other places".
-// ---------- majority vote rule ----------
-// On a group trip (2+ travellers), a saved place can only go on a day once more than half voted for it.
-// Solo trips skip voting: everything saved can be added.
+// ---------- votes: a signal, not a gate ----------
+// On a group trip (2+ travellers) any saved place can go on a day. Its votes just colour it:
+// green = group pick (more than half said yes), amber = some yes votes, red = nobody yet.
+// Solo trips skip voting: no colours.
 const votingOn = computed(() => props.travellers.length >= 2)
 const needed = computed(() => Math.floor(props.travellers.length / 2) + 1) // 3 travellers -> 2, 4 -> 3
-function isPick(w) {
-  return !votingOn.value || (w.votes || []).length >= needed.value
+const VOTE_LABEL = { pick: 'Group pick', some: 'Some votes', none: 'No votes yet' }
+function voteCount(w) {
+  return w ? (w.votes || []).length : 0
 }
-const picks = computed(() => {
-  const list = []
-  for (const w of unscheduled.value) if (isPick(w)) list.push(w)
-  return list
+// 'pick' | 'some' | 'none', or '' when there's nothing to colour (solo trip, or a stop that isn't a saved place)
+function voteLevel(w) {
+  if (!votingOn.value || !w) return ''
+  const n = voteCount(w)
+  if (n >= needed.value) return 'pick'
+  return n > 0 ? 'some' : 'none'
+}
+function voteClass(w) {
+  const level = voteLevel(w)
+  return level ? 'v-' + level : ''
+}
+function isPick(w) {
+  return !votingOn.value || voteLevel(w) === 'pick'
+}
+// The saved place a stop on the day came from (stops are matched to saved places by name)
+function wishFor(stop) {
+  const name = (stop.name || '').toLowerCase()
+  return props.wishlist.find((w) => w.name.toLowerCase() === name) || null
+}
+const picks = computed(() => unscheduled.value.filter(isPick))
+
+// Saved places: filter by vote level, sort by most votes (or A–Z)
+const voteFilter = ref('all')
+const voteSort = ref('votes')
+const voteFilters = computed(() => {
+  const count = (level) => unscheduled.value.filter((w) => voteLevel(w) === level).length
+  return [
+    { value: 'all', label: 'All', count: unscheduled.value.length },
+    { value: 'pick', label: 'Group picks', count: count('pick') },
+    { value: 'some', label: 'Some votes', count: count('some') },
+    { value: 'none', label: 'No votes', count: count('none') }
+  ]
 })
-const waiting = computed(() => {
-  const list = []
-  for (const w of unscheduled.value) if (!isPick(w)) list.push(w)
+const shownSaved = computed(() => {
+  const list = unscheduled.value.filter((w) => voteFilter.value === 'all' || voteLevel(w) === voteFilter.value)
+  if (voteSort.value === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
+  else list.sort((a, b) => voteCount(b) - voteCount(a))
   return list
 })
 
 const savedGroups = computed(() => {
   const groups = []
-  for (const w of picks.value) {
+  for (const w of shownSaved.value) {
     const city = w.city || ''
     let g = groups.find((x) => x.city === city)
     if (!g) {
@@ -1366,6 +1399,7 @@ const effectiveWeatherBlocks = computed(() => {
       ...block,
       condition: rainy ? 'Rain' : 'Clear',
       rain: rainy,
+      pop: rainy ? 1 : 0, // the what-if you chose, not a forecast
       simulated: true
     }
   })
@@ -1387,23 +1421,28 @@ const travelPrefs = computed(() => ({
   group: Math.max(1, props.travellers.length),
   real: realLegs.value
 }))
-// Real travel times for one leg (in the background lane; kept by the server, so it's quick next time)
+// Real travel times for one leg (in the background lane; kept by the server, so it's quick next time).
+// Returns a promise that settles when the lookup is done (so Optimize Route can wait for every leg).
+const legJobs = {} // legKey -> the lookup that is running
 function fetchLeg(a, b) {
   a = exitOf(a) // after a flight: from the airport it lands at
-  if (!a || !b || a.lat == null || b.lat == null) return
+  if (!a || !b || a.lat == null || b.lat == null) return Promise.resolve()
   const key = legKey(a, b)
-  if (realLegs.value[key] || asking.value[key]) return
+  if (realLegs.value[key]) return Promise.resolve()
+  if (legJobs[key]) return legJobs[key]
   asking.value = { ...asking.value, [key]: true }
-  axios.get('/api/travel/leg', { params: { from: a.lat + ',' + a.lon, to: b.lat + ',' + b.lon }, background: true, timeout: 30000 })
+  legJobs[key] = axios.get('/api/travel/leg', { params: { from: a.lat + ',' + a.lon, to: b.lat + ',' + b.lon }, background: true, timeout: 30000 })
     .then((res) => {
       if (res.data && Object.keys(res.data).length) realLegs.value = { ...realLegs.value, [key]: res.data }
     })
     .catch(() => {})
     .finally(() => {
+      delete legJobs[key]
       const copy = { ...asking.value }
       delete copy[key]
       asking.value = copy
     })
+  return legJobs[key]
 }
 // Preferences are constraints for Optimize; they do not change saved itinerary times by themselves.
 const opts = computed(() => ({
@@ -1660,7 +1699,8 @@ function modeIcon(mode) {
   return TRAVEL_MODES[mode] ? TRAVEL_MODES[mode].icon : 'map-pin'
 }
 function anchorLegText(leg) {
-  return TRAVEL_MODES[leg.mode].label + ' · ' + leg.min + ' min' + (leg.live ? '' : ' (est.)')
+  if (leg.mode === 'unknown') return 'No route yet · travel time not counted'
+  return TRAVEL_MODES[leg.mode].label + ' · ' + leg.min + ' min' + (leg.live ? '' : ' (approx.)')
 }
 function openAnchorLeg(which) {
   legOpener = document.activeElement
@@ -1772,12 +1812,39 @@ watch(() => dayShown.value + '|' + dayOpts.value.dayStart + '|' + dayOpts.value.
   if (outsideFlight()) fitDayToPrefs('Day planned around your flight')
 }), { immediate: true })
 
+// Real routes between every pair of places on the map (4 at a time). Returns the legs still without one, as "A → B".
+async function fetchAllLegs(points) {
+  const onMap = points.filter((p) => p.lat != null)
+  const pairs = []
+  for (const a of onMap) {
+    for (const b of onMap) {
+      // Only the ways the day can go: never into the start or out of the end
+      if (a.id === b.id || a.id === '@end' || b.id === '@start') continue
+      const [from, to] = legKey(exitOf(a), b).split('>')
+      if (from !== to) pairs.push([a, b]) // two names for one spot: nothing to travel
+    }
+  }
+  for (let i = 0; i < pairs.length; i += 4) await Promise.all(pairs.slice(i, i + 4).map(([a, b]) => fetchLeg(a, b)))
+  const missing = []
+  for (const [a, b] of pairs) {
+    const e = exitOf(a)
+    if (e.lat != null && !realLegs.value[legKey(e, b)]) missing.push(a.name + ' → ' + b.name)
+  }
+  return missing
+}
 async function optimize() {
   preview.value = null
   phase.value = 'route'
   await pause(350)
   phase.value = 'forecast'
   await pause(350)
+  // Optimize Route compares travel times between every pair of places, so get real routes for all of them first
+  const missing = await fetchAllLegs(work.value.concat(anchorList.value))
+  if (missing.length) {
+    phase.value = ''
+    showToast('Optimize Route needs real travel times. No route found for: ' + missing.slice(0, 3).join(', ') + (missing.length > 3 ? ' and ' + (missing.length - 3) + ' more' : '') + '. Try again in a minute.', false)
+    return
+  }
   phase.value = 'reorder'
   await pause(250)
   preview.value = optimizeDay(work.value, rain.value, { ...dayOpts.value, travel: travelPrefs.value })
@@ -1818,7 +1885,7 @@ function addMeal(place) {
   scheduleWish({
     name: c.label + ' at ' + place.name,
     address: place.name + (place.address ? ', ' + place.address : '') + (city ? ', ' + city : ''),
-    outdoor: false,
+    outdoor: null,
     city: c.city || null,
     lat: place.lat,
     lon: place.lon,
@@ -2053,7 +2120,6 @@ function dropInto(slot) {
   endDrag()
   if (!d || previewing.value) return
   if (d.kind === 'wish') {
-    if (!isPick(d.item)) return showToast(d.item.name + ' needs ' + needed.value + ' votes before it can go on a day', false)
     return scheduleWish(d.item, slot)
   }
   const list = stopRows.value.map((it) => it.stop)
@@ -2105,7 +2171,7 @@ function scheduleWish(w, slot, confirmed = false, roomOk = false) {
     })
     return
   }
-  const fresh = toWork({ id: '__new', name: w.name, address: w.address || null, outdoor: !!w.outdoor, duration: w.duration || 1.5, lat: w.lat, lon: w.lon, hour: 0 })
+  const fresh = toWork({ id: '__new', name: w.name, address: w.address || null, outdoor: w.outdoor ?? null, duration: w.duration || 1, lat: w.lat, lon: w.lon, hour: 0 })
   const list = stopRows.value.map((it) => it.stop)
   list.splice(slot, 0, fresh)
   const items = retime(list)
@@ -2240,10 +2306,16 @@ function legIcon(it) {
 }
 function legText(it) {
   if (it.mode === 'break') return ''
-  if (it.mode === 'unknown') return '~' + it.travelMin + ' min (place not found on the map)'
+  if (it.mode === 'unknown') {
+    const e = legEntry(it)
+    if (e.missing === 'place') return 'Not on the map · travel time not counted'
+    const prev = prevStopOf(it)
+    const checking = prev && asking.value[legKey(exitOf(prev.stop), it.stop)]
+    return checking ? 'Checking route…' : 'No route found · travel time not counted'
+  }
   if (!TRAVEL_MODES[it.mode]) return ''
   const e = legEntry(it)
-  return TRAVEL_MODES[it.mode].label + ' · ' + it.travelMin + ' min' + (e.live ? '' : ' (est.)')
+  return TRAVEL_MODES[it.mode].label + ' · ' + it.travelMin + ' min' + (e.live ? '' : ' (approx.)')
 }
 // Short note after it: who picked it, or why it's suggested (the panel has the full reason)
 function legNote(it) {
@@ -2281,13 +2353,13 @@ const legView = computed(() => {
   const b = toIt.stop
   const tp = travelPrefs.value
   const options = travelOptions(a, b, tp)
-  const rec = recommendTravel(options, tp)
+  const rec = recommendTravel(options, tp) // null when there's no route yet
   const chosen = b.travelMode && b.travelFrom === a.id ? b.travelMode : ''
   return {
     fromName: a.name, toName: b.name,
     from: { lat: a.lat, lon: a.lon }, to: { lat: b.lat, lon: b.lon },
     leaveText: formatHour(fromIt.start + (a.duration || 1)),
-    options, recommended: rec.option.mode, reason: rec.reason,
+    options, recommended: rec ? rec.option.mode : '', reason: rec ? rec.reason : '',
     chosen, chosenBy: chosen ? (b.travelBy === props.me ? 'You' : b.travelBy) : '',
     group: tp.group, maxWalk: tp.maxWalk, modes: tp.modes, priority: tp.priority,
     checking: !!asking.value[legKey(a, b)]
@@ -2302,11 +2374,11 @@ function anchorLegView(which) {
   if (!a || !b || a.lat == null || b.lat == null) return null
   const tp = travelPrefs.value
   const options = travelOptions(a, b, tp)
-  const rec = recommendTravel(options, tp)
-  const leave = which === 'start' ? rows[0].start - rec.option.min / 60 : rows[rows.length - 1].start + (a.duration || 1)
+  const rec = recommendTravel(options, tp) // null when there's no route yet
+  const leave = which === 'start' ? rows[0].start - (rec ? rec.option.min : 0) / 60 : rows[rows.length - 1].start + (a.duration || 1)
   return {
     fromName: a.name, toName: b.name, from: { lat: a.lat, lon: a.lon }, to: { lat: b.lat, lon: b.lon },
-    leaveText: formatHour(Math.max(0, leave)), options, recommended: rec.option.mode, reason: rec.reason,
+    leaveText: formatHour(Math.max(0, leave)), options, recommended: rec ? rec.option.mode : '', reason: rec ? rec.reason : '',
     chosen: '', chosenBy: '', readonly: true,
     group: tp.group, maxWalk: tp.maxWalk, modes: tp.modes, priority: tp.priority,
     checking: !!asking.value[legKey(a, b)]
@@ -2423,7 +2495,7 @@ const crowdSimulation = ref(null) // the last one set, for the "Simulating …" 
 
 function crowdOf(it) {
   const s = it.stop
-  if (!s.crowd && !s.popular) return { value: null, text: '–', tone: 'none', title: 'No crowd data (no address)' }
+  if (!s.crowd) return { value: null, text: '–', tone: 'none', title: 'No crowd data' }
   const c = Math.round(crowdAt(s, it.start)) // (a simulated crowd level is already in s.crowd)
   const level = c >= 80 ? { text: 'Peak', tone: 'bad' } : c >= 55 ? { text: 'Busy', tone: 'mid' } : { text: 'Quiet', tone: 'ok' }
   const isSimulated = !!s.crowdAssumed
@@ -2453,7 +2525,7 @@ function freeTimes(it, isGood) {
       if (o.stop.id !== s.id && h < o.start + (o.stop.duration || 1) + 0.25 && h + dur + 0.25 > o.start) clash = true
     }
     if (clash || !isGood(h)) continue
-    out.push({ hour: h, crowd: s.crowd || s.popular ? Math.round(crowdAt(s, h)) : null })
+    out.push({ hour: h, crowd: s.crowd ? Math.round(crowdAt(s, h)) : null })
   }
   out.sort((a, b) => (a.crowd || 0) - (b.crowd || 0) || a.hour - b.hour)
   return out.slice(0, 3)
@@ -2762,7 +2834,7 @@ const dayOptions = computed(() => {
   }
   return list
 })
-const indoorPicks = computed(() => picks.value.filter((w) => !w.outdoor).slice(0, 5)) // group picks only
+const indoorPicks = computed(() => picks.value.filter((w) => w.outdoor === false).slice(0, 5)) // group picks only
 
 function openSheet(it, section) {
   issuesOpen.value = false
@@ -3713,8 +3785,21 @@ watch(dayShown, () => {
 .ip-chev { color: var(--muted); font-size: 20px; line-height: 1; }
 .ip-drawer-body { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
 .ip-unschedule { margin: 0; padding: 14px; text-align: center; border: 1.5px dashed var(--primary); border-radius: var(--bs-border-radius, 0.375rem); color: var(--primary); font-size: 13px; }
-.ip-vote-rule { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 8px; padding: 10px 12px; border-radius: var(--bs-border-radius, 0.375rem); background: var(--warn-bg); color: var(--warn-ink); font-size: 13px; line-height: 1.4; }
-.ip-vote-rule svg { flex: none; margin-top: 1px; }
+/* Votes as a signal: green = group pick, amber = some votes, red = no votes yet */
+.v-pick { --vote: var(--bs-success, #198754); --vote-tint: var(--ok-tint); --vote-ink: var(--ok-ink); }
+.v-some { --vote: var(--gold); --vote-tint: var(--warn-bg); --vote-ink: var(--warn-ink); }
+.v-none { --vote: var(--active); --vote-tint: var(--danger-tint); --vote-ink: var(--danger-ink); }
+.ip-card.v-pick, .ip-card.v-some, .ip-card.v-none,
+.ip-wish.v-pick, .ip-wish.v-some, .ip-wish.v-none { border-left: 5px solid var(--vote); }
+.ip-vote-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--vote-tint); color: var(--vote-ink); font-size: 11px; font-weight: 700; vertical-align: middle; }
+.ip-vote-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+.ip-vote-legend .ip-vote { margin-left: auto; padding: 3px 10px; font-size: 12px; }
+.ip-vote-key::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 3px; background: var(--vote); vertical-align: -1px; }
+.ip-vote-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.ip-chip-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); font-size: 12px; font-weight: 600; }
+.ip-chip-btn:hover { border-color: var(--vote, var(--primary)); }
+.ip-chip-btn.on { background: var(--vote-tint, var(--primary-tint)); border-color: var(--vote, var(--primary)); color: var(--vote-ink, var(--ink)); }
+.ip-sort-btn { margin-left: auto; }
 .ip-group { display: flex; flex-direction: column; gap: 8px; }
 .ip-group + .ip-group { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
 .ip-group-head { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); }
@@ -3726,8 +3811,6 @@ watch(dayShown, () => {
 .ip-wish-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ip-wish-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ip-wish-text small { font-size: 11px; color: var(--muted); }
-.ip-wish.waiting { cursor: default; border-style: dashed; }
-.ip-wish.waiting .ip-thumb, .ip-wish.waiting .ip-wish-name { opacity: 0.65; }
 .ip-add { flex: none; width: 30px; height: 30px; border-radius: var(--bs-border-radius, 0.375rem); border: 1.5px solid var(--primary); background: #fff; color: var(--primary); font-size: 18px; line-height: 1; }
 .ip-vote { flex: none; padding: 5px 12px; border-radius: var(--bs-border-radius, 0.375rem); border: 1.5px solid var(--gold); background: #fff; color: var(--ink); font-size: 13px; font-weight: 700; }
 .ip-vote:hover { background: var(--gold); }

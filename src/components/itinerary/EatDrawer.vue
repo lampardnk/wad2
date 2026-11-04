@@ -67,7 +67,7 @@
 // context: { label: 'Lunch', icon, start (hour), date 'YYYY-MM-DD', fromName, from: { lat, lon } | null, city }
 import { ref, computed, watch, nextTick } from 'vue'
 import axios from 'axios'
-import { travelBetween } from '../../lib/itinerary/dayOptimizer.js'
+import { haversineKm } from '../../lib/itinerary/dayOptimizer.js'
 import { openStatus } from '../../services/safetyService.js'
 import AppIcon from '../common/AppIcon.vue'
 import { lineIconFor } from '../../lib/ui/emojiIcons.js'
@@ -145,7 +145,7 @@ watch(() => props.open, (isOpen) => {
   nextTick(() => searchEl.value && searchEl.value.focus())
 })
 
-// Cards: walking time, open at the meal time, diet badges; open places and closer ones first
+// Cards: distance, open at the meal time, diet badges; open places and closer ones first
 const shown = computed(() => {
   const q = query.value.trim().toLowerCase()
   const at = props.context.date ? new Date(props.context.date + 'T00:00:00') : new Date()
@@ -162,7 +162,8 @@ const shown = computed(() => {
     if (filter.value === 'veg' && !(p.diet.vegetarian || cuisines.includes('vegetarian') || cuisines.includes('vegan'))) continue
     if (filter.value === 'local' && !(p.kind === 'restaurant' && cuisines.some((c) => (localWords.length ? localWords.includes(c) : c === 'regional')))) continue
 
-    const walk = where.value ? travelBetween(where.value, p) : null
+    // Distance as the crow flies (a fact, not a guessed walking time)
+    const km = where.value && p.lat != null ? haversineKm(where.value, p) : null
     const status = openStatus(p.openingHours, at)
     let icon = isCafe ? '☕' : p.kind === 'fast_food' ? '🍔' : '🍽'
     for (const c of cuisines) if (ICONS[c]) { icon = ICONS[c]; break }
@@ -172,13 +173,13 @@ const shown = computed(() => {
       cuisineText: cuisines.length ? cuisines.map((c) => c.replace(/_/g, ' ')).slice(0, 3).join(' · ') : ({ cafe: 'Café', fast_food: 'Quick bites', food_court: 'Food court' }[p.kind] || 'Restaurant'),
       open: status.open,
       openText: status.open === true ? 'Open at ' + formatHour(hour) : status.open === false ? 'Closed at ' + formatHour(hour) : 'Hours not listed',
-      walkMin: walk ? walk.min : 99,
-      walkText: walk ? (walk.mode === 'walk' ? '🚶 ' + walk.min + ' min (' + Math.round(walk.km * 1000 / 50) * 50 + ' m)' : '🚇 ' + walk.min + ' min') : '',
+      distKm: km != null ? km : 999,
+      walkText: km == null ? '' : km < 1 ? Math.round(km * 1000 / 50) * 50 + ' m away' : km.toFixed(1) + ' km away',
       fitsYou: fits(p)
     })
   }
   const rank = (x) => (x.open === true ? 0 : x.open === null ? 1 : 2)
-  list.sort((a, b) => rank(a) - rank(b) || a.walkMin - b.walkMin)
+  list.sort((a, b) => rank(a) - rank(b) || a.distKm - b.distKm)
   return list.slice(0, 40)
 })
 

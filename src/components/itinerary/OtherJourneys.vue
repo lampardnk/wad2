@@ -43,10 +43,11 @@
     <div v-if="result" class="mb-4">
       <div class="alert alert-info">
         <strong>{{ result.fromName }} → {{ result.toName }}</strong><br>
-        We suggest <strong>{{ label(result.recommended) }}</strong>: {{ result.reason }}.
+        <template v-if="result.recommended">We suggest <strong>{{ label(result.recommended) }}</strong>: {{ result.reason }}.</template>
+        <template v-else-if="!result.checking">No route found between these places.</template>
         <span v-if="result.checking"> Checking live routes…</span>
       </div>
-      <TravelChoices :options="result.options" :recommended="result.recommended" :group="group" :maps-url="mapsUrl"
+      <TravelChoices :options="result.options" :recommended="result.recommended" :maps-url="mapsUrl"
         :chosen="editing ? editing.mode : ''" :chosen-by="editing ? editing.by : ''"
         action-label="Save" :mark-in-use="false" @choose="saveJourney" />
       <p class="form-text mt-2">{{ editing ? 'Save replaces the saved journey.' : 'Save the way you\'ll go, so everyone on the trip can see it.' }}</p>
@@ -233,8 +234,8 @@ const travelPrefs = computed(() => ({
 function build(from, to, real, checking) {
   const tp = { ...travelPrefs.value, real }
   const options = travelOptions(from, to, tp)
-  const rec = recommendTravel(options, tp)
-  return { fromName: fromText.value.trim(), toName: toText.value.trim(), from, to, options, recommended: rec.option.mode, reason: rec.reason, checking }
+  const rec = recommendTravel(options, tp) // null when there's no route (yet)
+  return { fromName: fromText.value.trim(), toName: toText.value.trim(), from, to, options, recommended: rec ? rec.option.mode : '', reason: rec ? rec.reason : '', checking }
 }
 
 const SAME_PLACE = 'From and To are the same place. Choose two different places.'
@@ -252,13 +253,13 @@ async function findWays() {
     error.value = SAME_PLACE
     return
   }
-  // Show the estimate straight away, then the real routes when they arrive
+  // Show "checking" straight away, then the real routes when they arrive
   result.value = build(from, to, {}, true)
   try {
     const res = await axios.get('/api/travel/leg', { params: { from: from.lat + ',' + from.lon, to: to.lat + ',' + to.lon }, timeout: 20000 })
     result.value = build(from, to, { [legKey(from, to)]: res.data }, false)
   } catch (err) {
-    if (result.value) result.value.checking = false // keep the estimate
+    if (result.value) result.value.checking = false // no routes: says so
   }
 }
 // A different place picked: the ways shown were for the old ones

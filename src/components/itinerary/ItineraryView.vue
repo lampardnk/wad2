@@ -466,7 +466,7 @@ export default {
       }
       stop.name = pick.name
       stop.address = pick.address || null
-      stop.outdoor = !!pick.outdoor
+      stop.outdoor = pick.outdoor ?? null
       stop.duration = pick.duration || null
       stop.forecast = null
       stop.dataFrom = ''
@@ -501,13 +501,13 @@ export default {
     // (date = another day, when this one was full: the stop goes after that day's last stop)
     async scheduleWish(w, changes, date) {
       if (date && date !== this.selectedDate) {
-        const later = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date, hour: this.nextFreeHour(date), duration: w.duration || 1.5, outdoor: !!w.outdoor })
+        const later = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date, hour: this.nextFreeHour(date), duration: w.duration || null, outdoor: !!w.outdoor })
         trip.stops.push(later)
         await this.applyOptimized([])
         this.loadForecast(later)
         return
       }
-      const stop = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date: this.selectedDate, hour: 0, duration: w.duration || 1.5, outdoor: !!w.outdoor })
+      const stop = runtimeStop({ ...this.extraOf(w), id: newId('s'), name: w.name, address: w.address || null, date: this.selectedDate, hour: 0, duration: w.duration || null, outdoor: !!w.outdoor })
       trip.stops.push(stop)
       await this.applyOptimized(changes.map((c) => (c.id === '__new' ? { ...c, id: stop.id } : c)))
       this.loadForecast(stop)
@@ -603,7 +603,7 @@ export default {
       const i = this.dayList.indexOf(this.selectedDate)
       this.$emit('go-places', { date: this.selectedDate, day: i >= 0 ? 'Day ' + (i + 1) : 'your itinerary' })
     },
-    // "Vote" on a place that's waiting for votes: open Group decisions, with a way back
+    // "Vote" in the saved places panel: open Group decisions, with a way back
     openVote() {
       const i = this.dayList.indexOf(this.selectedDate)
       this.$emit('go-places', { date: this.selectedDate, day: i >= 0 ? 'Day ' + (i + 1) : 'your itinerary', tab: 'vote' })
@@ -703,7 +703,6 @@ export default {
       item.error = ''
       try {
         item.forecast = await getForecast({ name: item.name, address: where, lat: item.lat, lon: item.lon })
-        item.bestTime = item.forecast.bestTimeDefault
         if (item.duration === null) item.duration = item.forecast.durationDefault
       } catch (err) {
         item.error = this.errorText(err)
