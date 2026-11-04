@@ -2455,6 +2455,7 @@ watch(dayShown, () => {
   gap: 8px 10px;
 }
 .ip-daynav-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.ip-daynav-actions .ip-small { height: 38px; padding: 0 14px; border-radius: 12px; }
 .ip-small {
   border: 1px solid var(--line);
   border-radius: var(--bs-border-radius, 0.375rem);
@@ -2522,7 +2523,7 @@ watch(dayShown, () => {
 
 /* the days sit in one white track, like a segmented control */
 .ip-strip-row {
-  flex: 1 1 320px;
+  flex: 0 1 auto; /* as wide as the days, up to the room there is */
   min-width: 0;
   display: flex;
   align-items: center;
