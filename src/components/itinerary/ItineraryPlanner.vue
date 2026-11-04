@@ -1824,7 +1824,8 @@ async function fetchAllLegs(points) {
       if (from !== to) pairs.push([a, b]) // two names for one spot: nothing to travel
     }
   }
-  for (let i = 0; i < pairs.length; i += 4) await Promise.all(pairs.slice(i, i + 4).map(([a, b]) => fetchLeg(a, b)))
+  // 2 at a time: each leg is 4 Geoapify requests, and too many at once get refused
+  for (let i = 0; i < pairs.length; i += 2) await Promise.all(pairs.slice(i, i + 2).map(([a, b]) => fetchLeg(a, b)))
   const missing = []
   for (const [a, b] of pairs) {
     const e = exitOf(a)
