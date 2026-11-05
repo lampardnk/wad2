@@ -96,15 +96,6 @@ export async function geoapifyAttractions({ placeId, lat, lon, radius, tourismTy
   return { elements }
 }
 
-// Is km (a route's length) under half the straight-line distance? Only checked past 300 m,
-// where rounding can't explain it. Used for fresh routes and for ones saved before this check.
-export function tooShort(from, to, km) {
-  const r = Math.PI / 180
-  const x = Math.sin((to.lat - from.lat) * r / 2) ** 2 + Math.cos(from.lat * r) * Math.cos(to.lat * r) * Math.sin((to.lon - from.lon) * r / 2) ** 2
-  const straight = 2 * 6371 * Math.asin(Math.sqrt(x))
-  return straight > 0.3 && km < straight / 2
-}
-
 // How long a route takes: { min, km } or null. from/to = { lat, lon }.
 // mode: 'walk' | 'bicycle' | 'drive' | 'approximated_transit' (public transport worked out from
 // OpenStreetMap's bus/train lines; no timetables, so it's an estimate).
@@ -124,8 +115,8 @@ export async function geoapifyRoute(from, to, mode, { withPath = false } = {}) {
   const f = data.features && data.features[0]
   const p = f && f.properties
   if (!p || p.time == null) return null
-  // A route much shorter than the straight line isn't real (Geoapify's transit sometimes answers 0 m, 1 min)
-  if (tooShort(from, to, (p.distance || 0) / 1000)) return null
+  // An empty route (0 m) is no route (Geoapify's transit sometimes answers 0 m, 1 min)
+  if (!p.distance) return null
   const route = { min: Math.max(1, Math.round(p.time / 60)), km: Math.round((p.distance || 0) / 100) / 10 }
   if (withPath && f.geometry) {
     // LineString: [[lon, lat], ...]; MultiLineString (one line per leg): [[[lon, lat], ...], ...]

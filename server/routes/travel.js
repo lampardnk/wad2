@@ -5,7 +5,7 @@
 // has fewer modes (or none) and the app says it has no route. Complete answers are kept in the database.
 import express from 'express'
 import { requireAuth } from './auth.js'
-import { geoapifyReady, geoapifyRoute, tooShort } from '../geoapify.js'
+import { geoapifyReady, geoapifyRoute } from '../geoapify.js'
 import { sharedCache } from '../sharedCache.js'
 
 const router = express.Router()
@@ -100,8 +100,8 @@ router.get('/leg', requireAuth, async (req, res) => {
   const saved = await legs.get(key)
   // Saved before rides could end with a short walk (a walk but no taxi): looked up once more
   const walkOnly = saved && saved.value.walk && !saved.value.taxi && !saved.value.triedNearby
-  // Saved with a route too short to be real (e.g. transit 0 m, 1 min): looked up again
-  const bad = saved && ['walk', 'bike', 'taxi', 'transit'].some((m) => saved.value[m] && tooShort(from, to, saved.value[m].km))
+  // Saved with an empty route (e.g. transit 0 m, 1 min): looked up again
+  const bad = saved && ['walk', 'bike', 'taxi', 'transit'].some((m) => saved.value[m] && !saved.value[m].km)
   if (saved && !walkOnly && !bad) return res.json(saved.value)
   let job = running.get(key)
   if (!job) {
